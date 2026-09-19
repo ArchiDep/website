@@ -97,8 +97,10 @@ check "the diary has about 500 lines ($lines)" [ "$lines" -ge 450 -a "$lines" -l
 check "the clue is in the middle (line $clue)" [ "$clue" -ge 200 -a "$clue" -le 300 ]
 check "only the clue and the help at the end say dragon" \
   [ "$(grep -c dragon "$HUNT/shipwreck/diary.txt")" -eq 2 ]
-check "the end of the diary explains less" \
-  [ -n "$(tail -n 15 "$HUNT/shipwreck/diary.txt" | grep 'less diary.txt')" ]
+check "the top of the diary explains how to quit less" \
+  [ -n "$(head -n 15 "$HUNT/shipwreck/diary.txt" | grep 'Press q')" ]
+check "the end of the diary points to less" \
+  [ -n "$(tail -n 10 "$HUNT/shipwreck/diary.txt" | grep 'less diary.txt')" ]
 
 echo "The catacombs"
 idols=$(cd "$HUNT/jungle/ruins/catacombs" && find . -name golden-idol)
@@ -220,6 +222,30 @@ OUTPUT=$(cat "$SETUP" | TREASURE_HUNT_RESTART=yes "$BASH" 2>&1)
 STATUS=$?
 check "the setup rebuilds the hunt when told to" [ "$STATUS" -eq 0 ]
 check "the rebuilt hunt starts over" [ ! -e "$HUNT/skull-island" -a -z "$(ls "$HUNT/bag")" ]
+
+echo "Terminal size"
+# setup_in_terminal <lines> <columns>: runs the setup in a pseudo-terminal of
+# that size, with the script command of macOS or of Linux.
+setup_in_terminal() {
+  local command="stty rows $1 cols $2; cat '$SETUP' | TREASURE_HUNT_RESTART=yes '$BASH'"
+  if script -q /dev/null true < /dev/null > /dev/null 2>&1; then
+    OUTPUT=$(script -q /dev/null "$BASH" -c "$command" < /dev/null 2>&1)
+  else
+    OUTPUT=$(script -qc "$BASH -c \"$command\"" /dev/null < /dev/null 2>&1)
+  fi
+}
+if command -v script > /dev/null; then
+  setup_in_terminal 24 80
+  check "a terminal with too few lines is warned about" output_contains "WARNING"
+  setup_in_terminal 40 70
+  check "a terminal with too few columns is warned about" output_contains "WARNING"
+  setup_in_terminal 40 100
+  check "a big enough terminal is not warned about" eval '! output_contains "WARNING"'
+  setup_in_terminal 0 0
+  check "a terminal that does not know its size is not warned about" eval '! output_contains "WARNING"'
+else
+  echo "  skip  no script command to make a terminal with"
+fi
 
 echo
 if [ "$FAILURES" -eq 0 ]; then

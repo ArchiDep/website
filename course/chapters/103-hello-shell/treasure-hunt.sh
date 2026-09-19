@@ -298,7 +298,22 @@ text MAP <<'END_MAP'
    Do not lose this map.
 END_MAP
 
-# The diary is built line by line when the hunt is set up: see diary().
+# The diary is built line by line when the hunt is set up: see diary(). The
+# help for less is at the top, so that it is the first thing less shows.
+text DIARY_START <<'END_DIARY_START'
+THE DIARY OF THE CAPTAIN
+
+  +----------------------------------------------------------+
+  |  How to read a long file with less:                      |
+  |                                                          |
+  |  - Arrow keys or Space: move down and up.                |
+  |  - Type /dragon and press Enter: search for "dragon".    |
+  |  - Press n: go to the next match.                        |
+  |  - Press q: quit less, and go back to your shell.        |
+  +----------------------------------------------------------+
+
+END_DIARY_START
+
 text DIARY_CLUE <<'END_DIARY_CLUE'
 We reached the island at last. I buried the key in the cave, behind
 the dragon. Nobody will ever take it: the dragon never wakes up.
@@ -307,21 +322,13 @@ END_DIARY_CLUE
 text DIARY_END <<'END_DIARY_END'
 --------------------------------------------------------------------
 
-You are reading the END of a long diary. The captain wrote a lot!
+This is the END of a long diary. The captain wrote a lot!
 cat printed the whole file, so the first pages went by too fast.
 
-To read a long file from the top, use less:
+To read a long file from the beginning, use less. The first lines of
+the diary explain how to move in less, and how to quit it. Then type:
 
     less diary.txt
-
-In less:
-
-- Use the arrow keys (or Space) to move.
-- Type /dragon and press Enter to search for the word "dragon".
-- Press n to go to the next match.
-- Press q to quit.
-
-(You can also scroll up in your terminal. But less is better.)
 END_DIARY_END
 
 # ---------------------------------------------------------------------------
@@ -906,8 +913,9 @@ END_TREASURE
 # Building the hunt
 # ---------------------------------------------------------------------------
 
-# The captain's diary: about 500 lines, the clue in the middle and the help
-# for less at the end. No line but the clue and the help says "dragon".
+# The captain's diary: about 500 lines, the clue in the middle, the help for
+# less at the top, and a pointer to it at the end, which is what cat leaves on
+# screen. No line but the clue and the help says "dragon".
 diary() {
   local sentences day i clue_day=83
   sentences=(
@@ -933,8 +941,7 @@ diary() {
     "The crew sings the same song every night."
   )
 
-  echo "THE DIARY OF THE CAPTAIN"
-  echo
+  fill "$DIARY_START"
   for ((day = 1; day <= 160; day++)); do
     echo "Day $day."
     if [ "$day" -eq "$clue_day" ]; then
@@ -1054,6 +1061,37 @@ confirm_restart() {
   esac
 }
 
+# The smallest terminal the hunt fits in: its widest line is 78 characters, and
+# start.txt, the tallest thing shown at once, is 31 lines.
+MIN_COLUMNS=80
+MIN_LINES=32
+
+# Warns students whose terminal window is too small for the hunt. The size is
+# read from the terminal, as the question above is. A script with no terminal,
+# or a terminal that does not know its size and says 0, is not warned.
+check_terminal_size() {
+  local size lines columns
+
+  size=$({ stty size < /dev/tty; } 2> /dev/null) || return 0
+  lines=${size% *}
+  columns=${size#* }
+  case "$lines$columns" in
+    '' | *[!0-9]*) return 0 ;;
+  esac
+  if [ "$lines" -eq 0 ] || [ "$columns" -eq 0 ]; then
+    return 0
+  fi
+
+  if [ "$columns" -lt "$MIN_COLUMNS" ] || [ "$lines" -lt "$MIN_LINES" ]; then
+    cat <<EOF
+
+WARNING: your terminal window is small ($columns columns, $lines lines).
+The hunt needs at least $MIN_COLUMNS columns and $MIN_LINES lines, or some
+texts and drawings will not fit. Make the window bigger before you start.
+EOF
+  fi
+}
+
 main() {
   if [ -z "${HOME:-}" ] || [ "$HOME" = "/" ] || [ ! -d "$HOME" ]; then
     fail "Your home directory was not found. Nothing was changed."
@@ -1090,6 +1128,8 @@ To start, go there and read start.txt:
 
 Good luck, explorer!
 EOF
+
+  check_terminal_size
 }
 
 # Everything above only defines things. Nothing runs before this last line, so
