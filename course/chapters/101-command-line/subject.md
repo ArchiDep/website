@@ -22,13 +22,15 @@ something like this:
 
 ### Why use it?
 
-A CLI is not very user-friendly or visually appealing but it has several advantages:
+A CLI is not very user-friendly or visually appealing but it has several
+advantages:
 
 - It requires very **few resources** (e.g. memory),
   which is convenient where resources are scarce
   (e.g. embedded systems, web servers).
 - It can be easily **automated** through scripting.
-- Is is ultimately **more powerful and efficient** than any GUI for many computing tasks.
+- It is ultimately **more powerful and efficient** than any GUI for many
+  computing tasks.
 
 For these reasons, a lot of tools, **especially development tools**,
 don't have any GUI and are only usable through a CLI.
@@ -42,7 +44,8 @@ Or they have a limited GUI that does not have as many options as the CLI.
 
 {% cols %}
 
-On **Unix-like** systems _(like macOS or Linux)_, it's an application called the **Terminal**.
+On **Unix-like** systems _(like macOS or Linux)_, it's an application called the
+**Terminal**.
 
 You can use it right away, as it's the _de-facto_ standard.
 
@@ -83,6 +86,27 @@ It will ask you for a **username** and a **password**. We suggest you use the
 same username as for the rest of the course, and that you use the same password
 as your Windows user account's.
 
+### Windows users: drives and copy/paste
+
+This is how you reference or use your **drives** (`C:`, `D:`, etc) in the
+Windows Subsystem for Linux (WSL):
+
+```bash
+$> cd /mnt/c/foo/bar
+$> cd /mnt/d/foo
+```
+
+**Copy/Paste**
+
+In a terminal, `Ctrl-C` already means something else: it **stops the command
+that is running** (see [stopping running
+commands](#stopping-running-commands)). It therefore **can't** be used as a
+shortcut to copy things from the CLI. Instead, the **W**indows **S**ubsystem for
+**L**inux (WSL) has two custom shortcuts:
+
+- `Ctrl-Shift-C` to **copy** things from the CLI
+- `Ctrl-Shift-V` to **paste** things to the CLI
+
 ## How to use the CLI
 
 When you open the CLI you will find a blank screen that looks like this:
@@ -103,8 +127,8 @@ For example, on earlier macOS versions, it used to be `bash3.2$`, indicating the
 name of the shell ([Bash][bash]) and its version.
 
 On more recent macOS versions using [the Z shell (Zsh)][zsh], the prompt might
-indicate your computer's name, your username and the current directory, e.g.
-`MyComputer:~ root#`.
+indicate your username, your computer's name and the current directory, e.g.
+`jde@MyComputer ~ %`.
 
 <div class="grid grid-cols-2 gap-4">
   <div><img src='images/bash-prompt.png' class="w-full !my-0" /></div>
@@ -119,7 +143,7 @@ indicate your computer's name, your username and the current directory, e.g.
 
 {% cols %}
 
-When the computer is working, the prompt disappear and you no longer have
+When the computer is working, the prompt disappears and you no longer have
 control.
 
 ![Sleep](images/sleep.png)
@@ -150,7 +174,7 @@ The syntax for using commands looks like this:
 $> name arg1 arg2 arg3 ...
 ```
 
-Note the use of **spaces** to separate the differents **arguments** of a command.
+Note the use of **spaces** to separate the different **arguments** of a command.
 
 - `name` represents the **command** you want to execute.
 - `arg1 arg2 arg3 ...` represent the **arguments of the command**, each of them **separated by a space**.
@@ -190,22 +214,20 @@ move to.
 **Values** can also be linked to an option:
 
 ```bash
-$> tar -c -v -f compressed.tar.gz file-to-compress
+$> head -n 5 notes.txt
 ```
 
-The [`tar` (**t**ape **ar**chive)][tar] command bundles and compresses files. In
-this example, it takes **three options**:
+The `head` command prints the beginning of a file. In this example, it takes
+**one option**:
 
-- `-c` tells it to **c**ompress (instead of uncompressing).
-- `-v` tells it to be **v**erbose (print more information to the CLI).
-- `-f` tells it where to store the compressed **f**ile; this is followed
-  **immediately** by `compressed.tar.gz` which is the **value** of that option.
+- `-n` tells it how many li**n**es to print; it is followed **immediately** by
+  `5`, which is the **value** of that option.
 
 It then takes **one value**:
 
-- `file-to-compress` is the file (or directory) to compress
+- `notes.txt` is the file to print the beginning of.
 
-There are two values in this example: one linked to the `-f` option, and one
+There are two values in this example: one linked to the `-n` option, and one
 used by the overall command.
 
 ### Naming things when using CLI
@@ -278,9 +300,10 @@ of information depending on what operating system you're on:
 
 - On Linux (including the WSL) or macOS, use `man ls` to display the **manual**
   for the `ls` command.
-- If you have [Node.js and npm][node] installed, there is also [tldr
-  pages][tldr-pages]: a cross-platform tool that provides simplified and
-  community-driven manual pages.
+- There is also [tldr pages][tldr-pages]: simplified, community-driven manual
+  pages that show the most common uses of a command instead of all its options.
+  Install a client with `brew install tlrc` on macOS, or with
+  `sudo apt install tldr` in the WSL or on Ubuntu.
 
 #### Interactive help pages
 
@@ -439,10 +462,11 @@ $> pwd
 /Users/Batman
 ```
 
-Or compress the current directory:
+Or make a compressed archive of the current directory with the [`tar` (**t**ape
+**ar**chive)][tar] command:
 
 ```bash
-tar -c -v -f /somewhere/compressed.tar.gz .
+$> tar -c -z -v -f /somewhere/archive.tar.gz .
 ```
 
 This does not seem very useful now, but it will be in further tutorials.
@@ -461,13 +485,21 @@ $> pwd
 /Users/Batman
 ```
 
-You can also drag and drop a directory from your Explorer or your Finder to the CLI to see its absolute path automaticaly written:
+You can also drag and drop a directory from your Explorer or your Finder to the CLI to see its absolute path automatically written:
 
 ```bash
 $> cd
 (Drag and drop a directory from your Explorer/Finder, and...)
 $> cd /Users/Batman/Pictures/
 ```
+
+{% note type: warning %}
+
+**Windows users:** dropping a directory into the WSL may write a Windows path
+such as `C:\Users\jde\Pictures`, which your Linux shell does not understand. In
+that case, write the path yourself in the `/mnt/c/...` form.
+
+{% endnote %}
 
 At any time and from anywhere, you can return to your **home directory** with
 the `cd` command, without any argument or with a `~` (tilde):
@@ -496,6 +528,9 @@ To type the `~` character, use this combination:
 
 - `AltGr-^` on **Windows**
 - `Alt-N` on **Mac**
+
+These are **dead keys**: nothing appears on screen until you press the space bar
+afterwards.
 
 {% endnote %}
 
@@ -530,7 +565,7 @@ happen to have a `path` directory that contains a `to` directory that contains a
 
 {% endnote %}
 
-{% callout %}
+{% callout type: warning %}
 
 **Windows users:** if your username contains **spaces** or **accents**, you
 should **NOT** store your projects under your home directory. You should find a
@@ -654,131 +689,25 @@ have finished what it was doing.
 
 {% endnote %}
 
-### Windows users
-
-This is how you reference or use your **drives** (`C:`, `D:`, etc) in the
-Windows Subsystem for Linux (WSL):
-
-```bash
-$> cd /mnt/c/foo/bar
-$> cd /mnt/d/foo
-```
-
-**Copy/Paste**
-
-Since `Ctrl-C` is used to stop the current process, it **can't** be used as a
-shortcut to copy things from the CLI. Instead, the **W**indows **S**ubsystem for
-**L**inux (WSL) has two custom shortcuts:
-
-- `Shift-Ctrl-C` to **copy** things from the CLI
-- `Shift-Ctrl-P` to **paste** things to the CLI
-
-## Vim
-
-[**Vim**][vim] is an infamous CLI editor originally developed in 1976 (WHAT?!)
-for the Unix operating system.
-
-{% note %}
-
-The name comes from "**vi** i**m**proved", because Vim is an improved clone of
-an earlier editor: [vi][vi] (from **vi**sual).
-
-{% endnote %}
-
-### WHY?!
-
-Why would you need to learn it?
-
-Sometimes it's just the **only editor you have** (e.g. on a server).
-Also **some developer tools might open Vim** for user input.
-
-If this happens (_and it will_), there's **one** imperative rule to follow:
-
-**DO NOT PANIC!**
-
-Open a file by running the `vim` command with the path to the file you want to
-create/edit:
-
-```bash
-vim test.txt
-```
-
-### How Vim works
-
-Vim can be unsettling at first, until you know how it works.
-
-**Let go of your fear. And your mouse**, it's mostly useless in Vim.
-You control Vim by **typing**.
-
-The first thing to understand whith Vim is that it has _3 modes_:
-
-- **Normal** mode (the one you're in when Vim starts).
-- **Command** mode (the one to use to save and/or quit).
-- **Insert** mode (the one to use to insert text).
-
-To go into each mode use this keys:
-
-| From           | Type  | To go to |
-| :------------- | :---- | :------- |
-| Normal         | `:`   | Command  |
-| Normal         | `i`   | Insert   |
-| Command/Insert | `Esc` | Normal   |
-
-### Normal mode
-
-The **Normal** mode of Vim is the one you're in when it starts.
-In this mode, you can move the cursor around with the arrow keys.
-
-You can also use some commands to interact with the text:
-
-| Command | Effect                                                          |
-| :------ | :-------------------------------------------------------------- |
-| `x`     | Delete the character under the cursor                           |
-| `dw`    | Delete a word, with the cursor standing before the first letter |
-| `dd`    | Delete the complete line the cursor is on                       |
-| `u`     | Undo the last command                                           |
-| `:`     | Enter **Command** mode (to save and/or quit)                    |
-| `i`     | Enter **Insert** mode (to type text)                            |
-
-{% note type: tip %}
-
-At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
-
-{% endnote %}
-
-### Command mode
-
-The **Command** mode, which you can only access from the **Normal** mode,
-is the one you'll mostly use to save and/or quit.
-
-To enter the **Command** mode, hit the `:` key.
-From there, you can use some commands:
-
-| Command     | Effect                                                                |
-| :---------- | :-------------------------------------------------------------------- |
-| `q`         | **Q**uit Vim (will fail if you have unsaved modifications)            |
-| `w`         | **W**rite (save) the file and all its modifications                   |
-| `q!`        | Force (**!**) Vim to **q**uit (any unsaved modification will be lost) |
-| `wq` or `x` | **W**rite and **q**uit, i.e. save the file then quit Vim.             |
-
-<!-- TODO: add link http://www.openvim.com/ -->
-
 ## Nano
 
 <div class="flex justify-center">
   <img src='images/nano.jpg' class="!m-0" />
 </div>
 
-> Nano: a simpler CLI editor to keep your sanity.
+> Nano: a simple CLI editor to keep your sanity.
 
-### An alternative to Vim
+### Editing a file without a window
 
-If Vim is a bit too much for you, [nano][nano] is another CLI editor that is
-much simpler to use and is also usually installed on most Unix-like systems
-(including the WSL).
+Sooner or later you will have to edit a file on a machine that has no graphical
+interface, like the server you will be given later in this course. You then
+need an editor that runs in the terminal.
 
-You can open a file with nano in much the same way as Vim, using the `nano`
-command instead:
+[Nano][nano] is one, it is simple to use, and it is installed on most Unix-like
+systems (including the WSL). It is the one we suggest you use.
+
+Open a file by running the `nano` command with the path to the file you want to
+create or edit:
 
 ```bash
 $> nano test.txt
@@ -831,8 +760,9 @@ systems), you have to set the `$EDITOR` environment variable. You can do that by
 adding the following line to your **`~/.zshrc` or `~/.bashrc` file**
 depending on which shell you are using:
 
-```
-export EDITOR=nano
+```bash
+export EDITOR=nano >> ~/.bashrc  # on WSL or Linux
+export EDITOR=nano >> ~/.zshrc   # on macOS
 ```
 
 Remember that you must **relaunch your terminal** for this change to take
@@ -848,8 +778,8 @@ bash
 
 {% note type: tip %}
 
-Now that you know how to use nano, you can edit your Bash profile file with the
-following command: `nano ~/.bashrc`.
+Now that you know how to use nano, you can also edit your Bash profile file with
+the following command: `nano ~/.bashrc`.
 
 {% endnote %}
 
@@ -863,6 +793,120 @@ $> sudo update-alternatives --config editor
 ```
 
 {% endnote %}
+
+## Vim
+
+[**Vim**][vim] is an infamous CLI editor originally developed in 1976 (WHAT?!)
+for the Unix operating system.
+
+{% note %}
+
+The name comes from "**vi** i**m**proved", because Vim is an improved clone of
+an earlier editor: [vi][vi] (from **vi**sual).
+
+{% endnote %}
+
+### Help, Vim opened and I can't get out
+
+**Some developer tools open Vim for you**, without asking. Git, for example,
+opens an editor when you describe a change, and on many systems that editor is
+Vim. You find yourself in a full-screen editor where what you type does nothing,
+or something you did not ask for, and where none of the usual ways out work.
+
+If this happens (_and it will_), there's **one** imperative rule to follow:
+
+**DO NOT PANIC!**
+
+To leave Vim without saving anything, type this, in this order:
+
+1. The `Esc` key.
+2. `:q!` — a colon, the letter `q`, then an exclamation mark.
+3. The `Enter` key.
+
+You are back at your prompt, and the file is unchanged.
+
+{% note type: tip %}
+
+To avoid meeting Vim by accident in the first place, tell your tools to use nano
+instead: see [setting nano as the default
+editor](#setting-nano-as-the-default-editor).
+
+{% endnote %}
+
+### WHY?!
+
+Why would you want to learn it?
+
+Sometimes it's just the **only editor you have** (e.g. on a server). It is also
+much more powerful than nano and will let you edit text at the speed of light
+once you know your way around it. Some developers use nothing else.
+
+Open a file by running the `vim` command with the path to the file you want to
+create/edit:
+
+```bash
+$> vim test.txt
+```
+
+### How Vim works
+
+Vim can be unsettling at first, until you know how it works.
+
+**Let go of your fear. And your mouse**, it's mostly useless in Vim. You control
+Vim by **typing**.
+
+The first thing to understand with Vim is that it has _3 modes_:
+
+- **Normal** mode (the one you're in when Vim starts).
+- **Command** mode (the one to use to save and/or quit).
+- **Insert** mode (the one to use to insert text).
+
+To go into each mode, use these keys:
+
+| From           | Type  | To go to |
+| :------------- | :---- | :------- |
+| Normal         | `:`   | Command  |
+| Normal         | `i`   | Insert   |
+| Command/Insert | `Esc` | Normal   |
+
+### Normal mode
+
+The **Normal** mode of Vim is the one you're in when it starts.
+In this mode, you can move the cursor around with the arrow keys.
+
+You can also use some commands to interact with the text:
+
+| Command | Effect                                                          |
+| :------ | :-------------------------------------------------------------- |
+| `x`     | Delete the character under the cursor                           |
+| `dw`    | Delete a word, with the cursor standing before the first letter |
+| `dd`    | Delete the complete line the cursor is on                       |
+| `u`     | Undo the last command                                           |
+| `:`     | Enter **Command** mode (to save and/or quit)                    |
+| `i`     | Enter **Insert** mode (to type text)                            |
+
+{% note type: tip %}
+
+At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
+
+{% endnote %}
+
+### Command mode
+
+The **Command** mode, which you can only access from the **Normal** mode,
+is the one you'll mostly use to save and/or quit.
+
+To enter the **Command** mode, hit the `:` key.
+From there, you can use some commands:
+
+| Command     | Effect                                                                |
+| :---------- | :-------------------------------------------------------------------- |
+| `q`         | **Q**uit Vim (will fail if you have unsaved modifications)            |
+| `w`         | **W**rite (save) the file and all its modifications                   |
+| `q!`        | Force (**!**) Vim to **q**uit (any unsaved modification will be lost) |
+| `wq` or `x` | **W**rite and **q**uit, i.e. save the file then quit Vim.             |
+
+<!-- TODO: add link http://www.openvim.com/ -->
 
 ## The `PATH` variable
 
@@ -950,20 +994,34 @@ However, sometimes you're downloading only an executable and saving it in a dire
 
 #### Custom command example
 
-Run the following commands to download a simple Hello World shell script and make it into an executable:
+Run the following commands to write a simple Hello World shell script and make
+it into an executable:
 
 ```bash
 $> mkdir -p ~/hello-program/bin
-$> curl -o ~/hello-program/bin/hello https://gist.githubusercontent.com/AlphaHydrae/8e09bf8790cbd6e3c7d9974988da3c28/raw/74372a1be35e973897c0a1fc946f3d18012a860c/hello.sh
-$> chmod 755 ~/hello-program/bin/hello
+$> printf '#!/bin/sh\necho Hello World\n' > ~/hello-program/bin/hello
+$> chmod +x ~/hello-program/bin/hello
 ```
 
-{% note %}
+{% callout type: more, id: custom-command-example %}
 
-The `curl` command is used to download the script file, and the `chmod` command
-to make that file executable.
+The `printf` command prints its argument, here interpreting `\n` as a line
+break, and the `>` operator writes that output into the file (as seen in [the
+`echo` command](#the-echo-command)). The file you have just created contains
+these two lines:
 
-{% endnote %}
+```bash
+#!/bin/sh
+echo Hello World
+```
+
+The first line tells the system which program should run the script. The second
+line is the script itself.
+
+A new file is not executable, so the `chmod` (**ch**ange **mod**e) command is
+used to add (`+`) the permission to e**x**ecute it.
+
+{% endcallout %}
 
 You should now be able to find it in the `~/hello-program/bin` directory:
 
@@ -1027,13 +1085,13 @@ $> nano ~/.bashrc
 Add this line at the bottom of your file (use `i` to enter **insert** mode if
 using Vim):
 
-```vim
+```bash
 export PATH="$HOME/hello-program/bin:$PATH"
 ```
 
+If you're in nano, press `Ctrl-X`, then answer `Yes` and confirm the filename.
 If you're in Vim, press `Esc` when you're done typing, then `:wq` and `Enter` to
-save and quit. If you're in nano, press `Ctrl-X`, then answer `Yes` and confirm
-the filename.
+save and quit.
 
 #### Does it work?
 
@@ -1092,14 +1150,14 @@ $> echo $PATH
 
 You have **added a directory to the `PATH`**:
 
-```vim
-export PATH="~/hello-program/bin:$PATH"
+```bash
+export PATH="$HOME/hello-program/bin:$PATH"
 ```
 
 This line says:
 
 - Modify the `PATH` variable.
-- In it, put the new directory `~/hello-program/bin` and the previous value of the `PATH`, separated by `:`.
+- In it, put the new directory `$HOME/hello-program/bin` and the previous value of the `PATH`, separated by `:`.
 
 The next time you run a command, your shell will **first look** in this directory for executables, then in the **rest of the `PATH`**.
 
@@ -1142,9 +1200,8 @@ well.
 
 A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 
-- [tmux](https://github.com/tmux/tmux/wiki)
+- [tmux](https://github.com/tmux/tmux/wiki) 💙
 - [screen](https://www.gnu.org/software/screen/)
-- [zellij](https://zellij.dev) 💙
 
 <!-- col -->
 
@@ -1152,64 +1209,21 @@ A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 
 {% endcols %}
 
-[ace]: https://en.wikipedia.org/wiki/Automatic_Computing_Engine
-[ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace
-[alan-turing]: https://en.wikipedia.org/wiki/Alan_Turing
-[algorithm]: https://en.wikipedia.org/wiki/Algorithm
-[analytical-engine]: https://en.wikipedia.org/wiki/Analytical_Engine
-[artificial-intelligence]: https://en.wikipedia.org/wiki/Artificial_intelligence
-[augmented-reality]: https://en.wikipedia.org/wiki/Augmented_reality
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
-[bernoulli-numbers]: https://en.wikipedia.org/wiki/Bernoulli_number
-[brain-interface]: https://en.wikipedia.org/wiki/Brain–computer_interface
-[bug]: https://en.wikipedia.org/wiki/Bug_(engineering)#History
 [building-the-future-of-the-command-line]: https://github.com/readme/featured/future-of-the-command-line
-[c]: https://en.wikipedia.org/wiki/C_(programming_language)
-[cat]: https://en.wikipedia.org/wiki/Cat_(Unix)
-[charles-babbage]: https://en.wikipedia.org/wiki/Charles_Babbage
 [cli]: https://en.wikipedia.org/wiki/Command-line_interface
-[computation]: https://en.wikipedia.org/wiki/Computation
-[computer-science]: https://en.wikipedia.org/wiki/Computer_science
-[delay-line-memory]: https://en.wikipedia.org/wiki/Delay-line_memory
-[digital]: https://en.wikipedia.org/wiki/Digital_data
-[electro-mechanical-computers]: https://en.wikipedia.org/wiki/Mechanical_computer#Electro-mechanical_computers
-[eniac]: https://en.wikipedia.org/wiki/ENIAC
-[freebsd]: https://en.wikipedia.org/wiki/FreeBSD
-[general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
-[gui]: https://en.wikipedia.org/wiki/Graphical_user_interface
-[keypunch]: https://en.wikipedia.org/wiki/Keypunch
-[lfm]: https://en.wikipedia.org/wiki/Luigi_Federico_Menabrea
-[linux]: https://en.wikipedia.org/wiki/Linux
-[macos]: https://en.wikipedia.org/wiki/MacOS
-[mainframe]: https://en.wikipedia.org/wiki/Mainframe_computer
-[motion-sensing]: https://en.wikipedia.org/wiki/Motion_detection
 [nano]: https://en.wikipedia.org/wiki/GNU_nano
-[node]: https://nodejs.org
-[note-g]: https://en.wikipedia.org/wiki/Note_G
 [oh-my-zsh]: https://ohmyz.sh
 [oh-my-zsh-plugins]: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
 [oh-my-zsh-windows]: http://kevinprogramming.com/using-zsh-in-windows-terminal/
 [powershell]: https://en.wikipedia.org/wiki/PowerShell
-[programmable]: https://en.wikipedia.org/wiki/Computer_program
-[punched-card]: https://en.wikipedia.org/wiki/Punched_card
 [redirection]: https://en.wikipedia.org/wiki/Redirection_(computing)
-[slide-git]: ../git
-[stored-program-computer]: https://en.wikipedia.org/wiki/Stored-program_computer
 [tar]: https://en.wikipedia.org/wiki/Tar_(computing)
-[the-imitation-game]: https://en.wikipedia.org/wiki/The_Imitation_Game
 [tldr-pages]: https://tldr.sh
-[transistor]: https://en.wikipedia.org/wiki/Transistor
 [tty]: https://en.wikipedia.org/wiki/Teleprinter
-[tui]: https://en.wikipedia.org/wiki/Touch_user_interface
-[turing-machine]: https://en.wikipedia.org/wiki/Turing_machine
-[unix]: https://en.wikipedia.org/wiki/Unix
-[unix-shell]: https://en.wikipedia.org/wiki/Unix_shell
 [vi]: https://en.wikipedia.org/wiki/Vi_(text_editor)
 [vim]: https://en.wikipedia.org/wiki/Vim_(text_editor)
-[virtual-reality]: https://en.wikipedia.org/wiki/Virtual_reality
 [vt100]: https://en.wikipedia.org/wiki/VT100
-[vui]: https://en.wikipedia.org/wiki/Voice_user_interface
-[windows-subsystem-for-linux]: https://docs.microsoft.com/en-us/windows/wsl/about
 [wsl]: https://learn.microsoft.com/en-us/windows/wsl/about
 [wsl-install]: https://learn.microsoft.com/en-us/windows/wsl/install
 [zsh]: https://en.wikipedia.org/wiki/Z_shell

@@ -149,6 +149,17 @@ materials.
 
 ### Writing Guidelines
 
+- **Write for a student reading the page on their own, and for no particular
+  sitting of the course.** A document does not know which session it falls in,
+  how long that session gives it, what was done just before it, or which of the
+  two classes is reading it — "this afternoon", "in a few weeks" and "as we saw
+  this morning" are wrong as soon as a session moves, and the same material is
+  taught twice on the same day. Situate things in the course's own order
+  instead: "later in this course", "the server you will be given".
+- **Speaker notes are published with the deck**, so they are written to the
+  reader, in the same register as everything else: they say more than the slide
+  does for whoever was not in the room. They are not instructions to the
+  teacher.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.

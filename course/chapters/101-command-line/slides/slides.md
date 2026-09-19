@@ -14,40 +14,28 @@ For old time's sake.
 
 ---
 
-### The first general-purpose computer (1837)
+### The first computer & program (1830s-1840s)
 
-The Analytical Engine, proposed by Charles Babbage <!-- .element: class="subtitle" -->
+Designed by Charles Babbage, programmed by Ada Lovelace <!-- .element: class="subtitle" -->
 
-<div class="grid grid-cols-9 gap-4">
-  <div class="col-span-3 col-start-2">
-    <img src="{{ 'images/analytical-engine.jpg' | relative_file_url }}" alt="Analytical Engine">
+<div class="grid grid-cols-12 gap-4 items-center">
+  <div class="col-span-4">
+    <img src="images/charles-babbage.jpg" alt="Charles Babbage">
   </div>
-  <div class="col-span-1">&nbsp;</div>
-  <div class="col-span-3">
-    <img src="{{ 'images/charles-babbage.jpg' | relative_file_url }}" alt="Charles Babbage">
+  <div class="col-span-4">
+    <img src="images/analytical-engine.jpg" alt="Analytical Engine">
   </div>
-</div>
-
-**Notes:**
-
-[Charles Babbage][charles-babbage], an English mathematician, proposed the
-mechanical [Analytical Engine][analytical-engine]: the first [digital][digital]
-[programmable][programmable], [general-purpose
-computer][general-purpose-computer].
-
----
-
-### The first programmer (1842)
-
-Ada Lovelace publishes the first algorithm <!-- .element: class="subtitle" -->
-
-<div class="grid grid-cols-10">
-  <div class="col-span-4 col-start-4">
-    <img src="{{ 'images/ada-lovelace.png' | relative_file_url }}" alt="Ada Lovelace">
+  <div class="col-span-4">
+    <img src="images/ada-lovelace.png" alt="Ada Lovelace">
   </div>
 </div>
 
 **Notes:**
+
+[Charles Babbage][charles-babbage], an English mathematician, designed the
+mechanical [Analytical Engine][analytical-engine] in 1837: the first
+[digital][digital], [programmable][programmable], [general-purpose
+computer][general-purpose-computer]. It was a design; it was never built.
 
 In 1842, [Ada Lovelace][ada-lovelace] translated into English and extensively
 annotated a description of the engine, including a way to calculate [Bernoulli
@@ -57,33 +45,13 @@ computer programmer.
 
 ---
 
-### A century later (1940s)
-
-Alan Turing formalizes algorithms and computation <!-- .element: class="subtitle" -->
-
-<div class="grid grid-cols-10">
-  <div class="col-span-4 col-start-4">
-    <img src="{{ 'images/alan-turing.jpg' | relative_file_url }}" alt="Alan Turing">
-  </div>
-</div>
-
-> Did you see [The Imitation Game][the-imitation-game]?
-
-**Notes:**
-
-[**Alan Turing**][alan-turing] formalized the concepts of [algorithm][algorithm]
-and [computation][computation] with the [Turing machine][turing-machine]. He is
-widely considered to be the father of theoretical [computer
-science][computer-science] and [artificial
-intelligence][artificial-intelligence].
-
----
-
 ### ENIAC (1946)
+
+No interface at all; switches, switches everywhere <!-- .element: class="subtitle" -->
 
 <div class="grid grid-cols-10">
   <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/eniac.jpg' | relative_file_url }}" alt="ENIAC">
+    <img src="images/eniac.jpg" alt="ENIAC">
   </div>
 </div>
 
@@ -91,58 +59,12 @@ intelligence][artificial-intelligence].
 
 At that time, there was no such thing as a stored computer program. Programs
 were **physically hard-coded**. On the [ENIAC][eniac], this was done using
-function tables with **hundreds of ten-way switches**, which took weeks.
+function tables with **hundreds of ten-way switches**, which took weeks. That
+means it was useless for anything that you could compute by hand in less than a
+week.
 
----
-
-### The first bug that was caught (1947)
-
-<div class="grid grid-cols-6">
-  <div class="col-span-4 col-start-2">
-    <img src="{{ 'images/bug.jpg' | relative_file_url }}" alt="Bug">
-  </div>
-</div>
-
-**Notes:**
-
-Computers like these are [electro-mechanical
-computers][electro-mechanical-computers] because they were based on switches and
-relays, as opposed to the [transistors][transistor] our current electronic
-computers are based on.
-
-When you had a bug in one of these computers, _debugging_ meant getting your
-hands dirty and finding the [actual bug][bug] in the physical machine.
-
----
-
-### Stored computer programs (1950s)
-
-The Automated Computing Engine, designed by Alan Turing <!-- .element: class="subtitle" -->
-
-<div class="grid grid-cols-10">
-  <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/ace.jpg' | relative_file_url }}" alt="Automated Computing Engine">
-  </div>
-</div>
-
-**Notes:**
-
-The [Automatic Computing Engine (ACE)][ace] was a British early electronic
-serial [stored-program computer][stored-program-computer] designed by [Alan
-Turing][alan-turing]. It used [mercury delay lines for its main
-memory][delay-line-memory].
-
----
-
-### Mercury delay line memory (1950s)
-
-Better not spill it... <!-- .element: class="subtitle italic" -->
-
-<div class="grid-cols-10">
-  <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/mercury-delay-line-memory.jpg' | relative_file_url }}" alt="Mercury Delay Line Memory">
-  </div>
-</div>
+There is nothing here to type on and nothing to click on: you programmed this
+machine by rewiring it. Everything that follows is a departure from that.
 
 ---
 
@@ -151,15 +73,14 @@ Better not spill it... <!-- .element: class="subtitle italic" -->
 One of the first user interfaces <!-- .element: class="subtitle" -->
 
 <div class="grid grid-cols-12 gap-8">
-  <div class="grid-5">&nbsp;</div>
   <div class="col-span-5 col-start-2">
-    <img src="{{ 'images/punched-card.jpg' | relative_file_url }}" alt="Punched Card">
+    <img src="images/punched-card.jpg" alt="Punched Card">
 
 Invented in 1725 <!-- .element: style="margin-top: 0;" -->
 
   </div>
   <div class="col-span-5 col-start-7">
-    <img src="{{ 'images/keypunch-machine.jpg' | relative_file_url }}" alt="Keypunch Machine">
+    <img src="images/keypunch-machine.jpg" alt="Keypunch Machine">
   </div>
 </div>
 
@@ -180,7 +101,7 @@ Punched cards are much older than computers. They were first invented around
 
 <div class="grid grid-cols-10">
   <div class="col-span-6 col-start-3">
-    <img src="{{ 'images/punched-cards-program.jpg' | relative_file_url }}" alt="Punched Card Program">
+    <img src="images/punched-cards-program.jpg" alt="Punched Card Program">
   </div>
 </div>
 
@@ -192,19 +113,24 @@ Punched cards are much older than computers. They were first invented around
 
 <div class="grid grid-cols-10">
   <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/tty.jpg' | relative_file_url }}" alt="TeleTYpewriter">
+    <img src="images/tty.jpg" alt="TeleTYpewriter">
   </div>
 </div>
 
 **Notes:**
 
-Teletypewriters (TTYs) became the most popular **computer terminals** in the
-1960s. They were basically electromechanical typewriters adapted as a user
+[Teletypewriters (TTYs)][tty] became the most popular **computer terminals** in
+the 1960s. They were basically electromechanical typewriters adapted as a user
 interface for early [mainframe computers][mainframe].
 
-This is when the first **command line interfaces (CLI)** were created. As you
-typed commands, a program running on the computer would interpret that input,
-and the output would be printed on physical paper.
+This is where both words come from. A **terminal** is the thing at the end of
+the wire, where the human sits; the computer is elsewhere, and is shared. **TTY**
+is the abbreviation of teletypewriter, and it is still the name Unix systems use
+for a terminal today.
+
+This is also when the first [**command line interfaces (CLI)**][cli] were
+created. As you typed commands, a program running on the computer would
+interpret that input, and the output would be printed on physical paper.
 
 ---
 
@@ -212,7 +138,7 @@ and the output would be printed on physical paper.
 
 <div class="grid grid-cols-10">
   <div class="col-span-6 col-start-3">
-    <img src="{{ 'images/vt102.jpg' | relative_file_url }}" alt="VT102">
+    <img src="images/vt102.jpg" alt="VT102">
   </div>
 </div>
 
@@ -230,7 +156,7 @@ The first portable operating system <!-- .element: class="subtitle" -->
 
 <div class="grid grid-cols-10">
   <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/unix.png' | relative_file_url }}" alt="Unix">
+    <img src="images/unix.png" alt="Unix">
   </div>
 </div>
 
@@ -241,8 +167,10 @@ Compared to earlier systems, Unix was the first **portable operating system**
 because it was written in the [C programming language][c], allowing it to be
 installed on multiple platforms.
 
-Unix is the ancestor of [Linux][linux]. [FreeBSD][freebsd], a Unix-like system,
-is also used as the basis for [macOS][macos] (since Mac OS X).
+[Linux][linux] is a Unix-like system written from scratch: it shares no code
+with Unix, but it works the same way and runs the same commands. [macOS][macos]
+descends from Unix more directly, and borrows parts of [FreeBSD][freebsd].
+Everything you learn in this course applies to all of them.
 
 ---
 
@@ -252,7 +180,7 @@ Text-based at that time <!-- .element: class="subtitle" -->
 
 <div class="grid grid-cols-10">
   <div class="col-span-6 col-start-3">
-    <img src="{{ 'images/shell.png' | relative_file_url }}" alt="Shell">
+    <img src="images/shell.png" alt="Shell">
   </div>
 </div>
 
@@ -271,7 +199,7 @@ Also a type of shell <!-- .element: class="subtitle" -->
 
 <div class="grid grid-cols-12">
   <div class="col-span-6 col-start-4">
-    <img src="{{ 'images/xerox-star.jpg' | relative_file_url }}" alt="Shell">
+    <img src="images/xerox-star.jpg" alt="Xerox Star">
   </div>
 </div>
 
@@ -286,118 +214,159 @@ interact with the kernel (graphical instead of textual).
 
 ---
 
-### Motion sensing user interfaces (2000s)
+### And since (2000s-today)
 
-Invented 1940s, on TV 1950s, in wise use 2000s
+New ways to talk to the same machine <!-- .element: class="subtitle" -->
 
-<div class="grid grid-cols-10">
-  <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/motion-sensing-interface.png' | relative_file_url }}" alt="Motion Sensing User Interface">
-  </div>
+<div class="grid grid-cols-3 gap-4">
+  <div><img src="images/motion-sensing-interface.png" alt="Motion Sensing User Interface"></div>
+  <div><img src="images/touch-user-interface.jpg" alt="Touch User Interface"></div>
+  <div><img src="images/voice-user-interface.png" alt="Voice User Interface"></div>
+  <div><img src="images/augmented-reality.webp" alt="Augmented Reality"></div>
+  <div><img src="images/virtual-reality.webp" alt="Virtual Reality"></div>
+  <div><img src="images/brain-computer-interface.png" alt="Brain Computer Interface"></div>
 </div>
 
 **Notes:**
 
-[Motion sensing][motion-sensing]
+[Motion sensing][motion-sensing], [touch][tui], [voice][vui], [augmented
+reality][augmented-reality], [virtual reality][virtual-reality], and perhaps
+one day a [brain-computer interface][brain-interface].
+
+Every one of these was going to replace what came before it, and none of them
+replaced the command line. It is sixty years old and it is what you will use to
+run a server later in this course.
 
 ---
 
-### Touch user interfaces (2000s)
+### Terminal, shell, command
 
-Invented 1960s, on TV 1980s, in wise use 2000s
+Three words, three different things <!-- .element: class="subtitle" -->
 
-<div class="grid grid-cols-10">
-  <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/touch-user-interface.jpg' | relative_file_url }}" alt="Touch User Interface">
-  </div>
-</div>
+{% mermaid %}
+
+flowchart LR
+you["You"] -- keystrokes --> term["Terminal"]
+term -- what you typed --> shell["Shell (bash, zsh)"]
+shell -- starts --> cmd["Command (ls, cd, git)"]
+cmd -- output --> term
+
+{% endmermaid %}
 
 **Notes:**
 
-[Touch user interface][tui]
+The **terminal** is the window: it draws text and it collects your keystrokes.
+It knows nothing about commands. On macOS it is the Terminal application, on
+Windows it is the Windows Terminal running the WSL.
+
+The **shell** is a program running inside that window. It reads the line you
+typed, works out which command you meant, starts it, and gives you the prompt
+back when it is done. [Bash][bash] and [Zsh][zsh] are shells.
+
+The **command** is another program, which the shell starts for you. `ls` is a
+file on your disk, like `git` or `code`.
+
+The three are separate programs, and they can be replaced separately: the same
+shell runs in any terminal, and a terminal can run any shell.
 
 ---
 
-### Voice user interfaces (2010s)
+### Why the command line today?
 
-Invented 1950s, on TV 1960s, in wise use 2010s
-
-<div class="grid grid-cols-10">
-  <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/voice-user-interface.png' | relative_file_url }}" alt="Voice User Interface">
-  </div>
-</div>
+- Servers often have **no GUI**
+- Development tools often have **no GUI** either
+- **Automation**: what you can type, you can script
+- **AI coding agents** run in a terminal
 
 **Notes:**
 
-[Voice user interface][vui]
+**Servers.** The machine you will be given later in this course has no screen,
+no mouse and no desktop. Text is the only interface it has. A GUI consumes
+valuable resources (CPU, memory, disk space) that are better spent on the
+server's main job: serving requests to clients.
+
+**Development tools.** Git, Docker, package managers, compilers: the command
+line is the complete interface, and the graphical clients built on top expose a
+subset of it. It's much faster to develop a command line interface for a new
+tool than a GUI, and it is much easier to maintain.
+
+**Automation.** A sequence of commands that works is a script; a script that
+works runs without you, on a schedule, or on a hundred machines.
+
+**AI coding agents.** They run in a terminal and they drive these same commands.
+Reading what an agent is about to do to your machine requires knowing what
+`rm -rf` means.
 
 ---
 
-### Augmented reality (2010s)
+### Where things are (Linux & the WSL)
 
-Invented 1960s, on TV 1970s, in wise use 2010s
-
-<div class="grid grid-cols-10">
-  <div class="col-span-8 col-start-2">
-    <img src="{{ 'images/augmented-reality.webp' | relative_file_url }}" alt="Augmented Reality">
-  </div>
-</div>
+```
+/
+├── bin
+├── etc
+├── home
+│   ├── batman
+│   └── jde              <-- ~
+│       ├── Documents
+│       ├── Downloads
+│       └── Pictures
+├── tmp
+├── usr
+│   └── bin
+└── var
+```
 
 **Notes:**
 
-[Augmented reality][augmented-reality]
+There is **one** tree, and it starts at `/`, the root of the filesystem. There
+are no drive letters: everything is somewhere under `/`.
+
+Your own files are in your **home directory**, `/home/jde` for user `jde`. `~`
+is a shortcut for it.
+
+A path is a route through this tree. From `/home/jde/Documents`, `..` is
+`/home/jde`, so `../Downloads` is `/home/jde/Downloads` and `../..` is `/home`.
 
 ---
 
-### Virtual reality (2010s)
+### Where things are (macOS)
 
-Invented 1960s, on TV 1980s, in wise use 2010s
-
-<div class="grid grid-cols-12">
-  <div class="col-span-10 col-start-2">
-    <img src="{{ 'images/virtual-reality.webp' | relative_file_url }}" alt="Virtual Reality">
-  </div>
-</div>
-
-**Notes:**
-
-[Virtual reality][virtual-reality]
-
----
-
-### Tomorrow?
-
-<div class="grid grid-cols-10">
-  <div class="col-span-6 col-start-3">
-    <img src="{{ 'images/brain-computer-interface.png' | relative_file_url }}" alt="Brain Computer Interface">
-  </div>
-</div>
+```
+/
+├── Applications
+├── bin
+├── etc
+├── tmp
+├── Users
+│   ├── batman
+│   └── jde              <-- ~
+│       ├── Documents
+│       ├── Downloads
+│       └── Pictures
+├── usr
+│   └── bin
+└── var
+```
 
 **Notes:**
 
-[Brain-computer interface?][brain-interface]
+The same tree, with the home directories under `/Users` instead of `/home`, and
+with `/Applications` where the graphical applications are installed.
 
-[ace]: https://en.wikipedia.org/wiki/Automatic_Computing_Engine
+Everything else you will learn is identical, which is the point: macOS is a Unix
+system, and so is the Linux running in the WSL and on the server.
+
 [ada-lovelace]: https://en.wikipedia.org/wiki/Ada_Lovelace
-[alan-turing]: https://en.wikipedia.org/wiki/Alan_Turing
-[algorithm]: https://en.wikipedia.org/wiki/Algorithm
 [analytical-engine]: https://en.wikipedia.org/wiki/Analytical_Engine
-[artificial-intelligence]: https://en.wikipedia.org/wiki/Artificial_intelligence
 [augmented-reality]: https://en.wikipedia.org/wiki/Augmented_reality
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [bernoulli-numbers]: https://en.wikipedia.org/wiki/Bernoulli_number
 [brain-interface]: https://en.wikipedia.org/wiki/Brain–computer_interface
-[bug]: https://en.wikipedia.org/wiki/Bug_(engineering)#History
-[building-the-future-of-the-command-line]: https://github.com/readme/featured/future-of-the-command-line
 [c]: https://en.wikipedia.org/wiki/C_(programming_language)
 [charles-babbage]: https://en.wikipedia.org/wiki/Charles_Babbage
 [cli]: https://en.wikipedia.org/wiki/Command-line_interface
-[computation]: https://en.wikipedia.org/wiki/Computation
-[computer-science]: https://en.wikipedia.org/wiki/Computer_science
-[delay-line-memory]: https://en.wikipedia.org/wiki/Delay-line_memory
 [digital]: https://en.wikipedia.org/wiki/Digital_data
-[electro-mechanical-computers]: https://en.wikipedia.org/wiki/Mechanical_computer#Electro-mechanical_computers
 [eniac]: https://en.wikipedia.org/wiki/ENIAC
 [freebsd]: https://en.wikipedia.org/wiki/FreeBSD
 [general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
@@ -409,17 +378,13 @@ Invented 1960s, on TV 1980s, in wise use 2010s
 [mainframe]: https://en.wikipedia.org/wiki/Mainframe_computer
 [motion-sensing]: https://en.wikipedia.org/wiki/Motion_detection
 [note-g]: https://en.wikipedia.org/wiki/Note_G
-[powershell]: https://en.wikipedia.org/wiki/PowerShell
 [programmable]: https://en.wikipedia.org/wiki/Computer_program
 [punched-card]: https://en.wikipedia.org/wiki/Punched_card
-[stored-program-computer]: https://en.wikipedia.org/wiki/Stored-program_computer
-[the-imitation-game]: https://en.wikipedia.org/wiki/The_Imitation_Game
-[transistor]: https://en.wikipedia.org/wiki/Transistor
 [tty]: https://en.wikipedia.org/wiki/Teleprinter
 [tui]: https://en.wikipedia.org/wiki/Touch_user_interface
-[turing-machine]: https://en.wikipedia.org/wiki/Turing_machine
 [unix]: https://en.wikipedia.org/wiki/Unix
 [unix-shell]: https://en.wikipedia.org/wiki/Unix_shell
 [virtual-reality]: https://en.wikipedia.org/wiki/Virtual_reality
 [vt100]: https://en.wikipedia.org/wiki/VT100
 [vui]: https://en.wikipedia.org/wiki/Voice_user_interface
+[zsh]: https://en.wikipedia.org/wiki/Z_shell

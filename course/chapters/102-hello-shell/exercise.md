@@ -23,6 +23,27 @@ the hunt will send you there too.
 
 <!-- more -->
 
+## :exclamation: Set your editor
+
+You will edit a file during the hunt, and later in the course other programs
+will open a text editor for you without asking. Tell them to use nano, so that
+none of them opens Vim when you did not choose it.
+
+Add the line to your shell's configuration file:
+
+```bash
+$> echo 'export EDITOR=nano' >> ~/.bashrc  # in the WSL
+$> echo 'export EDITOR=nano' >> ~/.zshrc   # on macOS
+```
+
+Then close your terminal and open a new one.
+
+{% note %}
+
+See [setting nano as the default editor][command-line-editor].
+
+{% endnote %}
+
 ## :exclamation: Prepare the hunt
 
 Run this command:
@@ -505,5 +526,6 @@ twice, that is a script asking to be written.
 [cheatsheet-run]: {% link cheatsheets/command-line/cheatsheet.md %}#run-a-program-program
 [command-line]: {% link chapters/101-command-line/subject.md %}
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}
+[command-line-editor]: {% link chapters/101-command-line/subject.md %}#setting-nano-as-the-default-editor
 [command-line-path]: {% link chapters/101-command-line/subject.md %}#the-path-variable
 [shell-scripting]: {% link cheatsheets/shell-scripting/cheatsheet.md %}
