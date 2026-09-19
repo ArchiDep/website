@@ -444,3 +444,20 @@ jobs:
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
+
+  # The treasure hunt of "Hello Shell" runs on the students' own machines: the
+  # Bash 3.2 of macOS and the Bash 5 and GNU tools of the WSL, which Ubuntu
+  # stands in for.
+  treasure-hunt:
+    runs-on: ${{ matrix.os }}
+    name: Play the treasure hunt (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v7
+
+      - name: Play the treasure hunt
+        run: /bin/bash course/test/treasure-hunt.test.sh

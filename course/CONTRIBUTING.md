@@ -130,6 +130,9 @@ the dashboard functionality is only available during the current semester).
     generating PDFs and building the search index.
   - `src/shared/**/*.{ts,tsx}`: Common TypeScript code used in many client-side
     scripts and build-time tasks.
+  - `test/treasure-hunt.test.sh`: Plays the whole treasure hunt that students
+    set up in "Hello Shell". CI runs it on macOS and Ubuntu; the file says how to
+    run it locally.
   - `tsconfig.json`: Base TypeScript configuration file.
   - `tsconfig.assets.json`: TypeScript configuration for client-side
     assets.
