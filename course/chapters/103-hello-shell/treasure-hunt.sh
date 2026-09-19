@@ -16,16 +16,28 @@
 # below. Bash 3.2 has no such option, and nothing to turn off.
 shopt -u patsub_replacement 2> /dev/null
 
-# The areas a gate opens are written into that gate as base64, so that they
-# cannot be found with ls before the gate opens. This is the command that
-# decodes them, which every gate includes.
-UNPACK='unpack() { printf '"'"'%s'"'"' "$1" | base64 --decode > "$2" && chmod "$3" "$2"; }'
-
 # Reads a heredoc into the variable named by $1, exactly as written, leading
 # spaces included.
 text() {
   IFS= read -r -d '' "$1" || true
 }
+
+# The areas a gate opens are written into that gate, so that they cannot be
+# found with ls before the gate opens. They are sealed with the cipher of
+# Julius Caesar: every letter and digit is shifted 3 places further, and turned
+# back when the gate opens. The areas are sealed inside one another, which
+# shifts the innermost ones several times over: letters come back to where
+# they started only after 26 shifts and digits after 10, and the deepest area
+# is 5 levels down.
+CAESAR_PLAIN='A-Za-z0-9'
+CAESAR_SEALED='D-ZA-Cd-za-c3-90-2'
+
+# The commands that work with sealed texts, which every gate includes, with the
+# text on their input: reveal prints it unsealed, unpack <file> <mode> writes it
+# unsealed, and seal prints it sealed.
+UNPACK="reveal() { LC_ALL=C tr '$CAESAR_SEALED' '$CAESAR_PLAIN'; }
+unpack() { reveal > \"\$1\" && chmod \"\$2\" \"\$1\"; }
+seal() { LC_ALL=C tr '$CAESAR_PLAIN' '$CAESAR_SEALED'; }"
 
 # The gold coin a gate drops, drawn with its number: @@COIN1@@, @@COIN2@@ and
 # @@COIN3@@ in a text are the three coins.
@@ -50,21 +62,35 @@ fill() {
   value=${value//@@D1@@/$D1}
   value=${value//@@D2@@/$D2}
   value=${value//@@D3@@/$D3}
-  value=${value//@@COMBINATION@@/$D1$D2$D3}
+  value=${value//@@SEALED_COMBINATION@@/$SEALED_COMBINATION}
   printf '%s' "$value"
 }
 
-# Prints a text, placeholders replaced, as base64 on one line.
+# Prints a text, placeholders replaced, sealed with the cipher of Caesar. The
+# gate holds it in a heredoc, which passes quotes, backslashes and dollars
+# through untouched.
 pack() {
-  fill "$1" | base64 | tr -d '\n'
+  fill "$1" | LC_ALL=C tr "$CAESAR_PLAIN" "$CAESAR_SEALED"
 }
 
-# Writes the text in the variable named by $3 into the text in the variable
-# named by $1, in place of the placeholder @@$2@@.
+# Seals the text in the variable named by $3 into the text in the variable
+# named by $1, in place of the placeholder @@$2@@. The placeholder is the body
+# of a heredoc ending with SEALED_$2, a line no sealed text can hold: it is
+# shifted with the rest at every level.
 embed() {
   local parent="${!1}" child
-  child=$(pack "${!3}")
+  heredoc_body child "${!3}"
   printf -v "$1" '%s' "${parent//@@$2@@/$child}"
+}
+
+# Sets the variable named by $1 to the text $2 sealed, as the body of a heredoc:
+# without its last newline, which the heredoc gives it back.
+heredoc_body() {
+  local sealed
+  # The x keeps the newlines the text ends with, which $(...) would remove.
+  sealed=$(pack "$2"; echo x)
+  sealed=${sealed%x}
+  printf -v "$1" '%s' "${sealed%$'\n'}"
 }
 
 # Writes a text into a file: put <file> <text> [<mode>]
@@ -436,13 +462,15 @@ HUNT='@@HUNT@@'
 @@UNPACK@@
 
 if [ -d "$HUNT/cave/lair" ]; then
-  echo "The dragon is gone. Only its lair is left."
+  reveal <<'SEALED'
+The dragon is gone. Only its lair is left.
+SEALED
   exit 0
 fi
 
 wake_up() {
   echo
-  cat <<'EOF'
+  reveal <<'SEALED'
 The dragon opens one eye. You interrupted its sleep!
 
 It is very angry... and very lazy. It flies away to sleep somewhere
@@ -461,16 +489,20 @@ quieter.
 
 Behind the place where it slept, there is a hole in the rock: its
 lair.
-EOF
+SEALED
   mkdir "$HUNT/cave/lair" &&
-  unpack '@@RUSTY_KEY@@' "$HUNT/cave/lair/rusty-key" 644 &&
-  unpack '@@LAIR_HINT@@' "$HUNT/cave/lair/.hint" 644
+  unpack "$HUNT/cave/lair/rusty-key" 644 <<'SEALED_RUSTY_KEY' &&
+@@RUSTY_KEY@@
+SEALED_RUSTY_KEY
+  unpack "$HUNT/cave/lair/.hint" 644 <<'SEALED_LAIR_HINT'
+@@LAIR_HINT@@
+SEALED_LAIR_HINT
   exit 0
 }
 
 trap wake_up INT
 
-cat <<'EOF'
+reveal <<'SEALED'
               /\___/\
        ___   (  -.-  )   z
       /   \_/         \ z
@@ -488,7 +520,7 @@ Words are scratched on the wall of the cave:
 
      https://archidep.ch/cheatsheets/command-line/
 
-EOF
+SEALED
 
 # The snores grow on one line before the next one starts, so that the dragon
 # stays on screen for a while.
@@ -550,12 +582,14 @@ HUNT='@@HUNT@@'
 @@UNPACK@@
 
 if [ -d "$HUNT/fortress/courtyard" ]; then
-  echo "The door is open. The courtyard is behind it."
+  reveal <<'SEALED'
+The door is open. The courtyard is behind it.
+SEALED
   exit 0
 fi
 
 if [ ! -f "$HUNT/fortress/key" ]; then
-  cat <<'EOF'
+  reveal <<'SEALED'
             _________
           .'    |    '.
          /      |      \
@@ -568,23 +602,31 @@ if [ ! -f "$HUNT/fortress/key" ]; then
 The door is locked. There is a keyhole.
 
 A key must be in the lock: a file named key, next to the door.
-EOF
+SEALED
   exit 1
 fi
 
 if ! grep -q 'RUSTY KEY' "$HUNT/fortress/key"; then
-  echo "This is not the right key. It does not turn."
+  reveal <<'SEALED'
+This is not the right key. It does not turn.
+SEALED
   exit 1
 fi
 
 mkdir "$HUNT/fortress/courtyard" &&
-unpack '@@GUARDIAN@@' "$HUNT/fortress/courtyard/guardian" 755 &&
-unpack '@@GUARDIAN_HINT@@' "$HUNT/fortress/courtyard/.hint" 644 || exit 1
+unpack "$HUNT/fortress/courtyard/guardian" 755 <<'SEALED_GUARDIAN' &&
+@@GUARDIAN@@
+SEALED_GUARDIAN
+unpack "$HUNT/fortress/courtyard/.hint" 644 <<'SEALED_GUARDIAN_HINT' || exit 1
+@@GUARDIAN_HINT@@
+SEALED_GUARDIAN_HINT
 
 mkdir -p "$HUNT/bag"
-echo "A gold coin. A number is carved on it: @@D1@@" > "$HUNT/bag/coin-1"
+reveal > "$HUNT/bag/coin-1" <<'SEALED'
+A gold coin. A number is carved on it: @@D1@@
+SEALED
 
-cat <<'EOF'
+reveal <<'SEALED'
 Click. The key turns, and the heavy door opens.
 
             _________
@@ -609,7 +651,7 @@ for you there:
         /|+|\==(||)
          | |    ||
          / \    ||
-EOF
+SEALED
 END_DOOR
 
 text GUARDIAN_HINT <<'END_GUARDIAN_HINT'
@@ -638,11 +680,13 @@ original="$HUNT/shipwreck/map.txt"
 copy="$here/map-copy.txt"
 
 if [ -f "$here/rest" ]; then
-  echo "The guardian nods. You may pass."
+  reveal <<'SEALED'
+The guardian nods. You may pass.
+SEALED
   exit 0
 fi
 
-cat <<'EOF'
+reveal <<'SEALED'
                       /\
          _______      ||
         |       |   <=||\
@@ -660,39 +704,45 @@ cat <<'EOF'
         (___|___)     ||
                       ||
 
-EOF
+SEALED
 
 if [ ! -f "$original" ]; then
-  cat <<'EOF'
+  reveal <<'SEALED'
 "Where is the captain's map? The original must stay in the shipwreck!
  Put it back there. Then bring me a copy."
-EOF
+SEALED
   exit 1
 fi
 
 if [ ! -f "$copy" ]; then
-  cat <<'EOF'
+  reveal <<'SEALED'
 The guardian blocks your way.
 
 "Halt! Bring me a copy of the captain's map. Put it here, next to me,
  and name it map-copy.txt. The original must stay in the shipwreck."
-EOF
+SEALED
   exit 1
 fi
 
 if ! cmp -s "$original" "$copy"; then
-  echo '"This is not a copy of the captain'"'"'s map!"'
+  reveal <<'SEALED'
+"This is not a copy of the captain's map!"
+SEALED
   exit 1
 fi
 
-unpack '@@REST@@' "$here/rest" 755 &&
-unpack '@@REST_HINT@@' "$here/.hint" 644 || exit 1
+unpack "$here/rest" 755 <<'SEALED_REST' &&
+@@REST@@
+SEALED_REST
+unpack "$here/.hint" 644 <<'SEALED_REST_HINT' || exit 1
+@@REST_HINT@@
+SEALED_REST_HINT
 
-cat <<'EOF'
+reveal <<'SEALED'
 The guardian looks at the map for a long time. Then it nods.
 
 "You may pass. But night is falling. You should rest first."
-EOF
+SEALED
 END_GUARDIAN
 
 text REST_HINT <<'END_REST_HINT'
@@ -718,13 +768,15 @@ HUNT='@@HUNT@@'
 here="$HUNT/fortress/courtyard"
 
 if [ -f "$here/lever" ]; then
-  echo "It is morning. The drawbridge is waiting."
+  reveal <<'SEALED'
+It is morning. The drawbridge is waiting.
+SEALED
   exit 0
 fi
 
 # The sun sets behind the walls of the fortress until the camp is ready.
 sunset() {
-  cat <<'EOF'
+  reveal <<'SEALED'
         .              *                .           *
    *            .               .                .
                         \   |   /
@@ -733,38 +785,48 @@ sunset() {
  | |_| |_| |_| |_| |_| |_| |_| |_| |_| |_| |_| |
  |                                             |
 
-EOF
+SEALED
 }
 
 if [ ! -d "$here/camp" ]; then
   sunset
-  cat <<'EOF'
+  reveal <<'SEALED'
 Night is falling. It is getting dark and cold. You cannot rest without
 a camp and a fire.
 
 Make a directory named camp, here. In it, make a file named fire.
 The fire is lit when the file contains the word: lit
-EOF
+SEALED
   exit 1
 fi
 
 if [ ! -f "$here/camp/fire" ]; then
   sunset
-  echo "Your camp has no fire. Make a file named fire in the camp."
+  reveal <<'SEALED'
+Your camp has no fire. Make a file named fire in the camp.
+SEALED
   exit 1
 fi
 
 if ! grep -q 'lit' "$here/camp/fire"; then
   sunset
-  echo "The fire is not lit. The fire file must contain the word: lit"
+  reveal <<'SEALED'
+The fire is not lit. The fire file must contain the word: lit
+SEALED
   exit 1
 fi
 
-unpack '@@DRAWBRIDGE_CONF@@' "$here/drawbridge.conf" 644 &&
-unpack '@@LEVER@@' "$here/lever" 755 &&
-unpack '@@DRAWBRIDGE_HINT@@' "$here/.hint" 644 || exit 1
+unpack "$here/drawbridge.conf" 644 <<'SEALED_DRAWBRIDGE_CONF' &&
+@@DRAWBRIDGE_CONF@@
+SEALED_DRAWBRIDGE_CONF
+unpack "$here/lever" 755 <<'SEALED_LEVER' &&
+@@LEVER@@
+SEALED_LEVER
+unpack "$here/.hint" 644 <<'SEALED_DRAWBRIDGE_HINT' || exit 1
+@@DRAWBRIDGE_HINT@@
+SEALED_DRAWBRIDGE_HINT
 
-cat <<'EOF'
+reveal <<'SEALED'
               (
           )    )  (
          (  ) (    )
@@ -775,7 +837,7 @@ cat <<'EOF'
 
 The fire is warm. You lie down next to it, and you fall asleep.
 
-EOF
+SEALED
 
 # The snores grow on one line, as the dragon's do. They only take their time
 # in a terminal, where someone is watching them.
@@ -786,7 +848,7 @@ for snore in z zz Zzz ZZzz ZZZzz; do
 done
 echo
 
-cat <<'EOF'
+reveal <<'SEALED'
 
 In the morning, you see what you could not see in the dark: a big
 drawbridge, closed, and a lever to open it.
@@ -805,7 +867,7 @@ drawbridge, closed, and a lever to open it.
    ~~~~~  ~~~~~~  ~~~~~~  ~~~~~~
 
 There is also a file with the settings of the drawbridge.
-EOF
+SEALED
 END_REST
 
 text DRAWBRIDGE_CONF <<'END_DRAWBRIDGE_CONF'
@@ -844,30 +906,46 @@ HUNT='@@HUNT@@'
 here="$HUNT/fortress/courtyard"
 
 if [ -d "$here/tower" ]; then
-  echo "The drawbridge is down. The tower is open."
+  reveal <<'SEALED'
+The drawbridge is down. The tower is open.
+SEALED
   exit 0
 fi
 
 if ! grep -Eq '^[[:space:]]*state[[:space:]]*=[[:space:]]*open[[:space:]]*$' "$here/drawbridge.conf" 2>/dev/null; then
-  cat <<'EOF'
+  reveal <<'SEALED'
 You pull the lever as hard as you can. It does not move.
 
 The settings of the drawbridge, in drawbridge.conf, say that it is
 closed. Change them to open.
-EOF
+SEALED
   exit 1
 fi
 
 mkdir "$here/tower" &&
-unpack '@@CURSED_CHEST@@' "$here/tower/cursed-chest.txt" 644 &&
-unpack '@@TRAP_SPIKES@@' "$here/tower/trap-spikes.txt" 644 &&
-unpack '@@TRAP_SNAKES@@' "$here/tower/trap-snakes.txt" 644 &&
-unpack '@@TRAP_SPIDERS@@' "$here/tower/trap-spiders.txt" 644 &&
-unpack '@@STAIRS@@' "$here/tower/stairs" 755 &&
-unpack '@@TOWER_HINT@@' "$here/tower/.hint" 644 || exit 1
+unpack "$here/tower/cursed-chest.txt" 644 <<'SEALED_CURSED_CHEST' &&
+@@CURSED_CHEST@@
+SEALED_CURSED_CHEST
+unpack "$here/tower/trap-spikes.txt" 644 <<'SEALED_TRAP_SPIKES' &&
+@@TRAP_SPIKES@@
+SEALED_TRAP_SPIKES
+unpack "$here/tower/trap-snakes.txt" 644 <<'SEALED_TRAP_SNAKES' &&
+@@TRAP_SNAKES@@
+SEALED_TRAP_SNAKES
+unpack "$here/tower/trap-spiders.txt" 644 <<'SEALED_TRAP_SPIDERS' &&
+@@TRAP_SPIDERS@@
+SEALED_TRAP_SPIDERS
+unpack "$here/tower/stairs" 755 <<'SEALED_STAIRS' &&
+@@STAIRS@@
+SEALED_STAIRS
+unpack "$here/tower/.hint" 644 <<'SEALED_TOWER_HINT' || exit 1
+@@TOWER_HINT@@
+SEALED_TOWER_HINT
 
 mkdir -p "$HUNT/bag"
-echo "A gold coin. A number is carved on it: @@D2@@" > "$HUNT/bag/coin-2"
+reveal > "$HUNT/bag/coin-2" <<'SEALED'
+A gold coin. A number is carved on it: @@D2@@
+SEALED
 
 # Each part of what happens waits a little before the next one, in a
 # terminal, where someone is watching.
@@ -875,7 +953,7 @@ pause() {
   if [ -t 1 ]; then sleep 1; fi
 }
 
-cat <<'EOF'
+reveal <<'SEALED'
 The chains turn. Slowly, the drawbridge goes down.
 
     _   _   _   _   _   _   _
@@ -889,16 +967,16 @@ The chains turn. Slowly, the drawbridge goes down.
   ~~~~~~~~ /=========\ ~~~~~~~~          |___|
    ~~~~~  /===========\  ~~~~~
 
-EOF
+SEALED
 pause
-cat <<'EOF'
+reveal <<'SEALED'
 A gold coin was hidden under the lever. You put it in your bag.
 
 @@COIN2@@
 
-EOF
+SEALED
 pause
-cat <<'EOF'
+reveal <<'SEALED'
 On the other side of the drawbridge, there is a tall tower.
 
            |>>>
@@ -909,7 +987,7 @@ On the other side of the drawbridge, there is a tall tower.
       |   [ ]   |
       |   ___   |
      _|__|   |__|_
-EOF
+SEALED
 END_LEVER
 
 text CURSED_CHEST <<'END_CURSED_CHEST'
@@ -984,7 +1062,9 @@ HUNT='@@HUNT@@'
 here="$HUNT/fortress/courtyard/tower"
 
 if [ -d "$here/top" ]; then
-  echo "You already climbed the stairs. The top of the tower is open."
+  reveal <<'SEALED'
+You already climbed the stairs. The top of the tower is open.
+SEALED
   exit 0
 fi
 
@@ -997,17 +1077,23 @@ for thing in cursed-chest.txt trap-spikes.txt trap-snakes.txt trap-spiders.txt; 
 done
 
 if [ -n "$remaining" ]; then
-  echo "You cannot climb the stairs. These are still here:"
+  reveal <<'SEALED'
+You cannot climb the stairs. These are still here:
+SEALED
   echo
   printf '%s' "$remaining"
   exit 1
 fi
 
 mkdir "$here/top" &&
-unpack '@@PARROT@@' "$here/top/parrot.txt" 644 &&
-unpack '@@TOP_HINT@@' "$here/top/.hint" 644 || exit 1
+unpack "$here/top/parrot.txt" 644 <<'SEALED_PARROT' &&
+@@PARROT@@
+SEALED_PARROT
+unpack "$here/top/.hint" 644 <<'SEALED_TOP_HINT' || exit 1
+@@TOP_HINT@@
+SEALED_TOP_HINT
 
-cat <<'EOF'
+reveal <<'SEALED'
 The curse is gone. You climb the stairs, all the way to the top.
 
                         o               ______
@@ -1019,7 +1105,7 @@ The curse is gone. You climb the stairs, all the way to the top.
     ______|
 
 Someone is waiting for you there.
-EOF
+SEALED
 END_STAIRS
 
 text PARROT <<'END_PARROT'
@@ -1062,32 +1148,42 @@ HUNT='@@HUNT@@'
 @@UNPACK@@
 
 if [ -d "$HUNT/skull-island" ]; then
-  echo "DING! You already went to Skull Island."
+  reveal <<'SEALED'
+DING! You already went to Skull Island.
+SEALED
   exit 0
 fi
 
 if [ ! -f "$HUNT/fortress/courtyard/tower/top/parrot.txt" ]; then
-  echo "DING! Nothing happens. It is not the right time."
+  reveal <<'SEALED'
+DING! Nothing happens. It is not the right time.
+SEALED
   exit 1
 fi
 
 boat=$(cd "$HUNT/beach/boat" 2>/dev/null && pwd -P)
 if [ -z "$boat" ] || [ "$(pwd -P)" != "$boat" ]; then
-  cat <<'EOF'
+  reveal <<'SEALED'
 DING! Nothing happens.
 
 The parrot said to ring the bell from the boat. Where are you? pwd
 tells you.
-EOF
+SEALED
   exit 1
 fi
 
 mkdir "$HUNT/skull-island" &&
-unpack '@@CHEST@@' "$HUNT/skull-island/chest" 644 &&
-unpack '@@ISLAND_HINT@@' "$HUNT/skull-island/.hint" 644 || exit 1
+unpack "$HUNT/skull-island/chest" 644 <<'SEALED_CHEST' &&
+@@CHEST@@
+SEALED_CHEST
+unpack "$HUNT/skull-island/.hint" 644 <<'SEALED_ISLAND_HINT' || exit 1
+@@ISLAND_HINT@@
+SEALED_ISLAND_HINT
 
 mkdir -p "$HUNT/bag"
-echo "A gold coin. A number is carved on it: @@D3@@" > "$HUNT/bag/coin-3"
+reveal > "$HUNT/bag/coin-3" <<'SEALED'
+A gold coin. A number is carved on it: @@D3@@
+SEALED
 
 # Each part of the trip waits a little before the next one, in a terminal,
 # where someone is watching.
@@ -1095,7 +1191,7 @@ pause() {
   if [ -t 1 ]; then sleep 1; fi
 }
 
-cat <<'EOF'
+reveal <<'SEALED'
 DING! DING! DING!
 
 The parrot lands on the boat.
@@ -1109,9 +1205,9 @@ The parrot lands on the boat.
     ~~~~\___________/~~~~
        ~~~~~    ~~~~~
 
-EOF
+SEALED
 pause
-cat <<'EOF'
+reveal <<'SEALED'
 "SQUAWK! Row! Row!"
 You row for a long time. Then you see it: Skull Island.
 
@@ -1125,15 +1221,15 @@ You row for a long time. Then you see it: Skull Island.
       ~~~~~~ /    .    '    '   .    .  \ ~~~~~~
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-EOF
+SEALED
 pause
-cat <<'EOF'
+reveal <<'SEALED'
 A gold coin was stuck in the bell. You put it in your bag.
 
 @@COIN3@@
 
 Skull Island is in ~/treasure-hunt/skull-island. There is a chest.
-EOF
+SEALED
 END_BELL
 
 # ---------------------------------------------------------------------------
@@ -1161,11 +1257,13 @@ HUNT='@@HUNT@@'
 @@UNPACK@@
 
 if [ -f "$HUNT/bag/treasure" ]; then
-  echo "The chest is empty. The treasure is in your bag."
+  reveal <<'SEALED'
+The chest is empty. The treasure is in your bag.
+SEALED
   exit 0
 fi
 
-cat <<'EOF'
+reveal <<'SEALED'
          ____________________
         /                   /|
        /___________________/ |
@@ -1173,21 +1271,32 @@ cat <<'EOF'
        |___________________|/
 
 The captain's chest! It has a lock with three numbers.
-EOF
+SEALED
 
-printf 'Enter the combination (coin 1, coin 2, coin 3): '
+# The question ends with a space instead of a newline, so that the answer is
+# typed after it.
+reveal <<'SEALED' | tr -d '\n'
+Enter the combination (coin 1, coin 2, coin 3):
+SEALED
+printf ' '
 read -r answer
 answer=$(printf '%s' "$answer" | tr -cd '0-9')
 
-if [ "$answer" != '@@COMBINATION@@' ]; then
-  echo "Click... The lock does not open. Look at the coins in your bag."
+# The combination is sealed too: the answer is sealed the same way before the
+# two are compared.
+if [ "$(printf '%s' "$answer" | seal)" != '@@SEALED_COMBINATION@@' ]; then
+  reveal <<'SEALED'
+Click... The lock does not open. Look at the coins in your bag.
+SEALED
   exit 1
 fi
 
 mkdir -p "$HUNT/bag"
-unpack '@@TREASURE@@' "$HUNT/bag/treasure" 755 || exit 1
+unpack "$HUNT/bag/treasure" 755 <<'SEALED_TREASURE' || exit 1
+@@TREASURE@@
+SEALED_TREASURE
 
-cat <<'EOF'
+reveal <<'SEALED'
 CLICK! The chest opens. The treasure is inside!
 
 You put it in your bag: ~/treasure-hunt/bag/treasure. It is a
@@ -1197,15 +1306,16 @@ program. From here, run it with:
 
 Can you run it from anywhere, just by typing treasure?
 Go back to the exercise to find out how.
-EOF
+SEALED
 END_CHEST
 
 text TREASURE <<'END_TREASURE'
 #!/bin/bash
 # The treasure of Skull Island.
 HUNT='@@HUNT@@'
+@@UNPACK@@
 
-cat <<'EOF'
+reveal <<'SEALED'
 
           *             .              *
                 o       o       o
@@ -1221,10 +1331,10 @@ cat <<'EOF'
       YOU FOUND THE TREASURE OF SKULL ISLAND!
       The crown and the gold of the captain are yours.
 
-EOF
+SEALED
 
 if [ -e "$HUNT/bag/golden-idol" ]; then
-  cat <<'EOF'
+  reveal <<'SEALED'
                  .-"-.
                 / o o \
                 \  ^  /
@@ -1234,7 +1344,7 @@ if [ -e "$HUNT/bag/golden-idol" ]; then
 
    And the golden idol from the catacombs! You found everything.
 
-EOF
+SEALED
 fi
 END_TREASURE
 
@@ -1340,6 +1450,36 @@ script_end() {
   printf -v "$1" '%s%s' "$script" "${SCRIPT_END//@@RUN@@/$2}"
 }
 
+# Seals what the program in the variable named by $1 says. It is written here
+# in plain text, in heredocs ending with a line that says SEALED, which is what
+# reveal prints; their text is sealed here, so that reading the program does
+# not tell what happens in the hunt.
+seal_messages() {
+  local program="${!1}" sealed="" line message="" body in_message=0
+  while IFS= read -r line; do
+    if [ "$in_message" -eq 1 ]; then
+      if [ "$line" = "SEALED" ]; then
+        heredoc_body body "$message"
+        sealed="$sealed$body
+SEALED
+"
+        message="" in_message=0
+      else
+        message="$message$line
+"
+      fi
+    else
+      sealed="$sealed$line
+"
+      case "$line" in
+        *"<<'SEALED'"*) in_message=1 ;;
+      esac
+    fi
+  # <<< ends the program with a newline of its own, one too many.
+  done <<< "${program%$'\n'}"
+  printf -v "$1" '%s' "$sealed"
+}
+
 build() {
   script_end DRAGON './dragon'
   script_end DOOR './door'
@@ -1350,6 +1490,11 @@ build() {
   script_end BELL '~/treasure-hunt/bell'
   script_end CHEST './chest'
   script_end TREASURE '~/treasure-hunt/bag/treasure'
+
+  local program
+  for program in DRAGON DOOR GUARDIAN REST LEVER STAIRS BELL CHEST TREASURE; do
+    seal_messages "$program"
+  done
 
   embed CHEST TREASURE TREASURE
   embed BELL CHEST CHEST
@@ -1477,6 +1622,7 @@ main() {
   D1=$((RANDOM % 10))
   D2=$((RANDOM % 10))
   D3=$((RANDOM % 10))
+  SEALED_COMBINATION=$(printf '%s' "$D1$D2$D3" | LC_ALL=C tr "$CAESAR_PLAIN" "$CAESAR_SEALED")
 
   if [ -e "$HUNT" ]; then
     confirm_restart

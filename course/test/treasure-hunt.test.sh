@@ -222,7 +222,9 @@ for program in "cave/dragon ./dragon" "fortress/door ./door" \
   "bag/treasure ~/treasure-hunt/bag/treasure"; do
   set -- $program
   check "$1 ends by telling how to run it" ends_with_banner "$HUNT/$1" "$2"
+  check "$1 says nothing in plain text" eval "! grep -q 'carved on it\|You put it in your bag\|DING!\|The chest\|YOU FOUND' '$HUNT/$1'"
 done
+check "the combination cannot be read in the chest" eval "! grep -q '$combination' '$HUNT/skull-island/chest'"
 
 echo "Restarting"
 if ! { : < /dev/tty; } 2>/dev/null; then
