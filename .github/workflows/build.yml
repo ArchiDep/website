@@ -461,3 +461,16 @@ jobs:
 
       - name: Play the treasure hunt
         run: /bin/bash course/test/treasure-hunt.test.sh
+
+  # The remote land of Avalon of "Hello SSH" runs on the SSH exercise server,
+  # and is played from a student's computer: both are Docker containers, which
+  # only the Ubuntu runners have.
+  avalon:
+    runs-on: ubuntu-24.04
+    name: Play the remote land of Avalon
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v7
+
+      - name: Play the remote land of Avalon
+        run: /bin/bash course/test/avalon.test.sh

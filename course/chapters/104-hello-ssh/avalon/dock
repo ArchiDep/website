@@ -1,0 +1,766 @@
+#!/bin/bash
+#
+# The remote land of Avalon, the SSH follow-up to the treasure hunt of the
+# "Hello Shell" exercise of the ArchiDep course.
+#
+# This is the first gate: the barge that takes a student to Avalon. It is
+# installed on the SSH exercise server, in /usr/local/bin, so that students
+# run it by its name once they are logged in. When it opens, it builds the rest
+# of the land in ~/avalon, in the student's own home directory: Merlin, who
+# holds the prophecy and the Lady of the Lake. Run "dock --restart" to start
+# over: it asks before it deletes the old land.
+#
+# Warning: spoilers. This file contains the whole of Avalon, solution included.
+#
+# It runs on the server, but the prophecy it writes runs on the students' own
+# machines: that one must work with the Bash 3.2 that macOS includes and with
+# the GNU tools of the WSL.
+#
+# The barge only takes students who logged in with their key. It knows how they
+# logged in from the file named in SSH_USER_AUTH, which the SSH server only
+# writes when its configuration has "ExposeAuthInfo yes".
+
+# Since Bash 5.2, an "&" in the replacement of ${value//pattern/replacement}
+# stands for the text that matched, which would break the "&&" of the gates
+# below.
+shopt -u patsub_replacement 2> /dev/null
+
+# The edition of the course this land belongs to. Every page of the site is
+# published under the starting year of its academic year, so the year is the
+# first segment of every address the land sends students to. It moves at the
+# year-end rollover, with the rest of the edition.
+CURRENT_YEAR=2026
+
+# Where the exercise is published, which every text that sends students there
+# writes as @@EXERCISE@@, followed by the anchor of a section.
+EXERCISE="https://archidep.ch/$CURRENT_YEAR/course/104-hello-ssh/"
+
+# The port of the impostor's SSH server, which the message left on the shore
+# sends students to.
+IMPOSTOR_PORT=2222
+
+# The words the prophecy can give. One is drawn for each student.
+WORDS=(
+  EXCALIBUR PENDRAGON CAMELOT GRAIL TINTAGEL BROCELIANDE
+  LANCELOT GAWAIN PERCEVAL GUINEVERE ROUNDTABLE LYONESSE
+)
+
+# Reads a heredoc into the variable named by $1, exactly as written, leading
+# spaces included.
+text() {
+  IFS= read -r -d '' "$1" || true
+}
+
+# What the gates say is sealed with the cipher of Julius Caesar, as in the
+# treasure hunt: every letter and digit is shifted 3 places further, and turned
+# back when the gate speaks. The programs a gate holds are sealed inside it,
+# which shifts the innermost ones several times over.
+CAESAR_PLAIN='A-Za-z0-9'
+CAESAR_SEALED='D-ZA-Cd-za-c3-90-2'
+
+# The commands that work with sealed texts, which every gate includes, with the
+# text on their input: reveal prints it unsealed, unpack <file> <mode> writes it
+# unsealed, and seal prints it sealed.
+UNPACK="reveal() { LC_ALL=C tr '$CAESAR_SEALED' '$CAESAR_PLAIN'; }
+unpack() { reveal > \"\$1\" && chmod \"\$2\" \"\$1\"; }
+seal() { LC_ALL=C tr '$CAESAR_PLAIN' '$CAESAR_SEALED'; }"
+
+# Prints a text with its placeholders replaced.
+fill() {
+  local value="$1"
+  value=${value//@@AVALON@@/$AVALON}
+  value=${value//@@LOGIN@@/$LOGIN}
+  value=${value//@@HOST@@/$HOST}
+  value=${value//@@PORT@@/$IMPOSTOR_PORT}
+  value=${value//@@EXERCISE@@/$EXERCISE}
+  value=${value//@@UNPACK@@/$UNPACK}
+  value=${value//@@WORD@@/$WORD}
+  value=${value//@@SEALED_WORD@@/$SEALED_WORD}
+  printf '%s' "$value"
+}
+
+# Prints a text, placeholders replaced, sealed with the cipher of Caesar.
+pack() {
+  fill "$1" | LC_ALL=C tr "$CAESAR_PLAIN" "$CAESAR_SEALED"
+}
+
+# Seals the text in the variable named by $3 into the text in the variable
+# named by $1, in place of the placeholder @@$2@@. The placeholder is the body
+# of a heredoc ending with SEALED_$2, a line no sealed text can hold: it is
+# shifted with the rest at every level.
+embed() {
+  local parent="${!1}" child
+  heredoc_body child "${!3}"
+  printf -v "$1" '%s' "${parent//@@$2@@/$child}"
+}
+
+# Sets the variable named by $1 to the text $2 sealed, as the body of a heredoc:
+# without its last newline, which the heredoc gives it back.
+heredoc_body() {
+  local sealed
+  # The x keeps the newlines the text ends with, which $(...) would remove.
+  sealed=$(pack "$2"; echo x)
+  sealed=${sealed%x}
+  printf -v "$1" '%s' "${sealed%$'\n'}"
+}
+
+# Writes a text into a file: put <file> <text> [<mode>]
+put() {
+  fill "$2" > "$1" && chmod "${3:-644}" "$1"
+}
+
+fail() {
+  echo "$*" >&2
+  exit 1
+}
+
+# ---------------------------------------------------------------------------
+# The barge
+# ---------------------------------------------------------------------------
+
+text BARGE <<'END_BARGE'
+
+      ~  ~    ~    ~   ~     ~    ~   ~    ~     ~   ~    ~
+    ~   ~   ~  ~     ~   ~    ~    ~    ~    ~  ~    ~     ~
+                        ______________
+                ~~     /      ||      \     ~~
+         ~~~~~~~~~~~~~/_______||_______\~~~~~~~~~~~~~~
+            ~~~~~~   \_________________/   ~~~~~~
+                ~~~~~~~~   ~~~~~~~~~   ~~~~~~~~
+    ~   ~   ~  ~     ~   ~    ~    ~    ~    ~  ~    ~     ~
+      ~  ~    ~    ~   ~     ~    ~   ~    ~     ~   ~    ~
+
+END_BARGE
+
+text NO_SSH <<'END_NO_SSH'
+The barge only carries travellers who crossed the sea: people who
+logged in to this server with SSH. You are not one of them.
+END_NO_SSH
+
+text BROKEN <<'END_BROKEN'
+The barge is broken: it cannot tell how you came to this server.
+
+This is not your fault. Tell your teacher that the SSH server does not
+expose how its users logged in (the ExposeAuthInfo option is off).
+END_BROKEN
+
+text PASSWORD <<'END_PASSWORD'
+A barge waits at the dock, in the mist. It does not move.
+
+The mists of Avalon only part for travellers who carry their key.
+You came to this server with your password.
+
+The server knows how you logged in: with a password, or with a key.
+
+Log out with exit, and come back with your key:
+
+    ssh @@LOGIN@@
+
+If the server still asks for your password, you have not given it
+your public key yet: go back to "Set up public key authentication"
+in the exercise.
+END_PASSWORD
+
+text ALREADY <<'END_ALREADY'
+The barge already took you to Avalon. It is here, on this server:
+
+    cd ~/avalon
+
+Want to start over? Run: dock --restart
+END_ALREADY
+
+text ARRIVAL <<'END_ARRIVAL'
+You carry your key, and the mists know it. The barge moves.
+
+It glides through the mist for a long time. Then the mist opens,
+and you see green hills, a forest, and a lake as still as a mirror:
+
+    THE REMOTE LAND OF AVALON
+
+Avalon is far from your own computer. It is a directory on this
+server, in your home directory here:
+
+    cd ~/avalon
+
+An old man with a long white beard waits for you there. It is Merlin,
+the enchanter. Look around with ls, and talk to him:
+
+    ./merlin
+
+Stuck? There is a hint here: cat .hint
+END_ARRIVAL
+
+text DOCK_HINT <<'END_DOCK_HINT'
+HINT
+
+Merlin wants a gift from your own land: your own computer, not this
+server. Two gifts please him.
+
+Played the treasure hunt? Bring him your treasure. It is in your bag,
+on your computer: ~/treasure-hunt/bag/treasure
+
+Did not play it? Ask your computer who it is, and write the answer in
+a file. On your computer:
+
+    uname -a > land.txt
+
+To send a file from your computer to Avalon, use scp, on your
+computer (open a new terminal, or log out with exit):
+
+    scp land.txt @@LOGIN@@:avalon/
+
+or:
+
+    scp ~/treasure-hunt/bag/treasure @@LOGIN@@:avalon/
+
+The path after the colon (:) is on the server, and it starts in your
+home directory there: avalon/ is ~/avalon on the server.
+
+Then log in again, and run ./merlin in ~/avalon.
+
+See "Copy a file with the scp command" in the exercise:
+@@EXERCISE@@#copy-a-file-with-the-scp-command
+END_DOCK_HINT
+
+# ---------------------------------------------------------------------------
+# Merlin
+# ---------------------------------------------------------------------------
+
+text MERLIN <<'END_MERLIN'
+#!/bin/bash
+# Merlin, the enchanter. He loves gifts from faraway lands.
+AVALON='@@AVALON@@'
+@@UNPACK@@
+
+if [ -f "$AVALON/lady" ]; then
+  reveal <<'SEALED'
+Merlin smiles. "I gave you the prophecy already. Read it far from
+here, in your own land."
+SEALED
+  exit 0
+fi
+
+reveal <<'SEALED'
+                 _____
+                /     \
+               /  * *  \
+              /_________\
+               | o   o |
+               |   >   |
+              /|\_____/|\
+             / |  \~/  | \
+            /  |   ~   |  \
+              _|_______|_
+
+SEALED
+
+gift=""
+if [ -f "$AVALON/treasure" ] && grep -q '^# The treasure of Skull Island' "$AVALON/treasure"; then
+  gift=treasure
+elif [ -f "$AVALON/land.txt" ]; then
+  gift=land
+fi
+
+if [ -z "$gift" ]; then
+  reveal <<'SEALED'
+"Welcome to Avalon, traveller. I am Merlin.
+
+ A parrot told me you would come. It also told me that you came from
+ far away. Then bring me a gift from your own land! Two things would
+ please me:
+
+ - The treasure of Skull Island, if you found it. Put it here, in
+   avalon, and keep its name: treasure.
+ - Or, if you did not find it, what your land answers when you ask it
+   who it is (uname -a), in a file named land.txt, here in avalon.
+
+ A gift from your land cannot be made here, on Avalon. Make it there,
+ and send it across the sea."
+SEALED
+  exit 1
+fi
+
+if [ "$gift" = land ]; then
+  if grep -qF "$(uname -n)" "$AVALON/land.txt" || [ "$(cat "$AVALON/land.txt")" = "$(uname -a)" ]; then
+    reveal <<'SEALED'
+Merlin reads land.txt, and frowns.
+
+"This does not come from your land. It comes from Avalon itself! You
+ asked this server who it is, not your own computer. Run uname -a on
+ your own computer, and send me what it says."
+SEALED
+    exit 1
+  fi
+  if ! grep -Eq '^(Darwin|Linux) [^ ]+ [^ ]+' "$AVALON/land.txt"; then
+    reveal <<'SEALED'
+Merlin reads land.txt, and shakes his head.
+
+"I cannot read this. I want everything your computer says when you
+ run uname -a, exactly as it says it."
+SEALED
+    exit 1
+  fi
+fi
+
+if [ "$gift" = treasure ]; then
+  reveal <<'SEALED'
+Merlin holds the treasure of Skull Island in his hands. His eyes
+shine.
+
+"So the treasure of Skull Island is real! I have waited so long to
+ see it. And look: it still says where it comes from."
+SEALED
+  case "$(sed -n "s/^HUNT='\(.*\)'$/\1/p" "$AVALON/treasure")" in
+    /Users/*)
+      reveal <<'SEALED'
+
+"In your land, homes are in /Users. You come from a Mac!"
+SEALED
+      ;;
+    /home/*)
+      reveal <<'SEALED'
+
+"In your land, homes are in /home. You come from Linux: the WSL on
+ Windows, maybe?"
+SEALED
+      ;;
+  esac
+  reveal <<'SEALED'
+
+"Now, try this: type treasure, here on Avalon, and see what happens.
+ Command not found! Your bag is not in the PATH of Avalon: your PATH
+ stayed on your own computer, with the rest of your settings. But the
+ treasure is a program, and a program is a file: here, ./treasure
+ works."
+SEALED
+else
+  reveal <<'SEALED'
+Merlin reads land.txt carefully.
+
+"So this is how your land answers! It is not Avalon's answer:
+ Avalon's would carry the name of this server."
+SEALED
+  if grep -q '^Darwin' "$AVALON/land.txt"; then
+    reveal <<'SEALED'
+
+"Darwin... You come from a Mac!"
+SEALED
+  elif grep -qi 'microsoft' "$AVALON/land.txt"; then
+    reveal <<'SEALED'
+
+"Linux, made by Microsoft... You come from the WSL, on Windows!"
+SEALED
+  else
+    reveal <<'SEALED'
+
+"Linux... You come from a land much like this one."
+SEALED
+  fi
+fi
+
+unpack "$AVALON/prophecy" 644 <<'SEALED_PROPHECY' &&
+@@PROPHECY@@
+SEALED_PROPHECY
+unpack "$AVALON/lady" 755 <<'SEALED_LADY' &&
+@@LADY@@
+SEALED_LADY
+unpack "$AVALON/.hint" 644 <<'SEALED_PROPHECY_HINT' || exit 1
+@@PROPHECY_HINT@@
+SEALED_PROPHECY_HINT
+
+reveal <<'SEALED'
+
+"In exchange, here is a prophecy. I wrote it with a magic ink that
+ only shows far from Avalon: here, it looks blank. Take it home, to
+ your own computer, and read it there."
+
+             ____________________
+            ()___________________)
+             |                  |
+             |  ~~~~ ~~~ ~~~~   |
+             |  ~~~ ~~~~ ~~~    |
+             |__________________|
+            ()___________________)
+
+Merlin puts the prophecy next to him, in ~/avalon: prophecy.
+SEALED
+END_MERLIN
+
+text PROPHECY_HINT <<'END_PROPHECY_HINT'
+HINT
+
+The prophecy is here, in ~/avalon, on the server. It can only be read
+on your own computer, so copy it from the server to your computer.
+On your computer:
+
+    scp @@LOGIN@@:avalon/prophecy .
+
+This time, the server is the first part of the command: that is where
+the file comes from. The dot (.) at the end is where the file goes:
+the directory you are in, on your computer.
+
+The prophecy is a program: read it by running it, on your computer:
+
+    ./prophecy
+
+"Permission denied"? It is not executable yet. You already opened a
+chest like this one on Skull Island: chmod +x prophecy.
+END_PROPHECY_HINT
+
+# ---------------------------------------------------------------------------
+# The prophecy
+# ---------------------------------------------------------------------------
+
+# It runs on the student's own computer, where Avalon is not: it can only
+# tell where it is by the name of the machine.
+text PROPHECY <<'END_PROPHECY'
+#!/bin/bash
+# A prophecy of Merlin, written with a magic ink.
+@@UNPACK@@
+
+if [ "$(hostname 2> /dev/null)" = '@@HOST@@' ]; then
+  reveal <<'SEALED'
+The parchment is blank. The magic ink only shows far from Avalon.
+
+Take the prophecy to your own computer, and read it there.
+SEALED
+  exit 1
+fi
+
+reveal <<'SEALED'
+Far from Avalon, the ink slowly appears.
+
+      ______________________________________________________
+     (__)                                                   )
+        |                                                  |
+        |   The Lady of the Lake knows where the parrot    |
+        |   is. But she never speaks to travellers who     |
+        |   stay on Avalon. Do not go back there.          |
+        |                                                  |
+        |   From your own land, call her by her name,      |
+        |   across the sea, and say the word.              |
+        |                                                  |
+        |                                  -- Merlin       |
+        |__________________________________________________|
+       (____________________________________________________)
+
+    The word is: @@WORD@@
+
+The Lady of the Lake is a program on the server: ~/avalon/lady.
+
+Stuck? Avalon's hint knows more. It is on the server: log in, and
+read ~/avalon/.hint over there.
+SEALED
+END_PROPHECY
+
+text LADY_HINT <<'END_LADY_HINT'
+ALREADY READ THE PROPHECY?
+
+The Lady of the Lake only answers a command sent from your own
+computer, without logging in. ssh can do that: after the address of
+the server, write the command to run there. On your computer:
+
+    ssh @@LOGIN@@ ./avalon/lady THE-WORD
+
+(with the word of the prophecy instead of THE-WORD). The command runs
+on the server, in your home directory there, and what it says comes
+back to your terminal. Then ssh logs you out again.
+
+If you are logged in to the server, as you are to read this hint,
+log out first with exit.
+
+See the tip at the end of "Spot the difference" in the exercise:
+@@EXERCISE@@#spot-the-difference
+END_LADY_HINT
+
+# ---------------------------------------------------------------------------
+# The Lady of the Lake
+# ---------------------------------------------------------------------------
+
+text LADY <<'END_LADY'
+#!/bin/bash
+# The Lady of the Lake. She only speaks to those who do not stay.
+AVALON='@@AVALON@@'
+@@UNPACK@@
+
+# SSH gives a terminal to someone who logs in, and names it in SSH_TTY. A
+# command sent with "ssh <server> <command>" gets none.
+if [ -n "${SSH_TTY:-}" ]; then
+  reveal <<'SEALED'
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The lake is still. Nobody answers.
+
+The Lady of the Lake does not speak to travellers who stay on Avalon,
+and you are here: you logged in to this server. Leave with exit, and
+call her from your own computer.
+SEALED
+  exit 1
+fi
+
+if [ "$#" -eq 0 ]; then
+  reveal <<'SEALED'
+A voice rises from the lake: "Who calls me? Say the word, traveller.
+Write it after my name."
+SEALED
+  exit 1
+fi
+
+word=$(printf '%s' "$*" | LC_ALL=C tr 'a-z' 'A-Z' | LC_ALL=C tr -cd 'A-Z')
+if [ "$(printf '%s' "$word" | seal)" != '@@SEALED_WORD@@' ]; then
+  reveal <<'SEALED'
+A voice rises from the lake: "That is not the word, traveller. Read
+the prophecy again."
+SEALED
+  exit 1
+fi
+
+if [ ! -f "$AVALON/message.txt" ]; then
+  unpack "$AVALON/message.txt" 644 <<'SEALED_MESSAGE' &&
+@@MESSAGE@@
+SEALED_MESSAGE
+  unpack "$AVALON/.hint" 644 <<'SEALED_SHORE_HINT' || exit 1
+@@SHORE_HINT@@
+SEALED_SHORE_HINT
+fi
+
+reveal <<'SEALED'
+                          |
+                          |
+                         _|_
+                        (___)
+                          |
+                         /|\
+       ~~~~~~~~~~~~~~~~~ \|/ ~~~~~~~~~~~~~~~~~~~~~~~~
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An arm rises from the lake, holding a sword. Then a voice:
+
+"You called me from your own land, traveller, and you did not set
+ foot on Avalon. I speak on Avalon, yet my words cross the sea and
+ appear in your own terminal. That is the magic of SSH."
+
+SEALED
+
+if [ -f "$AVALON/treasure" ]; then
+  reveal <<'SEALED'
+"You gave Merlin the treasure of Skull Island. The parrot followed
+ that treasure across the sea, and it followed you all the way here.
+
+SEALED
+else
+  reveal <<'SEALED'
+"You gave Merlin the words of your own land. The parrot heard them,
+ and it knew you had come a long way.
+
+SEALED
+fi
+
+reveal <<'SEALED'
+"You want to know where the parrot is? It was never lost. It flew to
+ Avalon to show you the way across the sea. Now that you know it, it
+ is waiting for you at home, on your own computer."
+
+             ,
+            (o>    SQUAWK! Home! Home!
+            //\
+            V_/_
+
+"One more thing, traveller. Someone left a message for you on the
+ shore of Avalon, in ~/avalon/message.txt. Read it if you like. But
+ trust nothing that you have not checked."
+SEALED
+END_LADY
+
+text MESSAGE <<'END_MESSAGE'
+A small piece of paper, folded in four. Nobody signed it.
+
+    "Traveller! The barge of Avalon no longer leaves from its usual
+     port. It now leaves from another port: @@PORT@@. Come back to
+     Avalon this way:
+
+         ssh -p @@PORT@@ @@LOGIN@@
+
+     -- A friend"
+END_MESSAGE
+
+text SHORE_HINT <<'END_SHORE_HINT'
+HINT
+
+The Lady of the Lake answered: you found the parrot!
+
+The message on the shore, message.txt, is optional. Before you trust
+it, remember how you checked this server the first time you connected
+to it. A server that really is this one has the same keys.
+
+See "A message on the shore" in the exercise:
+@@EXERCISE@@#a-message-on-the-shore
+END_SHORE_HINT
+
+# ---------------------------------------------------------------------------
+# Building Avalon
+# ---------------------------------------------------------------------------
+
+# The end of every program of Avalon, which is what cat leaves on screen when a
+# student reads one instead of running it. @@RUN@@ is how to run it.
+text SCRIPT_END <<'END_SCRIPT_END'
+
+
+
+
+
+
+
+
+
+
+# ======================================================================
+# ======================================================================
+#
+#    HALT, TRAVELLER!
+#
+#    This is not a scroll to read. It is a magic spell, and you are
+#    looking at the words inside it. Reading a spell does nothing:
+#    you have to cast it. Cast it like this:
+#
+#        @@RUN@@
+#
+#    (Curious travellers are allowed to read spells. Some find
+#    interesting things inside. But nothing happens until you cast it.)
+#
+# ======================================================================
+# ======================================================================
+END_SCRIPT_END
+
+# Adds the end above to the program in the variable named by $1, which is run
+# with $2.
+script_end() {
+  local script="${!1}"
+  printf -v "$1" '%s%s' "$script" "${SCRIPT_END//@@RUN@@/$2}"
+}
+
+# Seals what the program in the variable named by $1 says. It is written here
+# in plain text, in heredocs ending with a line that says SEALED, which is what
+# reveal prints; their text is sealed here, so that reading the program does
+# not tell what happens on Avalon.
+seal_messages() {
+  local program="${!1}" sealed="" line message="" body in_message=0
+  while IFS= read -r line; do
+    if [ "$in_message" -eq 1 ]; then
+      if [ "$line" = "SEALED" ]; then
+        heredoc_body body "$message"
+        sealed="$sealed$body
+SEALED
+"
+        message="" in_message=0
+      else
+        message="$message$line
+"
+      fi
+    else
+      sealed="$sealed$line
+"
+      case "$line" in
+        *"<<'SEALED'"*) in_message=1 ;;
+      esac
+    fi
+  # <<< ends the program with a newline of its own, one too many.
+  done <<< "${program%$'\n'}"
+  printf -v "$1" '%s' "$sealed"
+}
+
+build() {
+  script_end MERLIN './merlin'
+  script_end PROPHECY './prophecy     (on your own computer)'
+  script_end LADY 'ssh @@LOGIN@@ ./avalon/lady THE-WORD     (from your own computer)'
+
+  local program
+  for program in MERLIN PROPHECY LADY; do
+    seal_messages "$program"
+  done
+
+  embed LADY MESSAGE MESSAGE
+  embed LADY SHORE_HINT SHORE_HINT
+  embed MERLIN PROPHECY PROPHECY
+  embed MERLIN LADY LADY
+  # The prophecy is read on the student's own computer, where it cannot change
+  # the hint of Avalon: the hint Merlin leaves covers the Lady of the Lake too.
+  local merlin_hint="$PROPHECY_HINT
+------------------------------------------------------------------------
+
+$LADY_HINT"
+  embed MERLIN PROPHECY_HINT merlin_hint
+
+  mkdir -p "$AVALON" || return 1
+  put "$AVALON/merlin" "$MERLIN" 755
+  put "$AVALON/.hint" "$DOCK_HINT"
+}
+
+# Asks before deleting a land that already exists.
+confirm_restart() {
+  local answer=""
+
+  printf 'Delete Avalon and start again from the beginning? [y/N] '
+  read -r answer || true
+
+  case "$answer" in
+    y|Y|yes|YES|Yes) return 0 ;;
+    *) fail "Nothing was changed. Avalon is still in $AVALON." ;;
+  esac
+}
+
+main() {
+  local restart=no
+
+  case "${1:-}" in
+    --restart) restart=yes ;;
+    '') ;;
+    *) fail "Usage: dock [--restart]" ;;
+  esac
+
+  if [ -z "${HOME:-}" ] || [ "$HOME" = "/" ] || [ ! -d "$HOME" ]; then
+    fail "Your home directory was not found. Nothing was changed."
+  fi
+
+  AVALON="$HOME/avalon"
+  HOST=$(hostname)
+  LOGIN="$(id -un)@$HOST"
+  WORD=${WORDS[RANDOM % ${#WORDS[@]}]}
+  SEALED_WORD=$(printf '%s' "$WORD" | LC_ALL=C tr "$CAESAR_PLAIN" "$CAESAR_SEALED")
+
+  printf '%s' "$BARGE"
+
+  if [ -z "${SSH_CONNECTION:-}" ]; then
+    fill "$NO_SSH"
+    exit 1
+  fi
+
+  if [ -z "${SSH_USER_AUTH:-}" ] || [ ! -r "$SSH_USER_AUTH" ]; then
+    fill "$BROKEN"
+    exit 1
+  fi
+
+  if ! grep -q '^publickey ' "$SSH_USER_AUTH"; then
+    fill "$PASSWORD"
+    exit 1
+  fi
+
+  if [ -e "$AVALON" ]; then
+    if [ "$restart" = no ]; then
+      fill "$ALREADY"
+      exit 0
+    fi
+    confirm_restart
+    rm -rf "$AVALON" || fail "Could not delete $AVALON."
+  fi
+
+  build || fail "Something went wrong while building Avalon in $AVALON."
+
+  fill "$ARRIVAL"
+}
+
+# Everything above only defines things. Nothing runs before this last line.
+main "$@"

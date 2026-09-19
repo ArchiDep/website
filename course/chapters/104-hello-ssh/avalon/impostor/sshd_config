@@ -1,0 +1,31 @@
+# The impostor of the remote land of Avalon: a second SSH server on the SSH
+# exercise server, with host keys of its own, which the message left on the
+# shore of Avalon claims is the same server on another port.
+#
+# Nobody can ever log in to it. Students who accept its host key without
+# checking it only get the banner, which tells them what they just did. It
+# never asks for a password, since a student who trusted it would type their
+# real one: it only offers public key authentication, and accepts no key.
+#
+# Run it next to the real SSH server, as root:
+#
+#     ssh-keygen -q -t ed25519 -N '' -f /etc/ssh/avalon-impostor/ssh_host_ed25519_key
+#     /usr/sbin/sshd -f /etc/ssh/avalon-impostor/sshd_config
+
+Port 2222
+HostKey /etc/ssh/avalon-impostor/ssh_host_ed25519_key
+PidFile /run/sshd-avalon-impostor.pid
+
+AuthenticationMethods publickey
+PubkeyAuthentication yes
+AuthorizedKeysFile none
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+UsePAM no
+
+Banner /etc/ssh/avalon-impostor/banner.txt
+
+DisableForwarding yes
+PermitTTY no
+PrintMotd no

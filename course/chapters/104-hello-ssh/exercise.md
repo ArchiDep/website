@@ -4,7 +4,8 @@ title: Hello SSH
 
 In this series of exercises, you will learn to use the `ssh` command to connect
 to a remote server, and how to copy files to and from such a server using
-various tools.
+various tools. Then you will use them to follow a parrot to the remote land of
+Avalon.
 
 ## :exclamation: Connect to the exercise server
 
@@ -424,53 +425,35 @@ side keeps the matching public key.
 
 ## :exclamation: Copy a file with the `scp` command
 
-Create a simple text file on your local machine (using the following command or
-with your favorite text editor):
+The [`scp` (**s**ecure **c**o**p**y) command][scp-command] works like the [`cp`
+(**c**o**p**y) command][cp-command], which copies files on your own machine,
+except that it can copy files to and from other computers that have an SSH
+server running. It uses SSH to transfer the files.
+
+Like `cp`, it takes the file to copy first, then where to copy it:
 
 ```bash
-$> echo World > hello.txt
+$> scp <source> <destination>
 ```
 
-The [`scp` (**s**ecure **c**o**p**y) command][scp-command] works in principle
-like the [`cp` (**c**o**p**y) command][cp-command], which copies files on your
-own machine, except that it can copy files to and from other computers that have
-an SSH server running, using SSH to transfer the files. It reuses part of the
-same syntax as the `ssh` command to connect to an SSH server. Try running this
-command now (replacing `jde` with your username on the SSH exercise server):
+A file on the server is written with the same `<username>@<hostname>` as in the
+`ssh` command, then a colon (`:`), then the path of the file on the server. For
+example, assuming your username is `jde`:
 
-```bash
-$> scp hello.txt jde@ssh.archidep.ch:hello.txt
-hello.txt 100% 6 0.6KB/s 00:00
-```
+- `scp hello.txt jde@ssh.archidep.ch:hello.txt` copies the file `hello.txt` from
+  your machine **to** the server.
+- `scp jde@ssh.archidep.ch:hello.txt hello.txt` copies it **from** the server to
+  your machine.
 
-This command copies your local `hello.txt` file to the home directory of the
-`jde` user account on the remote computer.
+The side that comes first is where the file comes from. Run `scp` **on your own
+machine**, not on the server: your machine is the one that connects to the
+server, like with the `ssh` command.
 
-To check that the file has indeed been copied, connect to the server and use
-some of the commands you have learned so far:
+A path on the server that does not start with `/` starts in your home directory
+**on the server**. `jde@ssh.archidep.ch:hello.txt` is the file `~/hello.txt` of
+the `jde` user, on the server.
 
-```bash
-$> ssh jde@ssh.archidep.ch
-
-$> ls
-hello.txt
-...
-
-$> cat hello.txt
-World
-
-$> exit
-```
-
-You can also copy files from the remote computer to your local computer:
-
-```bash
-$> scp jde@ssh.archidep.ch:hello.txt hello2.txt
-hello.txt 100% 6 5.7KB/s 00:00
-
-$> cat hello2.txt
-World
-```
+You will use `scp` in a moment, on your way to the remote land of Avalon.
 
 {% note type: tip %}
 
@@ -576,12 +559,140 @@ to check the key fingerprint.
 
 {% endnote %}
 
-Once you have successfully connected to the server, copy another file to the
-server using the SFTP application this time. These applications will usually
-allow you to drag-and-drop files to and from the server. Play with it a bit and
-see what you can do.
+Once you have successfully connected to the server, copy a file to the server
+using the SFTP application. These applications will usually allow you to
+drag-and-drop files to and from the server. Play with it a bit and see what you
+can do.
 
 Now you know another way to copy files over SSH.
+
+## :exclamation: The remote land of Avalon
+
+Did you find the treasure of Skull Island in [Hello Shell][hello-shell]? Then
+you remember the parrot. It took you to Skull Island, and when you opened the
+chest, it flew away over the sea, far from your computer, to the remote land of
+Avalon. Follow it, and take your treasure with you: someone there has heard
+about it.
+
+You did not play the treasure hunt? A parrot landed on your window this morning.
+It looked at you, said "SQUAWK!", and flew away over the sea, to the remote land
+of Avalon. Follow it.
+
+{% callout type: exercise %}
+
+**The rule of Avalon.** Avalon is on the SSH exercise server. Your own computer
+is your own land. Each step asks you to do something on the right machine, so
+before you type a command, know which machine your terminal is connected to. It
+helps to keep two terminals open: one logged in to the server, and one on your
+own computer.
+
+{% endcallout %}
+
+To go to Avalon, log in to the server **with your key**, and take the barge:
+
+```bash
+$> dock
+```
+
+Then follow what it says. Your goal: find out where the parrot is.
+
+On the way, you will:
+
+- Show the server that you came with your key, not your password.
+- Copy a file from your computer to the server with `scp`, and another one from
+  the server to your computer.
+- Run a command on the server without logging in.
+
+{% note type: tip %}
+
+Stuck? There is a hint on Avalon: `cat .hint` in `~/avalon`, on the server. Want
+to start over? Run `dock --restart` on the server.
+
+{% endnote %}
+
+{% solution %}
+
+On your computer, log in to the server, then take the barge on the server:
+
+```bash
+$> ssh jde@ssh.archidep.ch
+$> dock
+$> cd ~/avalon
+$> ./merlin
+$> exit
+```
+
+Merlin wants a gift from your own land. On your computer, send him your treasure
+if you played the treasure hunt, or what your computer says about itself if you
+did not:
+
+```bash
+$> scp ~/treasure-hunt/bag/treasure jde@ssh.archidep.ch:avalon/
+
+$> uname -a > land.txt
+$> scp land.txt jde@ssh.archidep.ch:avalon/
+```
+
+Then give it to him, on the server:
+
+```bash
+$> ssh jde@ssh.archidep.ch
+$> cd ~/avalon
+$> ./merlin
+$> exit
+```
+
+On your computer, bring his prophecy home and read it:
+
+```bash
+$> scp jde@ssh.archidep.ch:avalon/prophecy .
+$> chmod +x prophecy
+$> ./prophecy
+```
+
+Still on your computer, call the Lady of the Lake without logging in, with the
+word of the prophecy:
+
+```bash
+$> ssh jde@ssh.archidep.ch ./avalon/lady TINTAGEL
+```
+
+Your word is different: it is chosen at random when you arrive on Avalon.
+
+{% endsolution %}
+
+### :question: A message on the shore
+
+When the Lady of the Lake has spoken, someone leaves a message for you on the
+shore of Avalon: `~/avalon/message.txt`, on the server. Read it, and do what a
+careful traveller would do.
+
+{% solution %}
+
+The message tells you to connect to the server on another port, with the `-p`
+option of `ssh`. The address is the same, but your SSH client has never seen
+this port, so it asks you whether you trust the server, and shows you the
+fingerprint of its key:
+
+```bash
+$> ssh -p 2222 jde@ssh.archidep.ch
+The authenticity of host '[ssh.archidep.ch]:2222 ([W.X.Y.Z]:2222)' can't be established.
+ED25519 key fingerprint is SHA256:...
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+```
+
+That fingerprint is not one of the fingerprints on the [dashboard][dashboard]. If
+this were the same server, it would have the same keys. It is a different server
+pretending to be the one you know: answer `no`.
+
+If you answered `yes`, you found out who wrote the message. Your SSH client now
+trusts that server for this port. Make it forget it, on your computer:
+
+```bash
+$> ssh-keygen -R '[ssh.archidep.ch]:2222'
+```
+
+{% endsolution %}
 
 ## :question: Sign a message with your key
 
@@ -767,9 +878,46 @@ are stored on your machine and which are stored on the server.
 You have also learned to use the SSH protocol through other tools such as `scp`
 or your favorite SFTP application to copy files.
 
+On the way to Avalon, you had to know, for every command, which machine it ran
+on: a file made on your computer had to be copied to the server, a prophecy made
+on the server had to be copied to your computer, and the Lady of the Lake only
+answered a command sent from your computer. Your settings stayed on your own
+computer too: the `PATH` that runs your treasure by its name does not exist on
+the server.
+
 If you are more security-minded, you may have also learned to protect your
 private key with a passphrase and to use SSH agent to make it more convenient to
 use SSH.
+
+## :question: Clean up (optional)
+
+Avalon is behind you? You can remove what the treasure hunt and Avalon left on
+your computer:
+
+- Open your shell's configuration file with nano (`~/.bashrc` in the WSL,
+  `~/.zshrc` on macOS), and delete the line you added to your `PATH` in [Hello
+  Shell][hello-shell]. Then open a new terminal.
+- Delete the prophecy you brought home from Avalon, and `land.txt` if you made
+  one:
+
+  ```bash
+  $> rm prophecy land.txt
+  ```
+
+- Delete the treasure hunt:
+
+  ```bash
+  $> rm -r ~/treasure-hunt
+  ```
+
+{% callout type: danger, animate: true %}
+
+The `-r` option makes `rm` delete a directory and everything inside it. This is
+the most dangerous command of this exercise: check the path twice before you
+press Enter. If you insert a space in the wrong place, you could delete your
+entire home directory.
+
+{% endcallout %}
 
 [chmod]: https://man7.org/linux/man-pages/man1/chmod.1.html
 [cp-command]: https://linuxize.com/post/cp-command-in-linux/
@@ -778,6 +926,8 @@ use SSH.
 [ecdsa]: https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
 [eddsa]: https://en.wikipedia.org/wiki/EdDSA
 [filezilla]: https://filezilla-project.org/
+
+[hello-shell]: {% link chapters/102-hello-shell/exercise.md %}
 [ftp]: https://en.wikipedia.org/wiki/File_Transfer_Protocol
 [ftp-security]: https://en.wikipedia.org/wiki/File_Transfer_Protocol#Security
 [hostname-command]: https://man7.org/linux/man-pages/man1/hostname.1.html

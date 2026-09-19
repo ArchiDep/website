@@ -1,0 +1,29 @@
+
+       _______
+      |   |   |     A sword glows in the mist. It looks exactly
+      |   |   |     like Excalibur. It is not Excalibur.
+      |   |   |
+    __|___|___|__
+       \  |  /
+        \ | /
+         \|/
+          V
+
+"Ha! Welcome, traveller. I am Morgan le Fay, and this is not Avalon.
+
+ You were asked if you trusted the key of this server, and you said
+ yes. Did you compare its fingerprint with the fingerprints on the
+ dashboard? They do not match. This is how an attacker in the middle
+ steals a connection: a server that says it is the right one, and a
+ traveller who does not check.
+
+ You are lucky. Your SSH client showed me your key, and a signature
+ made for this connection only. I cannot use it anywhere else. If this
+ server had asked for your password, and you had typed it, I would
+ have it now."
+
+You cannot log in here. Your SSH client now trusts this impostor for
+this port: make it forget, on your own computer, with:
+
+    ssh-keygen -R '[ssh.archidep.ch]:2222'
+

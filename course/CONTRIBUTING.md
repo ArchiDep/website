@@ -133,6 +133,10 @@ the dashboard functionality is only available during the current semester).
   - `test/treasure-hunt.test.sh`: Plays the whole treasure hunt that students
     set up in "Hello Shell". CI runs it on macOS and Ubuntu; the file says how to
     run it locally.
+  - `test/avalon.test.sh`: Plays the remote land of Avalon of "Hello SSH", from
+    a student's computer against the SSH exercise server, both in Docker
+    containers built from `test/avalon/`. CI runs it on Ubuntu; the file says
+    how to run it locally.
   - `tsconfig.json`: Base TypeScript configuration file.
   - `tsconfig.assets.json`: TypeScript configuration for client-side
     assets.
