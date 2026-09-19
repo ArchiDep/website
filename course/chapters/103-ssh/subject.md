@@ -522,8 +522,29 @@ enter aes-256-cbc encryption password:
 Verifying - enter aes-256-cbc encryption password:
 ```
 
-The ciphertext stored in the `ciphertext.aes` file cannot be decrypted without
-the key. The `-d` option makes the same command **d**ecrypt its input instead of
+Look at the ciphertext stored in the `ciphertext.aes` file. The `-v` option of
+the `cat` command makes it show **non-printing characters** as visible symbols
+like `^Q` or `M-^H`, instead of sending them to your terminal. You should see
+something like this:
+
+```bash
+$> cat -v ciphertext.aes
+Salted__p7`qM-^HM-Z^QM-cM-z^YM-^[M-^]M-PM-hM-{nM- /
+dM-^WYM-?^CM-^DM-J^]YM-^K_t^@M-^QM-^Kbt/M-^M!M-^Q
+```
+
+There is no trace of "too many secrets" in there.
+
+{% note type: more %}
+
+The file starts with `Salted__`: this is not part of your message. It is a label
+followed by a random value, the [**salt**][salt], which OpenSSL combined with
+your password to compute the secret key. It is stored in the file because the
+same salt is needed to compute the same key again when decrypting.
+
+{% endnote %}
+
+The ciphertext cannot be decrypted without the key. The `-d` option makes the same command **d**ecrypt its input instead of
 encrypting it. Entering the same password as before decrypts the ciphertext:
 
 ```bash
@@ -533,6 +554,15 @@ too many secrets
 ```
 
 With a different password, the decryption fails.
+
+{% note %}
+
+The example that showed you the ciphertext before uses `cat -v`. Do not display
+a binary file with `cat` alone. Some of its bytes may happen to be control
+characters that your terminal interprets as commands, which can leave it
+displaying garbage. If that happens, the `reset` command restores it.
+
+{% endnote %}
 
 ### Asymmetric encryption with RSA
 
@@ -572,6 +602,14 @@ $> ls
 ciphertext.rsa plaintext.txt private.pem public.pem
 ```
 
+The ciphertext is unreadable as well, and much longer than the plaintext: RSA
+with a 2048-bit key always produces 256 bytes of ciphertext.
+
+```bash
+$> cat -v ciphertext.rsa
+M-^_M-rVM-BM-"M-lXM-^XM-tM-il^MM-o*^TM-^EM-g9M-q^Q^BM-f^QM-no[...]
+```
+
 The ciphertext can be **decrypted with the corresponding private key**:
 
 ```bash
@@ -581,8 +619,17 @@ too many secrets
 ```
 
 You **cannot decrypt the ciphertext using the public key**, which is not a
-private key at all. And of course, an attacker who has **another private key
-cannot decrypt it either**:
+private key at all:
+
+```bash
+$> openssl pkeyutl -decrypt -inkey public.pem \
+   -pkeyopt rsa_padding_mode:oaep -in ciphertext.rsa
+Could not find private key from public.pem
+[...]
+```
+
+And of course, an attacker who has **another private key cannot decrypt it
+either**:
 
 ```bash
 # Generate another private key
@@ -656,6 +703,7 @@ Verification failure
 [pubkey-math]: https://www.onebigfluke.com/2013/11/public-key-crypto-math-explained.html
 [rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
 [rsync]: https://en.wikipedia.org/wiki/Rsync
+[salt]: https://en.wikipedia.org/wiki/Salt_(cryptography)
 [scp]: https://en.wikipedia.org/wiki/Secure_copy
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
 [shell]: https://en.wikipedia.org/wiki/Shell_(computing)
