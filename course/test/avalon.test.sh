@@ -300,6 +300,7 @@ check "Merlin reads where the student's home is" output_contains "homes are in /
 check "Merlin sends the student to try treasure" output_contains "Command not found"
 step "the treasure runs on Avalon by its path" 0 "ssh $LOGIN 'cd avalon && ./treasure'"
 check "it is the treasure" output_contains "YOU FOUND THE TREASURE"
+check "the parrot is waiting on Avalon" output_contains "You followed me"
 step "the prophecy reads on the student's computer" 0 "
   scp -q $LOGIN:avalon/prophecy . && chmod +x prophecy && ./prophecy"
 WORD=$(word_of_the_prophecy)

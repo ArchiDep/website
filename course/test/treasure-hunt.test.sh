@@ -239,6 +239,16 @@ check "no bonus without the idol" eval '! output_contains "golden idol"'
 (cd "$HUNT/jungle/ruins/catacombs" && mv "$idols" ~/treasure-hunt/bag/)
 OUTPUT=$(cd / && PATH="$PATH:$HUNT/bag" treasure 2>&1)
 check "the idol gives a bonus" output_contains "golden idol"
+check "the parrot flies away over the sea" output_contains "Follow me"
+# The treasure is a file: copied to another machine, it runs there and knows
+# the island is not around.
+mv "$HUNT" "$HOME/sailed-away"
+OUTPUT=$(cd / && "$HOME/sailed-away/bag/treasure" 2>&1)
+check "far from the island, the parrot is already there" \
+  output_contains "You followed me"
+check "far from the island, it is still the treasure" \
+  output_contains "YOU FOUND THE TREASURE"
+mv "$HOME/sailed-away" "$HUNT"
 
 echo "Programs read with cat"
 # ends_with_banner <file> <command>: the end of the file, which is what cat

@@ -1427,6 +1427,39 @@ if [ -e "$HUNT/bag/golden-idol" ]; then
 
 SEALED
 fi
+
+# The treasure is a file, so it can be copied to another machine and run
+# there. It knows it is far from home when the island it was made on is not
+# around, and the parrot says something else.
+if [ -d "$HUNT" ]; then
+  reveal <<'SEALED'
+You hear wings behind you. The parrot lands on the open chest, picks
+up one gold coin in its beak, and flies away over the sea, towards
+the rising sun.
+
+         ,
+        (o>    "SQUAWK! Follow me... if you can!"
+        //\
+        V_/_
+
+It is going somewhere no boat of yours can reach.
+
+SEALED
+else
+  reveal <<'SEALED'
+Wings again. The parrot is already here, waiting, on this side of the
+sea.
+
+         ,
+        (o>    "SQUAWK! You followed me! What took you so long?"
+        //\
+        V_/_
+
+It drops a gold coin at your feet. Skull Island is far away now: this
+treasure crossed the sea as a file, and it still works here.
+
+SEALED
+fi
 END_TREASURE
 
 # ---------------------------------------------------------------------------
