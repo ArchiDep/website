@@ -130,8 +130,8 @@ HOW TO PLAY
 - Places are directories. Move from place to place with cd.
 - Look around with ls. Read things with cat.
 - Lost? pwd tells you where you are.
-- You have a bag: it is the directory named bag. Things you pick up
-  go in your bag.
+- Your bag is the directory named bag. Things you pick up go in it.
+  Read your explorer's handbook: cat bag/explorers-handbook.txt
 - Some things are programs. You run them with ./ before their name.
 - Stuck? Every place has a hint in a hidden file named .hint.
   You cannot see it with ls, but you can read it:
@@ -140,6 +140,31 @@ HOW TO PLAY
 
 The adventure starts on the beach.
 END_START
+
+text HANDBOOK <<'END_HANDBOOK'
+A small book, worn at the corners. Every explorer who ever landed on
+this island carried one. Most of its pages are gone. These two are
+still readable:
+
+      _____________________ ______________________
+     /                     |                      |
+    |   THE EXPLORER'S     |  "Traveller, one day |
+    |      HANDBOOK        |   you will forget a  |
+    |                      |   word of the old    |
+    |    ~~~~~~~~~~~~~     |   tongue. Everyone   |
+    |    ~~~~~~~~~~~       |   does. Open the     |
+    |    ~~~~~~~~~~~~~     |   great book of      |
+    |                      |   commands, and it   |
+    |                      |   will come back."   |
+    |______________________|______________________|
+
+The great book of commands is here:
+
+    https://archidep.ch/cheatsheets/command-line/
+
+Every command you need on this island is written in it. Keep this
+handbook in your bag, and open the great book whenever you are stuck.
+END_HANDBOOK
 
 text START_HINT <<'END_START_HINT'
 HINT
@@ -453,6 +478,9 @@ in, write ./ before its name:
 
 This one never stops by itself. To interrupt a program that is
 running, press Ctrl-C.
+
+See "Run a program" in the command line cheatsheet:
+https://archidep.ch/cheatsheets/command-line/#run-a-program-program
 END_CAVE_HINT
 
 text DRAGON <<'END_DRAGON'
@@ -1245,7 +1273,9 @@ executable:
 
     chmod +x chest
 
-You will learn about permissions later in the course.
+You will learn about permissions later in the course. See "Make a
+file executable" in the command line cheatsheet:
+https://archidep.ch/cheatsheets/command-line/#make-a-file-executable-chmod-x
 
 The chest asks for a combination. Look at the coins in your bag.
 END_ISLAND_HINT
@@ -1530,6 +1560,7 @@ build() {
   put "$HUNT/start.txt" "$START"
   put "$HUNT/.hint" "$START_HINT"
   put "$HUNT/bell" "$BELL" 755
+  put "$HUNT/bag/explorers-handbook.txt" "$HANDBOOK"
 
   put "$HUNT/beach/sand.txt" "$SAND"
   put "$HUNT/beach/.bottle.txt" "$BOTTLE"

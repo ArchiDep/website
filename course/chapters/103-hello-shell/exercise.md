@@ -79,7 +79,7 @@ On the way, you will:
   completion.
 - Use relative paths with `..`.
 - Read a long file with `less`.
-- Run a program with `./`, and stop it with `Ctrl-C`.
+- Run a program with `./`, and stop it.
 
 {% note type: tip %}
 
@@ -217,10 +217,10 @@ The parrot at the top of the tower tells you where to go next, as a path.
 Follow it, then ring the bell from the right place. Before you run anything,
 work out where the path goes: count the `..` one by one.
 
-On Skull Island, the chest is a program that you are not allowed to run yet.
-`chmod +x` fixes that. You will learn about permissions later in the course. The
-chest then asks for a combination: look at the coins you've collected in your
-bag.
+On Skull Island, the chest is a program that you are not allowed to run yet. See
+["Make a file executable" in the **Command Line** cheatsheet][cheatsheet-chmod].
+You will learn about permissions later in the course. The chest then asks for a
+combination: look at the coins you've collected in your bag.
 
 {% solution %}
 
@@ -299,34 +299,6 @@ $> treasure
 
 {% endsolution %}
 
-## :question: Make your own hunt (optional)
-
-Make a small hunt of your own, with three clues, and a script that plays it. The
-[Shell Scripting][shell-scripting] chapter explains what you need.
-
-- Create a directory with three places in it. Put a clue in each one.
-- Write a script that goes through the places in order and shows each clue with
-  `cat`. Wait two seconds between clues with `sleep 2`.
-- Make the script executable, and run it.
-
-{% solution %}
-
-```bash
-#!/bin/bash
-cd ~/my-hunt || exit 1
-
-show_clue() {
-  cat "$1"
-  sleep 2
-}
-
-show_clue cave/echo.txt
-show_clue lake/fish.txt
-show_clue forest/tree.txt
-```
-
-{% endsolution %}
-
 ## :question: Clean up (optional)
 
 The hunt is over? You can remove it from your computer:
@@ -356,11 +328,41 @@ You moved, renamed, copied, created, edited and deleted files. You ran programs,
 stopped one, and made another one executable. Finally, you added a directory to
 your `PATH`, so that the shell finds the treasure from anywhere.
 
+## :space_invader: Make your own hunt
+
+You played someone else's hunt. Now build one, and make a friend play it. The
+[Shell Scripting][shell-scripting] chapter explains what you need.
+
+- Create a directory with three places in it. Put a clue in each one.
+- Write a script that goes through the places in order and shows each clue with
+  `cat`. Wait two seconds between clues for dramatic effect with `sleep 2`.
+- Make the script executable, and run it.
+
+{% solution %}
+
+```bash
+#!/bin/bash
+cd ~/my-hunt || exit 1
+
+show_clue() {
+  cat "$1"
+  sleep 2
+}
+
+show_clue cave/echo.txt
+show_clue lake/fish.txt
+show_clue forest/tree.txt
+```
+
+{% endsolution %}
+
+[cheatsheet-chmod]: {% link cheatsheets/command-line/cheatsheet.md %}#make-a-file-executable-chmod-x
 [cheatsheet-copy]: {% link cheatsheets/command-line/cheatsheet.md %}#copy-stuff-cp
 [cheatsheet-delete]: {% link cheatsheets/command-line/cheatsheet.md %}#delete-stuff-rm
 [cheatsheet-find]: {% link cheatsheets/command-line/cheatsheet.md %}#find-files-find
 [cheatsheet-move]: {% link cheatsheets/command-line/cheatsheet.md %}#move-stuff-mv
 [cheatsheet-read]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
+[cheatsheet-run]: {% link cheatsheets/command-line/cheatsheet.md %}#run-a-program-program
 [command-line]: {% link chapters/101-command-line/subject.md %}
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}
 [command-line-path]: {% link chapters/101-command-line/subject.md %}#the-path-variable

@@ -74,7 +74,12 @@ STATUS=$?
 check "the setup piped into bash succeeds" [ "$STATUS" -eq 0 ]
 check "the setup tells students to cd into the hunt" output_contains "cd ~/treasure-hunt"
 check "the hunt starts with start.txt" [ -f "$HUNT/start.txt" ]
-check "the bag is empty" [ -z "$(ls "$HUNT/bag")" ]
+check "the bag holds only the handbook" \
+  [ "$(ls "$HUNT/bag")" = explorers-handbook.txt ]
+check "the handbook points to the command line cheatsheet" \
+  grep -q "archidep.ch/cheatsheets/command-line/" "$HUNT/bag/explorers-handbook.txt"
+check "the start tells students to read the handbook" \
+  grep -q "cat bag/explorers-handbook.txt" "$HUNT/start.txt"
 check "the bottle is hidden on the beach" [ -f "$HUNT/beach/.bottle.txt" ]
 check "the temple's name has a space" [ -d "$HUNT/old temple" ]
 for place in . beach beach/boat "old temple" jungle jungle/river \
@@ -238,7 +243,8 @@ fi
 OUTPUT=$(cat "$SETUP" | TREASURE_HUNT_RESTART=yes "$BASH" 2>&1)
 STATUS=$?
 check "the setup rebuilds the hunt when told to" [ "$STATUS" -eq 0 ]
-check "the rebuilt hunt starts over" [ ! -e "$HUNT/skull-island" -a -z "$(ls "$HUNT/bag")" ]
+check "the rebuilt hunt starts over" \
+  [ ! -e "$HUNT/skull-island" -a "$(ls "$HUNT/bag")" = explorers-handbook.txt ]
 
 echo "Terminal size"
 # setup_in_terminal <lines> <columns>: runs the setup in a pseudo-terminal of

@@ -294,6 +294,15 @@ Recursively list all files in the current directory:
 $> find .
 ```
 
+Recursively find a file by its exact name, however deep it is buried. `find`
+prints the path of each file it found, which you can then use with another
+command:
+
+```bash
+$> find . -name notes.txt
+./projects/archidep/notes.txt
+```
+
 Recursively list all JavaScript files in the current directory:
 
 ```bash
@@ -307,6 +316,62 @@ Recursively find all files in the current directory containing the word "foo":
 ```bash
 $> grep -R foo .
 ```
+
+## Running programs
+
+### Run a program (`./program`)
+
+When you are in the directory that contains a program, run it by writing `./`
+before its name:
+
+```bash
+$> ./program
+```
+
+The `./` is not decoration: it is a path to the program, since `.` is the
+current directory. Without it, the shell only looks for a command named
+`program` in the directories of your [`$PATH`](#path), and answers `command not
+found`.
+
+Any other path to the program works too, relative or absolute, from wherever you
+are:
+
+```bash
+$> tools/program
+
+$> ../tools/program
+
+$> ~/tools/program
+
+$> /home/jde/tools/program
+```
+
+### Make a file executable (`chmod +x`)
+
+A file is only a program if it has the permission to be executed. A script you
+just wrote or downloaded often does not have it yet, and the shell refuses to
+run it:
+
+```bash
+$> ./program
+permission denied: ./program
+```
+
+Add that permission with the `chmod` command (**ch**ange **mod**e), `+x` meaning
+**add** the e**x**ecute permission:
+
+```bash
+$> chmod +x program
+$> ./program
+```
+
+{% callout type: warning %}
+
+Running a program gives it the right to do anything you can do on your computer:
+read, change or delete any of your files. Only make a file executable if you
+trust where it comes from.
+
+{% endcallout %}
 
 ## Environment variables
 
