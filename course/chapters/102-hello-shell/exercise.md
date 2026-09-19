@@ -384,26 +384,12 @@ later in the course has no Finder, no windows, no GUI at all: a text-based
 command line is the only way in, and everything you just did on the island is
 what you will be doing on it when you get there.
 
-## :question: Clean up (optional)
+## :exclamation: Keep your treasure
 
-The hunt is over? You can remove it from your computer:
-
-- Open your shell's configuration file with nano again, and delete the line you
-  added to your `PATH`. Then open a new terminal.
-- Delete the hunt:
-
-  ```bash
-  $> rm -r ~/treasure-hunt
-  ```
-
-{% callout type: danger, animate: true %}
-
-The `-r` option makes `rm` delete a directory and everything inside it. This is
-the most dangerous command of this exercise: check the path twice before you
-press Enter. If you insert a space in the wrong place, you could delete your
-entire home directory.
-
-{% endcallout %}
+The hunt is over, but do not delete it yet: keep `~/treasure-hunt` and the line
+you added to your `PATH`. Your adventure continues in [Hello SSH][hello-ssh],
+and your treasure will be useful there. That exercise ends by explaining how to
+clean up everything.
 
 ## :space_invader: Make your own hunt
 
@@ -528,4 +514,5 @@ twice, that is a script asking to be written.
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}
 [command-line-editor]: {% link chapters/101-command-line/subject.md %}#setting-nano-as-the-default-editor
 [command-line-path]: {% link chapters/101-command-line/subject.md %}#the-path-variable
+[hello-ssh]: {% link chapters/104-hello-ssh/exercise.md %}
 [shell-scripting]: {% link cheatsheets/shell-scripting/cheatsheet.md %}
