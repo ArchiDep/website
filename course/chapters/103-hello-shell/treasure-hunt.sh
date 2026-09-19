@@ -249,6 +249,10 @@ shows all files, the hidden ones too:
 
     ls -a
 
+One of the hidden files is a bottle. Read it like any other file:
+
+    cat .bottle.txt
+
 To go to the old temple from here, go up with .. first. A name with a
 space must be in quotes:
 
@@ -373,6 +377,7 @@ shipwreck.
 Lost? cd with nothing after it always takes you home, to ~. From
 there:
 
+    cd
     cd treasure-hunt
 
 The catacombs are optional. You can come back for the idol later.
@@ -1222,9 +1227,15 @@ mkdir "$HUNT/skull-island" &&
 unpack "$HUNT/skull-island/chest" 644 <<'SEALED_CHEST' &&
 @@CHEST@@
 SEALED_CHEST
-unpack "$HUNT/skull-island/.hint" 644 <<'SEALED_ISLAND_HINT' || exit 1
+unpack "$HUNT/skull-island/.hint" 644 <<'SEALED_ISLAND_HINT' &&
 @@ISLAND_HINT@@
 SEALED_ISLAND_HINT
+unpack "$HUNT/beach/boat/oars.txt" 644 <<'SEALED_OARS_AFTER' &&
+@@OARS_AFTER@@
+SEALED_OARS_AFTER
+unpack "$HUNT/beach/boat/.hint" 644 <<'SEALED_BOAT_HINT_AFTER' || exit 1
+@@BOAT_HINT_AFTER@@
+SEALED_BOAT_HINT_AFTER
 
 mkdir -p "$HUNT/bag"
 reveal > "$HUNT/bag/coin-3" <<'SEALED'
@@ -1277,6 +1288,24 @@ A gold coin was stuck in the bell. You put it in your bag.
 Skull Island is in ~/treasure-hunt/skull-island. There is a chest.
 SEALED
 END_BELL
+
+# What the boat says once the bell has taken you across, in place of the oars
+# and the hint that wait for the parrot to tell you where to sail.
+text OARS_AFTER <<'END_OARS_AFTER'
+Two old oars, still wet. This boat has taken you to Skull Island.
+
+The island is in ~/treasure-hunt/skull-island. There is a chest
+waiting for you there.
+END_OARS_AFTER
+
+text BOAT_HINT_AFTER <<'END_BOAT_HINT_AFTER'
+HINT
+
+You have already sailed. Skull Island is two levels up from the boat,
+then down into the island:
+
+    cd ../../skull-island
+END_BOAT_HINT_AFTER
 
 # ---------------------------------------------------------------------------
 # Part 3: the treasure
@@ -1551,6 +1580,8 @@ build() {
   embed CHEST TREASURE TREASURE
   embed BELL CHEST CHEST
   embed BELL ISLAND_HINT ISLAND_HINT
+  embed BELL OARS_AFTER OARS_AFTER
+  embed BELL BOAT_HINT_AFTER BOAT_HINT_AFTER
   embed STAIRS PARROT PARROT
   embed STAIRS TOP_HINT TOP_HINT
   embed LEVER CURSED_CHEST CURSED_CHEST

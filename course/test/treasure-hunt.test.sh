@@ -94,6 +94,10 @@ check "every address the hunt shows carries the edition" addresses_carry_the_edi
 check "the start tells students to read the handbook" \
   grep -q "cat bag/explorers-handbook.txt" "$HUNT/start.txt"
 check "the bottle is hidden on the beach" [ -f "$HUNT/beach/.bottle.txt" ]
+check "the beach's hint shows how to read the bottle" \
+  grep -q "cat .bottle.txt" "$HUNT/beach/.hint"
+check "the boat waits for somewhere to sail to" \
+  grep -q "Nobody has told you yet" "$HUNT/beach/boat/oars.txt"
 check "the temple's name has a space" [ -d "$HUNT/old temple" ]
 for place in . beach beach/boat "old temple" jungle jungle/river \
   jungle/river/waterfall jungle/ruins jungle/ruins/catacombs shipwreck cave \
@@ -209,6 +213,10 @@ gate "the bell rings from the boat, by its full path" 0 \
 check "skull island appears with a chest that cannot run" \
   is_not_executable "$HUNT/skull-island/chest"
 check "the bell drops coin 3" [ -n "$(digit_of "$HUNT/bag/coin-3")" ]
+check "the oars no longer wait for somewhere to sail to" \
+  grep -q "taken you to Skull Island" "$HUNT/beach/boat/oars.txt"
+check "the boat's hint points at the island it sailed to" \
+  grep -q "cd ../../skull-island" "$HUNT/beach/boat/.hint"
 
 echo "The chest"
 gate "the chest cannot run before chmod" 126 "$HUNT/skull-island" ./chest

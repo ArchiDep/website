@@ -323,10 +323,10 @@ entire home directory.
 ## :checkered_flag: What just happened?
 
 You moved around directories with relative and absolute paths, and read files
-with `cat` and `less`. You found hidden files and a file lost deep in a tree.
-You moved, renamed, copied, created, edited and deleted files. You ran programs,
-stopped one, and made another one executable. Finally, you added a directory to
-your `PATH`, so that the shell finds the treasure from anywhere.
+with `cat` and `less`. You found hidden files and (possibly) a file lost deep in
+a tree. You moved, renamed, copied, created, edited and deleted files. You ran
+programs, stopped one, and made another one executable. Finally, you added a
+directory to your `PATH`, so that the shell finds the treasure from anywhere.
 
 ## :space_invader: Make your own hunt
 
