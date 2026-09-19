@@ -12,6 +12,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Attributes do
   Values keep the type the lexer gave them, so `columns: 3` is the number 3.
   """
 
+  alias ArchiDep.CourseSite.Renderer.Liquid.ParseError
+
   @doc """
   Read the attribute list out of the tokens of a tag, as
   `Solid.Lexer.tokenize_tag_end/1` produces them.
@@ -19,8 +21,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Attributes do
   `{% callout type: more, id: what-is-npm %}` gives `%{"type" => "more", "id" =>
   "what-is-npm"}`, and `{% cols columns: 3 %}` gives `%{"columns" => 3}`.
   """
-  @spec parse(Solid.Lexer.tokens()) ::
-          {:ok, %{String.t() => term()}} | {:error, String.t(), Solid.Lexer.loc()}
+  @spec parse(Solid.Lexer.tokens()) :: {:ok, %{String.t() => term()}} | ParseError.t()
   def parse(tokens), do: collect(tokens, %{})
 
   defp collect([{:end, _loc}], attributes), do: {:ok, attributes}
@@ -32,18 +33,19 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Attributes do
       [value_token | rest] ->
         case value(value_token) do
           {:ok, value} -> collect(rest, Map.put(attributes, key, value))
-          :error -> {:error, "Unexpected attribute value", loc(value_token)}
+          :error -> ParseError.new("Unexpected attribute value", loc(value_token))
         end
 
       [] ->
-        {:error, "Missing value for attribute #{inspect(key)}", %{line: 1, column: 1}}
+        ParseError.new("Missing value for attribute #{inspect(key)}", %{line: 1, column: 1})
     end
   end
 
   defp collect([token | _rest], _attributes),
-    do: {:error, "Expected a `key: value` attribute", loc(token)}
+    do: ParseError.new("Expected a `key: value` attribute", loc(token))
 
-  defp collect([], _attributes), do: {:error, "Unterminated attributes", %{line: 1, column: 1}}
+  defp collect([], _attributes),
+    do: ParseError.new("Unterminated attributes", %{line: 1, column: 1})
 
   defp value({:string, _loc, string, _quotes}), do: {:ok, string}
   defp value({:integer, _loc, integer}), do: {:ok, integer}

@@ -15,6 +15,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawBody do
   closing tag, whitespace control included.
   """
 
+  alias ArchiDep.CourseSite.Renderer.Liquid.ParseError
   alias Solid.ParserContext
 
   @whitespaces [" ", "\f", "\r", "\t", "\v"]
@@ -23,7 +24,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawBody do
   Read `context.rest` up to the matching `{% end<tag> %}`.
   """
   @spec parse(ParserContext.t(), String.t()) ::
-          {:ok, String.t(), ParserContext.t()} | {:error, String.t(), Solid.Lexer.loc()}
+          {:ok, String.t(), ParserContext.t()} | ParseError.t()
   def parse(%ParserContext{} = context, end_tag_name) do
     case scan(context, end_tag_name, [], []) do
       {:ok, body, context} -> {:ok, IO.iodata_to_binary(body), context}
@@ -64,8 +65,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawBody do
         end
 
       "" ->
-        {:error, "Tag not terminated, expected {% #{end_tag_name} %}",
-         %{line: context.line, column: context.column}}
+        ParseError.new("Tag not terminated, expected {% #{end_tag_name} %}", context)
 
       <<character, rest::binary>> ->
         scan(

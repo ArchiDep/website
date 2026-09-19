@@ -15,6 +15,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.IncludeTag do
 
   @behaviour Solid.Tag
 
+  alias ArchiDep.CourseSite.Renderer.Liquid.ParseError
   alias ArchiDep.CourseSite.Renderer.Liquid.RawMarkup
 
   @enforce_keys [:loc, :path, :variables]
@@ -36,7 +37,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.IncludeTag do
     end
   end
 
-  defp markup("", loc), do: {:error, "The include tag requires the path of a partial", loc}
+  defp markup("", loc),
+    do: ParseError.new("The include tag requires the path of a partial", loc)
 
   defp markup(markup, _loc) do
     [path | _rest] = String.split(markup, ~r/\s+/, parts: 2)

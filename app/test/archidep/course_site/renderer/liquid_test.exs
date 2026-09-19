@@ -47,6 +47,17 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
                 ]}
     end
 
+    test "reports a link tag that names no page at all" do
+      assert render("See the [nothing]({% link %}).\n") ==
+               {:error,
+                [
+                  liquid_error(
+                    "The link tag requires the path of a page",
+                    %{line: 1, column: 19}
+                  )
+                ]}
+    end
+
     test "reports every problem of a document rather than the first" do
       assert render("""
              {% boom %}
@@ -80,6 +91,17 @@ defmodule ArchiDep.CourseSite.Renderer.LiquidTest do
                   RenderError.new(
                     {:unknown_include, "icons/nope.html"},
                     "chapters/701-paas/subject.md",
+                    %{line: 1, column: 1}
+                  )
+                ]}
+    end
+
+    test "reports an include tag that names no partial at all" do
+      assert render("{% include %}\n") ==
+               {:error,
+                [
+                  liquid_error(
+                    "The include tag requires the path of a partial",
                     %{line: 1, column: 1}
                   )
                 ]}

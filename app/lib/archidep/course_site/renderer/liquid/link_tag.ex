@@ -20,6 +20,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.LinkTag do
   @behaviour Solid.Tag
 
   alias ArchiDep.CourseSite.PageRef
+  alias ArchiDep.CourseSite.Renderer.Liquid.ParseError
   alias ArchiDep.CourseSite.Renderer.Liquid.RawMarkup
   alias ArchiDep.CourseSite.Renderer.Liquid.Registers
   alias ArchiDep.CourseSite.Renderer.RenderError
@@ -49,7 +50,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.LinkTag do
     end
   end
 
-  defp source_path("", loc), do: {:error, "The link tag requires the path of a page", loc}
+  defp source_path("", loc),
+    do: ParseError.new("The link tag requires the path of a page", loc)
 
   defp source_path(markup, _loc),
     do: {:ok, markup |> String.trim("\"") |> String.trim("'") |> String.trim()}

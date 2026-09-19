@@ -904,6 +904,9 @@ Three rules run across all of them:
   all is a parse error, since there is nothing to render. A value the tag cannot
   use is not: an aside of an unknown kind is shown as a plain note, a row of
   thirteen columns as a row of two, and the value the author wrote is reported.
+  Every parse error is built by
+  [`ParseError`](./renderer/liquid/parse_error.ex), which is what keeps the
+  location `Solid` hands a tag in a shape `Solid` can read back.
 - **A tag emits no whitespace of its own**, for the reason [every tag
   body](#every-tag-body-is-its-own-markdown-document) is its own document: a
   blank line ends an HTML block. The one exception is `mermaid`, whose body may
