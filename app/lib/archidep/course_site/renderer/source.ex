@@ -78,9 +78,15 @@ defmodule ArchiDep.CourseSite.Renderer.Source do
   The `[ref]: url` definitions written at the end of a piece of Markdown.
 
   Definitions are the run of such lines at the very end, which is where the
-  course writes them. One in the middle of a document is left to the Markdown
-  renderer, which resolves it for the document but not for a fragment extracted
-  from it.
+  course writes them, and **blank lines inside that run do not end it**. A
+  definition whose destination is still `{% link %}` holds spaces, so Markdown
+  reads it as a paragraph rather than as a definition, and the formatter puts a
+  blank line between it and its neighbours. Ending the run there would drop
+  every definition above the first such line — silently, since a reference link
+  nothing defines is rendered as the text it was written as. One definition
+  genuinely in the middle of a document, with prose after it, is still left to
+  the Markdown renderer, which resolves it for the document but not for a
+  fragment extracted from it.
 
   This is applied to a file by `parse/1` and to those definitions again once
   their Liquid has been expanded, which is what makes the pair of them the same
@@ -99,7 +105,8 @@ defmodule ArchiDep.CourseSite.Renderer.Source do
     |> Enum.reverse()
     |> Enum.map(&String.trim/1)
     |> Enum.drop_while(&(&1 == ""))
-    |> Enum.take_while(&Regex.match?(@link_reference, &1))
+    |> Enum.take_while(&(&1 == "" or Regex.match?(@link_reference, &1)))
+    |> Enum.reject(&(&1 == ""))
     |> Enum.reverse()
     |> Enum.map(fn line ->
       [_line, name, url] = Regex.run(@link_reference, line)

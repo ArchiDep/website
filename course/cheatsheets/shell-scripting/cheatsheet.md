@@ -8,9 +8,9 @@ machine do for you, the same way every time. That file is a script, and this is
 how you write one with [Bash][bash]. Most of it also works in other POSIX
 shells like [`sh`][sh] and [Zsh][zsh].
 
-The companion to this page is the [Command Line
-Cheatsheet][command-line-cheatsheet], which covers the commands you put _in_ a
-script.
+The companion to this page is the [Command Line Cheatsheet]({% link
+cheatsheets/command-line/cheatsheet.md %}), which covers the commands you put
+_in_ a script.
 
 ## What is a script?
 
@@ -87,7 +87,9 @@ Hello World
 
 The `./` matters: without it, the shell looks for `test.sh` in the directories
 of your `PATH` instead of in the current directory. See [make a file
-executable][cheatsheet-chmod] and [run a program][cheatsheet-run].
+executable]({% link cheatsheets/command-line/cheatsheet.md
+%}#make-a-file-executable-chmod-x) and [run a program]({% link
+cheatsheets/command-line/cheatsheet.md %}#run-a-program-program).
 
 {% endnote %}
 
@@ -391,10 +393,6 @@ flags][bash-option-flags] for the rest.
 [bash-shebang]: https://tldp.org/LDP/abs/html/sha-bang.html
 [bash-special-vars]: https://tldp.org/LDP/abs/html/refcards.html#AEN22402
 [bash-test-constructs]: https://www.tldp.org/LDP/abs/html/testconstructs.html
-
-[cheatsheet-chmod]: {% link cheatsheets/command-line/cheatsheet.md %}#make-a-file-executable-chmod-x
-[cheatsheet-run]: {% link cheatsheets/command-line/cheatsheet.md %}#run-a-program-program
-[command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}
 [node]: https://nodejs.org
 [php]: http://php.net
 [python]: https://www.python.org

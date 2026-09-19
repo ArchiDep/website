@@ -143,6 +143,17 @@ defmodule ArchiDep.CourseSite.Renderer.SourceTest do
                [{"cli", "{% link chapters/101-command-line/subject.md %}"}]
     end
 
+    test "reads definitions the formatter has split into blocks" do
+      assert Source.link_references(
+               "Text.\n\n[a]: https://example.com/a\n\n[b]: {% link chapters/101-command-line/subject.md %}\n[c]: /c\n"
+             ) ==
+               [
+                 {"a", "https://example.com/a"},
+                 {"b", "{% link chapters/101-command-line/subject.md %}"},
+                 {"c", "/c"}
+               ]
+    end
+
     test "leaves a definition that is not at the end to the Markdown renderer" do
       assert Source.link_references("[a]: https://example.com/a\n\nText.\n") == []
     end
