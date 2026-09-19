@@ -330,15 +330,88 @@ your `PATH`, so that the shell finds the treasure from anywhere.
 
 ## :space_invader: Make your own hunt
 
-You played someone else's hunt. Now build one, and make a friend play it. The
-[Shell Scripting][shell-scripting] chapter explains what you need.
+You played someone else's hunt. Now build one, and make a friend play it.
 
-- Create a directory with three places in it. Put a clue in each one.
-- Write a script that goes through the places in order and shows each clue with
-  `cat`. Wait two seconds between clues for dramatic effect with `sleep 2`.
-- Make the script executable, and run it.
+Create a directory with three places in it. Put a clue in each one, each clue
+pointing at the next place, and the treasure in the last place.
+
+Then play your own hunt by hand, the way you played the one on the island: see
+what's there (`ls`), read the first clue (`cat`), follow it to the next place
+(`cd`), and go on until you dig up the treasure.
 
 {% solution %}
+
+Build the island: three places, a clue in each one, and the treasure at the end
+of the trail.
+
+```bash
+$> mkdir -p ~/my-hunt/cave ~/my-hunt/lake ~/my-hunt/forest
+$> cd ~/my-hunt
+
+$> echo "An echo answers you: GO TO THE LAKE." > cave/echo.txt
+$> echo "A fish jumps out and shouts: THE FOREST!" > lake/fish.txt
+$> echo "The oldest tree whispers: DIG UNDER MY ROOTS." > forest/tree.txt
+$> echo "A chest full of gold. The hunt is over!" > forest/treasure.txt
+```
+
+Check that the island looks the way you think it does:
+
+```bash
+$> find .
+.
+./cave
+./cave/echo.txt
+./forest
+./forest/treasure.txt
+./forest/tree.txt
+./lake
+./lake/fish.txt
+```
+
+Then play it, one clue at a time:
+
+```bash
+$> cd ~/my-hunt
+$> cat cave/echo.txt
+$> cat lake/fish.txt
+$> cat forest/tree.txt
+$> cat forest/treasure.txt
+```
+
+{% endsolution %}
+
+### :space_invader: Automate it
+
+You have to type those four commands, in that order, every single time you want
+to see your hunt played, and so does everyone you show it to. Write that walk
+down once instead, in a file the computer runs for you.
+
+That is what a script is: anything you can type in your terminal, you can put in
+a file and have the machine do for you, the same way every time, as often as you
+want, on any machine. The treasure hunt you played on the island is itself such
+a script: it typed several hundred `mkdir`, `echo` and `chmod` commands so that
+you did not have to.
+
+- Write a script that goes through the places in order and shows each clue with
+  `cat`. Pause two seconds between clues for dramatic effect with `sleep 2`.
+- Make the script executable (["Make a file executable"][cheatsheet-chmod]), then
+  run it (["Run a program"][cheatsheet-run]).
+
+{% note type: tip %}
+
+Read [Shell Scripting][shell-scripting]: it has everything you need here — the
+`#!/bin/bash` line every script starts with, how to define a function, and how
+to run the finished script.
+
+{% endnote %}
+
+{% solution %}
+
+Write the script with nano (or vim):
+
+```bash
+$> nano ~/my-hunt/play
+```
 
 ```bash
 #!/bin/bash
@@ -352,7 +425,19 @@ show_clue() {
 show_clue cave/echo.txt
 show_clue lake/fish.txt
 show_clue forest/tree.txt
+cat forest/treasure.txt
 ```
+
+Make it executable, and run it:
+
+```bash
+$> chmod +x ~/my-hunt/play
+$> ~/my-hunt/play
+```
+
+The same four `cat` commands you typed by hand, in the same order, but written
+down once. From now on, whenever you catch yourself typing the same commands
+twice, that is a script asking to be written.
 
 {% endsolution %}
 
