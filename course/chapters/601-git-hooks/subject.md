@@ -16,7 +16,7 @@ Learn the basics of Git hooks.
 - [Git Branching]({% link chapters/202-git-branching/slides.md %})
 - [Collaborating with Git]({% link chapters/203-git-collaborating/slides.md %})
 - [Collaborating with Git]({% link chapters/204-hello-github/exercise.md %})
-- [Shell Scripting]({% link chapters/102-shell-scripting/subject.md %})
+- [Shell Scripting]({% link cheatsheets/shell-scripting/cheatsheet.md %})
 
 <!-- more -->
 

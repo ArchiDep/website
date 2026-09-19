@@ -14,4 +14,13 @@
 #   2025:
 #     /course/104-ssh/: /course/106-secure-shell/
 #     /cheatsheets/unix/: gone
-{}
+#
+# Only editions that have ended belong here. The edition being taught has a
+# manifest in `archives` too, and that one moves with the material rather than
+# being superseded by it: see "What the new edition owes" in docs/rollover.md.
+
+# "Shell Scripting" was never taught: it is reference material students look
+# things up in. It became a cheatsheet, and a cheatsheet is a different kind of
+# page from a chapter, so the slug it kept is not enough to match it.
+2025:
+  /course/102-shell-scripting/: /cheatsheets/shell-scripting/

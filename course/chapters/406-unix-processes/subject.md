@@ -13,7 +13,7 @@ and make them communicate.
 **Recommended reading**
 
 - [Command Line Introduction]({% link chapters/101-command-line/subject.md %})
-- [Secure Shell (SSH)]({% link chapters/104-ssh/subject.md %})
+- [Secure Shell (SSH)]({% link chapters/103-ssh/subject.md %})
 
 ## What is a process?
 

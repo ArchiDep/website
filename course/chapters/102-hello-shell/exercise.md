@@ -28,7 +28,7 @@ the hunt will send you there too.
 Run this command:
 
 ```bash
-$> curl -fsSL https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/103-hello-shell/treasure-hunt.sh | bash
+$> curl -fsSL https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/102-hello-shell/treasure-hunt.sh | bash
 ```
 
 `curl` downloads a script. The pipe (`|`) sends that script to `bash`, which
@@ -40,7 +40,7 @@ directory, and everything the hunt needs inside it.
 **Be careful with `curl … | bash`.** It runs a program from the internet on your
 computer, and you do not see what it does before it runs. Only do this with a
 script from someone you trust. You can [read this
-one](https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/103-hello-shell/treasure-hunt.sh)
+one](https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/102-hello-shell/treasure-hunt.sh)
 before you run it. It only writes in `~/treasure-hunt`.
 
 {% endcallout %}
@@ -455,9 +455,9 @@ you did not have to.
 
 {% note type: tip %}
 
-Read [Shell Scripting][shell-scripting]: it has everything you need here — the
-`#!/bin/bash` line every script starts with, how to define a function, and how
-to run the finished script.
+The [Shell Scripting Cheatsheet][shell-scripting] has everything you need here —
+the `#!/bin/bash` line every script starts with, how to define a function, and
+how to run the finished script.
 
 {% endnote %}
 
@@ -506,4 +506,4 @@ twice, that is a script asking to be written.
 [command-line]: {% link chapters/101-command-line/subject.md %}
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}
 [command-line-path]: {% link chapters/101-command-line/subject.md %}#the-path-variable
-[shell-scripting]: {% link chapters/102-shell-scripting/subject.md %}
+[shell-scripting]: {% link cheatsheets/shell-scripting/cheatsheet.md %}

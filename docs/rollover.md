@@ -297,6 +297,20 @@ declared nothing **fails the build**. That is what stops the mapping from
 quietly decaying, and it means the entry is owed in the same change as the
 rename, not at the next rollover.
 
+**The edition being taught owes nothing here.** `course/archives` holds a
+manifest for it too, and that one is not a record of anything finished: it is
+the current course, and it moves with it. So a page of it that has been
+renumbered or renamed is not declared in `archives.yml` — which would refuse it
+as an override of a page that edition never published — but recorded again:
+
+```bash
+cd app && mix archidep.course_site.archives
+```
+
+Run it in the same change as the rename, for the reason above. A clean
+`git status` afterwards means the record was already right. Only editions that
+have ended are frozen, and only they can owe an entry.
+
 [build-workflow]: ../.github/workflows/build.yml
 [completeness]: ../app/lib/archidep/course_site/archives/completeness.ex
 [former-servers]: ../app/lib/archidep/servers/CONTRIBUTING.md#servers-of-a-class-that-has-ended

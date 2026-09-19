@@ -10,6 +10,7 @@ sections:
   - title: Docker Deployment
 cheatsheets:
   - command-line
+  - shell-scripting
   - git
   - sysadmin
   - docker

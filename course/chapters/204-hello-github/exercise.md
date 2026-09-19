@@ -84,7 +84,7 @@ SHA256:ULmjUQDN4Snkh0s9u093mcva4cI94cDk name@host
 
 {% note type: tip %}
 
-Read [SSH Key Protection]({% link chapters/104-ssh/subject.md %}#key-protection)
+Read [SSH Key Protection]({% link chapters/103-ssh/subject.md %}#key-protection)
 again as a reminder on whether or not to set a passphrase.
 
 {% endnote %}

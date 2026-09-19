@@ -15,7 +15,7 @@
 
 set -u
 
-SETUP="$(cd "$(dirname "$0")/../chapters/103-hello-shell" && pwd)/treasure-hunt.sh"
+SETUP="$(cd "$(dirname "$0")/../chapters/102-hello-shell" && pwd)/treasure-hunt.sh"
 
 HOME="$(mktemp -d)"
 export HOME

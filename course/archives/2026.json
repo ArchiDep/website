@@ -19,33 +19,27 @@
       "slug": "command-line"
     },
     {
-      "path": "/course/102-shell-scripting/",
+      "path": "/course/102-hello-shell/",
       "kind": "chapter",
       "num": 102,
-      "slug": "shell-scripting"
-    },
-    {
-      "path": "/course/103-hello-shell/",
-      "kind": "chapter",
-      "num": 103,
       "slug": "hello-shell"
     },
     {
-      "path": "/course/104-ssh/",
+      "path": "/course/103-ssh/",
       "kind": "chapter",
-      "num": 104,
+      "num": 103,
       "slug": "ssh"
     },
     {
-      "path": "/course/104-ssh/slides/",
+      "path": "/course/103-ssh/slides/",
       "kind": "chapter_slides",
-      "num": 104,
+      "num": 103,
       "slug": "ssh"
     },
     {
-      "path": "/course/105-hello-ssh/",
+      "path": "/course/104-hello-ssh/",
       "kind": "chapter",
-      "num": 105,
+      "num": 104,
       "slug": "hello-ssh"
     },
     {
@@ -364,6 +358,11 @@
       "path": "/cheatsheets/command-line/",
       "kind": "cheatsheet",
       "slug": "command-line"
+    },
+    {
+      "path": "/cheatsheets/shell-scripting/",
+      "kind": "cheatsheet",
+      "slug": "shell-scripting"
     },
     {
       "path": "/cheatsheets/git/",

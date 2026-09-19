@@ -40,7 +40,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   - Vim or nano usage.
   - The specifics of particular commands.
 
-- [Shell scripting](https://archidep.ch/course/102-shell-scripting/)
+- [Shell scripting](https://archidep.ch/cheatsheets/shell-scripting/)
 
   You must know:
   - What a shell script is.
@@ -49,7 +49,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   You do not need to know:
   - The shell script basics.
 
-- [Secure Shell (SSH)](https://archidep.ch/course/104-ssh/)
+- [Secure Shell (SSH)](https://archidep.ch/course/103-ssh/)
 
   You must know:
   - What SSH is and what is is used for.
