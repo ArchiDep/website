@@ -16,6 +16,17 @@
 # below. Bash 3.2 has no such option, and nothing to turn off.
 shopt -u patsub_replacement 2> /dev/null
 
+# The edition of the course this hunt belongs to. Every page of the site is
+# published under the starting year of its academic year, so the year is the
+# first segment of every address the hunt sends students to. It moves at the
+# year-end rollover, with the rest of the edition.
+CURRENT_YEAR=2026
+
+# Where the command line cheatsheet is published, which every text that sends
+# students there writes as @@CHEATSHEET@@, followed by the anchor of a section
+# when there is one.
+CHEATSHEET="https://archidep.ch/$CURRENT_YEAR/cheatsheets/command-line/"
+
 # Reads a heredoc into the variable named by $1, exactly as written, leading
 # spaces included.
 text() {
@@ -55,6 +66,7 @@ COIN=${COIN%$'\n'}
 fill() {
   local value="$1"
   value=${value//@@HUNT@@/$HUNT}
+  value=${value//@@CHEATSHEET@@/$CHEATSHEET}
   value=${value//@@UNPACK@@/$UNPACK}
   value=${value//@@COIN1@@/${COIN//@@DIGIT@@/$D1}}
   value=${value//@@COIN2@@/${COIN//@@DIGIT@@/$D2}}
@@ -160,7 +172,7 @@ still readable:
 
 The great book of commands is here:
 
-    https://archidep.ch/cheatsheets/command-line/
+    @@CHEATSHEET@@
 
 Every command you need on this island is written in it. Keep this
 handbook in your bag, and open the great book whenever you are stuck.
@@ -386,8 +398,10 @@ gave you:
 
     mv ./left/right/.../golden-idol ~/treasure-hunt/bag/
 
-Tab completion helps with long paths. See "Find files" in the command
-line cheatsheet: https://archidep.ch/cheatsheets/command-line/#find-files-find
+Tab completion helps with long paths.
+
+See "Find files" in the command line cheatsheet:
+@@CHEATSHEET@@#find-files-find
 END_CATACOMBS_HINT
 
 text BONES <<'END_BONES'
@@ -480,7 +494,7 @@ This one never stops by itself. To interrupt a program that is
 running, press Ctrl-C.
 
 See "Run a program" in the command line cheatsheet:
-https://archidep.ch/cheatsheets/command-line/#run-a-program-program
+@@CHEATSHEET@@#run-a-program-program
 END_CAVE_HINT
 
 text DRAGON <<'END_DRAGON'
@@ -544,9 +558,9 @@ Words are scratched on the wall of the cave:
     "NO NOISE WILL EVER WAKE THE DRAGON.
      BUT A PROGRAM, EVEN A DRAGON, CAN BE STOPPED
      WITH TWO KEYS PRESSED TOGETHER.
-     THE COMMAND LINE CHEATSHEET KNOWS WHICH ONES."
+     THE GREAT BOOK OF COMMANDS KNOWS WHICH ONES."
 
-     https://archidep.ch/cheatsheets/command-line/
+     @@CHEATSHEET@@
 
 SEALED
 
@@ -582,8 +596,10 @@ is in ~/treasure-hunt/bag. From here, that is two levels up:
 
     mv rusty-key ../../bag/
 
-Then take the key to the fortress. See "Move stuff" in the command
-line cheatsheet: https://archidep.ch/cheatsheets/command-line/#move-stuff-mv
+Then take the key to the fortress.
+
+See "Move stuff" in the command line cheatsheet:
+@@CHEATSHEET@@#move-stuff-mv
 END_LAIR_HINT
 
 # ---------------------------------------------------------------------------
@@ -693,8 +709,10 @@ From the courtyard, the shipwreck is two levels up, then down:
 
     cp ../../shipwreck/map.txt map-copy.txt
 
-Then run ./guardian again. See "Copy stuff" in the command line
-cheatsheet: https://archidep.ch/cheatsheets/command-line/#copy-stuff-cp
+Then run ./guardian again.
+
+See "Copy stuff" in the command line cheatsheet:
+@@CHEATSHEET@@#copy-stuff-cp
 END_GUARDIAN_HINT
 
 text GUARDIAN <<'END_GUARDIAN'
@@ -1078,7 +1096,7 @@ deletes all the traps at once. It is fast, but one typo can delete
 much more than you wanted. Name each file for now.
 
 See "Delete stuff" in the command line cheatsheet:
-https://archidep.ch/cheatsheets/command-line/#delete-stuff-rm
+@@CHEATSHEET@@#delete-stuff-rm
 END_TOWER_HINT
 
 text STAIRS <<'END_STAIRS'
@@ -1264,6 +1282,9 @@ END_BELL
 # Part 3: the treasure
 # ---------------------------------------------------------------------------
 
+# This hint names the section of the cheatsheet it wants but addresses the one
+# above it, which holds it: the address of "Make a file executable" is longer
+# than the width of the smallest terminal the hunt fits in, and would wrap.
 text ISLAND_HINT <<'END_ISLAND_HINT'
 HINT
 
@@ -1273,9 +1294,10 @@ executable:
 
     chmod +x chest
 
-You will learn about permissions later in the course. See "Make a
-file executable" in the command line cheatsheet:
-https://archidep.ch/cheatsheets/command-line/#make-a-file-executable-chmod-x
+You will learn about permissions later in the course.
+
+See "Make a file executable" in the command line cheatsheet:
+@@CHEATSHEET@@#running-programs
 
 The chest asks for a combination. Look at the coins in your bag.
 END_ISLAND_HINT
@@ -1613,8 +1635,9 @@ confirm_restart() {
   esac
 }
 
-# The smallest terminal the hunt fits in: its widest line is 78 characters, and
-# start.txt, the tallest thing shown at once, is 31 lines.
+# The smallest terminal the hunt fits in, rounded up to the standard width: its
+# widest line is 72 characters, and start.txt, the tallest thing shown at once,
+# is 31 lines.
 MIN_COLUMNS=80
 MIN_LINES=32
 

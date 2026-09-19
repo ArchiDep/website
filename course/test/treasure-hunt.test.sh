@@ -66,7 +66,19 @@ is_executable() { [ -x "$1" ]; }
 is_not_executable() { [ -f "$1" ] && [ ! -x "$1" ]; }
 output_contains() { printf '%s' "$OUTPUT" | grep -q -- "$1"; }
 
+# The edition the hunt belongs to, and the address it sends students to, taken
+# from the setup so that a rollover moves them both at once.
+CURRENT_YEAR=$(sed -n 's/^CURRENT_YEAR=//p' "$SETUP")
+CHEATSHEET="https://archidep.ch/$CURRENT_YEAR/cheatsheets/command-line/"
+
+# Passes when no text of the hunt names an address of the site missing the
+# edition, which the site publishes every page under.
+addresses_carry_the_edition() {
+  ! grep -rho 'archidep\.ch/[^ ]*' "$HUNT" | grep -qv "^archidep.ch/$CURRENT_YEAR/"
+}
+
 echo "Bash $BASH_VERSION"
+check "the setup names an edition" [ -n "$CURRENT_YEAR" ]
 
 echo "Setup"
 OUTPUT=$(cat "$SETUP" | "$BASH" 2>&1)
@@ -76,8 +88,9 @@ check "the setup tells students to cd into the hunt" output_contains "cd ~/treas
 check "the hunt starts with start.txt" [ -f "$HUNT/start.txt" ]
 check "the bag holds only the handbook" \
   [ "$(ls "$HUNT/bag")" = explorers-handbook.txt ]
-check "the handbook points to the command line cheatsheet" \
-  grep -q "archidep.ch/cheatsheets/command-line/" "$HUNT/bag/explorers-handbook.txt"
+check "the handbook points to the command line cheatsheet of the edition" \
+  grep -qF "$CHEATSHEET" "$HUNT/bag/explorers-handbook.txt"
+check "every address the hunt shows carries the edition" addresses_carry_the_edition
 check "the start tells students to read the handbook" \
   grep -q "cat bag/explorers-handbook.txt" "$HUNT/start.txt"
 check "the bottle is hidden on the beach" [ -f "$HUNT/beach/.bottle.txt" ]
@@ -120,6 +133,11 @@ dragon=$!
 set +m
 sleep 1
 check "the dragon does not flee by itself" [ ! -e "$HUNT/cave/lair" ]
+# What a gate says is sealed, so the placeholder check above cannot see an
+# address a gate shows: reading one back from a gate that ran is what tells us
+# the placeholders of sealed texts were filled in.
+check "the dragon sends students to the great book of commands" \
+  grep -qF "$CHEATSHEET" "$HOME/dragon.out"
 kill -INT "$dragon"
 wait "$dragon"
 STATUS=$?
