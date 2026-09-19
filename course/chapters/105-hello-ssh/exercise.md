@@ -9,8 +9,9 @@ various tools.
 ## :exclamation: Connect to the exercise server
 
 An SSH exercise server has been prepared so that you can learn to use the `ssh`
-command and other SSH-based tools. You should have received a username and
-password for this course by email.
+command and other SSH-based tools. Your username and password for this server
+are shown on the [dashboard][dashboard], along with the fingerprints of the
+server's SSH host keys.
 
 As we've seen, the basic syntax of the SSH command is as follows:
 
@@ -21,22 +22,31 @@ $> ssh <username>@<hostname>
 To connect to the server:
 
 - Determine the SSH command to connect to the exercise server. Replace the
-  `<username>` placeholder by the username you received in your email, and the
+  `<username>` placeholder by the username shown on the dashboard, and the
   `<hostname>` placeholder by `ssh.archidep.ch`.
 - Execute that command in your console.
 - Since you are probably connecting to this server for the first time,
   you should get the initial SSH connection warning indicating that the
-  authenticity of the host cannot be established.
+  authenticity of the host cannot be established:
+
+  ```
+  The authenticity of host 'ssh.archidep.ch (W.X.Y.Z)' can't be established.
+  ED25519 key fingerprint is SHA256:...
+  Are you sure you want to continue connecting (yes/no/[fingerprint])?
+  ```
 
   Before accepting, you should verify that the key fingerprint in the warning
-  message corresponds to one of the keys provided by the teacher.
+  message corresponds to one of the fingerprints shown on the dashboard. You
+  can do that by pasting the fingerprint from the dashboard (the one that starts
+  with `SHA256:`) instead of answering `yes`. Your SSH client will compare it
+  with the fingerprint the server sent, and will only continue if they match.
 
 {% callout %}
 
 Answering yes without checking the key fingerprint exposes you to a potential
 man-in-the-middle attack. An attacker could make you connect to a compromised
-server and then intercept all traffic going through the SSH connexion, including
-your password.
+server and then intercept all traffic going through the SSH connection,
+including your password.
 
 {% endcallout %}
 
@@ -101,7 +111,9 @@ If you want to quickly run a command on a remote server with SSH and
 immediately disconnect, you can do so by providing more arguments to the
 SSH command:
 
-    $> ssh <username>@<hostname> [command]
+```bash
+$> ssh <username>@<hostname> [command]
+```
 
 For example, assuming your username is `jde`, open a new console and execute the
 following commands:
@@ -119,157 +131,6 @@ that you are no longer connected by the time you ran the second command.
 
 {% endnote %}
 
-## :exclamation: Copy a file with the `scp` command
-
-**Disconnect from the server** (with the `exit` command) or open a new console
-to run commands on your local machine.
-
-Create a simple text file (using the following command or with your favorite
-text editor):
-
-```bash
-$> echo World > hello.txt
-```
-
-All Unix systems have a [`cp` (**c**o**p**y) command][cp-command] that copies a
-file locally. Try it now:
-
-```bash
-$> cp hello.txt hello2.txt
-```
-
-Observe that the file has been copied (either by listing the files in your
-console with the following command, or simply by looking at the directory in
-your file explorer):
-
-```bash
-$> ls
-hello.txt
-hello2.txt
-...
-```
-
-The [`scp` (**s**ecure **c**o**p**y) command][scp-command] works in principle
-like the `cp` command, except that it can copy files to and from other computers
-that have an SSH server running, using SSH to transfer the files. It reuses part
-of the same syntax as the `ssh` command to connect to an SSH server. Try running
-this command now (replacing `jde` with your username on the SSH exercise
-server):
-
-```bash
-$> scp hello.txt jde@ssh.archidep.ch:hello.txt
-hello.txt 100% 4 0.6KB/s 00:00
-```
-
-This command copies your local `hello.txt` file to the home directory of the
-`jde` user account on the remote computer.
-
-To check that the file has indeed been copied, connect to your server
-and use some of the commands you have learned so far:
-
-```bash
-$> ssh jde@ssh.archidep.ch
-
-$ ls
-hello.txt
-...
-
-$ cat hello.txt
-World
-
-$ exit
-```
-
-You can also copy files from the remote computer to your local computer:
-
-```bash
-$> scp jde@ssh.archidep.ch:hello.txt hello3.txt
-hello.txt 100% 4 5.7KB/s 00:00
-
-$> cat hello3.txt
-World
-```
-
-{% note type: tip %}
-
-Here's a few additional examples of how to use the `scp` command:
-
-- `scp foo.txt jde@192.168.50.4:bar.txt`
-
-  Copy the local file `foo.txt` to a file named `bar.txt` in `jde`'s home
-  directory on the remote computer.
-
-- `scp foo.txt jde@192.168.50.4:`
-
-  Copy the file to `jde`'s home directory with the same file name.
-
-- `scp foo.txt jde@192.168.50.4:/tmp/foo.txt`
-
-  Copy the file to the absolute path `/tmp/foo.txt` on the remote computer.
-
-- `scp jde@192.168.50.4:foo.txt jsmith@192.168.50.5:bar.txt`
-
-  Copy the file from one remote computer to another.
-
-- `scp -r foo jde@192.168.50.4:foo`
-
-  **R**ecursively (the `-r` option) copy the contents of directory `foo` to
-  the remote computer (a [recursive][recursion] copy means that the directory
-  and all its subdirectories are copied).
-
-{% endnote %}
-
-## :exclamation: Copy a file using the SFTP protocol
-
-[SFTP][sftp] is an alternative to the original [FTP][ftp] protocol to transfer
-files. Since FTP is [insecure][ftp-security] (e.g. passwords are sent
-unencrypted), SFTP is an alternative that goes through SSH's secure channel and
-therefore poses fewer security risks.
-
-Most modern FTP clients support SFTP. Here's a couple:
-
-- [FileZilla][filezilla]
-- [WinSCP][winscp]
-- [Cyberduck][cyberduck]
-
-Many code editors also have SFTP support available through plugins.
-
-Install one of these applications (or use your favorite SFTP application if you
-already have one) and connect to the SSH exercise server. You will need to
-configure a connection with the following information:
-
-- **Protocol:** SFTP
-- **Host, hostname or server address:** `ssh.archidep.ch`
-- **Username**: the username you received by email
-- **Password**: the password you received by email
-- **Port:** 22 (the standard SSH port)
-
-{% note type: tip %}
-
-How to use these parameters depends on which application you use. They
-may not be named exactly like this.
-
-{% endnote %}
-
-For example, here's how to do it with Cyberduck:
-
-![Cyberduck SFTP password authentication](images/cyberduck-sftp-password.png)
-
-{% note type: warning %}
-
-When connecting for the first time, the application may issue the same
-initial connection warning as when you connect using the command line. Be sure
-to check the key fingerprint.
-
-{% endnote %}
-
-Once you have successfully connected to the server, copy another file to the
-server using the SFTP application this time. These applications will usually
-allow you to drag-and-drop files to and from the server. Play with it a bit and
-see what you can do.
-
-Now you know another way to copy files over SSH.
-
 ## :exclamation: Set up public key authentication
 
 The goal of this step is to generate a public/private key pair on your machine
@@ -277,7 +138,11 @@ and to configure SSH to use public key authentication instead of password
 authentication on the SSH exercise server.
 
 This will improve security and avoid having to type your password on each SSH
-connection.
+connection. You will also need this key pair for the rest of the course: to
+authenticate to GitHub, and to connect to your own server later.
+
+**Disconnect from the server** (with the `exit` command) or open a new console
+to run commands on your local machine.
 
 ### :question: Do I already have a key pair?
 
@@ -295,19 +160,6 @@ algorithm, such as an [ECDSA][ecdsa] key pair with files named `id_ecdsa` and
 `id_ecdsa.pub`, or an [RSA][rsa] key pair with files named `id_rsa` and
 `id_rsa.pub` if your system has an older SSH client.
 
-{% note type: tip %}
-
-On Windows, you can toggle the display of hidden files in the View tab of the
-explorer to access your `.ssh` directory manually.
-
-On macOS, type `open ~/.ssh` in your Terminal or use the `Cmd-Shift-.` shortcut
-to display hidden files.
-
-On most Linux distributions, the file manager will have an option to show hidden
-files under its menu.
-
-{% endnote %}
-
 If the directory doesn't exist or is empty, you don't have a key pair yet.
 
 {% note %}
@@ -317,6 +169,16 @@ as it is sometimes generated by some software. You can use this key if you want,
 but since it doesn't have the default name, you will have to add a `-i
 ~/.ssh/github_rsa` option to all your SSH commands. Generating a new key with
 the default name for command line use would probably be easier.
+
+{% endnote %}
+
+{% note type: warning %}
+
+On Windows, generate and keep your key pair **in the WSL**, in the `~/.ssh`
+directory of your Linux home directory. Do not copy it to or from your Windows
+files (under `/mnt/c`). Files stored there appear to be readable by anyone, and
+SSH refuses to use a private key that other people can read. It stops with a
+`WARNING: UNPROTECTED PRIVATE KEY FILE!` error.
 
 {% endnote %}
 
@@ -425,7 +287,7 @@ enter your private key's password though, if it is protected by one.)
 {% note type: more %}
 
 Once you have set up public key authentication for an SSH server, that server is
-in posession of your public key. Your SSH client can then use your private key
+in possession of your public key. Your SSH client can then use your private key
 to prove that you are the owner of this public key, using the mathematical
 relationship between the two. Your private key is never sent to the server
 during this process.
@@ -452,7 +314,7 @@ $> ls ~/.ssh
 authorized_keys
 
 $> cat ~/.ssh/authorized_keys
-ssh-rsa AAAAB3NzaC1yc2EAA... example
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... jde@497820feb22a
 ```
 
 When your SSH client connects to the SSH server, the server will look for your
@@ -482,38 +344,272 @@ more about this command later on in the course.
 
 {% endcallout %}
 
-## :exclamation: Configure your SFTP application to use public key authentication
+### :exclamation: Is your password gone?
 
-Most SFTP applications also support SSH public key authentication instead of
-password authentication. Open the SFTP application you used earlier, find out
-how to replace your password by public key authentication, and try it.
+**Disconnect from the server** again. Now connect while telling your SSH client
+**not** to use public key authentication:
 
-You can remove your password once you have selected your private key, since
-public key authentication will be used instead of your password.
+```bash
+$> ssh -o PubkeyAuthentication=no jde@ssh.archidep.ch
+```
+
+What happens? Why?
+
+{% solution %}
+
+The server asks for your password again, and your password still works.
+
+`ssh-copy-id` **added** a new way to authenticate to your user account. It did
+not replace your password. Your SSH client now tries your key first, which is
+why you no longer have to type your password, but the password is still
+accepted.
+
+Protecting a server with keys only means **also disabling password
+authentication** on the server, which is done in the SSH server's configuration.
+The virtual server you will create later in the course does not accept passwords
+at all: you will give it your public key when you create it.
+
+{% endsolution %}
+
+### :exclamation: Which key is where?
+
+You have now seen several files containing keys, on two different machines.
+Copy the following table and fill it in. For each file, write on which machine
+it is stored (your machine or the server), what it contains, and whether it
+must be kept secret. You can look for them with `ls` on both machines. The
+server's own keys are in the `/etc/ssh` directory.
+
+| File                                | Machine | Contains | Secret? |
+| :---------------------------------- | :------ | :------- | :------ |
+| `~/.ssh/id_ed25519`                 |         |          |         |
+| `~/.ssh/id_ed25519.pub`             |         |          |         |
+| `~/.ssh/authorized_keys`            |         |          |         |
+| `~/.ssh/known_hosts`                |         |          |         |
+| `/etc/ssh/ssh_host_ed25519_key`     |         |          |         |
+| `/etc/ssh/ssh_host_ed25519_key.pub` |         |          |         |
+
+Then answer these questions:
+
+- Which of these files is used to prove to the server that you are you?
+- Which of these files is used to prove to you that the server is the right
+  server?
+- An attacker copies your `id_ed25519.pub` file. What can they do with it?
+
+{% solution %}
+
+| File                                | Machine      | Contains                                       | Secret? |
+| :---------------------------------- | :----------- | :--------------------------------------------- | :------ |
+| `~/.ssh/id_ed25519`                 | Your machine | Your private key                               | Yes     |
+| `~/.ssh/id_ed25519.pub`             | Your machine | Your public key                                | No      |
+| `~/.ssh/authorized_keys`            | The server   | The public keys allowed to log in as your user | No      |
+| `~/.ssh/known_hosts`                | Your machine | The public keys of the servers you trust       | No      |
+| `/etc/ssh/ssh_host_ed25519_key`     | The server   | The server's private host key                  | Yes     |
+| `/etc/ssh/ssh_host_ed25519_key.pub` | The server   | The server's public host key                   | No      |
+
+- Your private key, `~/.ssh/id_ed25519`, proves to the server that you are you.
+  The server checks the proof with your public key, which it finds in
+  `~/.ssh/authorized_keys`.
+- The server's private host key proves to your machine that it is the right
+  server. Your SSH client checks the proof with the server's public host key.
+  The first time, you check it yourself with the fingerprint. After that, your
+  SSH client finds it in `~/.ssh/known_hosts`.
+- Nothing harmful. A public key can only be used to check a proof, not to make
+  one. This is why you can give your public key to any server or service. The
+  attacker would need your private key to log in as you.
+
+The two sides work the same way: each one keeps a private key, and the other
+side keeps the matching public key.
+
+{% endsolution %}
+
+## :exclamation: Copy a file with the `scp` command
+
+Create a simple text file on your local machine (using the following command or
+with your favorite text editor):
+
+```bash
+$> echo World > hello.txt
+```
+
+The [`scp` (**s**ecure **c**o**p**y) command][scp-command] works in principle
+like the [`cp` (**c**o**p**y) command][cp-command], which copies files on your
+own machine, except that it can copy files to and from other computers that have
+an SSH server running, using SSH to transfer the files. It reuses part of the
+same syntax as the `ssh` command to connect to an SSH server. Try running this
+command now (replacing `jde` with your username on the SSH exercise server):
+
+```bash
+$> scp hello.txt jde@ssh.archidep.ch:hello.txt
+hello.txt 100% 6 0.6KB/s 00:00
+```
+
+This command copies your local `hello.txt` file to the home directory of the
+`jde` user account on the remote computer.
+
+To check that the file has indeed been copied, connect to the server and use
+some of the commands you have learned so far:
+
+```bash
+$> ssh jde@ssh.archidep.ch
+
+$> ls
+hello.txt
+...
+
+$> cat hello.txt
+World
+
+$> exit
+```
+
+You can also copy files from the remote computer to your local computer:
+
+```bash
+$> scp jde@ssh.archidep.ch:hello.txt hello2.txt
+hello.txt 100% 6 5.7KB/s 00:00
+
+$> cat hello2.txt
+World
+```
 
 {% note type: tip %}
 
-You will need to provide the SFTP application with the location of your
-**private key**. The application will use the private key to prove that it owns
-the public key located in the server's `authorized_keys` file.
+Here are a few additional examples of how to use the `scp` command:
+
+- `scp foo.txt jde@192.168.50.4:bar.txt`
+
+  Copy the local file `foo.txt` to a file named `bar.txt` in `jde`'s home
+  directory on the remote computer.
+
+- `scp foo.txt jde@192.168.50.4:`
+
+  Copy the file to `jde`'s home directory with the same file name.
+
+- `scp foo.txt jde@192.168.50.4:/tmp/foo.txt`
+
+  Copy the file to the absolute path `/tmp/foo.txt` on the remote computer.
+
+- `scp jde@192.168.50.4:foo.txt jsmith@192.168.50.5:bar.txt`
+
+  Copy the file from one remote computer to another.
+
+- `scp -r foo jde@192.168.50.4:foo`
+
+  **R**ecursively (the `-r` option) copy the contents of directory `foo` to
+  the remote computer (a [recursive][recursion] copy means that the directory
+  and all its subdirectories are copied).
 
 {% endnote %}
 
-For example, Cyberduck allows you to select your default key file:
+## :exclamation: Copy files with an SFTP application
+
+[SFTP][sftp] is an alternative to the original [FTP][ftp] protocol to transfer
+files. Since FTP is [insecure][ftp-security] (e.g. passwords are sent
+unencrypted), SFTP is an alternative that goes through SSH's secure channel and
+therefore poses fewer security risks.
+
+Most modern FTP clients support SFTP. Here's a couple:
+
+- [FileZilla][filezilla]
+- [WinSCP][winscp]
+- [Cyberduck][cyberduck]
+
+Many code editors also have SFTP support available through plugins.
+
+Install one of these applications (or use your favorite SFTP application if you
+already have one) and connect to the SSH exercise server with public key
+authentication. You will need to configure a connection with the following
+information:
+
+- **Protocol:** SFTP
+- **Host, hostname or server address:** `ssh.archidep.ch`
+- **Username**: the username shown on the dashboard
+- **Port:** 22 (the standard SSH port)
+- **Private key** (or key file): your private key, `~/.ssh/id_ed25519`
+
+Leave the password empty. The application will use your private key to prove
+that it owns the public key in your `authorized_keys` file on the server, just
+like the `ssh` command does. Make sure to select the **private key**
+(`id_ed25519`), not the public key (`id_ed25519.pub`).
+
+{% note type: tip %}
+
+How to use these parameters depends on which application you use. They
+may not be named exactly like this.
+
+{% endnote %}
+
+For example, here's how to do it with Cyberduck:
 
 ![Cyberduck SFTP public key authentication](images/cyberduck-sftp-pubkey.png)
 
 {% note type: tip %}
 
-On macOS, depending on which application you use, you may not see hidden files
-and directories (file names starting with a dot `.`) when browsing the file
-system. Use the `Cmd-Shift-.` shortcut to display them.
+The `.ssh` directory is hidden, so it may not appear when you browse for your
+private key:
 
-On Windows, you can toggle the display of hidden files in the View tab of the
-explorer.
+- On macOS, use the `Cmd-Shift-.` shortcut in the file selection window to
+  display hidden files and directories.
+- On Windows, your private key is in the WSL, not in your Windows files. Type
+  `\\wsl.localhost\` in the address bar of the file selection window, then open
+  your Linux distribution's directory (e.g. `Ubuntu`), then `home`, your Linux
+  username, and `.ssh`. You can also find your Linux files under **Linux** in
+  the sidebar of the Windows file explorer.
+- On most Linux distributions, the file manager will have an option to show
+  hidden files under its menu.
 
-On most Linux distributions, the file manager will have an option to show hidden
-files under its menu.
+{% endnote %}
+
+{% note type: tip %}
+
+On Windows, FileZilla and WinSCP may ask you to convert your private key to
+another format. You can do so. The converted file is a copy of your private
+key: keep it as private as the original.
+
+{% endnote %}
+
+{% note type: warning %}
+
+When connecting for the first time, the application may issue the same
+initial connection warning as when you connect using the command line. Be sure
+to check the key fingerprint.
+
+{% endnote %}
+
+Once you have successfully connected to the server, copy another file to the
+server using the SFTP application this time. These applications will usually
+allow you to drag-and-drop files to and from the server. Play with it a bit and
+see what you can do.
+
+Now you know another way to copy files over SSH.
+
+## :question: Save typing with an SSH configuration file
+
+You will type the same SSH commands many times during this course. You can give
+a server a short name in your SSH client's configuration file, `~/.ssh/config`,
+on your local machine. Create or edit that file (for example with
+`nano ~/.ssh/config`) and add the following lines, replacing `jde` with your
+username:
+
+```
+Host archidep
+  HostName ssh.archidep.ch
+  User jde
+```
+
+You can now use `archidep` instead of `jde@ssh.archidep.ch` with all SSH-based
+commands:
+
+```bash
+$> ssh archidep
+$> scp hello.txt archidep:
+```
+
+{% note type: more %}
+
+The configuration file has many other options, for example `Port` to connect to
+a non-standard port, or `IdentityFile` to use a private key that does not have
+the default name. See the [`ssh_config` documentation][ssh-config].
 
 {% endnote %}
 
@@ -527,8 +623,7 @@ to unlock it.
 {% note type: tip %}
 
 If you did not set a passphrase when generating your key, you can also [add a
-passphrase
-afterwards](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases).
+passphrase afterwards][ssh-passphrase-add].
 
 {% endnote %}
 
@@ -569,7 +664,7 @@ If SSH agent is not already running, follow one of the guides above or run an
 agent and have it start a new shell for you:
 
 ```bash
-$> ssh-agent bash
+$> ssh-agent $SHELL
 ```
 
 The advantage of this last technique is that the agent will automatically quit
@@ -600,20 +695,24 @@ $> ssh-add /path/to/custom_id_ed25519
 
 ## :checkered_flag: What have I done?
 
-You have learned to use the `ssh` command to connect to a remote server, and
-also to use the SSH protocol through other tools such as `scp` or your favorite
-SFTP client to copy files.
+You have learned to use the `ssh` command to connect to a remote server, and to
+check that you are connecting to the right server with its key fingerprint.
 
 You have learned to configure and use public key authentication instead of the
-less secure password-based authentication mechanism.
+less secure password-based authentication mechanism, and you know which keys
+are stored on your machine and which are stored on the server.
+
+You have also learned to use the SSH protocol through other tools such as `scp`
+or your favorite SFTP application to copy files.
 
 If you are more security-minded, you may have also learned to protect your
 private key with a passphrase and to use SSH agent to make it more convenient to
 use SSH.
 
-[chmod]: https://linux.die.net/man/1/chmod
+[chmod]: https://man7.org/linux/man-pages/man1/chmod.1.html
 [cp-command]: https://linuxize.com/post/cp-command-in-linux/
 [cyberduck]: https://cyberduck.io
+[dashboard]: /app
 [ecdsa]: https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
 [eddsa]: https://en.wikipedia.org/wiki/EdDSA
 [filezilla]: https://filezilla-project.org/
@@ -624,10 +723,12 @@ use SSH.
 [rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
 [scp-command]: https://linuxize.com/post/how-to-use-scp-command-to-securely-transfer-files/
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
-[ssh-agent]: https://kb.iu.edu/d/aeww
-[ssh-agent-run]: https://www.ssh.com/ssh/agent
-[ssh-agent-run-github]: https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/
+[ssh-agent]: https://man7.org/linux/man-pages/man1/ssh-agent.1.html
+[ssh-agent-run]: https://www.ssh.com/academy/ssh/agent
+[ssh-agent-run-github]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
 [ssh-agent-security]: https://www.commandprompt.com/blog/security_considerations_while_using_ssh-agent/
-[uname-command]: https://linuxhint.com/linux-uname-command-tutorial/
+[ssh-config]: https://man.openbsd.org/ssh_config
+[ssh-passphrase-add]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
+[uname-command]: https://man7.org/linux/man-pages/man1/uname.1.html
 [whoami-command]: https://man7.org/linux/man-pages/man1/whoami.1.html
 [winscp]: https://winscp.net

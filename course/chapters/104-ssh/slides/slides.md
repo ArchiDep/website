@@ -25,7 +25,7 @@ SSH is a **cryptographic network protocol** for operating network services
     <iconify-icon icon="cib:git" noobserver></iconify-icon> Git
   </div>
   <div class="flex justify-center items-center gap-2">
-    <iconify-icon icon="fluent:folder-arrow-up-24-regular" noobserver></iconify-icon> FTP
+    <iconify-icon icon="fluent:folder-arrow-up-24-regular" noobserver></iconify-icon> SFTP
   </div>
 </div>
 
@@ -187,7 +187,7 @@ $> echo 'too many secrets' > plaintext.txt
 
 ```bash
 # Encrypt the plaintext
-$> cat plaintext.txt | openssl aes-256-cbc > ciphertext.aes
+$> cat plaintext.txt | openssl aes-256-cbc -pbkdf2 > ciphertext.aes
 enter aes-256-cbc encryption password:
 Verifying - enter aes-256-cbc encryption password:
 ```
@@ -207,7 +207,7 @@ encryption key.
 
 ```bash
 # Decrypt the ciphertext
-$> cat ciphertext.aes | openssl aes-256-cbc -d
+$> cat ciphertext.aes | openssl aes-256-cbc -pbkdf2 -d
 enter aes-256-cbc decryption password:
 too many secrets
 ```
@@ -280,7 +280,7 @@ uses pairs of keys: **public keys** which may be disseminated widely, while
 
 - **Quick & easy to generate a key pair**
 - **Too slow & hard to find the private key from the public key**
-- The private key can solve mathematicalsproblems based on the public key,
+- The private key can solve mathematical problems based on the public key,
   **proving ownership of that key** _(but not the other way around)_
 
 **Notes:**
@@ -440,7 +440,7 @@ the future, all data encrypted in the past is also compromised.
     <tr>
       <th>Asymmetric encryption</th>
       <td><strong class="text-success">No shared key</strong></td>
-      <td><span class="text-error">Slow, no forward secrecy</strong></td>
+      <td><span class="text-error">Slow, no forward secrecy</span></td>
     </tr>
   </tbody>
 </table>
@@ -511,8 +511,8 @@ This conceptual diagram illustrates the general idea behind the protocol:
 - Then they **mix their own secret color with the mutually shared color**
   (resulting in orange-tan and light-blue) and **publicly exchange** the two
   mixed colors.
-- Finally, Alice and Bob **mix the color he or she received** from each other
-  **with his or her own private color** (yellow-brown).
+- Finally, Alice and Bob each **mix the color they received** from the other
+  **with their own private color** (yellow-brown).
 
 The result is a final color mixture that is **identical to the partner's final
 color mixture**, and which was never shared publicly. When using large numbers
@@ -532,7 +532,7 @@ secret key over the network by computing it using asymmetric cryptography. It is
 therefore never transmitted.
 
 However, **a Man-in-the-Middle attack is still possible** if the attacker can
-position himself between the two parties to **intercept and relay all
+position themselves between the two parties to **intercept and relay all
 communications**.
 
 ---
@@ -658,7 +658,7 @@ achieve as secure a channel as possible.
 
 - Eavesdropping
 - Connection hijacking
-- DNS an IP spoofing
+- DNS and IP spoofing
 - Man-in-the-Middle attack
 
 <div class="mt-4 text-warning italic">
@@ -716,26 +716,17 @@ SSH does not counter the following threats:
 - **Genius mathematicians:** did you see [Sneakers][sneakers]?
 
 [aes]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
-[authorized_keys]: https://www.ssh.com/ssh/authorized_keys/openssh
-[bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
-[brute-force]: https://en.wikipedia.org/wiki/Brute-force_attack
 [ciphertext]: https://en.wikipedia.org/wiki/Ciphertext
 [dh]: https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
 [discrete-logarithm]: https://en.wikipedia.org/wiki/Discrete_logarithm
-[ecdsa]: https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
 [elliptic-curve]: https://en.wikipedia.org/wiki/Elliptic-curve_cryptography
 [enigma]: https://en.wikipedia.org/wiki/Enigma_machine#Operation
 [enigma-operating-shortcomings]: https://en.wikipedia.org/wiki/Cryptanalysis_of_the_Enigma#Operating_shortcomings
-[entropy]: https://en.wikipedia.org/wiki/Password_strength#Entropy_as_a_measure_of_password_strength
-[forward-secrecy]: https://en.wikipedia.org/wiki/Forward_secrecy
-[github-fingerprints]: https://docs.github.com/en/github/authenticating-to-github/githubs-ssh-key-fingerprints
-[git]: https://git-scm.com
 [hash]: https://en.wikipedia.org/wiki/Cryptographic_hash_function
 [hash-non-crypto]: https://en.wikipedia.org/wiki/Hash_function
 [hmac]: https://en.wikipedia.org/wiki/HMAC
 [hsm]: https://en.wikipedia.org/wiki/Hardware_security_module
 [integer-factorization]: https://en.wikipedia.org/wiki/Integer_factorization
-[key-exchange]: https://en.wikipedia.org/wiki/Key_exchange
 [mac]: https://en.wikipedia.org/wiki/Message_authentication_code
 [mitm]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
 [openssl]: https://www.openssl.org
@@ -744,15 +735,7 @@ SSH does not counter the following threats:
 [pubkey]: https://en.wikipedia.org/wiki/Public-key_cryptography
 [pubkey-math]: https://www.onebigfluke.com/2013/11/public-key-crypto-math-explained.html
 [rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
-[rsync]: https://en.wikipedia.org/wiki/Rsync
-[scp]: https://en.wikipedia.org/wiki/Secure_copy
-[sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
-[shell]: https://en.wikipedia.org/wiki/Shell_(computing)
 [side-channel]: https://en.wikipedia.org/wiki/Cryptanalysis#Side-channel_attacks
 [sneakers]: https://en.wikipedia.org/wiki/Sneakers_(1992_film)
-[ssh-agent]: https://www.cyberciti.biz/faq/how-to-use-ssh-agent-for-authentication-on-linux-unix/
-[ssh-copy-id]: https://www.ssh.com/academy/ssh/copy-id
-[ssh-passphrase]: https://learn.microsoft.com/en-us/azure/devops/repos/git/gcm-ssh-passphrase?view=azure-devops
-[ssh-passphrase-add]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
 [symmetric-encryption]: https://en.wikipedia.org/wiki/Symmetric-key_algorithm
 [syn-flood]: https://en.wikipedia.org/wiki/SYN_flood

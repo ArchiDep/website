@@ -21,7 +21,7 @@ and in the WSL on Windows. Its basic syntax is:
 ssh [user@]hostname [command]
 ```
 
-Here's a few examples:
+Here are a few examples:
 
 - `ssh example.com` - Connect to the SSH server at `example.com` and log in
   (with the same username as in your current shell).
@@ -40,8 +40,8 @@ message similar to this:
 ```bash
 $> ssh example.com
 The authenticity of host 'example.com (192.168.50.4)' can't be established.
-ECDSA key fingerprint is SHA256:colYVucS/YU0JSK7woiLAf5ChPgJYAR1BWJlET2EwDI=
-Are you sure you want to continue connecting (yes/no)?
+ED25519 key fingerprint is SHA256:colYVucS/YU0JSK7woiLAf5ChPgJYAR1BWJlET2EwDI.
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
 ```
 
 What does this mean? _I thought SSH was **secure**?_
@@ -79,8 +79,8 @@ One way to do this is to use the **key fingerprint** that is shown to you when
 first connecting. The key fingerprint is a [cryptographic hash][hash] of the
 public key:
 
-```bash
-ECDSA key fingerprint is SHA256:colYVucS/YU0JSK7woiLAf5ChPgJYAR1BWJlET2EwDI=
+```
+ED25519 key fingerprint is SHA256:colYVucS/YU0JSK7woiLAf5ChPgJYAR1BWJlET2EwDI.
 ```
 
 Some services that allow you to connect over SSH, like GitHub, [publish their
@@ -89,8 +89,13 @@ check them. In other cases, the key may be physically transmitted to you, or
 dictated over the phone.
 
 You should **check that both fingerprints match** before proceeding with the
-connection. If it does not, either you typed the wrong server address, or an
+connection. If they do not, either you typed the wrong server address, or an
 attacker may be trying to hack your connection.
+
+You do not have to compare the fingerprints by eye. Instead of answering `yes`,
+you can paste the fingerprint you obtained from a trusted source (the full
+`SHA256:...` value). SSH compares it with the fingerprint sent by the server,
+and only continues the connection if they are the same.
 
 ### Known hosts file
 
@@ -100,20 +105,31 @@ following command:
 
 ```bash
 $> cat ~/.ssh/known_hosts
-example.com,192.168.50.4 ecdsa-sha2-nistp256 eTJtK2wrRzhW5RQzUHprbFJa...
+example.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPM...
 ```
 
-The format of each line in this file is `[domain],[ipaddr] algorithm pubkey`.
+The format of each line in this file is `hostname algorithm pubkey`.
 
-The line above means that when SSH connects to `example.com` at IP address
-`192.168.50.4`, it expects the server to send this specific public key
-(`eTJtK2wrRzhW5RQzUHprbFJa...`) using the [ECDSA][ecdsa] algorithm.
+The line above means that when SSH connects to `example.com`, it expects the
+server to send this specific public key (`AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r...`)
+for the [Ed25519][eddsa] algorithm.
+
+{% note %}
+
+On some systems, such as Ubuntu, the host names in this file are hashed, so that
+someone who reads the file cannot find out which servers you connect to. The
+lines then start with `|1|` followed by random-looking characters instead of the
+host name. They work the same way.
+
+{% endnote %}
 
 {% note type: more %}
 
-ECDSA is another asymmetric algorithm like RSA, although ECDSA is based on
+Ed25519 is an asymmetric algorithm like RSA, although Ed25519 is based on
 [elliptic curve cryptography][elliptic-curve] while RSA is based on prime
-numbers.
+numbers. You may also see keys for other algorithms, such as
+`ecdsa-sha2-nistp256` ([ECDSA][ecdsa]) or `ssh-rsa` ([RSA][rsa]). A server
+usually has one key pair per algorithm.
 
 {% endnote %}
 
@@ -143,12 +159,12 @@ $> ssh 192.168.50.4
 IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
 Someone could be eavesdropping on you right now (man-in-the-middle attack)!
 It is also possible that a host key has just been changed.
-The fingerprint for the ECDSA key sent by the remote host is
-SHA256:FUwFoK/hcqRAvJgDFmljwOur8t/mhfbm4tfIxdaVTQ==.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:FUwFoK/hcqRAvJgDFmljwOur8t/mhfbm4tfIxdaVTQ8.
 Please contact your system administrator.
 Add correct host key in /path/to/.ssh/known_hosts to get rid of this message.
-Offending ECDSA key in /path/to/.ssh/known_hosts:33
-ECDSA host key for 192.168.50.4 has changed and you have requested strict checking.
+Offending ED25519 key in /path/to/.ssh/known_hosts:33
+ED25519 host key for 192.168.50.4 has changed and you have requested strict checking.
 Host key verification failed.
 ```
 
@@ -157,7 +173,24 @@ attacker may be intercepting your communications**.
 
 If you're sure it's not an attack, for example if you know the server actually
 changed its key pair, you can eliminate this warning by putting the correct
-public key in the known hosts file (or by removing the offending line).
+public key in the known hosts file, or by removing the offending line. The
+`ssh-keygen` command can remove all the lines for a server for you, using its
+`-R` (**r**emove) option:
+
+```bash
+$> ssh-keygen -R 192.168.50.4
+```
+
+The next time you connect, SSH will consider the server unknown again, and you
+will get the initial warning asking you to check its key fingerprint.
+
+{% note type: tip %}
+
+This happens often when a server is deleted and a new one is created with the
+same IP address or domain name. The new server has new host keys, but your
+known hosts file still contains the keys of the old one.
+
+{% endnote %}
 
 ## Password authentication
 
@@ -175,9 +208,9 @@ the server's user database:
 $> ssh jde@192.168.50.4
 
 The authenticity of host '192.168.50.4 (192.168.50.4)' can't be established.
-ECDSA key fingerprint is SHA256:E4GYJCEoz+G5wv+EdkPyRLytgP7aTj9BS9lr1d38Xg==.
-Are you sure you want to continue connecting (yes/no)? yes
-Warning: Permanently added '192.168.50.4' (ECDSA) to the list of known hosts.
+ED25519 key fingerprint is SHA256:E4GYJCEoz+G5wv+EdkPyRLytgP7aTj9BS9lr1d38Xg0.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.50.4' (ED25519) to the list of known hosts.
 
 jde@192.168.50.4's password:
 ```
@@ -198,9 +231,9 @@ typically [Bash][bash] on Linux servers:
 ```bash
 $> ssh jde@192.168.50.4
 jde@192.168.50.4's password:
-Welcome to Ubuntu 18.04.1 LTS (GNU/Linux 4.15.0-33-generic x86_64)
+Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.8.0-71-generic x86_64)
 
-  System information as of Wed Oct 21 04:29:00 UTC 2015
+  System information as of Thu Sep 24 08:29:00 UTC 2026
   ...
 
 $
@@ -288,7 +321,7 @@ Password authentication works, but it has some drawbacks:
 
 - Attackers may try to [brute force][brute-force] your password.
 - If an attacker succeeds in performing a man-in-the-middle attack (for example
-  if you forget to check the public key the first time you connect), he may
+  if you forget to check the public key the first time you connect), they may
   steal your password.
 - If the server is compromised, an attacker may modify the SSH server to steal
   your password.
@@ -373,17 +406,18 @@ A few tips on managing your key pairs:
 - **NEVER give your private key to anyone**.
 - Conversely, you may copy your private key to another computer of yours if you
   want it to have the same access to other computers or services.
-- **Back up your private and public key files** (`id_rsa` and `id_rsa.pub`) to
-  avoid having to regenerate a pair if you lose your computer or switch to
-  another computer. (If you create a new key pair, you will have to replace the
-  old public key with the new one everywhere you used it.)
+- **Back up your private and public key files** (`id_ed25519` and
+  `id_ed25519.pub`) to avoid having to regenerate a pair if you lose your
+  computer or switch to another computer. (If you create a new key pair, you
+  will have to replace the old public key with the new one everywhere you used
+  it.)
 - Use [the `ssh-copy-id` command][ssh-copy-id] to copy your public key to other
   computers to use public key authentication instead of password authentication.
 
   _You will see how to do that in the SSH exercises._
 
 - For web services using public key authentication (e.g. GitHub), you usually
-  have to manually copy the public key file's contents (`id_rsa.pub`) and
+  have to manually copy the public key file's contents (`id_ed25519.pub`) and
   provide it to them in your account's settings.
 
 ### Key protection
@@ -431,52 +465,30 @@ A few examples are:
 
 ## References
 
-- [How does SSH Work](https://www.hostinger.com/tutorials/ssh-tutorial-how-does-ssh-work)
-- [Demystifying Symmetric and Asymmetric Methods of Encryption](https://www.cheapsslshop.com/blog/demystifying-symmetric-and-asymmetric-methods-of-encryption)
+- [How does SSH Work](https://www.hostinger.com/tutorials/what-is-ssh)
 - [Understanding the SSH Encryption and Connection Process](https://www.digitalocean.com/community/tutorials/understanding-the-ssh-encryption-and-connection-process)
 - [Diffie-Hellman Key Exchange][dh]
 - [Simplest Explanation of the Math Behind Public Key Cryptography][pubkey-math]
 - [SSH, The Secure Shell: The Definitive Guide](https://books.google.ch/books/about/SSH_The_Secure_Shell_The_Definitive_Guid.html?id=9FSaScltd-kC&redir_esc=y)
 - [SSH Authentication Sequence and Key Files](https://serverfault.com/a/935667)
 
-[aes]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
-[authorized_keys]: https://www.ssh.com/ssh/authorized_keys/openssh
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [brute-force]: https://en.wikipedia.org/wiki/Brute-force_attack
-[ciphertext]: https://en.wikipedia.org/wiki/Ciphertext
 [dh]: https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
-[discrete-logarithm]: https://en.wikipedia.org/wiki/Discrete_logarithm
 [ecdsa]: https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm
+[eddsa]: https://en.wikipedia.org/wiki/EdDSA
 [elliptic-curve]: https://en.wikipedia.org/wiki/Elliptic-curve_cryptography
-[enigma]: https://en.wikipedia.org/wiki/Enigma_machine#Operation
-[enigma-operating-shortcomings]: https://en.wikipedia.org/wiki/Cryptanalysis_of_the_Enigma#Operating_shortcomings
 [entropy]: https://en.wikipedia.org/wiki/Password_strength#Entropy_as_a_measure_of_password_strength
-[forward-secrecy]: https://en.wikipedia.org/wiki/Forward_secrecy
-[github-fingerprints]: https://docs.github.com/en/github/authenticating-to-github/githubs-ssh-key-fingerprints
+[github-fingerprints]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 [git]: https://git-scm.com
 [hash]: https://en.wikipedia.org/wiki/Cryptographic_hash_function
-[hash-non-crypto]: https://en.wikipedia.org/wiki/Hash_function
-[hmac]: https://en.wikipedia.org/wiki/HMAC
-[hsm]: https://en.wikipedia.org/wiki/Hardware_security_module
-[integer-factorization]: https://en.wikipedia.org/wiki/Integer_factorization
-[key-exchange]: https://en.wikipedia.org/wiki/Key_exchange
-[mac]: https://en.wikipedia.org/wiki/Message_authentication_code
-[mitm]: https://en.wikipedia.org/wiki/Man-in-the-middle_attack
-[openssl]: https://www.openssl.org
-[pem]: https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail
-[plaintext]: https://en.wikipedia.org/wiki/Plaintext
-[pubkey]: https://en.wikipedia.org/wiki/Public-key_cryptography
 [pubkey-math]: https://www.onebigfluke.com/2013/11/public-key-crypto-math-explained.html
 [rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
 [rsync]: https://en.wikipedia.org/wiki/Rsync
 [scp]: https://en.wikipedia.org/wiki/Secure_copy
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
 [shell]: https://en.wikipedia.org/wiki/Shell_(computing)
-[side-channel]: https://en.wikipedia.org/wiki/Cryptanalysis#Side-channel_attacks
-[sneakers]: https://en.wikipedia.org/wiki/Sneakers_(1992_film)
 [ssh-agent]: https://www.cyberciti.biz/faq/how-to-use-ssh-agent-for-authentication-on-linux-unix/
 [ssh-copy-id]: https://www.ssh.com/academy/ssh/copy-id
 [ssh-passphrase]: https://learn.microsoft.com/en-us/azure/devops/repos/git/gcm-ssh-passphrase?view=azure-devops
 [ssh-passphrase-add]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
-[symmetric-encryption]: https://en.wikipedia.org/wiki/Symmetric-key_algorithm
-[syn-flood]: https://en.wikipedia.org/wiki/SYN_flood

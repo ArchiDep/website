@@ -203,11 +203,12 @@ the server that you are the owner of your public key.
 
 {% note type: tip %}
 
-On Windows, you can toggle the display of hidden files in the View tab of the
-explorer to access your `.ssh` directory manually. On macOS, type `open ~/.ssh`
-in your Terminal or use the `Cmd-Shift-.` shortcut to display hidden files. On
-most Linux distributions, the file manager will have an option to show hidden
-files under its menu.
+On Windows, your private key is in the WSL, not in your Windows files. Type
+`\\wsl.localhost\` in the address bar of the file selection window, then open
+your Linux distribution's directory (e.g. `Ubuntu`), then `home`, your Linux
+username, and `.ssh`. On macOS, use the `Cmd-Shift-.` shortcut in the file
+selection window to display hidden files. On most Linux distributions, the file
+manager will have an option to show hidden files under its menu.
 
 {% endnote %}
 
