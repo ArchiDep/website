@@ -8,7 +8,7 @@ root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 default_name=archidep-test
 default_user=jde
 default_domain=archidep1.ch
-default_image=24.04
+default_image=26.04
 # The shape of the Azure B1s instance the course requires students to select.
 default_cpus=1
 default_memory=1G
