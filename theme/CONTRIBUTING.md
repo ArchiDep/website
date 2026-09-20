@@ -116,7 +116,13 @@ theme built for it to compile and serve pages correctly, as documented in the
     everywhere; which ones exist is decided in [`ArchiDep.Emoji`][emoji], and
     [`emoji/README.md`](./emoji/README.md) says where they come from and how to
     add one.
-  - `scripts/copy-emoji.mjs`: Copies the above into the static assets.
+  - `logo/`: The site's logo as 8-bit pixel art, in hand-drawn sources, the
+    generator that animates and recolours them, and the rendered PNG and
+    animated WebP files. Both the course material and the application draw
+    their logo, rocket and coffee cup from these;
+    [`logo/README.md`](./logo/README.md) says how it is put together and how to
+    regenerate it.
+  - `scripts/copy-emoji.mjs`: Copies the emoji into the static assets.
   - `scripts/copy-fonts.mjs`: Copies the font files `src/fonts.css` names into
     the static assets.
   - `package.json`: npm workspace configuration, dependencies and build scripts.
