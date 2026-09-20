@@ -4,8 +4,7 @@ title: Hello SSH
 
 In this series of exercises, you will learn to use the `ssh` command to connect
 to a remote server, and how to copy files to and from such a server using
-various tools. Then you will use them to follow a parrot to the remote land of
-Avalon.
+various tools.
 
 ## :exclamation: Connect to the exercise server
 
