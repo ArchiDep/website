@@ -901,32 +901,65 @@ Then connect once more, read the fingerprint in the question this time, answer
 
 ## :checkered_flag: What have I done?
 
-You have learned to use the `ssh` command to connect to a remote server, and to
-check that you are connecting to the right server with its key fingerprint.
+You worked on two computers from a single terminal. The exercise server is a
+real machine somewhere on the Internet, with no screen and no windows of its
+own: text sent over the network is the only way in, and everything you learned
+in the previous chapter is what works there.
 
-You have learned to configure and use public key authentication instead of the
-less secure password-based authentication mechanism, and you know which keys
-are stored on your machine and which are stored on the server.
+Along the way, you:
 
-You have also learned to use the SSH protocol through other tools such as `scp`
-or your favorite SFTP application to copy files.
+- Connected to a server with `ssh`, after checking its key fingerprint.
+- Generated a key pair and gave your public key to the server with
+  `ssh-copy-id`.
+- Copied files in both directions with `scp`, and with an SFTP application,
+  which goes through the same SSH channel.
+- Ran a command on the server without logging in.
+- Refused a server whose fingerprint did not match.
+- (Optionally) signed a message with your key by hand, and used an SSH agent.
 
-On the way to Avalon, you had to know, for every command, which machine it ran
-on: a file made on your computer had to be copied to the server, a prophecy made
-on the server had to be copied to your computer, and the Lady of the Lake only
-answered a command sent from your computer. Your settings stayed on your own
-computer too: the `PATH` that runs your treasure by its name does not exist on
-the server. The last thing Avalon asked of you was to look at a key: a server
-claimed to be the one you knew, and only its fingerprint said otherwise.
+The hardest part of SSH is not a command: it is knowing **which machine** your
+command runs on. While you are logged in, your terminal shows a shell running on
+the server: what you type is sent there, and what it prints comes back.
+`hostname` and `whoami` are how you ask where you are. Avalon made every step
+depend on it: Merlin only accepted a gift made on your own computer, the
+prophecy only showed its ink away from the server, and the Lady of the Lake only
+answered a command sent from home. `scp` says the same thing in its arguments:
+the side written first is the one the file comes from.
 
-If you are more security-minded, you may have also learned to protect your
-private key with a passphrase and to use SSH agent to make it more convenient to
-use SSH.
+Files cross; settings do not. If you carried your treasure to Avalon, it still
+ran there as `./treasure`, because a program is a file like any other — but
+typing `treasure` gave "command not found", since the `PATH` that knows about
+your bag is yours, at home. Each machine also has its own home directory:
+`avalon/prophecy` after a colon is on the server.
+
+An SSH connection authenticates twice, in opposite directions: the server proves
+that it is the server, then you prove that you are you. Both proofs are the same
+mechanism: a signature made with a private key and checked with the matching
+public key. Your private key never leaves `~/.ssh` on your machine, the server's
+host key never leaves `/etc/ssh` on the server, and only signatures travel, each
+one made for a single connection and useless anywhere else. That is why giving a
+server your public key costs you nothing, and why a password, which can be
+replayed, is far worse to hand over.
+
+Nothing on the network tells you whose key you are being shown: you decide,
+once, the first time you connect. That is what the fingerprint question asks,
+and your SSH client then remembers your answer in `~/.ssh/known_hosts` and stops
+asking. The message on the shore was that attack in miniature: same address,
+same username, everything looking right, and only the fingerprint said otherwise
+— it was not on the dashboard. Refusing printed `Host key verification failed`,
+which reads like an error and was the right outcome; `ssh-keygen -R` is how you
+take a wrong answer back.
+
+Finally, `ssh-copy-id` **added** a way into your account without closing the old
+one: your password still worked when you asked for it. Only the server's own
+configuration can refuse passwords, and the server you will create later in the
+course will do exactly that: a hostname, a username and your key, with no
+password left to steal.
 
 ## :question: Clean up (optional)
 
-Avalon is behind you? You can remove what the treasure hunt and Avalon left on
-your computer:
+Avalon is behind you? You can remove what these exercises left on your
+computer:
 
 - Open your shell's configuration file with nano (`~/.bashrc` in the WSL,
   `~/.zshrc` on macOS), and delete the line you added to your `PATH` in [Hello
@@ -937,6 +970,24 @@ your computer:
   ```bash
   $> rm prophecy land.txt
   ```
+
+- If you signed a message with your key, delete it and its signature:
+
+  ```bash
+  $> rm message.txt message.txt.sig
+  ```
+
+- If you answered `yes` to the message on the shore, your SSH client still
+  trusts the server that was waiting on that other port. Make it forget that
+  key:
+
+  ```bash
+  $> ssh-keygen -R '[ssh.archidep.ch]:2222'
+  ```
+
+  Your `~/.ssh/known_hosts` file is where that trust was written down. The entry
+  for the exercise server itself, on its normal port, is a key you checked
+  against the [dashboard][dashboard]: keep that one.
 
 - Delete the treasure hunt:
 
