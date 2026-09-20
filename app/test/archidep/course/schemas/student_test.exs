@@ -116,6 +116,18 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
     end
   end
 
+  describe "generate_ssh_exercise_password/0" do
+    # A randomly generated secret, asserted by its properties rather than its
+    # value (see `docs/testing.md`). It is too short for the byte floors of
+    # `assert_secure_random_token/1`, which guard bearer tokens.
+    test "generates a distinct 10-character lowercase base32 password per call" do
+      passwords = Enum.map(1..100, fn _index -> Student.generate_ssh_exercise_password() end)
+
+      assert Enum.all?(passwords, &(String.length(&1) == 10 and &1 =~ ~r/\A[a-z2-7]+\z/))
+      assert length(Enum.uniq(passwords)) == 100
+    end
+  end
+
   describe "new/3 required fields" do
     test "the name is required" do
       assert errors_on(student_changeset(:new, name: "")) == %{name: ["can't be blank"]}

@@ -7,6 +7,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
   use ArchiDep, :schema
 
   alias ArchiDep.Course.Schemas.Class
+  alias ArchiDep.Course.Schemas.Student
   alias ArchiDep.Course.Types
 
   @type t :: %__MODULE__{
@@ -23,7 +24,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
     field :academic_class, :string
     field :domain, :string
 
-    embeds_many :students, Student, primary_key: false do
+    embeds_many :students, ImportedStudent, primary_key: false do
       field :name, :string
       field :email, :string
     end
@@ -62,20 +63,12 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         existing_usernames,
         now
       ) do
-    password_bytes = :crypto.strong_rand_bytes(5 * length(students))
-
     students
     |> Enum.map(&Map.from_struct/1)
     # By folded email, like the index the insert conflicts against: one person
     # listed twice in the same payload under different spellings is one student.
     |> Enum.uniq_by(&String.downcase(&1.email))
-    |> Enum.with_index()
-    |> Enum.map(fn {student, idx} ->
-      password =
-        password_bytes
-        |> :binary.part(idx * 5, 5)
-        |> Base.encode32(padding: false)
-
+    |> Enum.map(fn student ->
       Map.merge(student, %{
         id: UUID.generate(),
         academic_class: academic_class,
@@ -83,7 +76,7 @@ defmodule ArchiDep.Course.Schemas.StudentImportList do
         domain: domain,
         active: true,
         servers_enabled: false,
-        ssh_exercise_password: password,
+        ssh_exercise_password: Student.generate_ssh_exercise_password(),
         class_id: class_id,
         version: 1,
         created_at: now,

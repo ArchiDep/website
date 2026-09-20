@@ -16,6 +16,13 @@ defmodule ArchiDep.Course.Schemas.Student do
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime_usec]
 
+  # How much randomness goes into the password a student uses to log in to the
+  # SSH exercise server. Base32 encodes 5 bits per character, so 6 bytes is a
+  # 10-character password carrying 48 bits of entropy — far out of reach of
+  # online guessing against the exercise server, while staying short enough to
+  # be typed by hand by the students who will not copy it from the dashboard.
+  @ssh_exercise_password_bytes 6
+
   @type t :: %__MODULE__{
           id: UUID.t(),
           name: String.t(),
@@ -161,6 +168,17 @@ defmodule ArchiDep.Course.Schemas.Student do
         :user_id
       )
 
+  # Base32 rather than Base64, and lowercase, for the students who type the
+  # password rather than copying it: the alphabet omits the digits `0`, `1`,
+  # `8` and `9`, so none of the usual `0`/`O` and `1`/`l` misreadings can
+  # occur, and no character needs the shift key.
+  @spec generate_ssh_exercise_password() :: String.t()
+  def generate_ssh_exercise_password,
+    do:
+      @ssh_exercise_password_bytes
+      |> :crypto.strong_rand_bytes()
+      |> Base.encode32(padding: false, case: :lower)
+
   @spec new(Types.student_data(), Class.t(), DateTime.t()) :: Changeset.t(t())
   def new(data, class, now) do
     id = UUID.generate()
@@ -180,7 +198,7 @@ defmodule ArchiDep.Course.Schemas.Student do
       class: class,
       class_id: class.id,
       username_confirmed: false,
-      ssh_exercise_password: 5 |> :crypto.strong_rand_bytes() |> Base.encode32(),
+      ssh_exercise_password: generate_ssh_exercise_password(),
       version: 1,
       created_at: now,
       updated_at: now

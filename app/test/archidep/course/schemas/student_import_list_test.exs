@@ -10,9 +10,9 @@ defmodule ArchiDep.Course.Schemas.StudentImportListTest do
   # schema itself never reads the clock — the use case injects this value.
   @now ~U[2024-03-15 10:30:00.000000Z]
 
-  # Base32 (RFC 4648) alphabet without padding, the encoding
+  # Base32 (RFC 4648) alphabet, lowercase and without padding, the encoding
   # `to_insert_data/4` uses for the generated SSH exercise password.
-  @base32 ~r/\A[A-Z2-7]+\z/
+  @base32 ~r/\A[a-z2-7]+\z/
 
   describe "changeset/1" do
     test "a valid import list has no errors" do
@@ -303,10 +303,10 @@ defmodule ArchiDep.Course.Schemas.StudentImportListTest do
         |> StudentImportList.to_insert_data(class, [], @now)
         |> Enum.map(& &1.ssh_exercise_password)
 
-      # Each password is 5 random bytes base32-encoded (8 characters). The value
-      # is unpinnable, so its encoding is checked and the passwords are required
-      # to differ across students.
-      assert Enum.all?(passwords, &(String.length(&1) == 8 and &1 =~ @base32))
+      # Each password is 6 random bytes base32-encoded (10 characters). The
+      # value is unpinnable, so its encoding is checked and the passwords are
+      # required to differ across students.
+      assert Enum.all?(passwords, &(String.length(&1) == 10 and &1 =~ @base32))
       assert Enum.uniq(passwords) == passwords
     end
 
