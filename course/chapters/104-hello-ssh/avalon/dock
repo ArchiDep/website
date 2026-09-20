@@ -600,9 +600,9 @@ for arg in "$@"; do
   esac
 done
 
-# The word is looked for in each argument on its own, so that whatever was
-# pasted next to it does not hide it, and then in all of them at once, so that
-# a word typed in two pieces is still the word.
+# Each argument is searched on its own, so that whatever was pasted next to
+# the word does not hide it, and then all of them at once, so that a word
+# typed in two pieces still counts.
 word=no
 for candidate in "$@" "$*"; do
   candidate=$(printf '%s' "${candidate%%SHA256:*}" |
@@ -702,10 +702,10 @@ You hold out the key you were shown. The lake goes very still.
  a sword that looks like mine and is not mine.
 SEALED
 
-  # Morgan's own server marks the travellers who got as far as telling it who
-  # they were, which is something only a client that accepted her key ever
-  # does. Nothing marks the ones who refused, so the lake speaks of what it can
-  # see rather than of what it cannot.
+  # The server on the other port marks the travellers who got as far as
+  # telling it who they were, which is something only a client that accepted
+  # its key ever does. Nothing marks the ones who refused, so the lake speaks
+  # of what it can see rather than of what it cannot.
   if [ -f "$AVALON/.morgan" ]; then
     reveal <<'SEALED'
 
