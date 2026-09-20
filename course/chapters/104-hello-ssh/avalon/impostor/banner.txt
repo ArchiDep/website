@@ -33,5 +33,5 @@ the line that begins with SHA256. Answer no, and take that fingerprint
 to the Lady of the Lake. She is waiting for it, and she has something
 for you:
 
-    ssh <your-login>@ssh.archidep.ch ./avalon/lady THE-WORD SHA256:...
+    ssh <username>@ssh.archidep.ch ./avalon/lady THE-WORD SHA256:...
 

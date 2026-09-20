@@ -286,11 +286,41 @@ reveal <<'SEALED'
 
 SEALED
 
+# A file called treasure that holds no treasure is not nothing: it is a
+# traveller who tried the name on its own. Merlin says so rather than greeting
+# them as though they had come empty-handed, but it does not stand in the way
+# of the other gift, so that nobody has to delete anything to go on.
 gift=""
-if [ -f "$AVALON/treasure" ] && grep -q '^# The treasure of Skull Island' "$AVALON/treasure"; then
-  gift=treasure
-elif [ -f "$AVALON/land.txt" ]; then
+forgery=no
+if [ -f "$AVALON/treasure" ]; then
+  if grep -q '^# The treasure of Skull Island' "$AVALON/treasure"; then
+    gift=treasure
+  else
+    forgery=yes
+  fi
+fi
+
+if [ -z "$gift" ] && [ -f "$AVALON/land.txt" ]; then
   gift=land
+fi
+
+if [ -z "$gift" ] && [ "$forgery" = yes ]; then
+  reveal <<'SEALED'
+Merlin picks up the file you called treasure. He turns it over once,
+and laughs.
+
+"The right name, traveller, and nothing of Skull Island inside it!
+ Did you think the name was the thing? Anyone can write treasure on
+ anything. I read what is in it.
+
+ The real one is a program, and it still says where it comes from. It
+ is in your bag, on your own computer, and it crosses the sea like
+ any other file.
+
+ Never found it? Then tell me instead what your own land answers when
+ you ask it who it is, and I will be just as glad."
+SEALED
+  exit 1
 fi
 
 if [ -z "$gift" ]; then
@@ -607,6 +637,23 @@ if [ -n "$fingerprint" ] && [ -f "$AVALON/message.txt" ]; then
   # written into this spell.
   impostor=$(fingerprint_of "$IMPOSTOR_KEY")
 
+  # A land that cannot read that key cannot tell it from any other, and the
+  # trial it is the answer to does not exist on such a machine either. The lake
+  # says so and gives nothing: a dead end a teacher can hear about is worth
+  # more than Excalibur handed to whoever types the right shape.
+  if [ -z "$impostor" ]; then
+    reveal <<'SEALED'
+The lake goes dark, and nothing rises from it.
+
+Avalon is broken: the Lady of the Lake cannot reach the key you are
+asking her about, so she cannot tell you whose it is.
+
+This is not your fault. Tell your teacher that she cannot read the
+host key of the server on port @@PORT@@.
+SEALED
+    exit 1
+  fi
+
   mine=no
   for key in $HOST_KEYS; do
     if [ "$(fingerprint_of "$key")" = "$fingerprint" ]; then
@@ -626,10 +673,7 @@ SEALED
     exit 1
   fi
 
-  # A land whose impostor is not installed cannot tell its key from any other.
-  # Rather than hold a traveller back for a server that is not there, it takes
-  # them at their word.
-  if [ -n "$impostor" ] && [ "$fingerprint" != "$impostor" ]; then
+  if [ "$fingerprint" != "$impostor" ]; then
     reveal <<'SEALED'
 A voice rises from the lake: "I do not know that key, traveller.
 
@@ -644,6 +688,11 @@ SEALED
 @@FINAL_HINT@@
 SEALED_FINAL_HINT
 
+  # What tells the lake, when a traveller calls again with only the word, that
+  # it has nothing left to ask them for. Calling again with the key replays the
+  # whole ending, which is checked above and before this.
+  touch "$AVALON/.excalibur"
+
   reveal <<'SEALED'
 You hold out the key you were shown. The lake goes very still.
 
@@ -651,15 +700,40 @@ You hold out the key you were shown. The lake goes very still.
  belongs to Morgan le Fay. The barge of Avalon never moved: she wrote
  that message herself, and she waited for you on that other port with
  a sword that looks like mine and is not mine.
+SEALED
 
- You looked at her key before you trusted her. That is the whole of
- it, and it is the only thing that ever protects you: a key you have
- not checked is a stranger who knows your name.
+  # Morgan's own server marks the travellers who got as far as telling it who
+  # they were, which is something only a client that accepted her key ever
+  # does. Nothing marks the ones who refused, so the lake speaks of what it can
+  # see rather than of what it cannot.
+  if [ -f "$AVALON/.morgan" ]; then
+    reveal <<'SEALED'
 
- If you told your own computer to trust her, it still does. Take that
- back, at home:
+ And you went to her. You gave her your hand before you had looked
+ at it.
+
+ She told you herself why that cost you nothing: your key signed a
+ challenge she made for that one connection, and it is worth nothing
+ to her anywhere else. That was luck, traveller, not care. A password
+ would have been hers.
+
+ You read her key in the end. Read it first, next time: a key you
+ have not checked is a stranger who knows your name.
+
+ And your own computer still trusts her. Take that back, at home:
 
      ssh-keygen -R '[@@HOST@@]:@@PORT@@'
+SEALED
+  else
+    reveal <<'SEALED'
+
+ You never set foot on her shore. You read her key, and that was all
+ it took: a key you have not checked is a stranger who knows your
+ name.
+SEALED
+  fi
+
+  reveal <<'SEALED'
 
  Now take what I promised you."
 
@@ -691,14 +765,36 @@ SEALED
   exit 0
 fi
 
-if [ ! -f "$AVALON/message.txt" ]; then
-  unpack "$AVALON/message.txt" 644 <<'SEALED_MESSAGE' &&
+# The scene below is played once. A traveller who comes back with only the word
+# has it already, and wants the one thing they are missing rather than all of it
+# again.
+if [ -f "$AVALON/.excalibur" ]; then
+  reveal <<'SEALED'
+A voice rises from the lake: "You have Excalibur, traveller, and
+Avalon is behind you. Go home."
+SEALED
+  exit 0
+fi
+
+if [ -f "$AVALON/message.txt" ]; then
+  reveal <<'SEALED'
+A voice rises from the lake: "I have spoken once, traveller, and I am
+still waiting.
+
+ Read the message on the shore, ~/avalon/message.txt, and bring me
+ the key of whatever answers at the end of it:
+
+     ssh @@LOGIN@@ ./avalon/lady THE-WORD SHA256:..."
+SEALED
+  exit 1
+fi
+
+unpack "$AVALON/message.txt" 644 <<'SEALED_MESSAGE' &&
 @@MESSAGE@@
 SEALED_MESSAGE
-  unpack "$AVALON/.hint" 644 <<'SEALED_SHORE_HINT' || exit 1
+unpack "$AVALON/.hint" 644 <<'SEALED_SHORE_HINT' || exit 1
 @@SHORE_HINT@@
 SEALED_SHORE_HINT
-fi
 
 reveal <<'SEALED'
                           |
@@ -744,21 +840,11 @@ reveal <<'SEALED'
             V_/_
 
 "One last trial, traveller, and Avalon is behind you. Someone left a
- message for you on the shore, in ~/avalon/message.txt. Read it: it
- will tell you to go somewhere.
+ message for you on the shore, in ~/avalon/message.txt. Read it, and
+ trust nothing that you have not checked.
 
- Before you go anywhere, look at the key of the server that answers
- there, and hold it against the fingerprints on the dashboard. A
- server that really is this one has the same keys. Trust nothing that
- you have not checked.
-
- Your own computer shows you that key before it asks you anything, on
- the line that begins with SHA256. Bring it back to me, with the word,
- from your own land:
-
-     ssh @@LOGIN@@ ./avalon/lady THE-WORD SHA256:...
-
- I hold Excalibur. Bring me that key, and it is yours."
+ It will send you somewhere. Whatever answers there has a key. Bring
+ me that key, and Excalibur is yours."
 SEALED
 END_LADY
 
@@ -766,12 +852,28 @@ text MESSAGE <<'END_MESSAGE'
 A small piece of paper, folded in four. Nobody signed it.
 
     "Traveller! The barge of Avalon no longer leaves from its usual
-     port. It now leaves from another port: @@PORT@@. Come back to
-     Avalon this way:
+     port. It now leaves from another port: @@PORT@@.
+
+     You cannot board it from here. Nobody sails to Avalon from
+     Avalon: you are already on it, and this is where the barge
+     arrives. Go home first, log out of this server, and come back
+     from your own computer, this way:
 
          ssh -p @@PORT@@ @@LOGIN@@
 
      -- A friend"
+
+You remember what the Lady of the Lake said: trust nothing that you
+have not checked. Whatever answers on that port shows you its key
+before it asks you anything, on the line that begins with SHA256.
+That key is the one she wants.
+
+Call her with it, from your own computer, and with the word of the
+prophecy:
+
+    ssh @@LOGIN@@ ./avalon/lady THE-WORD SHA256:...
+
+Stuck? There is a hint here: cat .hint
 END_MESSAGE
 
 text SHORE_HINT <<'END_SHORE_HINT'
@@ -812,8 +914,8 @@ text FINAL_HINT <<'END_FINAL_HINT'
 HINT
 
 Avalon is behind you. You crossed the sea in both directions, you
-found the parrot, and you did not take Morgan le Fay's hand without
-looking at it first.
+found the parrot, and you know now what a key nobody has looked at is
+worth.
 
 Nothing is left here. What remains is optional, in the exercise: the
 clean-up of what the treasure hunt and Avalon left on your own
@@ -932,6 +1034,10 @@ confirm_restart() {
 
   printf 'Delete Avalon and start again from the beginning? [y/N] '
   read -r answer || true
+  # Separates what either answer leads to from the line it was typed on, and
+  # ends that line itself when the answer came from an end of input rather than
+  # from a traveller pressing enter.
+  printf '\n'
 
   case "$answer" in
     y|Y|yes|YES|Yes) return 0 ;;

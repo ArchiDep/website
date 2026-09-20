@@ -5,17 +5,24 @@
 # Nobody can ever log in to it. Students who accept its host key without
 # checking it only get the banner, which tells them what they just did. It
 # never asks for a password, since a student who trusted it would type their
-# real one: it only offers public key authentication, and accepts no key.
+# real one: it only offers public key authentication, and the program it looks
+# keys up with prints none. That program is also what marks a student who got
+# as far as authenticating here, which is why it runs as root.
 #
 # Its public host key must stay readable by everyone: the Lady of the Lake, who
 # runs as the student, reads it to tell whether the fingerprint a student
 # brings back to her is the one this server showed them.
 #
+# The SSH server refuses to run a key lookup program that anyone but root could
+# rewrite, and refuses it again for every directory on the way to it.
+#
 # Run it next to the real SSH server, as root:
 #
 #     ssh-keygen -q -t ed25519 -N '' -f /etc/ssh/avalon-impostor/ssh_host_ed25519_key
+#     chown -R root:root /etc/ssh/avalon-impostor
 #     chmod 755 /etc/ssh/avalon-impostor
 #     chmod 644 /etc/ssh/avalon-impostor/ssh_host_ed25519_key.pub
+#     chmod 755 /etc/ssh/avalon-impostor/authorized_keys_command
 #     /usr/sbin/sshd -f /etc/ssh/avalon-impostor/sshd_config
 
 Port 2222
@@ -24,7 +31,11 @@ PidFile /run/sshd-avalon-impostor.pid
 
 AuthenticationMethods publickey
 PubkeyAuthentication yes
+# Keeping the file at none matters: without it the students' own
+# ~/.ssh/authorized_keys would be read here, and they would be let in.
 AuthorizedKeysFile none
+AuthorizedKeysCommand /etc/ssh/avalon-impostor/authorized_keys_command
+AuthorizedKeysCommandUser root
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin no

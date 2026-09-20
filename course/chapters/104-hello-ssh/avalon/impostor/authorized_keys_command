@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# The program the impostor of Avalon looks authorized keys up with, and the
+# mark Morgan le Fay leaves on a traveller who took her hand.
+#
+# It prints no key, ever. That is what makes the impostor accept nobody, and it
+# is the only thing it has to do; the mark is left on the way past.
+#
+# The SSH server runs this once a client has accepted its host key and begun to
+# authenticate, with the username the client sent. Both of those come after the
+# question a student answers with yes or no: a traveller who answered no closed
+# the connection during the key exchange, before ever saying who they were, so
+# this program never runs for them and no mark is made. Its absence is what the
+# Lady of the Lake reads at the end of Avalon.
+#
+# The username comes from the client, which is free to send anything at all, so
+# nothing here is built from it before it has been looked up.
+#
+# It runs as root, and makes the mark as the student rather than as itself:
+# ~/avalon belongs to them, and a symbolic link planted there would otherwise
+# have root writing wherever they liked.
+
+# The SSH server gives this program an environment of its own, which is not one
+# that has been through a login shell. The locale is pinned along with the path
+# because the range in the pattern below is only the letters it looks like in
+# the C locale: anywhere else it is a range of collation, and matches more.
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+LC_ALL=C
+export PATH LC_ALL
+
+user="$1"
+
+# No account here is named like this, and one that began with a dash would be
+# read as an option by the lookup below rather than as a name.
+case "$user" in
+  '' | -* | *[!a-z0-9_-]*) exit 0 ;;
+esac
+
+entry=$(getent passwd "$user") || exit 0
+uid=$(printf '%s' "$entry" | cut -d: -f3)
+gid=$(printf '%s' "$entry" | cut -d: -f4)
+home=$(printf '%s' "$entry" | cut -d: -f6)
+
+[ -n "$uid" ] && [ -n "$gid" ] && [ -n "$home" ] || exit 0
+
+# A student who has not reached Avalon yet has no directory to be marked in,
+# and one who starts the land again leaves the mark behind with it.
+setpriv --reuid "$uid" --regid "$gid" --clear-groups \
+  touch "$home/avalon/.morgan" 2> /dev/null
+
+exit 0
