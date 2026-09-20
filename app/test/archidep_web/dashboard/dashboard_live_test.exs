@@ -74,10 +74,30 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
                  username: "alice",
                  password: "hunter2",
                  fingerprints: [
-                   "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY (ED25519)",
-                   "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ (ECDSA)",
-                   "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb (ED25519)",
-                   "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd (ECDSA)"
+                   [
+                     %{
+                       algorithm: "ED25519",
+                       fingerprint: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY",
+                       copied: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY"
+                     },
+                     %{
+                       algorithm: "ECDSA",
+                       fingerprint: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ",
+                       copied: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ"
+                     }
+                   ],
+                   [
+                     %{
+                       algorithm: "ED25519",
+                       fingerprint: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb",
+                       copied: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb"
+                     },
+                     %{
+                       algorithm: "ECDSA",
+                       fingerprint: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd",
+                       copied: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd"
+                     }
+                   ]
                  ]
                },
                name_prompt?: false,
@@ -1003,9 +1023,31 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
         %{
           username: dd_value(html, gettext("Username")),
           password: html_element_attribute(copy, "data-clipboard-text"),
-          fingerprints: html |> find_html_elements("li.text-xs") |> Enum.map(&normalized_text/1)
+          fingerprints: fingerprint_groups(html)
         }
     end
+  end
+
+  # The fingerprints as the page groups them, one list per digest, each row
+  # pinning what it shows next to what its copy button puts in the clipboard.
+  defp fingerprint_groups(html) do
+    html
+    |> find_html_elements("#ssh-exercise-vm-host-key-fingerprints > ul")
+    |> Enum.map(fn group ->
+      group
+      |> find_html_elements("li")
+      |> Enum.map(fn row ->
+        [algorithm] = find_html_elements(row, "span")
+        [fingerprint] = find_html_elements(row, "code")
+        [copy] = find_html_elements(row, "button")
+
+        %{
+          algorithm: normalized_text(algorithm),
+          fingerprint: normalized_text(fingerprint),
+          copied: html_element_attribute(copy, "data-clipboard-text")
+        }
+      end)
+    end)
   end
 
   defp call_to_action(html) do

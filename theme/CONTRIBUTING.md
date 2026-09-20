@@ -246,6 +246,15 @@ DaisyUI semantic colors, so that the dashboard application and the course
 material both honor the same light/dark behavior described in the [`app`][app-contributing]
 and [`course`][course-contributing] documentation.
 
+**`night`'s base ramp is nearly flat, and it runs the other way.** Its
+`base-100`, `base-200` and `base-300` are 20.8%, 19.3% and 17.9% OKLCH
+lightness: each step is _darker_ than the last, barely 1.5 points apart, where
+`nord` steps down by 2–3.5 points from a light 95%. A surface tint that reads
+clearly in the default theme can therefore be invisible in dark mode, so do not
+reach for the next `base-*` step to lift a row on hover or to mark a nested
+panel. Tint with a translucent `base-content` instead — `bg-base-content/15` and
+the like — which moves away from whatever surface it sits on in both themes.
+
 ### Typography & Fonts
 
 Three families, declared by `src/fonts.css` — which both entry points import —

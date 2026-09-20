@@ -4,8 +4,10 @@ defmodule ArchiDepWeb.Components.CoreComponents do
   """
 
   use Phoenix.Component
+  use Gettext, backend: ArchiDepWeb.Gettext
 
   alias ArchiDep.Emoji
+  alias Phoenix.LiveView.JS
   alias Phoenix.LiveView.Rendered
 
   attr :name, :string, required: true, doc: "the name of the emoji to show"
@@ -113,6 +115,49 @@ defmodule ArchiDepWeb.Components.CoreComponents do
         {render_slot(@inner_block)}
       </dd>
     </div>
+    """
+  end
+
+  attr :id, :string,
+    required: true,
+    doc: "the identifier of the button, which its tooltip is looked up by"
+
+  attr :text, :string, required: true, doc: "the value to put in the clipboard"
+
+  # Declared explicitly, which keeps it out of the global attributes below so
+  # that a caller's classes are merged into the button's own rather than
+  # rendered as a second class attribute beside them.
+  attr :class, :string, default: nil, doc: "additional classes to add to the button"
+
+  attr :rest, :global, doc: "arbitrary HTML attributes to add to the button"
+
+  @doc """
+  A button that puts a value in the clipboard.
+
+  The copying itself is clipboard.js's, wired in `app.js` to every element
+  carrying a `data-clipboard-text` attribute. The click handler only turns the
+  button's own tooltip into a confirmation and schedules its reset, which the
+  `hide-tooltip` listener does by looking the button up by its identifier.
+  """
+  @spec copy_button(map()) :: Rendered.t()
+  def copy_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      id={@id}
+      class={["cursor-pointer text-base-content/75 hover:text-base-content tooltip", @class]}
+      aria-label={gettext("Copy to clipboard")}
+      data-clipboard-text={@text}
+      data-tip={gettext("Copy to clipboard")}
+      phx-click={
+        JS.set_attribute({"data-tip", gettext("Copied!")})
+        |> JS.add_class("tooltip-open")
+        |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
+      }
+      {@rest}
+    >
+      <Heroicons.clipboard_document class="size-4" />
+    </button>
     """
   end
 

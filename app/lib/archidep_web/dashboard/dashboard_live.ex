@@ -39,10 +39,10 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         )
       ])
 
-    ssh_exercise_vm_host_keys =
+    ssh_exercise_vm_host_key_fingerprints =
       case student do
         %StudentView{class: %ClassView{ssh_exercise_vm_host_keys: keys}} ->
-          SSH.stored_ssh_host_keys(keys)
+          keys |> SSH.stored_ssh_host_keys() |> host_key_fingerprints()
 
         _not_a_student ->
           []
@@ -64,7 +64,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       page_title: gettext("Dashboard"),
       now: Clock.now(),
       student: student,
-      ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys,
+      ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
       servers: servers,
       server_state_map: ServerTrackerClient.server_state_map(servers),
       groups: groups
@@ -165,6 +165,24 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
 
     student
   end
+
+  # The exercise VM's fingerprints, in one group per digest: the page lists
+  # every host key's SHA256 fingerprint, then every host key's MD5 one, since
+  # which of the two a student is comparing against depends on the client they
+  # connect with. Each fingerprint carries the identifier of its row's copy
+  # button, unique across both groups.
+  defp host_key_fingerprints([]), do: []
+
+  defp host_key_fingerprints(keys),
+    do:
+      Enum.map([:sha256, :md5], fn digest ->
+        keys
+        |> Enum.with_index()
+        |> Enum.map(fn {key, index} ->
+          {"ssh-exercise-vm-host-key-#{index}-#{digest}-copy", SSHHostKey.algorithm(key),
+           SSHHostKey.fingerprint(key, digest)}
+        end)
+      end)
 
   defp active_servers(servers), do: Enum.filter(servers, & &1.active)
 
