@@ -195,6 +195,11 @@ component-specific frameworks, languages and tools.
   programming languages and tools used in this project. The required versions
   are specified in the [`.tool-versions`](./.tool-versions) file at the root of
   the repository.
+- [Multipass](https://canonical.com/multipass) is used to run a local virtual
+  machine standing in for the cloud server the course has students create on
+  Azure, to test the course material and the dashboard's server features against
+  something disposable. See the [`scripts/test-vm`](./scripts/test-vm) script,
+  which its `--help` documents.
 - [Prettier](https://prettier.io) is used to format a significant part of the
   code in this project (JavaScript/TypeScript and HTML files that are not part
   of the Phoenix application). See the [`.prettierrc.yml`](./.prettierrc.yml)

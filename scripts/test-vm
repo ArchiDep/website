@@ -1,0 +1,371 @@
+#!/usr/bin/env bash
+# Manage a local Multipass virtual machine standing in for the cloud server the
+# course has students create on Azure.
+set -euo pipefail
+
+root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+default_name=archidep-test
+default_user=jde
+default_domain=archidep1.ch
+default_image=24.04
+# The shape of the Azure B1s instance the course requires students to select.
+default_cpus=1
+default_memory=1G
+default_disk=30G
+default_key="$HOME/.ssh/id_ed25519.pub"
+
+# The key the application authenticates to students' servers with, which the
+# exercise has them add to their authorized keys.
+app_key_file="$root_dir/app/priv/ssh/id_ed25519.pub"
+
+# The port the application, and Multipass itself, reach the machine on. The
+# firewall always lets it through, or neither could get back in.
+ssh_port=22
+
+usage() {
+  cat <<EOF
+Usage: scripts/test-vm [command] [options]
+
+Launch a local Multipass virtual machine standing in for the cloud server the
+course has students create on Azure: Ubuntu $default_image on the shape of a B1s
+instance, with a course Unix username whose authorized keys hold your public key
+and the application's, the course hostname, and 2G of swap. Each of those last
+three can be left out to produce a half-configured machine to test against.
+
+Commands:
+  create      Launch the virtual machine (the default).
+  info        Print the details needed to register it in the dashboard.
+  destroy     Delete and purge it.
+  recreate    Destroy it, then create it again.
+
+Options:
+  -n, --name NAME      Multipass instance name (default: $default_name).
+  -u, --user USERNAME  Course Unix username (default: $default_user).
+  -d, --domain DOMAIN  Course domain; the hostname is USERNAME.DOMAIN
+                       (default: $default_domain).
+  -k, --key FILE       Your public SSH key (default: ~/.ssh/id_ed25519.pub).
+  -i, --image IMAGE    Ubuntu image (default: $default_image).
+      --cpus N         Number of CPUs (default: $default_cpus).
+      --memory SIZE    Amount of memory (default: $default_memory).
+      --disk SIZE      Disk size (default: $default_disk).
+      --no-app-key     Leave the application's key out of the user's authorized
+                       keys, as it is until the exercise has students add it.
+      --no-hostname    Keep the Multipass hostname instead of USERNAME.DOMAIN.
+      --no-swap        Leave the machine without swap.
+      --bare           All three of the above at once: the machine as Azure
+                       hands it over, with the rest of the exercise still to be
+                       walked through.
+      --ports LIST     Enable ufw, refusing incoming traffic on every port but
+                       SSH and the comma-separated LIST. Without it no firewall
+                       runs and every port is reachable. The dashboard probes
+                       80, 443, 3000 and 3001, so '--ports 80,443' leaves it to
+                       find two of the four closed, and '--ports ""' all four.
+  -y, --yes            Do not ask before destroying an instance.
+  -h, --help           Print this message.
+
+The machine is reachable from here at the address 'info' prints. Nothing
+filters its ports unless --ports says so — on Azure that filtering is the
+security group the exercise has students open 80, 443, 3000 and 3001 in.
+
+'destroy' drops the machine's address from ~/.ssh/known_hosts, because the next
+machine to be given that address presents a different host key.
+EOF
+}
+
+command=create
+name="$default_name"
+username="$default_user"
+domain="$default_domain"
+image="$default_image"
+cpus="$default_cpus"
+memory="$default_memory"
+disk="$default_disk"
+key_file="$default_key"
+app_key=true
+set_hostname=true
+swap=true
+firewall=false
+ports=
+assume_yes=false
+
+if [[ $# -gt 0 && $1 != -* ]]; then
+  command="$1"
+  shift
+fi
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -n | --name)
+      name="$2"
+      shift 2
+      ;;
+    -u | --user)
+      username="$2"
+      shift 2
+      ;;
+    -d | --domain)
+      domain="$2"
+      shift 2
+      ;;
+    -k | --key)
+      key_file="$2"
+      shift 2
+      ;;
+    -i | --image)
+      image="$2"
+      shift 2
+      ;;
+    --cpus)
+      cpus="$2"
+      shift 2
+      ;;
+    --memory)
+      memory="$2"
+      shift 2
+      ;;
+    --disk)
+      disk="$2"
+      shift 2
+      ;;
+    --no-app-key)
+      app_key=false
+      shift
+      ;;
+    --no-hostname)
+      set_hostname=false
+      shift
+      ;;
+    --no-swap)
+      swap=false
+      shift
+      ;;
+    --bare)
+      app_key=false
+      set_hostname=false
+      swap=false
+      shift
+      ;;
+    --ports)
+      firewall=true
+      ports="${2//,/ }"
+      shift 2
+      ;;
+    -y | --yes)
+      assume_yes=true
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      >&2 echo "Unknown option: $1"
+      >&2 usage
+      exit 1
+      ;;
+  esac
+done
+
+hostname="${username}.${domain}"
+
+for port in $ports; do
+  if [[ ! $port =~ ^[0-9]+$ ]] || ((port < 1 || port > 65535)); then
+    >&2 echo "Not a port number: '${port}'. --ports takes a comma-separated list, such as '80,443'."
+    exit 1
+  fi
+done
+
+instance_exists() {
+  multipass info "$name" &>/dev/null
+}
+
+instance_ipv4() {
+  multipass info "$name" --format csv | awk -F, 'NR == 2 { print $3 }'
+}
+
+cloud_init() {
+  local authorized_keys=("$(cat "$key_file")")
+  if [[ $app_key == true ]]; then
+    authorized_keys+=("$(cat "$app_key_file")")
+  fi
+
+  # Every command below is one unquoted string because Multipass reserializes
+  # this configuration before handing it to cloud-init and drops quotes as it
+  # does: a quoted 600 comes out the other side as a number, which fails
+  # cloud-init's schema validation and leaves it in the degraded state that
+  # 'multipass launch' waits out.
+  local commands=()
+
+  if [[ $swap == true ]]; then
+    # The 2G of swap the exercise has students add, added the way it has them
+    # add it.
+    commands+=(
+      'fallocate -l 2G /swapfile'
+      'chmod 600 /swapfile'
+      'mkswap /swapfile'
+      'swapon /swapfile'
+      'echo /swapfile none swap sw 0 0 >> /etc/fstab'
+    )
+  fi
+
+  if [[ $firewall == true ]]; then
+    # ufw ships with the Ubuntu image and only has to be pointed at the ports to
+    # let through; enabling it last means no rule is missing while it is up.
+    commands+=(
+      'ufw default deny incoming'
+      'ufw default allow outgoing'
+      "ufw allow ${ssh_port}/tcp"
+    )
+    for port in $ports; do
+      commands+=("ufw allow ${port}/tcp")
+    done
+    commands+=('ufw --force enable')
+  fi
+
+  cat <<EOF
+#cloud-config
+users:
+  - default
+  - name: $username
+    gecos: ArchiDep
+    groups: [adm, sudo]
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: 'ALL=(ALL) NOPASSWD:ALL'
+    ssh_authorized_keys:
+$(printf '      - %s\n' "${authorized_keys[@]}")
+EOF
+
+  if [[ $set_hostname == true ]]; then
+    cat <<EOF
+hostname: $username
+fqdn: $hostname
+prefer_fqdn_over_hostname: true
+manage_etc_hosts: true
+EOF
+  fi
+
+  if ((${#commands[@]} > 0)); then
+    echo 'runcmd:'
+    printf '  - %s\n' "${commands[@]}"
+  fi
+}
+
+# The ports ufw lets through, as a comma-separated list, or nothing at all when
+# no firewall is running.
+open_ports() {
+  multipass exec "$name" -- sudo ufw status \
+    | awk '/^[0-9]+\/tcp +ALLOW/ { split($1, port, "/"); print port[1] }' \
+    | sort -n -u \
+    | paste -sd, -
+}
+
+print_info() {
+  local ip open firewall
+  ip="$(instance_ipv4)"
+  open="$(open_ports)"
+
+  if [[ -n $open ]]; then
+    firewall="ufw allowing ${open}"
+  else
+    firewall='none, every port reachable'
+  fi
+
+  cat <<EOF
+
+  Connect:   ssh ${username}@${ip}
+  Hostname:  $(multipass exec "$name" -- hostname)
+  Firewall:  ${firewall}
+
+Register it in the dashboard with the address above and these SSH host public
+keys:
+
+EOF
+
+  multipass exec "$name" -- bash -c 'cat /etc/ssh/ssh_host_*_key.pub'
+}
+
+create() {
+  if instance_exists; then
+    >&2 echo "An instance named '${name}' already exists. Destroy it first, or use recreate."
+    exit 1
+  fi
+
+  if [[ ! -f $key_file ]]; then
+    >&2 echo "No public SSH key at '${key_file}'. Pass another one with --key."
+    exit 1
+  fi
+
+  if [[ $app_key == true && ! -f $app_key_file ]]; then
+    >&2 echo "The application has no SSH key at '${app_key_file}'. Run scripts/init-docker to generate one, or pass --no-app-key."
+    exit 1
+  fi
+
+  cloud_init | multipass launch "$image" \
+    --name "$name" \
+    --cpus "$cpus" \
+    --memory "$memory" \
+    --disk "$disk" \
+    --cloud-init -
+
+  # Launching has already waited for cloud-init; all that is left is to report
+  # whether it finished cleanly. Ask with --long rather than --wait, which never
+  # returns through 'multipass exec'.
+  local cloud_init_status
+  if ! cloud_init_status="$(multipass exec "$name" -- cloud-init status --long)"; then
+    >&2 echo "WARNING: cloud-init did not finish cleanly:"
+    >&2 echo "$cloud_init_status"
+  fi
+
+  print_info
+}
+
+destroy() {
+  if ! instance_exists; then
+    echo "No instance named '${name}'."
+    return
+  fi
+
+  if [[ $assume_yes == false ]]; then
+    read -r -p "Permanently delete the instance '${name}' and its disk? [y/N] " answer
+    if [[ $answer != [yY] ]]; then
+      echo "Left alone."
+      return
+    fi
+  fi
+
+  local ip
+  ip="$(instance_ipv4)"
+
+  multipass delete --purge "$name"
+
+  if [[ -n $ip ]]; then
+    ssh-keygen -R "$ip" &>/dev/null || true
+  fi
+}
+
+case "$command" in
+  create)
+    create
+    ;;
+  info)
+    if ! instance_exists; then
+      >&2 echo "No instance named '${name}'."
+      exit 1
+    fi
+    print_info
+    ;;
+  destroy)
+    destroy
+    ;;
+  recreate)
+    destroy
+    create
+    ;;
+  *)
+    >&2 echo "Unknown command: ${command}"
+    >&2 usage
+    exit 1
+    ;;
+esac
