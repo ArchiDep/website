@@ -115,14 +115,46 @@ jobs:
         run: mix coveralls.html --raise --repeat-until-failure 3
         working-directory: app
 
+      # Both pins float within a bound — `ansible-core==2.21.*` and the
+      # collection ranges of `requirements.yml` — so resolving them is a read of
+      # PyPI and of Ansible Galaxy that the cache below is keyed to make
+      # unnecessary. The week is what keeps those bounds free to move: it
+      # expires the cache on the cadence of the scheduled build that exists to
+      # catch upstream drift, rather than freezing the tools until someone edits
+      # a requirements file. The interpreter is part of the key because a
+      # virtualenv is a set of links to the one that created it, and the runner
+      # image upgrades its Python from under us.
+      - name: Read what the Ansible cache is keyed on
+        id: ansible-key
+        run: |
+          echo "week=$(date --utc +%G-W%V)" >> "$GITHUB_OUTPUT"
+          echo "python=$(python3 --version | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pinned Ansible
+        id: ansible-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            tmp/ansible
+            ~/.ansible/collections
+          key: ${{ runner.os }}-ansible-${{ steps.ansible-key.outputs.python }}-${{ hashFiles('requirements.txt', 'requirements.yml') }}-${{ steps.ansible-key.outputs.week }}
+
       # Install the pinned Ansible the compatibility smoke test drives, from the
       # same requirements files the production image will consume, so the test
-      # certifies the version we ship rather than whatever is latest.
+      # certifies the version we ship rather than whatever is latest. Skipped
+      # outright on a cache hit: whether `pip` and `ansible-galaxy` would reach
+      # their index anyway to re-resolve a range they have already satisfied is
+      # their business, and the point here is that a run installing nothing new
+      # does not depend on either being up.
       - name: Install pinned Ansible for external-tool compatibility tests
+        if: steps.ansible-cache.outputs.cache-hit != 'true'
         run: |
-          python3 -m pip install --user --break-system-packages -r requirements.txt
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          PATH="$HOME/.local/bin:$PATH" ansible-galaxy collection install -r requirements.yml
+          python3 -m venv tmp/ansible
+          tmp/ansible/bin/pip install --disable-pip-version-check -r requirements.txt
+          tmp/ansible/bin/ansible-galaxy collection install -r requirements.yml
+
+      - name: Put the pinned Ansible on the PATH
+        run: echo "$PWD/tmp/ansible/bin" >> "$GITHUB_PATH"
 
       # Compatibility smoke tests (tagged `:external`) drive the real external
       # tools instead of their mocks. They are excluded from the default run and
