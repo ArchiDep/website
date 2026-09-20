@@ -27,6 +27,12 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     "favicons/archidep-coffee-2x.webp",
     "favicons/archidep-coffee-3x.png",
     "favicons/archidep-coffee-3x.webp",
+    "favicons/archidep-desk-2x.png",
+    "favicons/archidep-desk-2x.webp",
+    "favicons/archidep-desk-4x.png",
+    "favicons/archidep-desk-4x.webp",
+    "favicons/archidep-desk-6x.png",
+    "favicons/archidep-desk-6x.webp",
     "favicons/archidep-logo-2x.png",
     "favicons/archidep-logo-2x.webp",
     "favicons/archidep-logo-4x.png",
@@ -69,7 +75,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       dirs = course_fixture(tmp_dir)
       urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 36)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 42)}
       assert written(dirs.output_dir) == expected_build("/2026")
     end
 
@@ -85,7 +91,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
           absolute_base_url: "https://archidep.example.com"
         )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 36)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 42)}
 
       assert written(dirs.output_dir) == %{
                expected_build("/2026")
@@ -268,7 +274,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         "---\ntitle: Command Line\n---\n\n![CLI](images/cli.jpg)\n"
       )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 36)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 42)}
     end
 
     test "says which of an edition's links lead nowhere", %{tmp_dir: tmp_dir} do
@@ -365,17 +371,17 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       output_dir: dirs.output_dir,
       pages: 2,
       chapters: 1,
-      files: Keyword.get(overrides, :files, 35),
+      files: Keyword.get(overrides, :files, 41),
       page_assets: 1,
       assets: 1
     }
 
   # The whole of what a build leaves behind: the two pages as the test layout
-  # writes them down, the three files a build makes of itself, the ten anchored
-  # at its mount point, the picture beside a page and the asset the build
-  # carries. An edition holds all of its own under its prefix; what is anchored
-  # at the mount point sits beside it, and so does a second copy of the home
-  # page for as long as that edition is the one being taught.
+  # writes them down, the three files a build makes of itself, the marks
+  # anchored at its mount point, the picture beside a page and the asset the
+  # build carries. An edition holds all of its own under its prefix; what is
+  # anchored at the mount point sits beside it, and so does a second copy of the
+  # home page for as long as that edition is the one being taught.
   defp expected_build(edition \\ "", home_at_base? \\ true, mode \\ :live) do
     home = "/|index.md|Architecture & Deployment · ArchiDep|||CLI|page:::<p>Welcome.</p>"
     home_url = if home_at_base?, do: "/", else: edition <> "/"

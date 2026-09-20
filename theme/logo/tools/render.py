@@ -30,9 +30,11 @@ OUT = os.path.normpath(os.path.join(HERE, "..", "..", "..", "course", "favicons"
 
 # Which scales of each part to write, chosen from the size it is shown at and
 # the device pixel ratios worth serving. The whole logo heads the course home
-# page at 186 CSS pixels, which is 2x; the rocket and the cup are shown small.
+# page at 186 CSS pixels, which is 2x, and the idle laptop heads the dashboard's
+# login page at the same size; the rocket and the cup are shown small.
 # Everything written here is published, so unused scales are not rendered.
-SCALES = {"logo": (2, 4, 6), "rocket": (1, 2, 3), "coffee": (1, 2, 3)}
+SCALES = {"logo": (2, 4, 6), "desk": (2, 4, 6), "rocket": (1, 2, 3),
+          "coffee": (1, 2, 3)}
 
 # Only the logo and the cup animate. The rocket is shown small, in the header
 # and the sidebar, where the exhaust would be a distraction rather than a
@@ -79,7 +81,14 @@ def parts():
 
 
 def icons():
-    """Square icons, resampled down from the largest render of each part."""
+    """Square icons, resampled down from the largest render of each part.
+
+    These are the only files here an image library writes, and it stamps each
+    one with the time it was written unless stripped of everything that is not
+    the picture. Left in, that stamp makes every icon a changed file on every
+    run whether or not a pixel moved, which buries a real change in a dozen
+    spurious ones.
+    """
     rows = []
     for prefix, part in ICON_SETS.items():
         source = f"{OUT}/archidep-{part}-{max(SCALES[part])}x.png"
@@ -90,7 +99,7 @@ def icons():
                  # fit inside the square, then centre it on a transparent one
                  "-resize", f"{size}x{size}",
                  "-background", "none", "-gravity", "center",
-                 "-extent", f"{size}x{size}", path], check=True)
+                 "-extent", f"{size}x{size}", "-strip", path], check=True)
             rows.append((os.path.basename(path), size, size,
                          os.path.getsize(path), 0))
     ico = os.path.normpath(os.path.join(OUT, "..", "favicon.ico"))

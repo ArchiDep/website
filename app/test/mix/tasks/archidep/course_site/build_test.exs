@@ -27,6 +27,12 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
     "favicons/archidep-coffee-2x.webp",
     "favicons/archidep-coffee-3x.png",
     "favicons/archidep-coffee-3x.webp",
+    "favicons/archidep-desk-2x.png",
+    "favicons/archidep-desk-2x.webp",
+    "favicons/archidep-desk-4x.png",
+    "favicons/archidep-desk-4x.webp",
+    "favicons/archidep-desk-6x.png",
+    "favicons/archidep-desk-6x.webp",
     "favicons/archidep-logo-2x.png",
     "favicons/archidep-logo-2x.webp",
     "favicons/archidep-logo-4x.png",
@@ -55,7 +61,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
 
@@ -87,7 +93,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
 
@@ -146,7 +152,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end
@@ -187,7 +193,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
       # under the edition prefix rather than also at the mount point.
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 35 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 41 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end
@@ -199,7 +205,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 35 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 41 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end
@@ -223,7 +229,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end

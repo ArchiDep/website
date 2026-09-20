@@ -21,6 +21,7 @@ P8 = {i: _rgb(c) for i, c in enumerate([
 
 BLACK, WHITE, RED, ORANGE, YELLOW, BLUE = P8[0], P8[7], P8[8], P8[9], P8[10], P8[12]
 GREY, DARKGREY, BROWN, PEACH = P8[6], P8[5], P8[4], P8[15]
+NAVY, PLUM, MOSS, GREEN, INDIGO, PINK = P8[1], P8[2], P8[3], P8[11], P8[13], P8[14]
 
 ROCKET = {
     EMPTY: (0, 0, 0, 0),
@@ -33,15 +34,29 @@ ROCKET = {
     CORE: YELLOW,
 }
 
-# The laptop layer's own colours, mapped into the palette. The screen's two
-# blues must stay distinguishable, so the lighter one gets its own value rather
-# than collapsing onto PICO-8's blue.
+# The two tones the hand-drawn layer paints the screen in: the screen itself,
+# and the band across it where the room is reflected in the glass.
+SCREEN_TONE = (117, 174, 203, 255)
+GLARE_TONE = (136, 186, 209, 255)
+
+# What the hand-drawn layer lightens its blue to. It is not a palette colour:
+# the screen's two blues must stay distinguishable, and collapsing the lighter
+# one onto PICO-8's blue erases the glare.
+GLARE_BLUE = _rgb("83DDFF")
+
+# How far the glare lightens a screen of any other colour, matched by eye to
+# what the hand-drawn layer does to its blue. A single veil over the whole band
+# is what reads as glass: a reflection is light added to whatever is behind it,
+# not a colour of its own.
+GLARE_VEIL = 0.45
+
+# The laptop layer's own colours, mapped into the palette.
 LAPTOP_MAP = {
     (0, 0, 0, 255): BLACK,
     (205, 205, 205, 255): GREY,
     (95, 95, 95, 255): DARKGREY,
-    (117, 174, 203, 255): BLUE,
-    (136, 186, 209, 255): _rgb("83DDFF"),
+    SCREEN_TONE: BLUE,
+    GLARE_TONE: GLARE_BLUE,
 }
 
 # The mug, by the symbols `coffee` decodes it into. The reflection on the
@@ -59,6 +74,19 @@ MUG_MAP = {
 
 def convert(grid):
     return [[LAPTOP_MAP.get(c, c) for c in row] for row in grid]
+
+
+def lit(colour):
+    """The glare band, over a screen showing `colour`.
+
+    Blue is not computed but taken from the hand-drawn layer, so that an idle
+    screen in its blue phase is the same screen as the one the rocket launches
+    off.
+    """
+    if colour == BLUE:
+        return GLARE_BLUE
+    return tuple(round(c + GLARE_VEIL * (w - c))
+                 for c, w in zip(colour[:3], WHITE[:3])) + (255,)
 
 
 def paint_mug(grid):

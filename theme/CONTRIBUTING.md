@@ -119,9 +119,9 @@ theme built for it to compile and serve pages correctly, as documented in the
   - `logo/`: The site's logo as 8-bit pixel art: the hand-drawn sources and the
     generator that animates and recolours them, which writes the PNG and
     animated WebP files it produces into `course/favicons`. Both the course
-    material and the application draw their logo, rocket and coffee cup from
-    there; [`logo/README.md`](./logo/README.md) says how it is put together and
-    how to regenerate it.
+    material and the application draw their logo, rocket, coffee cup and idle
+    laptop from there; [`logo/README.md`](./logo/README.md) says how it is put
+    together and how to regenerate it.
   - `scripts/copy-emoji.mjs`: Copies the emoji into the static assets.
   - `scripts/copy-fonts.mjs`: Copies the font files `src/fonts.css` names into
     the static assets.

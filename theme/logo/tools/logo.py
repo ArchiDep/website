@@ -8,7 +8,8 @@ rocket alone loops in 4.
 
 The parts are emitted separately as well as composed because the site uses them
 separately: the whole logo heads the course home page, the rocket sits in the
-header, and the mug sits in the sidebar footer.
+header, and the mug sits in the sidebar footer. The dashboard's login page takes
+the same composite with no rocket on it, because nothing has been launched yet.
 """
 
 import math
@@ -17,6 +18,7 @@ import coffee
 import colours
 import pixgrid as P
 import raster
+import screen
 from rocket import Rocket
 
 LAPTOP_AT = (2, 16)            # in cells, as in the original composite
@@ -53,6 +55,13 @@ def mugs():
     return [colours.paint_mug(coffee.frame(i)) for i in range(MUG_CYCLE)]
 
 
+def glass():
+    """Which tone the hand-drawn layer paints each cell of the screen in."""
+    _, _, g = P.to_grid(f"{P.SRC}/laptop.png")
+    sx, sy, sw, sh = SCREEN
+    return [[g[sy + y][sx + x] for x in range(sw)] for y in range(sh)]
+
+
 def composite():
     lap, rocket = laptop(), rockets()
     sx, sy, sw, sh = SCREEN
@@ -64,6 +73,33 @@ def composite():
         g = [[(0, 0, 0, 0) for _ in range(w)] for _ in range(h)]
         _paste(g, lap, LAPTOP_AT)
         _paste(g, rocket[i % raster.FRAMES], (ox, oy))
+        _paste(g, colours.paint_mug(coffee.frame(i)), COFFEE_AT)
+        out.append(g)
+    return out
+
+
+def desk(effect):
+    """The laptop and the mug, with no rocket and a screen saver on the screen.
+
+    Nothing is launching, so the machine is idle and its screen shows a screen
+    saver. The glare stays where the hand drew it and lightens whatever the
+    effect has put behind it.
+    """
+    lap, tone = laptop(), glass()
+    sx, sy, sw, sh = SCREEN
+    ox, oy = LAPTOP_AT[0] + sx, LAPTOP_AT[1] + sy
+    out = []
+    for i in range(math.lcm(effect.period, MUG_CYCLE)):
+        w, h = CANVAS
+        g = [[(0, 0, 0, 0) for _ in range(w)] for _ in range(h)]
+        _paste(g, lap, LAPTOP_AT)
+        shown = effect.content(i)
+        for y in range(sh):
+            for x in range(sw):
+                if tone[y][x] == colours.GLARE_TONE:
+                    g[oy + y][ox + x] = colours.lit(shown[y][x])
+                elif tone[y][x] == colours.SCREEN_TONE:
+                    g[oy + y][ox + x] = shown[y][x]
         _paste(g, colours.paint_mug(coffee.frame(i)), COFFEE_AT)
         out.append(g)
     return out
@@ -82,6 +118,7 @@ PARTS = {
     "logo": lambda: crop(composite()),
     "rocket": lambda: crop(rockets()),
     "coffee": lambda: crop(mugs()),
+    "desk": lambda: crop(desk(screen.BARS)),
 }
 
 

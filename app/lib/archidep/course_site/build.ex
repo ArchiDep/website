@@ -49,7 +49,8 @@ defmodule ArchiDep.CourseSite.Build do
   # decision rather than whatever happens to be sitting in the directory, and a
   # mark that stops being drawn should have to be taken off this list to stop
   # being carried. As output paths, since that is what a build writes them as
-  # and what the chrome asks for them by.
+  # and what the pages drawing them ask for them by — the course site's chrome
+  # and the dashboard alike, both served out of what a build published.
   @root_files [
     "/favicon.ico",
     "/favicons/heig.png",
@@ -71,6 +72,12 @@ defmodule ArchiDep.CourseSite.Build do
     "/favicons/archidep-logo-4x.webp",
     "/favicons/archidep-logo-6x.png",
     "/favicons/archidep-logo-6x.webp",
+    "/favicons/archidep-desk-2x.png",
+    "/favicons/archidep-desk-2x.webp",
+    "/favicons/archidep-desk-4x.png",
+    "/favicons/archidep-desk-4x.webp",
+    "/favicons/archidep-desk-6x.png",
+    "/favicons/archidep-desk-6x.webp",
     "/favicons/archidep-rocket-1x.png",
     "/favicons/archidep-rocket-2x.png",
     "/favicons/archidep-rocket-3x.png",

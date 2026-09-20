@@ -6,7 +6,8 @@ the exhaust burns, the steam drifts, and the light on the coffee shifts.
 
 Both halves of the project use it, which is why it lives with the theme rather
 than with either one: the whole logo heads the course home page, the rocket
-sits in the header, and the cup sits in the sidebar footer.
+sits in the header, the cup sits in the sidebar footer, and the laptop with
+nothing launching off it heads the dashboard's login page.
 
 ## What is here
 
@@ -64,15 +65,36 @@ Each animation is accompanied by its first frame as a still. That still is what
 animation at all, and it is what appears anywhere the animation cannot play,
 such as print and PDF export.
 
+## The idle laptop
+
+The login page shows the same laptop and cup with no rocket, because nothing has
+been launched yet. An idle machine needs something on its screen, so the screen
+becomes the moving part in the exhaust's place: bands of colour sliding
+diagonally across it, a screen saver.
+
+The glare is not painted over. It is the room reflected in the glass rather than
+part of the picture on the screen, so it stays where the hand drew it and
+lightens whatever an effect has put behind it, which is what keeps the screen
+reading as glass. Its blue is the one the hand drew rather than a computed one,
+so the phase the bars pass through matches the logo's screen exactly. The effect
+is in [`tools/screen.py`](tools/screen.py).
+
+Its loop has to close against the cup's. The two are composed into one animation
+whose length is the lowest common multiple of both, so an effect whose period
+shares no factor with the cup's 24 frames makes that multiple enormous;
+eight-cell bars in three colours come back to where they started after 24 frames
+as well.
+
 ## Sizes
 
 Assets are rendered at whole numbers of pixels per drawn pixel rather than at
-fixed pixel sizes — the whole logo at 2×, 4× and 6×, the rocket and the cup at
-1×, 2× and 3×, each chosen from the size it is shown at and the device pixel
-ratios worth serving. A fixed size that is not a whole multiple of the artwork
-forces every pixel to be either blurred or unevenly widened, and once the image
-animates that unevenness crawls. The logo is 93 drawn pixels wide, so a
-512-pixel-wide asset would be 5.5 pixels per drawn pixel.
+fixed pixel sizes — the whole logo and the idle laptop at 2×, 4× and 6×, the
+rocket and the cup at 1×, 2× and 3×, each chosen from the size it is shown at
+and the device pixel ratios worth serving. A fixed size that is not a whole
+multiple of the artwork forces every pixel to be either blurred or unevenly
+widened, and once the image animates that unevenness crawls. The logo is 93
+drawn pixels wide, so a 512-pixel-wide asset would be 5.5 pixels per drawn
+pixel.
 
 Displayed sizes should be whole multiples too. 93 drawn pixels at 2× is 186 CSS
 pixels; serving 4× and 6× alongside lets displays at device pixel ratios of 2

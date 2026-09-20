@@ -29,11 +29,30 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
     test "render the login page for an anonymous user", %{conn: conn} do
       conn = get(conn, ~p"/login")
 
-      assert login_form(html_response(conn, 200)) == %{
-               action: "/auth/switch-edu-id/configure",
-               method: "get",
-               submit: "Log in",
-               remember_me_checkboxes: 1
+      assert login_page(html_response(conn, 200)) == %{
+               marks: [
+                 %{
+                   alt: "ArchiDep logo",
+                   animated:
+                     "/favicons/archidep-desk-2x.webp 1x, /favicons/archidep-desk-4x.webp 2x, /favicons/archidep-desk-6x.webp 3x",
+                   reduced_motion: [
+                     {"(prefers-reduced-motion: reduce)",
+                      "/favicons/archidep-desk-2x.png 1x, /favicons/archidep-desk-4x.png 2x, /favicons/archidep-desk-6x.png 3x"}
+                   ]
+                 }
+               ],
+               headings: ["Hello there"],
+               paragraphs: [
+                 "Welcome to the course! Please log in using your Switch Edu-ID account to continue."
+               ],
+               forms: [
+                 %{
+                   action: "/auth/switch-edu-id/configure",
+                   method: "get",
+                   submit: "Log in",
+                   remember_me_checkboxes: 1
+                 }
+               ]
              }
     end
 
@@ -425,10 +444,37 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
              {:ok, auth.session_id}
   end
 
-  defp login_form(html) do
-    form = html |> find_html_elements("form") |> hd()
+  # Everything the login page is there to show: the mark, the greeting, what a
+  # visitor is being asked to do, and the form that does it. Scoped to the hero,
+  # because the layout around it carries a mark and a heading of its own, and
+  # every region is a list so that a second one appearing fails the assertion
+  # rather than going unnoticed behind the first.
+  defp login_page(html) do
+    hero = html |> find_html_elements(".hero") |> hd()
 
     %{
+      marks: hero |> find_html_elements("picture") |> Enum.map(&mark/1),
+      headings: hero |> find_html_elements("h1") |> Enum.map(&html_element_text/1),
+      paragraphs: hero |> find_html_elements("p") |> Enum.map(&html_element_text/1),
+      forms: hero |> find_html_elements("form") |> Enum.map(&login_form/1)
+    }
+  end
+
+  defp mark(picture) do
+    img = picture |> find_html_elements("img") |> hd()
+
+    %{
+      alt: html_element_attribute(img, "alt"),
+      animated: html_element_attribute(img, "srcset"),
+      reduced_motion:
+        picture
+        |> find_html_elements("source")
+        |> Enum.map(&{html_element_attribute(&1, "media"), html_element_attribute(&1, "srcset")})
+    }
+  end
+
+  defp login_form(form),
+    do: %{
       action: html_element_attribute(form, "action"),
       method: html_element_attribute(form, "method"),
       submit:
@@ -436,7 +482,6 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
       remember_me_checkboxes:
         form |> find_html_elements(~s(input[type="checkbox"][name="remember-me"])) |> length()
     }
-  end
 
   defp switch_edu_id_auth(userinfo),
     do: %Ueberauth.Auth{

@@ -1,24 +1,45 @@
 <Layouts.app flash={@flash} auth={@auth} current_path={@current_path}>
   <div class="my-4 hero bg-base-200">
-    <div class="hero-content p-10 text-center">
-      <div class="max-w-md">
-        <h1 class="text-5xl font-bold">Hello there</h1>
-        <p class="py-6">
-          {gettext(
-            "Welcome to the course! Please log in using your Switch Edu-ID account to continue."
-          )}
-        </p>
-
-        <form action="/auth/switch-edu-id/configure" method="get">
-          <div class="flex flex-col gap-2">
-            <button type="submit" class="btn btn-primary">{gettext("Log in")}</button>
-            <label>
-              <input type="checkbox" name="remember-me" value="true" />
-              {gettext("Remember Me")}
-            </label>
-          </div>
-        </form>
+    <div class="hero-content p-10 flex-col items-center max-w-2xl">
+      <div class="flex flex-wrap sm:flex-nowrap items-center gap-6">
+        <picture>
+          <source
+            media="(prefers-reduced-motion: reduce)"
+            type="image/png"
+            srcset="/favicons/archidep-desk-2x.png 1x, /favicons/archidep-desk-4x.png 2x, /favicons/archidep-desk-6x.png 3x"
+          />
+          <img
+            src="/favicons/archidep-desk-2x.png"
+            srcset="/favicons/archidep-desk-2x.webp 1x, /favicons/archidep-desk-4x.webp 2x, /favicons/archidep-desk-6x.webp 3x"
+            width="186"
+            height="116"
+            alt="ArchiDep logo"
+            class="w-[186px] shrink-0 [image-rendering:pixelated]"
+          />
+        </picture>
+        <div class="text-center sm:text-left">
+          <h1 class="text-5xl font-bold">Hello there</h1>
+          <p class="pt-4">
+            {gettext(
+              "Welcome to the course! Please log in using your Switch Edu-ID account to continue."
+            )}
+          </p>
+        </div>
       </div>
+
+      <form
+        action="/auth/switch-edu-id/configure"
+        method="get"
+        class="w-full max-w-md text-center"
+      >
+        <div class="flex flex-col gap-2">
+          <button type="submit" class="btn btn-primary">{gettext("Log in")}</button>
+          <label>
+            <input type="checkbox" name="remember-me" value="true" />
+            {gettext("Remember Me")}
+          </label>
+        </div>
+      </form>
     </div>
   </div>
 </Layouts.app>
