@@ -8,19 +8,6 @@ prepares the hunt for you: an island where places are directories, clues are
 files, and a few things are programs. You explore it with the [Command
 Line][command-line]. On the way, you meet a few new commands.
 
-{% callout type: exercise %}
-
-**The rule of the hunt.** The goal of this exercise is to learn to use the
-command line, so do everything in your terminal: the Terminal on macOS, the WSL
-on Windows. Do not look at the files of the hunt in the Finder, the Windows file
-explorer or a graphical editor.
-
-Do not remember a command? Look it up in the [**Command Line**
-cheatsheet][command-line-cheatsheet], in the sidebar. It is there for that, and
-the hunt will send you there too.
-
-{% endcallout %}
-
 <!-- more -->
 
 ## :exclamation: Set your editor
@@ -46,6 +33,19 @@ See [setting nano as the default editor][command-line-editor].
 
 ## :exclamation: Prepare the hunt
 
+{% callout type: exercise %}
+
+**The rule of the hunt.** The goal of this exercise is to learn to use the
+command line, so do everything in your terminal: the Terminal on macOS, the WSL
+on Windows. Do not look at the files of the hunt in the Finder, the Windows file
+explorer or a graphical editor.
+
+Do not remember a command? Look it up in the [**Command Line**
+cheatsheet][command-line-cheatsheet], in the sidebar. It is there for that, and
+the hunt will send you there too.
+
+{% endcallout %}
+
 Run this command:
 
 ```bash
@@ -66,14 +66,6 @@ before you run it. It only writes in `~/treasure-hunt`.
 
 {% endcallout %}
 
-At the end, the script tells you to type this command:
-
-```bash
-$> cd ~/treasure-hunt
-```
-
-Go ahead and do that. You will then be ready to explore the island.
-
 {% note type: tip %}
 
 Want to start over? Run the same `curl` command again. It asks before it deletes
@@ -81,34 +73,36 @@ your hunt.
 
 {% endnote %}
 
-## :exclamation: Explore the island
+## :exclamation: Go on the hunt
 
-Read `start.txt`:
+Go where the script put the hunt, and read `start.txt`:
 
 ```bash
+$> cd ~/treasure-hunt
 $> cat start.txt
 ```
 
-Then follow the clues. Your goal for this part: find out where the captain hid
-the key, and get past the dragon.
+Everything you need is on the island from now on: each place tells you what to
+do and where to go next, and each one also has a hint in a hidden file if you
+are stuck (`cat .hint`). You will not need this page again until you have the
+treasure.
 
 On the way, you will:
 
-- Move around with `cd`, look around with `ls`, and read with `cat`.
-- Find hidden files with `ls -a`.
-- Go into a directory whose name has a space, with quotes or with Tab
-  completion.
-- Use relative paths with `..`.
-- Read a long file with `less`.
-- Run a program with `./`, and stop it.
-
-{% note type: tip %}
-
-Stuck? Every place has a hint in a hidden file: `cat .hint`.
-
-{% endnote %}
+- Move around the file system and see what is in it (`cd`, `ls`, `pwd`).
+- Read files, short and long (`cat`, `less`).
+- Create, copy, move, rename and delete files and directories (`mkdir`,
+  `touch`, `cp`, `mv`, `rm`).
+- Edit a file with nano (or Vim). You will do this a lot on your server later in
+  the course.
+- Run programs, stop one that does not stop by itself, and make one executable.
+- Look for what `ls` does not show you (`ls -a`, `find`).
 
 {% solution %}
+
+The whole hunt, from the beach to the treasure.
+
+Exploring the island:
 
 ```bash
 $> cd ~/treasure-hunt
@@ -137,17 +131,7 @@ $> ./dragon             # then press Ctrl-C
 $> ls lair
 ```
 
-{% endsolution %}
-
-### :question: The golden idol (optional)
-
-The catacombs, under the ruins, are very deep. A golden idol is lost somewhere
-down there. Bring it back in your bag, and your treasure will be bigger.
-
-Do not search by hand: use `find` (see ["Find files" in the **Command Line**
-cheatsheet][cheatsheet-find]).
-
-{% solution %}
+The golden idol, lost in the catacombs under the ruins (optional):
 
 ```bash
 $> cd ~/treasure-hunt/jungle/ruins/catacombs
@@ -164,35 +148,7 @@ $> mv ./left/right/left/.../golden-idol ~/treasure-hunt/bag/
 Your path is different: the catacombs are different each time the hunt is
 prepared. Copy the one `find` gives you.
 
-{% endsolution %}
-
-## :exclamation: Change things
-
-In this part, you do not only look at the island: you change it. Take the key
-to the fortress and get to the top of its tower.
-
-On the way, you will:
-
-- Move a file with `mv`, and rename it with `mv` too.
-- Copy a file with `cp`, and see how it is different from `mv`.
-- Create a directory with `mkdir` and a file with `touch`, and write in a file
-  with `echo … >`.
-- Edit a file with nano (or Vim). You will do this a lot on your server later in
-  the course.
-- Delete files with `rm`.
-
-`cp`, `mv` and `rm` are new: see ["Copy stuff"][cheatsheet-copy], ["Move
-stuff"][cheatsheet-move] and ["Delete stuff"][cheatsheet-delete] in the
-**Command Line** cheatsheet.
-
-{% callout type: warning %}
-
-`rm` deletes a file forever. There is no bin to get it back from. Read the name
-twice before you press Enter.
-
-{% endcallout %}
-
-{% solution %}
+Taking the key to the fortress, and climbing the tower:
 
 ```bash
 $> cd ~/treasure-hunt/cave
@@ -230,20 +186,7 @@ $> cd top
 $> cat parrot.txt
 ```
 
-{% endsolution %}
-
-## :exclamation: Find the treasure
-
-The parrot at the top of the tower tells you where to go next, as a path.
-Follow it, then ring the bell from the right place. Before you run anything,
-work out where the path goes: count the `..` one by one.
-
-On Skull Island, the chest is a program that you are not allowed to run yet. See
-["Make a file executable" in the **Command Line** cheatsheet][cheatsheet-chmod].
-You will learn about permissions later in the course. The chest then asks for a
-combination: look at the coins you've collected in your bag.
-
-{% solution %}
+Sailing to Skull Island, and opening the chest:
 
 ```bash
 $> cd ../../../../beach/./boat
@@ -257,6 +200,7 @@ permission denied: ./chest
 
 $> chmod +x chest
 $> cat ../bag/coin-1 ../bag/coin-2 ../bag/coin-3
+                  # or cat ../bag/coin-*
 $> ./chest
 
 $> ../bag/treasure
@@ -268,6 +212,10 @@ hunt is prepared.
 {% endsolution %}
 
 ## :exclamation: Take the treasure home
+
+This last step is for when the chest is open and the treasure is in your bag.
+Not there yet? Go back to the island: the hunt sends you here when it is done
+with you.
 
 The treasure is a program in your bag. You can run it with its path:
 
@@ -505,10 +453,6 @@ twice, that is a script asking to be written.
 {% endsolution %}
 
 [cheatsheet-chmod]: {% link cheatsheets/command-line/cheatsheet.md %}#make-a-file-executable-chmod-x
-[cheatsheet-copy]: {% link cheatsheets/command-line/cheatsheet.md %}#copy-stuff-cp
-[cheatsheet-delete]: {% link cheatsheets/command-line/cheatsheet.md %}#delete-stuff-rm
-[cheatsheet-find]: {% link cheatsheets/command-line/cheatsheet.md %}#find-files-find
-[cheatsheet-move]: {% link cheatsheets/command-line/cheatsheet.md %}#move-stuff-mv
 [cheatsheet-run]: {% link cheatsheets/command-line/cheatsheet.md %}#run-a-program-program
 [command-line]: {% link chapters/101-command-line/subject.md %}
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}

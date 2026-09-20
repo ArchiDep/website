@@ -164,6 +164,14 @@ materials.
   reader, in the same register as everything else: they say more than the slide
   does for whoever was not in the room. They are not instructions to the
   teacher.
+- **An exercise a student plays through a program they run — the treasure hunt
+  of [Hello Shell](./chapters/102-hello-shell/exercise.md), the land of Avalon
+  of [Hello SSH](./chapters/104-hello-ssh/exercise.md) — is guided by that
+  program, not by its page.** The running exercise is the one home of its own
+  step-by-step instructions: it is where the student is, it tells them what to
+  do next and it carries its own hints. Its page says how to start it, what
+  kinds of things it makes them do, and what is left to do once it is over —
+  plus its [solutions](#solutions), which are hidden until revealed.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.

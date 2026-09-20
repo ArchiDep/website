@@ -452,7 +452,8 @@ A path on the server that does not start with `/` starts in your home directory
 **on the server**. `jde@ssh.archidep.ch:hello.txt` is the file `~/hello.txt` of
 the `jde` user, on the server.
 
-You will use `scp` in a moment, on your way to the remote land of Avalon.
+You will use `scp` at the end of this exercise, on your way to the remote land
+of Avalon.
 
 {% note type: tip %}
 
@@ -564,162 +565,6 @@ drag-and-drop files to and from the server. Play with it a bit and see what you
 can do.
 
 Now you know another way to copy files over SSH.
-
-## :exclamation: The remote land of Avalon
-
-Did you find the treasure of Skull Island in [Hello Shell][hello-shell]? Then
-you remember the parrot. It took you to Skull Island, and when you opened the
-chest, it flew away over the sea, far from your computer, to the remote land of
-Avalon. Follow it, and take your treasure with you: someone there has heard
-about it.
-
-You did not play the treasure hunt? A parrot landed on your window this morning.
-It looked at you, said "SQUAWK!", and flew away over the sea, to the remote land
-of Avalon. Follow it.
-
-{% callout type: exercise %}
-
-**The rule of Avalon.** Avalon is on the SSH exercise server. Your own computer
-is your own land. Each step asks you to do something on the right machine, so
-before you type a command, know which machine your terminal is connected to. It
-helps to keep two terminals open: one logged in to the server, and one on your
-own computer.
-
-{% endcallout %}
-
-To go to Avalon, log in to the server **with your key**, and take the barge:
-
-```bash
-$> dock
-```
-
-Then follow what it says. Your goal: find out where the parrot is.
-
-On the way, you will:
-
-- Show the server that you came with your key, not your password.
-- Copy a file from your computer to the server with `scp`, and another one from
-  the server to your computer.
-- Run a command on the server without logging in.
-- Check a server's key fingerprint before you trust it.
-
-{% note type: tip %}
-
-Stuck? There is a hint on Avalon: `cat .hint` in `~/avalon`, on the server. Want
-to start over? Run `dock --restart` on the server.
-
-{% endnote %}
-
-{% solution %}
-
-On your computer, log in to the server, then take the barge on the server:
-
-```bash
-$> ssh jde@ssh.archidep.ch
-$> dock
-$> cd ~/avalon
-$> ./merlin
-$> exit
-```
-
-Merlin wants a gift from your own land. On your computer, send him your treasure
-if you played the treasure hunt, or what your computer says about itself if you
-did not:
-
-```bash
-$> scp ~/treasure-hunt/bag/treasure jde@ssh.archidep.ch:avalon/
-
-$> uname -a > land.txt
-$> scp land.txt jde@ssh.archidep.ch:avalon/
-```
-
-Then give it to him, on the server:
-
-```bash
-$> ssh jde@ssh.archidep.ch
-$> cd ~/avalon
-$> ./merlin
-$> exit
-```
-
-On your computer, bring his prophecy home and read it:
-
-```bash
-$> scp jde@ssh.archidep.ch:avalon/prophecy .
-$> ./prophecy   # "Permission denied"? Your scp did not carry the
-                # permissions across: run chmod +x prophecy, then
-                # try again
-```
-
-Still on your computer, call the Lady of the Lake without logging in, with the
-word of the prophecy:
-
-```bash
-$> ssh jde@ssh.archidep.ch ./avalon/lady TINTAGEL
-```
-
-Your word is different: it is chosen at random when you arrive on Avalon.
-
-{% endsolution %}
-
-### :exclamation: A message on the shore
-
-When the Lady of the Lake has spoken, someone leaves a message for you on the
-shore of Avalon: `~/avalon/message.txt`, on the server. Read it, and do what a
-careful traveller would do.
-
-The message sends you somewhere. Whatever you decide to do about that, the
-server that answers there shows you its key before it asks you anything. Read
-that fingerprint, compare it with the fingerprints on the
-[dashboard][dashboard], and bring it back to the Lady of the Lake to finish your
-journey.
-
-{% solution %}
-
-The message tells you to connect to the server on another port, with the `-p`
-option of `ssh`. The address is the same, but your SSH client has never seen
-this port, so it asks you whether you trust the server, and shows you the
-fingerprint of its key:
-
-```bash
-$> ssh -p 2222 jde@ssh.archidep.ch
-The authenticity of host '[ssh.archidep.ch]:2222 ([W.X.Y.Z]:2222)' can't be established.
-ED25519 key fingerprint is SHA256:...
-Are you sure you want to continue connecting (yes/no/[fingerprint])?
-```
-
-That fingerprint is not one of the fingerprints on the [dashboard][dashboard]. If
-this were the same server, it would have the same keys. It is a different server
-pretending to be the one you know: answer `no`. Your SSH client then gives up,
-and what it prints looks like a failure:
-
-```bash
-Host key verification failed.
-```
-
-That is the right outcome. Refusing to connect **is** the answer.
-
-Now take the fingerprint that server showed you back to the Lady of the Lake,
-from your own computer, with the word of the prophecy:
-
-```bash
-$> ssh jde@ssh.archidep.ch ./avalon/lady TINTAGEL SHA256:...
-```
-
-She knows that key, and she tells you whose it is.
-
-If you answered `yes`, you found out who wrote the message before she could tell
-you. Your SSH client now trusts that server for this port, and will not ask you
-again. Make it forget, on your computer:
-
-```bash
-$> ssh-keygen -R '[ssh.archidep.ch]:2222'
-```
-
-Then connect once more, read the fingerprint in the question this time, answer
-`no`, and bring the fingerprint back to the Lady of the Lake.
-
-{% endsolution %}
 
 ## :question: Sign a message with your key
 
@@ -892,6 +737,167 @@ $> ssh-add /path/to/custom_id_ed25519
 ```
 
 {% endcallout %}
+
+## :exclamation: The remote land of Avalon
+
+{% cols %}
+
+**You found the treasure of Skull Island** in [Hello Shell][hello-shell]? Then
+you remember the parrot. It took you to Skull Island, and when you opened the
+chest, it flew away over the sea, far from your computer, to the remote land of
+Avalon. Follow it, and take your treasure with you: someone there has heard
+about it.
+
+<!-- col -->
+
+**You did not play the treasure hunt?** A parrot landed on your window this
+morning. It looked at you, said "SQUAWK!", and flew away over the sea, towards a
+land you have never seen: the remote land of Avalon. Follow it, and bring
+something with you: someone there will ask where you come from.
+
+{% endcols %}
+
+{% callout type: exercise %}
+
+**The rule of Avalon.** Avalon is on the SSH exercise server. Your own computer
+is your own land. Each step asks you to do something on the right machine, so
+before you type a command, know which machine your terminal is connected to. It
+helps to keep two terminals open: one logged in to the server, and one on your
+own computer.
+
+{% endcallout %}
+
+To go to Avalon, log in to the server **with your key**, and take the barge:
+
+```bash
+$> ssh <username>@ssh.archidep.ch
+$> dock
+```
+
+Then follow what it says. Your goal: find out where the parrot is.
+
+Avalon tells you what to do from there on, and there is a hint on Avalon itself
+if you are stuck (`cat .hint` in `~/avalon`, on the server). You will not need
+this page again until Avalon is behind you.
+
+On the way, you will:
+
+- Show the server that you came with your key, not your password.
+- Copy a file from your computer to the server with `scp`, and another one from
+  the server to your computer.
+- Run a command on the server without logging in.
+- Decide whether to trust a server you have never connected to before.
+
+{% note type: tip %}
+
+Want to start over? Run `dock --restart` on the server.
+
+{% endnote %}
+
+{% solution %}
+
+On your computer, log in to the server, then take the barge on the server:
+
+```bash
+$> ssh jde@ssh.archidep.ch
+$> dock
+$> cd ~/avalon
+$> ./merlin
+$> exit
+```
+
+Merlin wants a gift from your own land. On your computer, send him your treasure
+if you played the treasure hunt, or what your computer says about itself if you
+did not:
+
+```bash
+$> scp ~/treasure-hunt/bag/treasure jde@ssh.archidep.ch:avalon/
+
+$> uname -a > land.txt
+$> scp land.txt jde@ssh.archidep.ch:avalon/
+```
+
+Then give it to him, on the server:
+
+```bash
+$> ssh jde@ssh.archidep.ch
+$> cd ~/avalon
+$> ./merlin
+$> exit
+```
+
+On your computer, bring his prophecy home and read it:
+
+```bash
+$> scp jde@ssh.archidep.ch:avalon/prophecy .
+$> ./prophecy   # "Permission denied"? Your scp did not carry the
+                # permissions across: run chmod +x prophecy, then
+                # try again
+```
+
+Still on your computer, call the Lady of the Lake without logging in, with the
+word of the prophecy:
+
+```bash
+$> ssh jde@ssh.archidep.ch ./avalon/lady TINTAGEL
+```
+
+Your word is different: it is chosen at random when you arrive on Avalon.
+
+{% endsolution %}
+
+### :exclamation: A message on the shore
+
+When the Lady of the Lake has spoken, someone leaves a message for you on the
+shore of Avalon: `~/avalon/message.txt`, on the server. It is the last trial of
+your journey. Read it, and do what a careful traveller would do.
+
+{% solution %}
+
+The message tells you to connect to the server on another port, with the `-p`
+option of `ssh`. The address is the same, but your SSH client has never seen
+this port, so it asks you whether you trust the server, and shows you the
+fingerprint of its key:
+
+```bash
+$> ssh -p 2222 jde@ssh.archidep.ch
+The authenticity of host '[ssh.archidep.ch]:2222 ([W.X.Y.Z]:2222)' can't be established.
+ED25519 key fingerprint is SHA256:...
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+```
+
+That fingerprint is not one of the fingerprints on the [dashboard][dashboard]. If
+this were the same server, it would have the same keys. It is a different server
+pretending to be the one you know: answer `no`. Your SSH client then gives up,
+and what it prints looks like a failure:
+
+```bash
+Host key verification failed.
+```
+
+That is the right outcome. Refusing to connect **is** the answer.
+
+Now take the fingerprint that server showed you back to the Lady of the Lake,
+from your own computer, with the word of the prophecy:
+
+```bash
+$> ssh jde@ssh.archidep.ch ./avalon/lady TINTAGEL SHA256:...
+```
+
+She knows that key, and she tells you whose it is.
+
+If you answered `yes`, you found out who wrote the message before she could tell
+you. Your SSH client now trusts that server for this port, and will not ask you
+again. Make it forget, on your computer:
+
+```bash
+$> ssh-keygen -R '[ssh.archidep.ch]:2222'
+```
+
+Then connect once more, read the fingerprint in the question this time, answer
+`no`, and bring the fingerprint back to the Lady of the Lake.
+
+{% endsolution %}
 
 ## :checkered_flag: What have I done?
 

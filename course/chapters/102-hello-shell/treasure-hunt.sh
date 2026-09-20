@@ -1424,8 +1424,8 @@ program. From here, run it with:
 
     ../bag/treasure
 
-Can you run it from anywhere, just by typing treasure?
-Go back to the exercise to find out how.
+Can you run it from anywhere, just by typing treasure? Go back to
+the exercise, to "Take the treasure home", and find out.
 SEALED
 END_CHEST
 
