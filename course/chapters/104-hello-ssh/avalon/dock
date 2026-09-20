@@ -39,6 +39,16 @@ EXERCISE="https://archidep.ch/$CURRENT_YEAR/course/104-hello-ssh/"
 # sends students to.
 IMPOSTOR_PORT=2222
 
+# The public host key of that impostor, on this machine. The Lady of the Lake
+# reads it to tell whether the fingerprint a student brings back is the one the
+# impostor showed them, so this file must stay readable by everyone.
+IMPOSTOR_KEY=/etc/ssh/avalon-impostor/ssh_host_ed25519_key.pub
+
+# Where this machine keeps its own public host keys, which are the fingerprints
+# the dashboard lists. A student who brings one of these back read the wrong
+# server's key.
+HOST_KEYS='/etc/ssh/ssh_host_*_key.pub'
+
 # The words the prophecy can give. One is drawn for each student.
 WORDS=(
   EXCALIBUR PENDRAGON CAMELOT GRAIL TINTAGEL BROCELIANDE
@@ -72,6 +82,8 @@ fill() {
   value=${value//@@LOGIN@@/$LOGIN}
   value=${value//@@HOST@@/$HOST}
   value=${value//@@PORT@@/$IMPOSTOR_PORT}
+  value=${value//@@IMPOSTOR_KEY@@/$IMPOSTOR_KEY}
+  value=${value//@@HOST_KEYS@@/$HOST_KEYS}
   value=${value//@@EXERCISE@@/$EXERCISE}
   value=${value//@@UNPACK@@/$UNPACK}
   value=${value//@@WORD@@/$WORD}
@@ -501,7 +513,23 @@ text LADY <<'END_LADY'
 #!/bin/bash
 # The Lady of the Lake. She only speaks to those who do not stay.
 AVALON='@@AVALON@@'
+HOST_KEYS='@@HOST_KEYS@@'
 @@UNPACK@@
+
+# Where the impostor's key is on this machine. It is sealed like everything
+# else of Avalon: a traveller who reads this spell before going to the shore
+# should not find the answer written in it in plain sight.
+IMPOSTOR_KEY=$(reveal <<'SEALED'
+@@IMPOSTOR_KEY@@
+SEALED
+)
+
+# Prints the SHA256 fingerprint of the public key in the file $1, and nothing
+# at all if there is no key to read there.
+fingerprint_of() {
+  ssh-keygen -l -f "$1" 2> /dev/null |
+    LC_ALL=C grep -o 'SHA256:[A-Za-z0-9+/=]*'
+}
 
 # SSH gives a terminal to someone who logs in, and names it in SSH_TTY. A
 # command sent with "ssh <server> <command>" gets none.
@@ -528,13 +556,139 @@ SEALED
   exit 1
 fi
 
-word=$(printf '%s' "$*" | LC_ALL=C tr 'a-z' 'A-Z' | LC_ALL=C tr -cd 'A-Z')
-if [ "$(printf '%s' "$word" | seal)" != '@@SEALED_WORD@@' ]; then
-  reveal <<'SEALED'
+# A traveller who comes back from the shore brings a fingerprint next to the
+# word. The two are told apart by the SHA256: that every fingerprint begins
+# with, so they can be given in either order, and whatever a student pasted
+# around a fingerprint is trimmed off it.
+fingerprint=""
+for arg in "$@"; do
+  case "$arg" in
+    *SHA256:*)
+      rest=${arg#*SHA256:}
+      fingerprint="SHA256:${rest%%[!A-Za-z0-9+/=]*}"
+      ;;
+  esac
+done
+
+# The word is looked for in each argument on its own, so that whatever was
+# pasted next to it does not hide it, and then in all of them at once, so that
+# a word typed in two pieces is still the word.
+word=no
+for candidate in "$@" "$*"; do
+  candidate=$(printf '%s' "${candidate%%SHA256:*}" |
+    LC_ALL=C tr 'a-z' 'A-Z' | LC_ALL=C tr -cd 'A-Z')
+  if [ -n "$candidate" ] &&
+    [ "$(printf '%s' "$candidate" | seal)" = '@@SEALED_WORD@@' ]; then
+    word=yes
+  fi
+done
+
+if [ "$word" = no ]; then
+  if [ -n "$fingerprint" ]; then
+    reveal <<'SEALED'
+A voice rises from the lake: "You bring me a key, traveller, but not
+the word. Say the word of the prophecy as well, before the key."
+SEALED
+  else
+    reveal <<'SEALED'
 A voice rises from the lake: "That is not the word, traveller. Read
 the prophecy again."
 SEALED
+  fi
   exit 1
+fi
+
+# The last trial: a traveller who has already been to the shore comes back with
+# the fingerprint of the key that answered there. A fingerprint brought before
+# the message was left falls through to the scene below, which asks for it.
+if [ -n "$fingerprint" ] && [ -f "$AVALON/message.txt" ]; then
+  # Both keys are read here, on this machine, where they are: the fingerprint a
+  # student brings back is compared with the real thing, not with a copy
+  # written into this spell.
+  impostor=$(fingerprint_of "$IMPOSTOR_KEY")
+
+  mine=no
+  for key in $HOST_KEYS; do
+    if [ "$(fingerprint_of "$key")" = "$fingerprint" ]; then
+      mine=yes
+    fi
+  done
+
+  if [ "$mine" = yes ]; then
+    reveal <<'SEALED'
+A voice rises from the lake: "That is my own key, traveller: the key
+of this server, and one of those the dashboard lists. It is not the
+key you were shown on that other port.
+
+ Look again at what that server says about itself, on the line that
+ begins with SHA256."
+SEALED
+    exit 1
+  fi
+
+  # A land whose impostor is not installed cannot tell its key from any other.
+  # Rather than hold a traveller back for a server that is not there, it takes
+  # them at their word.
+  if [ -n "$impostor" ] && [ "$fingerprint" != "$impostor" ]; then
+    reveal <<'SEALED'
+A voice rises from the lake: "I do not know that key, traveller.
+
+ Your own computer shows you a server's key before it asks you
+ whether you trust it, on the line that begins with SHA256. Read it
+ there, and bring me all of it."
+SEALED
+    exit 1
+  fi
+
+  unpack "$AVALON/.hint" 644 <<'SEALED_FINAL_HINT' || exit 1
+@@FINAL_HINT@@
+SEALED_FINAL_HINT
+
+  reveal <<'SEALED'
+You hold out the key you were shown. The lake goes very still.
+
+"That key is not mine, traveller, and it is on no dashboard. It
+ belongs to Morgan le Fay. The barge of Avalon never moved: she wrote
+ that message herself, and she waited for you on that other port with
+ a sword that looks like mine and is not mine.
+
+ You looked at her key before you trusted her. That is the whole of
+ it, and it is the only thing that ever protects you: a key you have
+ not checked is a stranger who knows your name.
+
+ If you told your own computer to trust her, it still does. Take that
+ back, at home:
+
+     ssh-keygen -R '[@@HOST@@]:@@PORT@@'
+
+ Now take what I promised you."
+
+                            /\
+                           /  \
+                           |  |
+                           |  |
+                           |  |
+                           |  |
+                      =====|  |=====
+                           |__|
+                           |  |
+                          (____)
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      EXCALIBUR IS YOURS, AND AVALON IS BEHIND YOU.
+
+"Go home, traveller. You know the way now: the sea is SSH, and you
+ have crossed it in both directions. Your parrot is waiting."
+
+             ,
+            (o>    SQUAWK! Home! Home!
+            //\
+            V_/_
+
+SEALED
+  exit 0
 fi
 
 if [ ! -f "$AVALON/message.txt" ]; then
@@ -557,7 +711,7 @@ reveal <<'SEALED'
          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-An arm rises from the lake, holding a sword. Then a voice:
+An arm rises from the lake, holding a sword: Excalibur. Then a voice:
 
 "You called me from your own land, traveller, and you did not set
  foot on Avalon. I speak on Avalon, yet my words cross the sea and
@@ -589,9 +743,22 @@ reveal <<'SEALED'
             //\
             V_/_
 
-"One more thing, traveller. Someone left a message for you on the
- shore of Avalon, in ~/avalon/message.txt. Read it if you like. But
- trust nothing that you have not checked."
+"One last trial, traveller, and Avalon is behind you. Someone left a
+ message for you on the shore, in ~/avalon/message.txt. Read it: it
+ will tell you to go somewhere.
+
+ Before you go anywhere, look at the key of the server that answers
+ there, and hold it against the fingerprints on the dashboard. A
+ server that really is this one has the same keys. Trust nothing that
+ you have not checked.
+
+ Your own computer shows you that key before it asks you anything, on
+ the line that begins with SHA256. Bring it back to me, with the word,
+ from your own land:
+
+     ssh @@LOGIN@@ ./avalon/lady THE-WORD SHA256:...
+
+ I hold Excalibur. Bring me that key, and it is yours."
 SEALED
 END_LADY
 
@@ -610,15 +777,50 @@ END_MESSAGE
 text SHORE_HINT <<'END_SHORE_HINT'
 HINT
 
-The Lady of the Lake answered: you found the parrot!
+The Lady of the Lake answered: you found the parrot! One trial is
+left before Avalon is behind you.
 
-The message on the shore, message.txt, is optional. Before you trust
-it, remember how you checked this server the first time you connected
-to it. A server that really is this one has the same keys.
+The message on the shore, message.txt, sends you to another port of
+this server. Before you trust what answers there, remember how you
+checked this server the first time you connected to it: a server that
+really is this one has the same keys. Compare the key you are shown
+with the fingerprints on the dashboard. If they do not match, answer
+no. Refusing looks like an error:
+
+    Host key verification failed.
+
+That error is you getting it right.
+
+Either way, your SSH client shows you that server's key before it
+asks you anything, on the line that begins with SHA256. Copy that
+fingerprint, and bring it back to the Lady of the Lake from your own
+computer:
+
+    ssh @@LOGIN@@ ./avalon/lady THE-WORD SHA256:...
+
+Already answered yes? Your computer now trusts that server for this
+port and will stop asking. Make it forget, on your own computer, and
+the question comes back:
+
+    ssh-keygen -R '[@@HOST@@]:@@PORT@@'
 
 See "A message on the shore" in the exercise:
 @@EXERCISE@@#a-message-on-the-shore
 END_SHORE_HINT
+
+text FINAL_HINT <<'END_FINAL_HINT'
+HINT
+
+Avalon is behind you. You crossed the sea in both directions, you
+found the parrot, and you did not take Morgan le Fay's hand without
+looking at it first.
+
+Nothing is left here. What remains is optional, in the exercise: the
+clean-up of what the treasure hunt and Avalon left on your own
+computer.
+
+@@EXERCISE@@#clean-up-optional
+END_FINAL_HINT
 
 # ---------------------------------------------------------------------------
 # Building Avalon
@@ -704,6 +906,7 @@ build() {
 
   embed LADY MESSAGE MESSAGE
   embed LADY SHORE_HINT SHORE_HINT
+  embed LADY FINAL_HINT FINAL_HINT
   embed MERLIN PROPHECY PROPHECY
   embed MERLIN LADY LADY
   # The prophecy is read on the student's own computer, where it cannot change

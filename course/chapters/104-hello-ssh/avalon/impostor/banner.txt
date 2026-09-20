@@ -27,3 +27,11 @@ this port: make it forget, on your own computer, with:
 
     ssh-keygen -R '[ssh.archidep.ch]:2222'
 
+Then come back here. You will be asked the same question again, and
+this time you can read my key's fingerprint before you answer it, on
+the line that begins with SHA256. Answer no, and take that fingerprint
+to the Lady of the Lake. She is waiting for it, and she has something
+for you:
+
+    ssh <your-login>@ssh.archidep.ch ./avalon/lady THE-WORD SHA256:...
+

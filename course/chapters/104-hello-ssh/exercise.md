@@ -601,6 +601,7 @@ On the way, you will:
 - Copy a file from your computer to the server with `scp`, and another one from
   the server to your computer.
 - Run a command on the server without logging in.
+- Check a server's key fingerprint before you trust it.
 
 {% note type: tip %}
 
@@ -661,11 +662,17 @@ Your word is different: it is chosen at random when you arrive on Avalon.
 
 {% endsolution %}
 
-### :question: A message on the shore
+### :exclamation: A message on the shore
 
 When the Lady of the Lake has spoken, someone leaves a message for you on the
 shore of Avalon: `~/avalon/message.txt`, on the server. Read it, and do what a
 careful traveller would do.
+
+The message sends you somewhere. Whatever you decide to do about that, the
+server that answers there shows you its key before it asks you anything. Read
+that fingerprint, compare it with the fingerprints on the
+[dashboard][dashboard], and bring it back to the Lady of the Lake to finish your
+journey.
 
 {% solution %}
 
@@ -683,14 +690,34 @@ Are you sure you want to continue connecting (yes/no/[fingerprint])?
 
 That fingerprint is not one of the fingerprints on the [dashboard][dashboard]. If
 this were the same server, it would have the same keys. It is a different server
-pretending to be the one you know: answer `no`.
+pretending to be the one you know: answer `no`. Your SSH client then gives up,
+and what it prints looks like a failure:
 
-If you answered `yes`, you found out who wrote the message. Your SSH client now
-trusts that server for this port. Make it forget it, on your computer:
+```bash
+Host key verification failed.
+```
+
+That is the right outcome. Refusing to connect **is** the answer.
+
+Now take the fingerprint that server showed you back to the Lady of the Lake,
+from your own computer, with the word of the prophecy:
+
+```bash
+$> ssh jde@ssh.archidep.ch ./avalon/lady TINTAGEL SHA256:...
+```
+
+She knows that key, and she tells you whose it is.
+
+If you answered `yes`, you found out who wrote the message before she could tell
+you. Your SSH client now trusts that server for this port, and will not ask you
+again. Make it forget, on your computer:
 
 ```bash
 $> ssh-keygen -R '[ssh.archidep.ch]:2222'
 ```
+
+Then connect once more, read the fingerprint in the question this time, answer
+`no`, and bring the fingerprint back to the Lady of the Lake.
 
 {% endsolution %}
 
@@ -883,7 +910,8 @@ on: a file made on your computer had to be copied to the server, a prophecy made
 on the server had to be copied to your computer, and the Lady of the Lake only
 answered a command sent from your computer. Your settings stayed on your own
 computer too: the `PATH` that runs your treasure by its name does not exist on
-the server.
+the server. The last thing Avalon asked of you was to look at a key: a server
+claimed to be the one you knew, and only its fingerprint said otherwise.
 
 If you are more security-minded, you may have also learned to protect your
 private key with a passphrase and to use SSH agent to make it more convenient to

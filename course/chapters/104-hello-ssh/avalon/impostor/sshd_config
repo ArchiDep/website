@@ -7,9 +7,15 @@
 # never asks for a password, since a student who trusted it would type their
 # real one: it only offers public key authentication, and accepts no key.
 #
+# Its public host key must stay readable by everyone: the Lady of the Lake, who
+# runs as the student, reads it to tell whether the fingerprint a student
+# brings back to her is the one this server showed them.
+#
 # Run it next to the real SSH server, as root:
 #
 #     ssh-keygen -q -t ed25519 -N '' -f /etc/ssh/avalon-impostor/ssh_host_ed25519_key
+#     chmod 755 /etc/ssh/avalon-impostor
+#     chmod 644 /etc/ssh/avalon-impostor/ssh_host_ed25519_key.pub
 #     /usr/sbin/sshd -f /etc/ssh/avalon-impostor/sshd_config
 
 Port 2222
