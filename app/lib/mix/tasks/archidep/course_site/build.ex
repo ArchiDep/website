@@ -31,11 +31,12 @@ defmodule Mix.Tasks.Archidep.CourseSite.Build do
   - `--declarations` — what the course declares about itself. Defaults to the
     `course.yml` of the course.
   - `--progress` — how far the course has got, which decides which chapters show
-    their answers: `complete`, the URL of a running deployment's progress route,
-    or a file holding the same JSON. See
+    their answers: `none`, `complete`, the URL of a running deployment's
+    progress route, or a file holding the same JSON. See
     `Mix.Tasks.Archidep.CourseSite.ProgressSource`. An archive defaults to
     `complete` and is the only build that may be told it; every other build has
-    to be told where to read it, there being no answer that is safe to guess.
+    to be told how far the course has got, there being no answer that is safe to
+    guess — `none` is what a build run to see whether the material builds says.
   - `--static` — the static directory holding the global assets. Defaults to
     `priv/static`.
   - `--years` — the academic year this edition covers. Defaults to what the

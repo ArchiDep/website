@@ -371,7 +371,8 @@ archived edition — has no database to read, so it is told where to look with
 `--progress`; see
 [`Mix.Tasks.Archidep.CourseSite.ProgressSource`](../app/lib/mix/tasks/archidep/course_site/progress_source.ex).
 The same record is served publicly at `GET /api/progress`, which is what those
-builds read.
+builds read. A build run only to see whether the material builds needs no such
+record: `--progress none` renders a course nobody has taught yet.
 
 ### Special Tags and Features
 

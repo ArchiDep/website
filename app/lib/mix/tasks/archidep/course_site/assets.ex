@@ -23,8 +23,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.Assets do
     `priv/static`. Its `cache_manifest.json` is read when it is there, and the
     assets are taken to be undigested when it is not.
   - `--progress` — how far the course has got, which decides which chapters show
-    their answers: `complete`, the URL of a running deployment's progress route,
-    or a file holding the same JSON. See
+    their answers: `none`, `complete`, the URL of a running deployment's
+    progress route, or a file holding the same JSON. See
     `Mix.Tasks.Archidep.CourseSite.ProgressSource`. Defaults to `complete`,
     every page having to be rendered whole for its references to be checked;
     naming a source is how the gating is checked against a course still being

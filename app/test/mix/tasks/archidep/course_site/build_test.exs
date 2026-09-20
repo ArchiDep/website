@@ -195,6 +195,20 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
       assert File.exists?(dirs.output_dir) == false
     end
 
+    # A course nobody has taught yet is an answer rather than a source, so this
+    # build needs nothing to read and withholds every answer.
+    test "renders a course nobody has taught yet when told there is none", %{tmp_dir: tmp_dir} do
+      dirs = course!(tmp_dir)
+
+      Build.run(args(dirs, progress_file: nil) ++ ["--progress", "none"])
+
+      assert shell_output() == [
+               {:info,
+                "Rendered 2 pages and 1 chapters into 17 files, beside 1 files next to a page and 1 global assets"},
+               {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
+             ]
+    end
+
     test "refuses to guess how far the course has got", %{tmp_dir: tmp_dir} do
       dirs = course!(tmp_dir)
 

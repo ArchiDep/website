@@ -120,6 +120,33 @@ defmodule Mix.Tasks.Archidep.CourseSite.AssetsTest do
              ]
     end
 
+    # The value for a run that has no source to point at: nothing has been
+    # taught, so nothing is done and every answer is withheld.
+    test "takes the course to have got nowhere when told there is no progress",
+         %{tmp_dir: tmp_dir} do
+      dirs = course!(tmp_dir)
+
+      write!(
+        dirs.content_dir,
+        "chapters/102-shell-scripting/subject.md",
+        "---\ntitle: Shell Scripting\n---\n\nScript.\n"
+      )
+
+      Assets.run(args(dirs, progress: "none"))
+
+      assert shell_output() == [
+               {:info,
+                "Read 1 documents, 0 cheatsheets and 0 files next to a page from #{dirs.content_dir}"},
+               {:info, "Digested 0 files next to a page"},
+               {:info,
+                "Read 1 undigested assets from #{dirs.static_dir}, which was never digested"},
+               {:info, "Parsed 1 partials from #{dirs.includes_dir}"},
+               {:info, "0 sections and chapters are done as far as this run is concerned"},
+               {:info, "Withheld the answers of 1 documents the course has not covered yet"},
+               {:info, "Rendered 1 documents; every reference resolves"}
+             ]
+    end
+
     test "reports what the course cannot read at all", %{tmp_dir: tmp_dir} do
       dirs = course!(tmp_dir)
       write!(dirs.content_dir, "chapters/104-ssh/notes.md", "# Notes")

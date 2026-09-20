@@ -22,6 +22,12 @@ and automated agents interacting with this project.
 - There should generally be no need to add a new bounded context without
   explicit instructions from a human. If you believe a new context is needed,
   explain why in your response and ask for confirmation.
+- When you run `mix archidep.course_site.build` or
+  `mix archidep.course_site.assets` merely to see whether the course material
+  builds, pass `--progress none` rather than hunting for a progress file or a
+  deployment to read: it renders a course nobody has taught yet, which needs no
+  source. Only a build whose output someone will read as the site — the backup
+  copy, the printed PDFs — has to be told the real progress.
 - When you touch `async: true` tests — especially ones asserting PubSub
   broadcasts or other process-global state that the SQL sandbox does not isolate
   — verify their stability by re-running them with:

@@ -749,12 +749,15 @@ disagree about where `course.yml` is.
 
 **How far the course has got is the one input a command has to be told about.**
 The application reads it from its own tables; a command has no application
-running, so `--progress` says where to look — a URL, a file, or `complete` for
-an edition that is over, which is derived from the course rather than read at
-all. `Mix.Tasks.Archidep.CourseSite.ProgressSource` is the whole of that, and it
-lives with the commands rather than here: this subsystem must run standalone and
-reads nothing but the filesystem, and a build that can reach the network is a
-different claim.
+running, so `--progress` says where to look — a URL, a file, `complete` for an
+edition that is over or `none` for one nobody has taught yet, the last two being
+answers rather than sources, derived rather than read at all. `none` is what a
+build run only to see whether the material builds is told, there being nothing
+to look up.
+[`Mix.Tasks.Archidep.CourseSite.ProgressSource`](../../mix/tasks/archidep/course_site/progress_source.ex)
+is the whole of that, and it lives with the commands rather than here: this
+subsystem must run standalone and reads nothing but the filesystem, and a build
+that can reach the network is a different claim.
 
 ## Laying a page out
 

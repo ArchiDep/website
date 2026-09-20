@@ -6,9 +6,13 @@ defmodule Mix.Tasks.Archidep.CourseSite.ProgressSource do
   A running application reads it from its own database, through
   `ArchiDep.Course.course_sessions/0`. A command has no application running, so
   it is told, by the one `--progress` switch the two commands share, and the
-  switch takes three forms:
+  switch takes four forms:
 
-  - `complete` — a course that is over. Not a source at all: it is derived from
+  - `none` — a course nobody has taught yet. Not a source at all: it is the
+    empty list of sessions, what a progress file recording none reads as, so
+    nothing is done, nothing is due and every answer stays withheld. It is the
+    value for a build run only to see whether the material builds.
+  - `complete` — a course that is over. Not a source either: it is derived from
     the course being built (see `ArchiDep.CourseSite.Progress.complete/1`), and
     is refused where it would be a lie about a course still being taught.
   - an `http://` or `https://` URL — the progress route of a running deployment,
@@ -16,14 +20,14 @@ defmodule Mix.Tasks.Archidep.CourseSite.ProgressSource do
   - anything else — a file holding the same JSON that route serves, for a
     snapshot handed over by hand.
 
-  Dispatching on the value is what makes a file literally named `complete`, or
-  one whose name begins with a URL scheme, unaddressable. Both are worth the
-  one knob.
+  Dispatching on the value is what makes a file literally named `none` or
+  `complete`, or one whose name begins with a URL scheme, unaddressable. All
+  three are worth the one knob.
 
-  This is a module of the commands rather than of
-  `ArchiDep.CourseSite` — that subsystem must run standalone and reads nothing
-  but the filesystem, and a build that can reach the network is a different
-  claim. It is not a Mix task: it defines no `run/1`.
+  This is a module of the commands rather than of `ArchiDep.CourseSite` — that
+  subsystem must run standalone and reads nothing but the filesystem, and a
+  build that can reach the network is a different claim. It is not a Mix task:
+  it defines no `run/1`.
   """
 
   alias ArchiDep.CourseSite.Build
@@ -33,7 +37,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.ProgressSource do
   alias Req.Response
 
   @forms """
-  Say where to read it from with one of:
+  Say how far it has got with one of:
+    --progress none                       a course nobody has taught yet
     --progress complete                   a course that is over (archive builds only)
     --progress https://host/api/progress  a running deployment
     --progress ./progress.json            a snapshot
@@ -49,6 +54,10 @@ defmodule Mix.Tasks.Archidep.CourseSite.ProgressSource do
   there and the only place the value is accepted: a live or a backup build
   rendered as complete would reveal every answer of a course still being taught,
   and would look entirely normal.
+
+  `none` is subject to no such rule and is accepted everywhere: a course nobody
+  has taught yet withholds every answer, which is the wrong picture of a live
+  edition but never a disclosure.
   """
   @spec progress!(String.t() | nil, boolean()) :: [Session.t()] | :complete
   def progress!(value, complete_allowed?)
@@ -57,6 +66,8 @@ defmodule Mix.Tasks.Archidep.CourseSite.ProgressSource do
 
   def progress!(nil, false),
     do: Mix.raise("This build needs to be told how far the course has got.\n\n" <> @forms)
+
+  def progress!("none", _complete_allowed?), do: []
 
   def progress!("complete", true), do: :complete
 
