@@ -39,6 +39,10 @@ const titleSlide = () => ({
 
 const deck = new Reveal({
   hash: true,
+  // A deck's fragments pace an explanation as it is given, which a reader of
+  // the PDF is not sitting through: print each slide once, fully revealed,
+  // rather than once per fragment.
+  pdfSeparateFragments: false,
   markdown: {
     notesSeparator: '^\\*\\*Notes:\\*\\*',
     verticalSeparator: '^--v'
