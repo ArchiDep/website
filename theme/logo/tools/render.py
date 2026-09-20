@@ -1,17 +1,21 @@
-"""Render every part of the logo at every scale into `../rendered`.
+"""Render the logo, its parts and the icons into `course/favicons`.
+
+They are written straight into the directory the course build publishes from, so
+there is one copy of each file rather than a rendered set here and a published
+set there.
 
 Scales are whole numbers of pixels per drawn pixel, not fixed pixel sizes. The
 logo is 93 drawn pixels wide, so a fixed 512 would be 5.5 pixels per drawn
 pixel: every asset made that way has to either blur or make some pixels wider
 than others, and the unevenness crawls once the image animates. Whole-number
-scales cost nothing to keep - lossless WebP run-length-encodes flat colour, so
-scaling up only lengthens the runs and every scale lands within a kilobyte of
-the others.
+scales cost almost nothing to keep - lossless WebP run-length-encodes flat
+colour, so scaling up only lengthens the runs.
 
-Each animated part is written twice: the animation, and the first frame as a
-still. The still is what `prefers-reduced-motion` is served, so those visitors
-never download the animation at all, and it is also what shows anywhere the
-animation cannot play, such as print and PDF export.
+The icons are the exception. Their sizes are fixed by what browsers ask for and
+none is a whole multiple of the artwork, so they are resampled down from a large
+render and are soft as a result. Drawing them at their own sizes would be
+better; the generated rocket cannot do it, because its outline is one cell thick
+whatever the size and at icon sizes the black eats the hull.
 """
 
 import os
@@ -21,9 +25,24 @@ import sys
 import logo
 import pixgrid as P
 
-OUT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    "..", "rendered"))
-SCALES = range(1, 7)
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.normpath(os.path.join(HERE, "..", "..", "..", "course", "favicons"))
+
+# Which scales of each part to write, chosen from the size it is shown at and
+# the device pixel ratios worth serving. The whole logo heads the course home
+# page at 186 CSS pixels, which is 2x; the rocket and the cup are shown small.
+# Everything written here is published, so unused scales are not rendered.
+SCALES = {"logo": (2, 4, 6), "rocket": (1, 2, 3), "coffee": (1, 2, 3)}
+
+# Only the logo and the cup animate. The rocket is shown small, in the header
+# and the sidebar, where the exhaust would be a distraction rather than a
+# detail, so it is written as a still.
+STILL_ONLY = {"rocket"}
+
+# Sizes browsers ask for, and the part each icon set is drawn from.
+ICON_SIZES = [16, 32, 48, 96, 180, 192]
+ICON_SETS = {"archidep-rocket": "rocket", "archidep": "logo"}
+ICO_SIZES = [16, 32, 48]
 
 
 def _encode(frames, scale, stem):
@@ -43,28 +62,52 @@ def _encode(frames, scale, stem):
     return anim
 
 
-def render():
-    os.makedirs(OUT, exist_ok=True)
+def parts():
     rows = []
-    for name, build in logo.PARTS.items():
-        frames = build()
-        for scale in SCALES:
+    for name, scales in SCALES.items():
+        frames = logo.PARTS[name]()
+        for scale in scales:
             stem = f"archidep-{name}-{scale}x"
             still = f"{OUT}/{stem}.png"
             P.write_png(still, frames[0], scale=scale)
-            size = os.path.getsize(still)
-            anim = None
-            if len(frames) > 1:
-                anim = _encode(frames, scale, stem)
-                size = os.path.getsize(anim)
-            rows.append((name, scale,
-                         len(frames[0][0]) * scale, len(frames[0]) * scale,
-                         os.path.getsize(still), size if anim else 0))
+            animated = len(frames) > 1 and name not in STILL_ONLY
+            size = os.path.getsize(_encode(frames, scale, stem)) if animated \
+                else os.path.getsize(still)
+            rows.append((stem, len(frames[0][0]) * scale, len(frames[0]) * scale,
+                         os.path.getsize(still), size if animated else 0))
     return rows
 
 
+def icons():
+    """Square icons, resampled down from the largest render of each part."""
+    rows = []
+    for prefix, part in ICON_SETS.items():
+        source = f"{OUT}/archidep-{part}-{max(SCALES[part])}x.png"
+        for size in ICON_SIZES:
+            path = f"{OUT}/{prefix}-{size}.png"
+            subprocess.run(
+                ["magick", source,
+                 # fit inside the square, then centre it on a transparent one
+                 "-resize", f"{size}x{size}",
+                 "-background", "none", "-gravity", "center",
+                 "-extent", f"{size}x{size}", path], check=True)
+            rows.append((os.path.basename(path), size, size,
+                         os.path.getsize(path), 0))
+    ico = os.path.normpath(os.path.join(OUT, "..", "favicon.ico"))
+    subprocess.run(["magick",
+                    *[f"{OUT}/archidep-rocket-{s}.png" for s in ICO_SIZES],
+                    ico], check=True)
+    rows.append(("favicon.ico", 0, 0, os.path.getsize(ico), 0))
+    return rows
+
+
+def _delays(path):
+    return [int(t) for t in subprocess.run(
+        ["magick", "identify", "-format", "%T ", path],
+        capture_output=True, check=True).stdout.split()]
+
+
 def _same(path, want, scale):
-    """Does a decoded frame match the grid it was built from?"""
     w, h, buf = P.read_rgba(path)
     for y in range(0, h, scale):
         for x in range(0, w, scale):
@@ -73,12 +116,6 @@ def _same(path, want, scale):
             if (got[3] != 0) if exp[3] == 0 else (got != exp):
                 return False
     return True
-
-
-def _delays(path):
-    return [int(t) for t in subprocess.run(
-        ["magick", "identify", "-format", "%T ", path],
-        capture_output=True, check=True).stdout.split()]
 
 
 def _check(name, scale, frames):
@@ -114,19 +151,20 @@ def verify():
     frame covers the same span.
     """
     bad = []
-    for name, build in logo.PARTS.items():
-        frames = build()
-        if len(frames) == 1:
+    for name, scales in SCALES.items():
+        frames = logo.PARTS[name]()
+        if len(frames) == 1 or name in STILL_ONLY:
             continue
-        for scale in SCALES:
+        for scale in scales:
             bad += _check(name, scale, frames)
     return bad
 
 
 if __name__ == "__main__":
-    for name, scale, w, h, still, anim in render():
-        print("%-7s %dx  %4dx%-4d  still %5.1f KB%s"
-              % (name, scale, w, h, still / 1024,
+    os.makedirs(OUT, exist_ok=True)
+    for stem, w, h, still, anim in parts() + icons():
+        print("%-26s %4dx%-4d  %5.1f KB%s"
+              % (stem, w, h, still / 1024,
                  "  anim %5.1f KB" % (anim / 1024) if anim else ""))
     if "--verify" in sys.argv:
         bad = verify()

@@ -65,11 +65,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Sidebar do
       <div class="lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4">
         <a href={@links[:home]} class="text-xl font-bold inline">
           <div class="flex items-center gap-x-2">
-            <div class="avatar">
-              <div class="w-10">
-                <img src={@links[:favicon_192]} alt="ArchiDep logo" />
-              </div>
-            </div>
+            <img
+              src={@links[:rocket_1x]}
+              srcset={"#{@links[:rocket_1x]} 1x, #{@links[:rocket_2x]} 2x, #{@links[:rocket_3x]} 3x"}
+              width="41"
+              height="28"
+              alt="ArchiDep logo"
+              class="w-[41px] [image-rendering:pixelated]"
+            />
             <span class="font-title">ArchiDep</span>
           </div>
         </a>

@@ -15,12 +15,31 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
   # below writes with their own path as their content.
   @root_files [
     "favicon.ico",
-    "favicons/archidep-512-flat.png",
-    "favicons/archidep-coffee.png",
+    "favicons/archidep-16.png",
+    "favicons/archidep-180.png",
+    "favicons/archidep-192.png",
+    "favicons/archidep-32.png",
+    "favicons/archidep-48.png",
+    "favicons/archidep-96.png",
+    "favicons/archidep-coffee-1x.png",
+    "favicons/archidep-coffee-1x.webp",
+    "favicons/archidep-coffee-2x.png",
+    "favicons/archidep-coffee-2x.webp",
+    "favicons/archidep-coffee-3x.png",
+    "favicons/archidep-coffee-3x.webp",
+    "favicons/archidep-logo-2x.png",
+    "favicons/archidep-logo-2x.webp",
+    "favicons/archidep-logo-4x.png",
+    "favicons/archidep-logo-4x.webp",
+    "favicons/archidep-logo-6x.png",
+    "favicons/archidep-logo-6x.webp",
     "favicons/archidep-rocket-16.png",
     "favicons/archidep-rocket-180.png",
     "favicons/archidep-rocket-192.png",
+    "favicons/archidep-rocket-1x.png",
+    "favicons/archidep-rocket-2x.png",
     "favicons/archidep-rocket-32.png",
+    "favicons/archidep-rocket-3x.png",
     "favicons/archidep-rocket-48.png",
     "favicons/archidep-rocket-96.png",
     "favicons/heig.png"
@@ -36,7 +55,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 17 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
 
@@ -68,7 +87,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 17 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
 
@@ -127,7 +146,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 17 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end
@@ -168,7 +187,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
       # under the edition prefix rather than also at the mount point.
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 16 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 35 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end
@@ -180,7 +199,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 16 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 35 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end
@@ -204,7 +223,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 17 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 36 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end

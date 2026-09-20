@@ -11,6 +11,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.SidebarTest do
   alias ArchiDep.CourseSite.Layout.Chrome.Sidebar
 
   @links %{
+    rocket_1x: "/favicons/archidep-rocket-1x.png",
+    rocket_2x: "/favicons/archidep-rocket-2x.png",
+    rocket_3x: "/favicons/archidep-rocket-3x.png",
+    coffee_1x: "/favicons/archidep-coffee-1x.webp",
+    coffee_2x: "/favicons/archidep-coffee-2x.webp",
+    coffee_3x: "/favicons/archidep-coffee-3x.webp",
+    coffee_still_1x: "/favicons/archidep-coffee-1x.png",
+    coffee_still_2x: "/favicons/archidep-coffee-2x.png",
+    coffee_still_3x: "/favicons/archidep-coffee-3x.png",
     home: "/",
     favicon_192: "/favicons/archidep-rocket-192.png",
     heig_logo: "/favicons/heig.png",
@@ -164,11 +173,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.SidebarTest do
       <div class="lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4">
         <a href="/" class="text-xl font-bold inline">
           <div class="flex items-center gap-x-2">
-            <div class="avatar">
-              <div class="w-10">
-                <img src="/favicons/archidep-rocket-192.png" alt="ArchiDep logo">
-              </div>
-            </div>
+            <img src="/favicons/archidep-rocket-1x.png" srcset="/favicons/archidep-rocket-1x.png 1x, /favicons/archidep-rocket-2x.png 2x, /favicons/archidep-rocket-3x.png 3x" width="41" height="28" alt="ArchiDep logo" class="w-[41px] [image-rendering:pixelated]">
             <span class="font-title">ArchiDep</span>
           </div>
         </a>

@@ -248,6 +248,30 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     favicon_192: "favicons/archidep-rocket-192.png"
   }
 
+  # The marks drawn in the page rather than asked for by the browser, each at
+  # whole multiples of the pixel art so its pixels stay square however the
+  # display scales. The logo and the cup animate, and the PNG beside each
+  # animation is the still shown in its place when the visitor has asked for
+  # reduced motion. The rocket does not animate: it is drawn small, where an
+  # exhaust would be a distraction rather than a detail.
+  @marks %{
+    logo_2x: "favicons/archidep-logo-2x.webp",
+    logo_4x: "favicons/archidep-logo-4x.webp",
+    logo_6x: "favicons/archidep-logo-6x.webp",
+    logo_still_2x: "favicons/archidep-logo-2x.png",
+    logo_still_4x: "favicons/archidep-logo-4x.png",
+    logo_still_6x: "favicons/archidep-logo-6x.png",
+    coffee_1x: "favicons/archidep-coffee-1x.webp",
+    coffee_2x: "favicons/archidep-coffee-2x.webp",
+    coffee_3x: "favicons/archidep-coffee-3x.webp",
+    coffee_still_1x: "favicons/archidep-coffee-1x.png",
+    coffee_still_2x: "favicons/archidep-coffee-2x.png",
+    coffee_still_3x: "favicons/archidep-coffee-3x.png",
+    rocket_1x: "favicons/archidep-rocket-1x.png",
+    rocket_2x: "favicons/archidep-rocket-2x.png",
+    rocket_3x: "favicons/archidep-rocket-3x.png"
+  }
+
   @doc """
   Resolve everything the chrome of a page needs, or say what it could not
   resolve.
@@ -330,9 +354,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     |> required(:home, :home)
     |> required(:favicon, {:root_file, "favicon.ico"})
     |> required(:heig_logo, {:root_file, "favicons/heig.png"})
-    |> required(:logo, {:root_file, "favicons/archidep-512-flat.png"})
-    |> required(:coffee_logo, {:root_file, "favicons/archidep-coffee.png"})
     |> favicons()
+    |> marks()
     |> menu_emoji()
     |> emoji(@legend_emoji)
     |> emoji(@search_emoji)
@@ -390,6 +413,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
 
   defp favicons(resolved) do
     Enum.reduce(@favicons, resolved, fn {key, path}, resolved ->
+      required(resolved, key, {:root_file, path})
+    end)
+  end
+
+  defp marks(resolved) do
+    Enum.reduce(@marks, resolved, fn {key, path}, resolved ->
       required(resolved, key, {:root_file, path})
     end)
   end

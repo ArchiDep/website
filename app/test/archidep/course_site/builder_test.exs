@@ -15,12 +15,31 @@ defmodule ArchiDep.CourseSite.BuilderTest do
   # below writes with their own path as their content.
   @root_files [
     "favicon.ico",
-    "favicons/archidep-512-flat.png",
-    "favicons/archidep-coffee.png",
+    "favicons/archidep-16.png",
+    "favicons/archidep-180.png",
+    "favicons/archidep-192.png",
+    "favicons/archidep-32.png",
+    "favicons/archidep-48.png",
+    "favicons/archidep-96.png",
+    "favicons/archidep-coffee-1x.png",
+    "favicons/archidep-coffee-1x.webp",
+    "favicons/archidep-coffee-2x.png",
+    "favicons/archidep-coffee-2x.webp",
+    "favicons/archidep-coffee-3x.png",
+    "favicons/archidep-coffee-3x.webp",
+    "favicons/archidep-logo-2x.png",
+    "favicons/archidep-logo-2x.webp",
+    "favicons/archidep-logo-4x.png",
+    "favicons/archidep-logo-4x.webp",
+    "favicons/archidep-logo-6x.png",
+    "favicons/archidep-logo-6x.webp",
     "favicons/archidep-rocket-16.png",
     "favicons/archidep-rocket-180.png",
     "favicons/archidep-rocket-192.png",
+    "favicons/archidep-rocket-1x.png",
+    "favicons/archidep-rocket-2x.png",
     "favicons/archidep-rocket-32.png",
+    "favicons/archidep-rocket-3x.png",
     "favicons/archidep-rocket-48.png",
     "favicons/archidep-rocket-96.png",
     "favicons/heig.png"
@@ -50,7 +69,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       dirs = course_fixture(tmp_dir)
       urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 17)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 36)}
       assert written(dirs.output_dir) == expected_build("/2026")
     end
 
@@ -66,7 +85,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
           absolute_base_url: "https://archidep.example.com"
         )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 17)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 36)}
 
       assert written(dirs.output_dir) == %{
                expected_build("/2026")
@@ -249,7 +268,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         "---\ntitle: Command Line\n---\n\n![CLI](images/cli.jpg)\n"
       )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 17)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 36)}
     end
 
     test "says which of an edition's links lead nowhere", %{tmp_dir: tmp_dir} do
@@ -346,7 +365,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       output_dir: dirs.output_dir,
       pages: 2,
       chapters: 1,
-      files: Keyword.get(overrides, :files, 16),
+      files: Keyword.get(overrides, :files, 35),
       page_assets: 1,
       assets: 1
     }

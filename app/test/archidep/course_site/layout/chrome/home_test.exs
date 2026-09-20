@@ -7,7 +7,15 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   alias ArchiDep.CourseSite.Layout.Chrome.HomeCard
   alias ArchiDep.CourseSite.Layout.Chrome.MenuEntry
 
-  @links %{logo: "/favicons/archidep-512-flat.png", heig_logo: "/favicons/heig.png"}
+  @links %{
+    heig_logo: "/favicons/heig.png",
+    logo_2x: "/favicons/archidep-logo-2x.webp",
+    logo_4x: "/favicons/archidep-logo-4x.webp",
+    logo_6x: "/favicons/archidep-logo-6x.webp",
+    logo_still_2x: "/favicons/archidep-logo-2x.png",
+    logo_still_4x: "/favicons/archidep-logo-4x.png",
+    logo_still_6x: "/favicons/archidep-logo-6x.png"
+  }
 
   describe "title/1" do
     test "names the course, who teaches it, and how it is doing" do
@@ -131,7 +139,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
     String.trim_trailing("""
     <div class="flex flex-wrap xs:flex-nowrap items-center gap-4">
       <div class="flex items-center gap-4">
-        <img src="/favicons/archidep-512-flat.png" alt="ArchiDep logo" class="!m-0 w-40">
+        <picture>
+          <source media="(prefers-reduced-motion: reduce)" type="image/png" srcset="/favicons/archidep-logo-2x.png 1x, /favicons/archidep-logo-4x.png 2x, /favicons/archidep-logo-6x.png 3x">
+          <img src="/favicons/archidep-logo-2x.png" srcset="/favicons/archidep-logo-2x.webp 1x, /favicons/archidep-logo-4x.webp 2x, /favicons/archidep-logo-6x.webp 3x" width="186" height="116" alt="ArchiDep logo" class="!m-0 w-[186px] [image-rendering:pixelated]">
+        </picture>
       </div>
       <div>
         <h1 class="text-2xl md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-5xl !mb-0 dark:text-white print:hidden">

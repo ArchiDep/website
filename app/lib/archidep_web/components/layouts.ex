@@ -36,11 +36,14 @@ defmodule ArchiDepWeb.Components.Layouts do
         </label>
         <a class="btn btn-ghost text-xl" href="/">
           <div class="flex items-center gap-x-2">
-            <div class="avatar">
-              <div class="w-10">
-                <img src="/favicons/archidep-rocket-192.png" alt="ArchiDep logo" />
-              </div>
-            </div>
+            <img
+              src="/favicons/archidep-rocket-1x.png"
+              srcset="/favicons/archidep-rocket-1x.png 1x, /favicons/archidep-rocket-2x.png 2x, /favicons/archidep-rocket-3x.png 3x"
+              width="41"
+              height="28"
+              alt="ArchiDep logo"
+              class="w-[41px] [image-rendering:pixelated]"
+            />
             <h1>{gettext("ArchiDep")}</h1>
           </div>
         </a>
@@ -111,11 +114,14 @@ defmodule ArchiDepWeb.Components.Layouts do
           <div class="lg:hidden w-full flex justify-between items-center pl-6 pr-2 pt-4">
             <a href="/" class="text-xl font-bold inline">
               <div class="flex items-center gap-x-2">
-                <div class="avatar">
-                  <div class="w-10">
-                    <img src="/favicons/archidep-rocket-192.png" alt="ArchiDep logo" />
-                  </div>
-                </div>
+                <img
+                  src="/favicons/archidep-rocket-1x.png"
+                  srcset="/favicons/archidep-rocket-1x.png 1x, /favicons/archidep-rocket-2x.png 2x, /favicons/archidep-rocket-3x.png 3x"
+                  width="41"
+                  height="28"
+                  alt="ArchiDep logo"
+                  class="w-[41px] [image-rendering:pixelated]"
+                />
                 <span class="font-title">ArchiDep</span>
               </div>
             </a>
@@ -262,11 +268,21 @@ defmodule ArchiDepWeb.Components.Layouts do
               </p>
               <p class="flex items-center gap-x-1 text-xs">
                 <a href="/" class="hover:text-accent flex items-center gap-1.5">
-                  <span class="avatar">
-                    <span class="w-5 -mt-1">
-                      <img src="/favicons/archidep-coffee.png" alt="ArchiDep logo" />
-                    </span>
-                  </span>
+                  <picture class="-mt-1">
+                    <source
+                      media="(prefers-reduced-motion: reduce)"
+                      type="image/png"
+                      srcset="/favicons/archidep-coffee-1x.png 1x, /favicons/archidep-coffee-2x.png 2x, /favicons/archidep-coffee-3x.png 3x"
+                    />
+                    <img
+                      src="/favicons/archidep-coffee-1x.png"
+                      srcset="/favicons/archidep-coffee-1x.webp 1x, /favicons/archidep-coffee-2x.webp 2x, /favicons/archidep-coffee-3x.webp 3x"
+                      width="27"
+                      height="31"
+                      alt="ArchiDep logo"
+                      class="w-[27px] [image-rendering:pixelated]"
+                    />
+                  </picture>
                   <span class="font-title">ArchiDep</span>
                 </a>
                 <span class="tooltip tooltip-left">

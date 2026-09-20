@@ -82,7 +82,6 @@ PARTS = {
     "logo": lambda: crop(composite()),
     "rocket": lambda: crop(rockets()),
     "coffee": lambda: crop(mugs()),
-    "laptop": lambda: [laptop()],
 }
 
 

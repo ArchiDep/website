@@ -17,8 +17,11 @@ sits in the header, and the cup sits in the sidebar footer.
   proportions rather than from the drawing itself.
 - `tools/`: the generator, in dependency-free Python. It needs only a Python 3
   interpreter and ImageMagick.
-- `rendered/`: what the generator produces, committed so that no build step
-  needs Python or ImageMagick.
+
+What it produces is written straight into
+[`course/favicons`](../../course/favicons), the directory the course build
+publishes from, and committed there, so there is one copy of each file and no
+build step needs Python or ImageMagick.
 
 ## The grid
 
@@ -63,11 +66,13 @@ such as print and PDF export.
 
 ## Sizes
 
-Assets are rendered at whole numbers of pixels per drawn pixel, from 1× to 6×,
-rather than at fixed pixel sizes. A fixed size that is not a whole multiple of
-the artwork forces every pixel to be either blurred or unevenly widened, and
-once the image animates that unevenness crawls. The logo is 93 drawn pixels
-wide, so a 512-pixel-wide asset would be 5.5 pixels per drawn pixel.
+Assets are rendered at whole numbers of pixels per drawn pixel rather than at
+fixed pixel sizes — the whole logo at 2×, 4× and 6×, the rocket and the cup at
+1×, 2× and 3×, each chosen from the size it is shown at and the device pixel
+ratios worth serving. A fixed size that is not a whole multiple of the artwork
+forces every pixel to be either blurred or unevenly widened, and once the image
+animates that unevenness crawls. The logo is 93 drawn pixels wide, so a
+512-pixel-wide asset would be 5.5 pixels per drawn pixel.
 
 Displayed sizes should be whole multiples too. 93 drawn pixels at 2× is 186 CSS
 pixels; serving 4× and 6× alongside lets displays at device pixel ratios of 2
@@ -78,16 +83,27 @@ Keeping every scale costs almost nothing. Lossless WebP run-length-encodes flat
 colour, so scaling up only lengthens the runs: every scale of the whole logo
 lands between 3 and 5 KB, and the 6× is smaller than the 3×.
 
+The icons browsers ask for are the exception. None of 16, 32, 48, 96, 180 or 192
+is a whole multiple of the artwork, so they are resampled down from the largest
+render and are soft at the smallest sizes. Drawing them at their own sizes would
+be better, and the generated rocket cannot do it: its outline is one cell thick
+whatever the size, so below about 23 cells across the black eats the hull.
+
 ## Regenerating
 
 ```bash
 cd theme/logo/tools && python3 render.py --verify
 ```
 
-This rewrites everything in `rendered/`. `--verify` decodes each animation back
-and checks it against the frames it was built from, cell by cell; it is worth
-running, because the encoder collapses runs of identical frames into one with a
-longer delay and the result should still be exactly what was intended.
+This rewrites every logo, part and icon in `course/favicons`, and `favicon.ico`
+beside it. `--verify` decodes each animation back and checks it against the
+frames it was built from, cell by cell; it is worth running, because the encoder
+collapses runs of identical frames into one with a longer delay and the result
+should still be exactly what was intended.
+
+A file added or dropped here has to be added to or dropped from the list of
+files a build publishes, in
+[`ArchiDep.CourseSite.Build`](../../app/lib/archidep/course_site/build.ex).
 
 To change the artwork, edit a file in `src/` at one pixel per drawn pixel and
 regenerate. To change the rocket's shape or size, or the timing, see
@@ -95,7 +111,6 @@ regenerate. To change the rocket's shape or size, or the timing, see
 
 ## Attribution
 
-The artwork was drawn for this course. The palette is from [PICO-8][pico8] by
-Lexaloffle Games.
+The palette is from [PICO-8][pico8] by Lexaloffle Games.
 
 [pico8]: https://www.lexaloffle.com/pico-8.php

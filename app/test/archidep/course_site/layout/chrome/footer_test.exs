@@ -8,6 +8,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
   alias ArchiDep.CourseSite.SiteInfo
 
   @links %{
+    coffee_1x: "/favicons/archidep-coffee-1x.webp",
+    coffee_2x: "/favicons/archidep-coffee-2x.webp",
+    coffee_3x: "/favicons/archidep-coffee-3x.webp",
+    coffee_still_1x: "/favicons/archidep-coffee-1x.png",
+    coffee_still_2x: "/favicons/archidep-coffee-2x.png",
+    coffee_still_3x: "/favicons/archidep-coffee-3x.png",
     heig_logo: "/favicons/heig.png",
     coffee_logo: "/favicons/archidep-coffee.png",
     repository: "https://github.com/ArchiDep/website",
@@ -84,11 +90,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.FooterTest do
         </p>
         <p class="flex items-center gap-x-1 text-xs">
           <a href="/" class="hover:text-accent flex items-center gap-1.5">
-            <span class="avatar -mt-1">
-              <span class="w-5">
-                <img src="/favicons/archidep-coffee.png" alt="ArchiDep logo">
-              </span>
-            </span>
+            <picture class="-mt-1">
+              <source media="(prefers-reduced-motion: reduce)" type="image/png" srcset="/favicons/archidep-coffee-1x.png 1x, /favicons/archidep-coffee-2x.png 2x, /favicons/archidep-coffee-3x.png 3x">
+              <img src="/favicons/archidep-coffee-1x.png" srcset="/favicons/archidep-coffee-1x.webp 1x, /favicons/archidep-coffee-2x.webp 2x, /favicons/archidep-coffee-3x.webp 3x" width="27" height="31" alt="ArchiDep logo" class="w-[27px] [image-rendering:pixelated]">
+            </picture>
             <span class="font-title">ArchiDep</span>
           </a>
           #{Keyword.fetch!(parts, :version)}

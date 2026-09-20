@@ -89,7 +89,21 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
     ~H"""
     <div class="flex flex-wrap xs:flex-nowrap items-center gap-4">
       <div class="flex items-center gap-4">
-        <img src={@links[:logo]} alt="ArchiDep logo" class="!m-0 w-40" />
+        <picture>
+          <source
+            media="(prefers-reduced-motion: reduce)"
+            type="image/png"
+            srcset={"#{@links[:logo_still_2x]} 1x, #{@links[:logo_still_4x]} 2x, #{@links[:logo_still_6x]} 3x"}
+          />
+          <img
+            src={@links[:logo_still_2x]}
+            srcset={"#{@links[:logo_2x]} 1x, #{@links[:logo_4x]} 2x, #{@links[:logo_6x]} 3x"}
+            width="186"
+            height="116"
+            alt="ArchiDep logo"
+            class="!m-0 w-[186px] [image-rendering:pixelated]"
+          />
+        </picture>
       </div>
       <div>
         <h1 class="text-2xl md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-5xl !mb-0 dark:text-white print:hidden">

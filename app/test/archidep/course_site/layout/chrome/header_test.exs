@@ -8,6 +8,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HeaderTest do
   alias ArchiDep.CourseSite.SiteInfo
 
   @links %{
+    rocket_1x: "/favicons/archidep-rocket-1x.png",
+    rocket_2x: "/favicons/archidep-rocket-2x.png",
+    rocket_3x: "/favicons/archidep-rocket-3x.png",
     home: "/",
     favicon_192: "/favicons/archidep-rocket-192.png",
     branch: "https://github.com/ArchiDep/website/tree/main",
@@ -60,11 +63,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HeaderTest do
         </label>
         <a class="btn btn-ghost text-xl print:text-3xl print:pl-0" href="/">
           <div class="flex items-center gap-x-2">
-            <div class="avatar">
-              <div class="w-10">
-                <img src="/favicons/archidep-rocket-192.png" alt="ArchiDep logo">
-              </div>
-            </div>
+            <img src="/favicons/archidep-rocket-1x.png" srcset="/favicons/archidep-rocket-1x.png 1x, /favicons/archidep-rocket-2x.png 2x, /favicons/archidep-rocket-3x.png 3x" width="41" height="28" alt="ArchiDep logo" class="w-[41px] [image-rendering:pixelated]">
             <h1 class="print:hidden">ArchiDep</h1>
             <h1 class="hidden print:block">Architecture &amp; Deployment</h1>
           </div>

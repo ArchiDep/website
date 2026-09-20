@@ -45,21 +45,41 @@ defmodule ArchiDep.CourseSite.Build do
 
   # The files anchored at the build's mount point rather than under its edition,
   # which is what `{:root_file, _}` means. They are named one by one rather than
-  # walked, for the same reason the includes are: the directory they come from
-  # holds marks nothing draws, and what a build publishes is a decision rather
-  # than whatever happens to be sitting there. As output paths, since that is
-  # what a build writes them as and what the chrome asks for them by.
+  # walked, for the same reason the includes are: what a build publishes is a
+  # decision rather than whatever happens to be sitting in the directory, and a
+  # mark that stops being drawn should have to be taken off this list to stop
+  # being carried. As output paths, since that is what a build writes them as
+  # and what the chrome asks for them by.
   @root_files [
     "/favicon.ico",
     "/favicons/heig.png",
-    "/favicons/archidep-512-flat.png",
-    "/favicons/archidep-coffee.png",
+    "/favicons/archidep-16.png",
+    "/favicons/archidep-32.png",
+    "/favicons/archidep-48.png",
+    "/favicons/archidep-96.png",
+    "/favicons/archidep-180.png",
+    "/favicons/archidep-192.png",
     "/favicons/archidep-rocket-16.png",
     "/favicons/archidep-rocket-32.png",
     "/favicons/archidep-rocket-48.png",
     "/favicons/archidep-rocket-96.png",
     "/favicons/archidep-rocket-180.png",
-    "/favicons/archidep-rocket-192.png"
+    "/favicons/archidep-rocket-192.png",
+    "/favicons/archidep-logo-2x.png",
+    "/favicons/archidep-logo-2x.webp",
+    "/favicons/archidep-logo-4x.png",
+    "/favicons/archidep-logo-4x.webp",
+    "/favicons/archidep-logo-6x.png",
+    "/favicons/archidep-logo-6x.webp",
+    "/favicons/archidep-rocket-1x.png",
+    "/favicons/archidep-rocket-2x.png",
+    "/favicons/archidep-rocket-3x.png",
+    "/favicons/archidep-coffee-1x.png",
+    "/favicons/archidep-coffee-1x.webp",
+    "/favicons/archidep-coffee-2x.png",
+    "/favicons/archidep-coffee-2x.webp",
+    "/favicons/archidep-coffee-3x.png",
+    "/favicons/archidep-coffee-3x.webp"
   ]
 
   @archives "*.json"

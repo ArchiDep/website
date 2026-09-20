@@ -23,11 +23,14 @@
         </label>
         <a class="btn btn-ghost text-xl" href="/">
           <div class="flex items-center gap-x-2">
-            <div class="avatar">
-              <div class="w-10 rounded-full">
-                <img src="/favicons/archidep-192.png" alt="ArchiDep logo" />
-              </div>
-            </div>
+            <img
+              src="/favicons/archidep-rocket-1x.png"
+              srcset="/favicons/archidep-rocket-1x.png 1x, /favicons/archidep-rocket-2x.png 2x, /favicons/archidep-rocket-3x.png 3x"
+              width="41"
+              height="28"
+              alt="ArchiDep logo"
+              class="w-[41px] [image-rendering:pixelated]"
+            />
             <h1>{gettext("ArchiDep")}</h1>
           </div>
         </a>

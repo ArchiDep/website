@@ -58,11 +58,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Header do
         </label>
         <a class="btn btn-ghost text-xl print:text-3xl print:pl-0" href={@links[:home]}>
           <div class="flex items-center gap-x-2">
-            <div class="avatar">
-              <div class="w-10">
-                <img src={@links[:favicon_192]} alt="ArchiDep logo" />
-              </div>
-            </div>
+            <img
+              src={@links[:rocket_1x]}
+              srcset={"#{@links[:rocket_1x]} 1x, #{@links[:rocket_2x]} 2x, #{@links[:rocket_3x]} 3x"}
+              width="41"
+              height="28"
+              alt="ArchiDep logo"
+              class="w-[41px] [image-rendering:pixelated]"
+            />
             <h1 class="print:hidden">ArchiDep</h1>
             <h1 class="hidden print:block">Architecture &amp; Deployment</h1>
           </div>
