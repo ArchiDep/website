@@ -372,7 +372,9 @@ text RUINS_HINT <<'END_RUINS_HINT'
 HINT
 
 Read the path one piece at a time: .. (up once), .. (up again), then
-shipwreck.
+shipwreck:
+
+    cd ../../shipwreck
 
 Lost? cd with nothing after it always takes you home, to ~. From
 there:
@@ -423,6 +425,8 @@ text IDOL <<'END_IDOL'
        |_______|
 
 The golden idol! It is heavy, and it shines in the dark.
+
+Do not leave it in the dark: put it in your bag, and carry it out.
 END_IDOL
 
 text SHIPWRECK_HINT <<'END_SHIPWRECK_HINT'
@@ -591,6 +595,9 @@ text RUSTY_KEY <<'END_RUSTY_KEY'
 RUSTY KEY
 
 An old, heavy key. A word is written on it: FORTRESS.
+
+Do not leave it lying here: put it in your bag, and carry it to the
+fortress.
 END_RUSTY_KEY
 
 text LAIR_HINT <<'END_LAIR_HINT'
@@ -614,8 +621,13 @@ END_LAIR_HINT
 text FORTRESS_HINT <<'END_FORTRESS_HINT'
 HINT
 
-The door needs a file named key, next to it. Your key is in your bag,
-and its name is rusty-key.
+The door of the fortress is a program. To run a program in the
+directory you are in, write ./ before its name:
+
+    ./door
+
+It needs a file named key, next to it. Your key is in your bag, and
+its name is rusty-key.
 
 mv moves a file. It can also give it a new name, at the same time:
 
@@ -706,9 +718,13 @@ END_DOOR
 text GUARDIAN_HINT <<'END_GUARDIAN_HINT'
 HINT
 
-cp copies a file. The copy can have another name, and be in another
-place. mv would move the original, and the guardian wants it to stay
-in the shipwreck.
+The guardian is a program. Talk to it by running it:
+
+    ./guardian
+
+It wants a copy of the captain's map. cp copies a file. The copy can
+have another name, and be in another place. mv would move the
+original, and the guardian wants it to stay in the shipwreck.
 
 From the courtyard, the shipwreck is two levels up, then down:
 
@@ -799,8 +815,13 @@ END_GUARDIAN
 text REST_HINT <<'END_REST_HINT'
 HINT
 
-mkdir makes a directory. touch makes an empty file. echo with >
-writes text into a file:
+Resting is a program. Lie down by running it:
+
+    ./rest
+
+You cannot rest without a camp and a lit fire. mkdir makes a
+directory. touch makes an empty file. echo with > writes text into a
+file:
 
     mkdir camp
     touch camp/fire
@@ -890,10 +911,12 @@ The fire is warm. You lie down next to it, and you fall asleep.
 
 SEALED
 
-# The snores grow on one line, as the dragon's do. They only take their time
-# in a terminal, where someone is watching them.
+# The snores grow on one line, as the dragon's do, but they stop on their own
+# after three seconds: the dragon's snores never stop, and a student who met it
+# first is quick to reach for Ctrl-C. They only take their time in a terminal,
+# where someone is watching them.
 printf '   '
-for snore in z zz Zzz ZZzz ZZZzz; do
+for snore in z zz Zzz; do
   printf ' %s' "$snore"
   [ -t 1 ] && sleep 1
 done
@@ -938,7 +961,12 @@ END_DRAWBRIDGE_CONF
 text DRAWBRIDGE_HINT <<'END_DRAWBRIDGE_HINT'
 HINT
 
-Open the settings file with the nano editor:
+The lever is a program. Pull it by running it:
+
+    ./lever
+
+It will not move while drawbridge.conf says the drawbridge is closed.
+Open that settings file with the nano editor:
 
     nano drawbridge.conf
 
@@ -1089,16 +1117,22 @@ END_TRAP_SPIDERS
 text TOWER_HINT <<'END_TOWER_HINT'
 HINT
 
-rm deletes a file:
+The stairs of the tower are a program. Climb them by running them:
+
+    ./stairs
+
+Nothing can climb while the cursed chest and the traps are here. rm
+deletes a file:
 
     rm cursed-chest.txt
 
 Careful: there is no bin. A deleted file is gone forever. Read the
-name twice before you press Enter. Delete each trap the same way.
+name twice before you press Enter. Delete each trap the same way,
+then run ./stairs again.
 
-You may see rm trap-*.txt somewhere. The * matches any text, so this
-deletes all the traps at once. It is fast, but one typo can delete
-much more than you wanted. Name each file for now.
+One command could clear all the traps at once: rm trap-*.txt. The *
+matches any text. It is fast, but one typo can delete much more than
+you wanted. Name each file to be more careful.
 
 See "Delete stuff" in the command line cheatsheet:
 @@CHEATSHEET@@#delete-stuff-rm
@@ -1317,9 +1351,12 @@ END_BOAT_HINT_AFTER
 text ISLAND_HINT <<'END_ISLAND_HINT'
 HINT
 
-"Permission denied" means you are not allowed to do this. The chest
-is a program, but it is not executable yet. chmod +x makes a file
-executable:
+The chest is a program. Open it by running it:
+
+    ./chest
+
+"Permission denied" means you are not allowed to do this: the chest
+is not executable yet. chmod +x makes a file executable:
 
     chmod +x chest
 
@@ -1328,7 +1365,8 @@ You will learn about permissions later in the course.
 See "Make a file executable" in the command line cheatsheet:
 @@CHEATSHEET@@#running-programs
 
-The chest asks for a combination. Look at the coins in your bag.
+Then run ./chest again. It asks for a combination: look at the coins
+in your bag.
 END_ISLAND_HINT
 
 text CHEST <<'END_CHEST'
@@ -1367,6 +1405,7 @@ answer=$(printf '%s' "$answer" | tr -cd '0-9')
 # two are compared.
 if [ "$(printf '%s' "$answer" | seal)" != '@@SEALED_COMBINATION@@' ]; then
   reveal <<'SEALED'
+
 Click... The lock does not open. Look at the coins in your bag.
 SEALED
   exit 1
@@ -1378,6 +1417,7 @@ unpack "$HUNT/bag/treasure" 755 <<'SEALED_TREASURE' || exit 1
 SEALED_TREASURE
 
 reveal <<'SEALED'
+
 CLICK! The chest opens. The treasure is inside!
 
 You put it in your bag: ~/treasure-hunt/bag/treasure. It is a

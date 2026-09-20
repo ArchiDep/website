@@ -160,6 +160,10 @@ step "the dock opens to the key" 0 "ssh $LOGIN dock"
 check "the student arrives on Avalon" output_contains "THE REMOTE LAND OF AVALON"
 check "Merlin waits on Avalon" on_server "test -x /home/jde/avalon/merlin"
 check "there is a hint on Avalon" on_server "test -f /home/jde/avalon/.hint"
+check "the hint on Avalon tells how to talk to Merlin" \
+  on_server "grep -q './merlin' /home/jde/avalon/.hint"
+check "the home directory the student lands in has a hint too" \
+  on_server "grep -q 'cd ~/avalon' /home/jde/.hint"
 for thing in prophecy lady message.txt; do
   check "$thing does not exist yet" on_server "test ! -e /home/jde/avalon/$thing"
 done
@@ -180,18 +184,20 @@ step "Merlin refuses something that is not uname -a" 1 "
 step "Merlin accepts uname -a from the student's computer" 0 "
   uname -a > land.txt && scp -q land.txt $LOGIN:avalon/ && $MERLIN"
 check "Merlin tells where the student comes from" output_contains "much like this one"
-check "the prophecy appears, not executable" \
-  on_server "test -f /home/jde/avalon/prophecy -a ! -x /home/jde/avalon/prophecy"
+check "the prophecy appears, executable" \
+  on_server "test -x /home/jde/avalon/prophecy"
 check "the Lady of the Lake appears" on_server "test -x /home/jde/avalon/lady"
 step "Merlin gave the prophecy already" 0 "$MERLIN"
 
 echo "The prophecy"
-step "the prophecy is blank on the server" 1 "ssh $LOGIN 'bash avalon/prophecy'"
+step "the prophecy is blank on the server" 1 "ssh $LOGIN './avalon/prophecy'"
 check "no word on the server" output_lacks "The word is"
-step "the prophecy comes down without execute permission" 0 "
-  scp -q $LOGIN:avalon/prophecy . && test ! -x prophecy"
-step "the prophecy cannot run before chmod" 126 "./prophecy"
-step "the prophecy reads on the student's computer" 0 "chmod +x prophecy && ./prophecy"
+# scp carries the mode of the prophecy across, so it usually arrives ready to
+# run; an old scp or a strict umask could still strip it, which is why the hint
+# keeps chmod as a fallback and this step accepts both.
+step "the prophecy reads on the student's computer" 0 "
+  scp -q $LOGIN:avalon/prophecy . &&
+  { ./prophecy || { chmod +x prophecy && ./prophecy; }; }"
 WORD=$(word_of_the_prophecy)
 check "the prophecy gives a word ($WORD)" [ -n "$WORD" ]
 docker cp "$COMPUTER:/home/student/prophecy" "$LOCAL/prophecy" > /dev/null

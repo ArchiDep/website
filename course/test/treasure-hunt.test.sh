@@ -66,6 +66,17 @@ is_executable() { [ -x "$1" ]; }
 is_not_executable() { [ -f "$1" ] && [ ! -x "$1" ]; }
 output_contains() { printf '%s' "$OUTPUT" | grep -q -- "$1"; }
 
+# answer_starts_on_its_own_line <text>: a line of OUTPUT begins with the text,
+# rather than the text being appended to the question a gate asked. In a
+# terminal that newline comes on top of the one the terminal echoes when the
+# student presses Enter, which is what puts a blank line between the two. Here
+# the answer is piped in and never echoed, so only the gate's own newline shows.
+answer_starts_on_its_own_line() {
+  printf '%s\n' "$OUTPUT" | awk -v needle="$1" '
+    index($0, needle) == 1 { found = 1 }
+    END { exit !found }'
+}
+
 # The edition the hunt belongs to, and the address it sends students to, taken
 # from the setup so that a rollover moves them both at once.
 CURRENT_YEAR=$(sed -n 's/^CURRENT_YEAR=//p' "$SETUP")
@@ -107,6 +118,17 @@ done
 for area in cave/lair fortress/courtyard skull-island; do
   check "$area does not exist yet" [ ! -e "$HUNT/$area" ]
 done
+check "the ruins' hint shows the way to the shipwreck" \
+  grep -qF "cd ../../shipwreck" "$HUNT/jungle/ruins/.hint"
+
+# tells_how_to_run <directory> <command>: the hint of a place that holds a
+# program names the command that runs it, for a student who reads the hint
+# before trying anything.
+tells_how_to_run() { grep -qF -- "$2" "$1/.hint"; }
+check "the cave's hint tells how to run the dragon" \
+  tells_how_to_run "$HUNT/cave" ./dragon
+check "the fortress's hint tells how to run the door" \
+  tells_how_to_run "$HUNT/fortress" ./door
 
 echo "Placeholders"
 check "no placeholder is left in the hunt" \
@@ -129,6 +151,8 @@ idols=$(cd "$HUNT/jungle/ruins/catacombs" && find . -name golden-idol)
 depth=$(printf '%s' "$idols" | tr -cd '/' | wc -c | tr -d ' ')
 check "there is exactly one golden idol" [ "$(printf '%s\n' "$idols" | grep -c golden-idol)" -eq 1 ]
 check "the idol is deep ($depth levels)" [ "$depth" -ge 30 ]
+check "the idol itself asks to be put in the bag" \
+  grep -q "put it in your bag" "$HUNT/jungle/ruins/catacombs/${idols#./}"
 
 echo "The dragon"
 set -m
@@ -148,6 +172,8 @@ STATUS=$?
 check "Ctrl-C makes the dragon flee (exit status $STATUS)" [ "$STATUS" -eq 0 ]
 check "the lair appears" [ -f "$HUNT/cave/lair/rusty-key" ]
 check "the lair has a hint" [ -f "$HUNT/cave/lair/.hint" ]
+check "the key itself asks to be put in the bag" \
+  grep -q "put it in your bag" "$HUNT/cave/lair/rusty-key"
 gate "the dragon is gone afterwards" 0 "$HUNT/cave" ./dragon
 
 echo "The door"
@@ -159,6 +185,8 @@ rm "$HUNT/fortress/key"
 (cd "$HUNT/fortress" && mv ../bag/rusty-key key)
 gate "the door opens with the rusty key" 0 "$HUNT/fortress" ./door
 check "the courtyard appears with the guardian" is_executable "$HUNT/fortress/courtyard/guardian"
+check "the courtyard's hint tells how to run the guardian" \
+  tells_how_to_run "$HUNT/fortress/courtyard" ./guardian
 check "the door drops coin 1" [ -n "$(digit_of "$HUNT/bag/coin-1")" ]
 check "the rest does not exist yet" [ ! -e "$HUNT/fortress/courtyard/rest" ]
 
@@ -174,6 +202,7 @@ gate "the guardian refuses something that is not a copy" 1 "$COURTYARD" ./guardi
 (cd "$COURTYARD" && cp ../../shipwreck/map.txt map-copy.txt)
 gate "the guardian accepts a copy" 0 "$COURTYARD" ./guardian
 check "the rest appears" is_executable "$COURTYARD/rest"
+check "the courtyard's hint tells how to run the rest" tells_how_to_run "$COURTYARD" ./rest
 
 echo "The camp"
 gate "the rest needs a camp" 1 "$COURTYARD" ./rest
@@ -185,6 +214,7 @@ echo lit > "$COURTYARD/camp/fire"
 gate "the rest works with a lit fire" 0 "$COURTYARD" ./rest
 check "the lever appears" is_executable "$COURTYARD/lever"
 check "the drawbridge settings appear" [ -f "$COURTYARD/drawbridge.conf" ]
+check "the courtyard's hint tells how to run the lever" tells_how_to_run "$COURTYARD" ./lever
 
 echo "The drawbridge"
 gate "the lever does not move while the drawbridge is closed" 1 "$COURTYARD" ./lever
@@ -193,6 +223,8 @@ printf '%s\n' "${conf/state=closed/state=open}" > "$COURTYARD/drawbridge.conf"
 gate "the lever moves once the drawbridge is open" 0 "$COURTYARD" ./lever
 check "the lever drops coin 2" [ -n "$(digit_of "$HUNT/bag/coin-2")" ]
 check "the tower appears with its stairs" is_executable "$COURTYARD/tower/stairs"
+check "the tower's hint tells how to run the stairs" \
+  tells_how_to_run "$COURTYARD/tower" ./stairs
 
 TOWER="$COURTYARD/tower"
 
@@ -212,6 +244,8 @@ gate "the bell rings from the boat, by its full path" 0 \
   "$TOWER/top/../../../../beach/./boat" "$HUNT/bell"
 check "skull island appears with a chest that cannot run" \
   is_not_executable "$HUNT/skull-island/chest"
+check "the island's hint tells how to run the chest" \
+  tells_how_to_run "$HUNT/skull-island" ./chest
 check "the bell drops coin 3" [ -n "$(digit_of "$HUNT/bag/coin-3")" ]
 check "the oars no longer wait for somewhere to sail to" \
   grep -q "taken you to Skull Island" "$HUNT/beach/boat/oars.txt"
@@ -226,10 +260,14 @@ wrong=$(printf '%03d' $(((10#$combination + 1) % 1000)))
 OUTPUT=$(cd "$HUNT/skull-island" && echo "$wrong" | ./chest 2>&1)
 STATUS=$?
 check "the chest refuses a wrong combination" [ "$STATUS" -eq 1 ]
+check "the refusal is not flush with the combination typed above it" \
+  answer_starts_on_its_own_line "Click... "
 check "no treasure for a wrong combination" [ ! -e "$HUNT/bag/treasure" ]
 OUTPUT=$(cd "$HUNT/skull-island" && echo "${combination:0:1} ${combination:1:1} ${combination:2:1}" | ./chest 2>&1)
 STATUS=$?
 check "the chest opens with the combination of the coins" [ "$STATUS" -eq 0 ]
+check "the opening is not flush with the combination typed above it" \
+  answer_starts_on_its_own_line "CLICK! "
 check "the treasure is in the bag, executable" is_executable "$HUNT/bag/treasure"
 
 echo "Taking the treasure home"

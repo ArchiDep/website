@@ -645,8 +645,9 @@ On your computer, bring his prophecy home and read it:
 
 ```bash
 $> scp jde@ssh.archidep.ch:avalon/prophecy .
-$> chmod +x prophecy
-$> ./prophecy
+$> ./prophecy   # "Permission denied"? Your scp did not carry the
+                # permissions across: run chmod +x prophecy, then
+                # try again
 ```
 
 Still on your computer, call the Lady of the Lake without logging in, with the

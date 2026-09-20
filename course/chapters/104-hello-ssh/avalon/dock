@@ -190,10 +190,30 @@ the enchanter. Look around with ls, and talk to him:
 Stuck? There is a hint here: cat .hint
 END_ARRIVAL
 
+text HOME_HINT <<'END_HOME_HINT'
+HINT
+
+This is your home directory on the server. Avalon is not here: it is
+the land the barge built next to it.
+
+    cd ~/avalon
+
+Look around there with ls, and read the hint of Avalon itself if you
+need more help:
+
+    cat .hint
+
+Want to start over? Run: dock --restart
+END_HOME_HINT
+
 text DOCK_HINT <<'END_DOCK_HINT'
 HINT
 
-Merlin wants a gift from your own land: your own computer, not this
+Merlin is a program. Talk to him by running him, here in ~/avalon:
+
+    ./merlin
+
+He wants a gift from your own land: your own computer, not this
 server. Two gifts please him.
 
 Played the treasure hunt? Bring him your treasure. It is in your bag,
@@ -358,7 +378,7 @@ SEALED
   fi
 fi
 
-unpack "$AVALON/prophecy" 644 <<'SEALED_PROPHECY' &&
+unpack "$AVALON/prophecy" 755 <<'SEALED_PROPHECY' &&
 @@PROPHECY@@
 SEALED_PROPHECY
 unpack "$AVALON/lady" 755 <<'SEALED_LADY' &&
@@ -697,6 +717,10 @@ $LADY_HINT"
   mkdir -p "$AVALON" || return 1
   put "$AVALON/merlin" "$MERLIN" 755
   put "$AVALON/.hint" "$DOCK_HINT"
+  # Every place of the treasure hunt has a hint, so students reach for cat
+  # .hint as soon as they land, before they have gone into Avalon. The home
+  # directory they land in answers with the way there.
+  put "$HOME/.hint" "$HOME_HINT"
 }
 
 # Asks before deleting a land that already exists.
