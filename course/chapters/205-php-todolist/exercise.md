@@ -28,9 +28,8 @@ has three people).
 
 {% note type: warning %}
 
-This is a graded exercise that **must** be done as a group. You cannot deliver
-it alone, since the whole point is to make you work with Git as a team. Let the
-teachers know immediately if there is a problem.
+This exercise **must** be done as a group. You cannot deliver it alone, since
+the whole point is to make you work with Git as a team.
 
 {% endnote %}
 
@@ -247,7 +246,7 @@ Alice's repository on GitHub.
 {% callout type: exercise %}
 
 Make sure that each team member contributes something to the repository. These
-are the requirements that we will evaluate:
+are the requirements your delivery must meet:
 
 - The work must be delivered in the forked repository on GitHub.
 - The todo list must work:

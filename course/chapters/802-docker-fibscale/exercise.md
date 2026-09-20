@@ -8,7 +8,7 @@ In this exercise, you will apply your knowledge of Docker and Linux
 administration to containerize a standalone web application (without a
 database). The application you will be containerizing is
 [FibScale][fibscale-repo] from the [horizontal scaling exercise]({% link
-chapters/603-floodit-deployment/exercise.md %}).
+chapters/515-fibscale-deployment/exercise.md %}).
 
 <!-- more -->
 
@@ -37,7 +37,7 @@ Open the project in your favorite text editor.
 ### :exclamation: Create a `.dockerignore` file
 
 If you look at the FibScale repository from the [horizontal scaling exercise]({%
-link chapters/603-floodit-deployment/exercise.md %}) (on your cloud server), you
+link chapters/515-fibscale-deployment/exercise.md %}) (on your cloud server), you
 may notice that a bunch of folders were created when running various commands
 like `bundle install` during the course of the exercise:
 

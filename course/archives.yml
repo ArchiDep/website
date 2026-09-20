@@ -19,8 +19,12 @@
 # manifest in `archives` too, and that one moves with the material rather than
 # being superseded by it: see "What the new edition owes" in docs/rollover.md.
 
-# "Shell Scripting" was never taught: it is reference material students look
-# things up in. It became a cheatsheet, and a cheatsheet is a different kind of
-# page from a chapter, so the slug it kept is not enough to match it.
 2025:
+  # "Shell Scripting" was never taught: it is reference material students look
+  # things up in. It became a cheatsheet, and a cheatsheet is a different kind
+  # of page from a chapter, so the slug it kept is not enough to match it.
   /course/102-shell-scripting/: /cheatsheets/shell-scripting/
+  # The graded exercise is drawn anew each year, so the page it is published on
+  # is named for what it is rather than for the application of any one year.
+  # 2025 named it after the application it used, "Flood It".
+  /course/603-floodit-deployment/: /course/603-graded-deployment/

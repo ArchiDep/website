@@ -283,10 +283,10 @@
       "slug": "git-automated-deployment"
     },
     {
-      "path": "/course/603-floodit-deployment/",
+      "path": "/course/603-graded-deployment/",
       "kind": "chapter",
       "num": 603,
-      "slug": "floodit-deployment"
+      "slug": "graded-deployment"
     },
     {
       "path": "/course/701-paas/",

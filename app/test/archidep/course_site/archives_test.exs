@@ -18,16 +18,19 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   # in the order that manifest lists them.
   @current_edition "2026"
 
-  # "Shell Scripting" was chapter 102 in 2025 and is a cheatsheet now, and the
-  # three chapters that followed it moved up one number. Every other page is
-  # still published at the path 2025 knew it by.
+  # Two of the pages 2025 published are published at another path now: "Shell
+  # Scripting" was chapter 102 and is a cheatsheet, which moved the three
+  # chapters that followed it up one number; and the graded exercise, which 2025
+  # named after the application it had students deploy, is named for what it is.
+  # Every other page is still published at the path 2025 knew it by.
   @shell_scripting {:cheatsheet, "shell-scripting"}
   @path_in_2025 %{
     "/cheatsheets/shell-scripting/" => "/course/102-shell-scripting/",
     "/course/102-hello-shell/" => "/course/103-hello-shell/",
     "/course/103-ssh/" => "/course/104-ssh/",
     "/course/103-ssh/slides/" => "/course/104-ssh/slides/",
-    "/course/104-hello-ssh/" => "/course/105-hello-ssh/"
+    "/course/104-hello-ssh/" => "/course/105-hello-ssh/",
+    "/course/603-graded-deployment/" => "/course/603-floodit-deployment/"
   }
 
   describe "mapping/0" do

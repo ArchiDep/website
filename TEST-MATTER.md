@@ -444,16 +444,14 @@ following exercises:
   [:classical_building: (architecture)](https://archidep.ch/course/514-certbot-deployment/#classical_building-architecture)
 - [Horizontally scale a web application with nginx as a load balancer](https://archidep.ch/course/515-fibscale-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/515-fibscale-deployment/#classical_building-architecture)
-- [Deploy Flood It, a Spring Boot (Java) & Angular (JavaScript) application with a PostgreSQL database](https://archidep.ch/course/603-floodit-deployment/)
-  [:classical_building: (architecture)](https://archidep.ch/course/603-floodit-deployment/#classical_building-architecture)
+- The graded deployment exercise (published later in the semester)
 
 You must understand how to set up automated deployments with Git hooks, which
 you put in practice during the following exercises:
 
 - [Set up an automated deployment with Git hooks](https://archidep.ch/course/602-git-automated-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/602-git-automated-deployment/#classical_building-architecture)
-- [Deploy Flood It, a Spring Boot (Java) & Angular (JavaScript) application with a PostgreSQL database](https://archidep.ch/course/603-floodit-deployment/)
-  [:classical_building: (architecture)](https://archidep.ch/course/603-floodit-deployment/#classical_building-architecture)
+- The graded deployment exercise (published later in the semester)
 
 You must understand how to deploy various applications to a cloud platform with
 the Platform-as-a-Service (PaaS) service model, which you put in practice during

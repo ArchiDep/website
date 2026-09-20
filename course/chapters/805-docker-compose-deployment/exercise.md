@@ -1597,9 +1597,7 @@ volumes:
 You can read the [Docker documentation][docker-docs] or about [going further
 with Docker]({% link chapters/804-docker-compose/subject.md %}#going-further).
 
-Want a challenge? Containerize the [Flood It deployment]({% link
-chapters/603-floodit-deployment/exercise.md %}) (or an app of yours). On your
-own. Off you go!
+Want a challenge? Containerize an app of yours. On your own. Off you go!
 
 [compose-file-build]: https://docs.docker.com/compose/compose-file/05-services/#build
 [compose-file-depends-on]: https://docs.docker.com/compose/compose-file/05-services/#depends_on

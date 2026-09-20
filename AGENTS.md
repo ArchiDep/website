@@ -182,7 +182,9 @@ instructions targeted towards AI agents.
 - **Commands**
   - Do not execute the `npm run pdf` command documented in
     [`./CONTRIBUTING.md`][contributing]. It is an expensive operation that
-    generates PDF files for all course slides. A human will run this command
-    when needed.
+    generates PDF files for all course slides. Nothing you change to the course
+    material needs it run, by you or by a human: see [PDF
+    generation](./course/CONTRIBUTING.md#pdf-generation) for what publishes
+    them.
 
 [contributing]: ./CONTRIBUTING.md
