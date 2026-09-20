@@ -17,6 +17,7 @@ for AI assistants and automated agents.
 - [Theme Implementation](#theme-implementation)
   - [Entry Points](#entry-points)
   - [Tailwind Configuration](#tailwind-configuration)
+  - [Styling Slides](#styling-slides)
   - [Themes & Dark Mode](#themes--dark-mode)
   - [Typography & Fonts](#typography--fonts)
   - [Syntax Highlighting](#syntax-highlighting)
@@ -208,6 +209,28 @@ points (`theme.css` and `slides.css`) and uses the following directives:
 - `@custom-variant` defines extra variants, notably `screen:` (styles that apply
   only on screen, not in print) and, in `slides.css`, a `dark:` variant scoped to
   the slides' `data-theme` attribute.
+
+### Styling Slides
+
+A slide deck loads two sets of styles: the theme's `slides.css`, whose utilities
+sit in `@layer utilities`, and [reveal.js][reveal]'s own stylesheet and theme,
+which `course/src/assets/slides.ts` imports from JavaScript as plain,
+**unlayered** stylesheets. An unlayered declaration wins over a layered one
+whatever their specificities, so **a reveal.js rule beats every Tailwind utility
+that sets the same property**. The ones that catch people out are on images:
+
+- `.reveal img, .reveal video, .reveal iframe { max-width: 95% }` — `w-full`
+  yields 95% of the container, never 100%.
+- `.reveal img { margin: var(--r-block-margin) 0 }` — `m-0` and `my-0` do
+  nothing.
+
+A utility reveal.js does not compete for (`absolute`, `left-1/2`, `box-border`,
+an arbitrary `[clip-path:…]`) applies normally, which is what makes the failure
+hard to spot: most of a class list works and one class silently does not. When a
+utility appears to have no effect on a slide, look for an unlayered `.reveal`
+rule before suspecting a typo or a missing `@source`. Tailwind's `!` modifier
+(`max-w-none!`) overrides one; picking a property reveal.js does not set avoids
+the conflict altogether.
 
 ### Themes & Dark Mode
 

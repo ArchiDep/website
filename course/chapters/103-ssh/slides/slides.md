@@ -384,20 +384,72 @@ communication channel.
 
 #### Diffie-Hellman key exchange
 
-<img src="images/dh.png" alt="Diffie-Hellman Key Exchange" class="w-1/3" />
+<!-- Six copies of the same image, each clipped to one horizontal band of it and
+     stacked in the same place, so that clicking through the fragments draws the
+     analogy one row at a time. The first copy is in the flow and gives the
+     stack its size: clipping is painting only, so it still occupies the whole
+     image even while showing just the top band, and nothing moves as the rest
+     appear. Each band's bottom inset is the next band's top inset, so the six
+     tile the image exactly.
+
+     Reveal caps slide images at 95% of their container, so every copy is
+     narrower than the wrapper. The copy in the flow is an inline box and the
+     slide centers it; the others are absolutely positioned, which makes them
+     blocks that centering no longer reaches, so they are placed on the same
+     axis by hand. -->
+<div class="relative mx-auto w-1/3">
+  <img
+    src="images/dh.png"
+    alt="Diffie-Hellman Key Exchange"
+    class="box-border w-full [clip-path:inset(0_0_79.586%_0)]"
+  />
+  <img
+    src="images/dh.png"
+    alt=""
+    class="fragment absolute top-0 left-1/2 -translate-x-1/2 box-border w-full [clip-path:inset(20.414%_0_68.343%_0)]"
+  />
+  <img
+    src="images/dh.png"
+    alt=""
+    class="fragment absolute top-0 left-1/2 -translate-x-1/2 box-border w-full [clip-path:inset(31.657%_0_52.959%_0)]"
+  />
+  <img
+    src="images/dh.png"
+    alt=""
+    class="fragment absolute top-0 left-1/2 -translate-x-1/2 box-border w-full [clip-path:inset(47.041%_0_26.775%_0)]"
+  />
+  <img
+    src="images/dh.png"
+    alt=""
+    class="fragment absolute top-0 left-1/2 -translate-x-1/2 box-border w-full [clip-path:inset(73.225%_0_15.385%_0)]"
+  />
+  <img
+    src="images/dh.png"
+    alt=""
+    class="fragment absolute top-0 left-1/2 -translate-x-1/2 box-border w-full [clip-path:inset(84.615%_0_0_0)]"
+  />
+</div>
 
 **Notes:**
 
 This conceptual diagram illustrates the general idea behind the protocol:
 
-- Alice and Bob choose a **random, public starting color** (yellow) together.
-- Then they each separately choose a **secret color known only to themselves**
-  (orange and blue-green).
-- Then they **mix their own secret color with the mutually shared color**
-  (resulting in orange-tan and light-blue) and **publicly exchange** the two
-  mixed colors.
-- Finally, Alice and Bob each **mix the color they received** from the other
-  **with their own private color** (yellow-brown).
+1. Alice and Bob choose a **random, public starting color** (yellow) together.
+2. They each separately choose a **secret color known only to themselves**
+   (orange and blue-green).
+3. They each **mix their own secret color with the mutually shared color**,
+   giving orange-tan and light-blue.
+4. They **publicly exchange** the two mixed colors. An attacker can see them go
+   past, but **separating a mixture back into its ingredients is expensive**.
+5. They each add **their own secret color** to the mixture they received from
+   the other.
+6. Both now hold a mixture of **all three colors** (yellow-brown).
+
+Both sides apply **the same two secret colors to the same starting color**, only
+in the opposite order — and mixing does not care about the order. That
+**commutativity** is what makes the two results meet. The real protocol rests on
+the same property: Alice computes `(g^b)^a` and Bob computes `(g^a)^b`, which
+are both `g^(ab)`.
 
 The result is a final color mixture that is **identical to the partner's final
 color mixture**, and which was never shared publicly. When using large numbers
