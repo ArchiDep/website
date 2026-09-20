@@ -238,6 +238,28 @@ To github.com:bob/github-demo.git
  * [new branch]      main -> main
 ```
 
+{% note type: tip %}
+
+The first time you connect to GitHub over SSH — for **Bob**, this push; for
+**Alice**, [the clone further down](#alice-clone-the-shared-repository) — your
+SSH client warns you that it does not know this server, and shows you the
+fingerprint of its key before anything is transferred:
+
+```
+The authenticity of host 'github.com (W.X.Y.Z)' can't be established.
+ED25519 key fingerprint is SHA256:...
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+```
+
+GitHub is one of the services that [publish their SSH key
+fingerprints][github-fingerprints], so you have a trusted source to check
+against. Compare the fingerprint in the warning with the published one for the
+same algorithm by eye, or, instead of answering `yes`, paste that published
+fingerprint (the full `SHA256:...` value) at the prompt, which has your SSH
+client make the comparison and refuse to connect if they differ.
+
+{% endnote %}
+
 The command `git push <remote> <branch>` tells Git to push the commit pointed to
 by `<branch>` to the remote named `<remote>`.
 
@@ -677,3 +699,4 @@ You can then re-run your pull command, which should work this time.
 
 [git-tutorial]: {% link chapters/202-git-branching/slides.md %}
 [github]: https://github.com
+[github-fingerprints]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints

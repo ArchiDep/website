@@ -240,8 +240,8 @@ Are you sure you want to continue connecting (yes/no/[fingerprint])?
 
 To protect yourself from [man-in-the-middle attacks][man-in-the-middle-attacks],
 you can obtain the SSH host key fingerprints from your virtual machine before
-attempting to connect. That way, you will be able to see if the key fingerprint
-in the warning matches one of your virtual machine's keys.
+attempting to connect. That way, you will be able to check whether the key
+fingerprint in the warning is one of your virtual machine's keys.
 
 To do this, you need to install the [Azure CLI][azure-cli]. Once you
 have it installed and have logged in, you can run the following command (adapt
@@ -273,6 +273,14 @@ After a while, it should print the response:
 
 Your machine's public key fingerprints are in the `message` property, separated
 by encoded new lines (`\n`).
+
+Once you have them, there are two ways to check the key when the warning
+appears. You can compare the fingerprint in the warning with these ones by eye:
+in this example, the `SHA256:0TORCgUgzrPGeDHzV5fGAarkpGpc5Nbkhb7q2dbG0OA` the
+warning shows is the machine's ECDSA key. Or, instead of answering `yes`, you
+can paste the matching fingerprint (the full `SHA256:...` value) at the prompt.
+Your SSH client then compares it with the fingerprint the server sent, and only
+connects if they are the same.
 
 {% callout type: more, id: azure-fingerprint %}
 

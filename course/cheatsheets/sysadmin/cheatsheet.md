@@ -307,6 +307,12 @@ command on the server:
 find /etc/ssh -name "*.pub" -exec ssh-keygen -l -f {} \;
 ```
 
+Each line of the output has the fingerprint of one key as its `SHA256:...` part.
+When the warning appears, you can either compare the fingerprint it shows with
+these ones by eye, or paste the matching `SHA256:...` value instead of answering
+`yes`, which has your SSH client make the comparison and refuse to connect if
+they differ.
+
 ## Installing & upgrading
 
 You must be an administrator (have `sudo` access) to perform some of the following operations.
