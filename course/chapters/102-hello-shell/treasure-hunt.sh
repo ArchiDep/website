@@ -132,7 +132,6 @@ text START <<'END_START'
 
          THE TREASURE OF SKULL ISLAND
 
-
 Long ago, a pirate captain hid a treasure near this island.
 Many explorers looked for it. Nobody found it.
 Now it is your turn.
@@ -143,12 +142,13 @@ HOW TO PLAY
 - Look around with ls. Read things with cat.
 - Lost? pwd tells you where you are.
 - Your bag is the directory named bag. Things you pick up go in it.
-  Read your explorer's handbook: cat bag/explorers-handbook.txt
 - Some things are programs. You run them with ./ before their name.
-- Stuck? Every place has a hint in a hidden file named .hint.
-  You cannot see it with ls, but you can read it:
+- Stuck? Every place has a hint in a hidden file named .hint. You
+  cannot see it with ls, but you can read it: cat .hint
 
-      cat .hint
+Every explorer carries a handbook. Read yours before you go:
+
+    cat bag/explorers-handbook.txt
 
 The adventure starts on the beach.
 END_START
@@ -426,7 +426,7 @@ text IDOL <<'END_IDOL'
 
 The golden idol! It is heavy, and it shines in the dark.
 
-Do not leave it in the dark: put it in your bag, and carry it out.
+Do not leave it in the dark: put it in your bag.
 END_IDOL
 
 text SHIPWRECK_HINT <<'END_SHIPWRECK_HINT'
@@ -596,8 +596,7 @@ RUSTY KEY
 
 An old, heavy key. A word is written on it: FORTRESS.
 
-Do not leave it lying here: put it in your bag, and carry it to the
-fortress.
+Do not leave it lying here: put it in your bag.
 END_RUSTY_KEY
 
 text LAIR_HINT <<'END_LAIR_HINT'
