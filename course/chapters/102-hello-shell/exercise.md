@@ -122,13 +122,13 @@ $> cd ../../ruins
 $> cat stone.txt
 
 $> cd ../../shipwreck
-$> less diary.txt       # then type /dragon and press Enter,
+$> less diary.txt       # then type /octopus and press Enter,
                         # press n to go to the next match,
                         # and q to quit
 
 $> cd ../cave
-$> ./dragon             # then press Ctrl-C
-$> ls lair
+$> ./octopus            # then press Ctrl-C
+$> ls den
 ```
 
 The golden idol, lost in the catacombs under the ruins (optional):
@@ -148,21 +148,21 @@ $> mv ./left/right/left/.../golden-idol ~/treasure-hunt/bag/
 Your path is different: the catacombs are different each time the hunt is
 prepared. Copy the one `find` gives you.
 
-Taking the key to the fortress, and climbing the tower:
+Taking the key to the fort, and climbing the tower:
 
 ```bash
 $> cd ~/treasure-hunt/cave
-$> mv lair/rusty-key ../bag/
+$> mv den/rusty-key ../bag/
 
-$> cd ../fortress
+$> cd ../fort
 $> mv ../bag/rusty-key key
 $> ./door
 
 $> cd courtyard
-$> ./guardian
+$> ./mapmaker
 
 $> cp ../../shipwreck/map.txt map-copy.txt
-$> ./guardian
+$> ./mapmaker
 
 $> ./rest
 $> mkdir camp

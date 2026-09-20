@@ -112,10 +112,10 @@ check "the boat waits for somewhere to sail to" \
 check "the temple's name has a space" [ -d "$HUNT/old temple" ]
 for place in . beach beach/boat "old temple" jungle jungle/river \
   jungle/river/waterfall jungle/ruins jungle/ruins/catacombs shipwreck cave \
-  fortress; do
+  fort; do
   check "there is a hint in $place" [ -f "$HUNT/$place/.hint" ]
 done
-for area in cave/lair fortress/courtyard skull-island; do
+for area in cave/den fort/courtyard skull-island; do
   check "$area does not exist yet" [ ! -e "$HUNT/$area" ]
 done
 check "the ruins' hint shows the way to the shipwreck" \
@@ -125,10 +125,10 @@ check "the ruins' hint shows the way to the shipwreck" \
 # program names the command that runs it, for a student who reads the hint
 # before trying anything.
 tells_how_to_run() { grep -qF -- "$2" "$1/.hint"; }
-check "the cave's hint tells how to run the dragon" \
-  tells_how_to_run "$HUNT/cave" ./dragon
-check "the fortress's hint tells how to run the door" \
-  tells_how_to_run "$HUNT/fortress" ./door
+check "the cave's hint tells how to run the octopus" \
+  tells_how_to_run "$HUNT/cave" ./octopus
+check "the fort's hint tells how to run the door" \
+  tells_how_to_run "$HUNT/fort" ./door
 
 echo "Placeholders"
 check "no placeholder is left in the hunt" \
@@ -139,8 +139,8 @@ lines=$(wc -l < "$HUNT/shipwreck/diary.txt" | tr -d ' ')
 clue=$(grep -n 'buried the key' "$HUNT/shipwreck/diary.txt" | cut -d: -f1)
 check "the diary has about 500 lines ($lines)" [ "$lines" -ge 450 -a "$lines" -le 550 ]
 check "the clue is in the middle (line $clue)" [ "$clue" -ge 200 -a "$clue" -le 300 ]
-check "only the clue and the help at the end say dragon" \
-  [ "$(grep -c dragon "$HUNT/shipwreck/diary.txt")" -eq 2 ]
+check "only the clue and the help at the end say octopus" \
+  [ "$(grep -c octopus "$HUNT/shipwreck/diary.txt")" -eq 2 ]
 check "the top of the diary explains how to quit less" \
   [ -n "$(head -n 15 "$HUNT/shipwreck/diary.txt" | grep 'Press q')" ]
 check "the end of the diary points to less" \
@@ -154,53 +154,53 @@ check "the idol is deep ($depth levels)" [ "$depth" -ge 30 ]
 check "the idol itself asks to be put in the bag" \
   grep -q "put it in your bag" "$HUNT/jungle/ruins/catacombs/${idols#./}"
 
-echo "The dragon"
+echo "The octopus"
 set -m
-(cd "$HUNT/cave" && exec ./dragon > "$HOME/dragon.out" 2>&1) &
-dragon=$!
+(cd "$HUNT/cave" && exec ./octopus > "$HOME/octopus.out" 2>&1) &
+octopus=$!
 set +m
 sleep 1
-check "the dragon does not flee by itself" [ ! -e "$HUNT/cave/lair" ]
+check "the octopus does not flee by itself" [ ! -e "$HUNT/cave/den" ]
 # What a gate says is sealed, so the placeholder check above cannot see an
 # address a gate shows: reading one back from a gate that ran is what tells us
 # the placeholders of sealed texts were filled in.
-check "the dragon sends students to the great book of commands" \
-  grep -qF "$CHEATSHEET" "$HOME/dragon.out"
-kill -INT "$dragon"
-wait "$dragon"
+check "the octopus sends students to the great book of commands" \
+  grep -qF "$CHEATSHEET" "$HOME/octopus.out"
+kill -INT "$octopus"
+wait "$octopus"
 STATUS=$?
-check "Ctrl-C makes the dragon flee (exit status $STATUS)" [ "$STATUS" -eq 0 ]
-check "the lair appears" [ -f "$HUNT/cave/lair/rusty-key" ]
-check "the lair has a hint" [ -f "$HUNT/cave/lair/.hint" ]
+check "Ctrl-C makes the octopus flee (exit status $STATUS)" [ "$STATUS" -eq 0 ]
+check "the den appears" [ -f "$HUNT/cave/den/rusty-key" ]
+check "the den has a hint" [ -f "$HUNT/cave/den/.hint" ]
 check "the key itself asks to be put in the bag" \
-  grep -q "put it in your bag" "$HUNT/cave/lair/rusty-key"
-gate "the dragon is gone afterwards" 0 "$HUNT/cave" ./dragon
+  grep -q "put it in your bag" "$HUNT/cave/den/rusty-key"
+gate "the octopus is gone afterwards" 0 "$HUNT/cave" ./octopus
 
 echo "The door"
-gate "the door is locked without a key" 1 "$HUNT/fortress" ./door
-touch "$HUNT/fortress/key"
-gate "the door refuses a key that is not the rusty key" 1 "$HUNT/fortress" ./door
-rm "$HUNT/fortress/key"
-(cd "$HUNT/cave" && mv lair/rusty-key ../bag/)
-(cd "$HUNT/fortress" && mv ../bag/rusty-key key)
-gate "the door opens with the rusty key" 0 "$HUNT/fortress" ./door
-check "the courtyard appears with the guardian" is_executable "$HUNT/fortress/courtyard/guardian"
-check "the courtyard's hint tells how to run the guardian" \
-  tells_how_to_run "$HUNT/fortress/courtyard" ./guardian
+gate "the door is locked without a key" 1 "$HUNT/fort" ./door
+touch "$HUNT/fort/key"
+gate "the door refuses a key that is not the rusty key" 1 "$HUNT/fort" ./door
+rm "$HUNT/fort/key"
+(cd "$HUNT/cave" && mv den/rusty-key ../bag/)
+(cd "$HUNT/fort" && mv ../bag/rusty-key key)
+gate "the door opens with the rusty key" 0 "$HUNT/fort" ./door
+check "the courtyard appears with the mapmaker" is_executable "$HUNT/fort/courtyard/mapmaker"
+check "the courtyard's hint tells how to run the mapmaker" \
+  tells_how_to_run "$HUNT/fort/courtyard" ./mapmaker
 check "the door drops coin 1" [ -n "$(digit_of "$HUNT/bag/coin-1")" ]
-check "the rest does not exist yet" [ ! -e "$HUNT/fortress/courtyard/rest" ]
+check "the rest does not exist yet" [ ! -e "$HUNT/fort/courtyard/rest" ]
 
-COURTYARD="$HUNT/fortress/courtyard"
+COURTYARD="$HUNT/fort/courtyard"
 
-echo "The guardian"
-gate "the guardian wants a copy of the map" 1 "$COURTYARD" ./guardian
+echo "The mapmaker"
+gate "the mapmaker wants a copy of the map" 1 "$COURTYARD" ./mapmaker
 (cd "$COURTYARD" && mv ../../shipwreck/map.txt map-copy.txt)
-gate "the guardian refuses when the original was moved" 1 "$COURTYARD" ./guardian
+gate "the mapmaker refuses when the original was moved" 1 "$COURTYARD" ./mapmaker
 (cd "$COURTYARD" && mv map-copy.txt ../../shipwreck/map.txt)
 echo "a fake map" > "$COURTYARD/map-copy.txt"
-gate "the guardian refuses something that is not a copy" 1 "$COURTYARD" ./guardian
+gate "the mapmaker refuses something that is not a copy" 1 "$COURTYARD" ./mapmaker
 (cd "$COURTYARD" && cp ../../shipwreck/map.txt map-copy.txt)
-gate "the guardian accepts a copy" 0 "$COURTYARD" ./guardian
+gate "the mapmaker accepts a copy" 0 "$COURTYARD" ./mapmaker
 check "the rest appears" is_executable "$COURTYARD/rest"
 check "the courtyard's hint tells how to run the rest" tells_how_to_run "$COURTYARD" ./rest
 
@@ -294,9 +294,9 @@ echo "Programs read with cat"
 ends_with_banner() {
   tail -n 20 "$1" | grep -q "HALT, EXPLORER" && tail -n 20 "$1" | grep -qF "    $2"
 }
-for program in "cave/dragon ./dragon" "fortress/door ./door" \
-  "fortress/courtyard/guardian ./guardian" "fortress/courtyard/rest ./rest" \
-  "fortress/courtyard/lever ./lever" "fortress/courtyard/tower/stairs ./stairs" \
+for program in "cave/octopus ./octopus" "fort/door ./door" \
+  "fort/courtyard/mapmaker ./mapmaker" "fort/courtyard/rest ./rest" \
+  "fort/courtyard/lever ./lever" "fort/courtyard/tower/stairs ./stairs" \
   "bell ~/treasure-hunt/bell" "skull-island/chest ./chest" \
   "bag/treasure ~/treasure-hunt/bag/treasure"; do
   set -- $program

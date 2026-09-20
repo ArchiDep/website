@@ -162,12 +162,12 @@ still readable:
      /                     |                      |
     |   THE EXPLORER'S     |  "Traveller, one day |
     |      HANDBOOK        |   you will forget a  |
-    |                      |   word of the old    |
-    |    ~~~~~~~~~~~~~     |   tongue. Everyone   |
-    |    ~~~~~~~~~~~       |   does. Open the     |
-    |    ~~~~~~~~~~~~~     |   great book of      |
-    |                      |   commands, and it   |
-    |                      |   will come back."   |
+    |                      |   word of the        |
+    |    ~~~~~~~~~~~~~     |   sailors' tongue.   |
+    |    ~~~~~~~~~~~       |   Everyone does.     |
+    |    ~~~~~~~~~~~~~     |   Open the great     |
+    |                      |   book, and it will  |
+    |                      |   come back."        |
     |______________________|______________________|
 
 The great book of commands is here:
@@ -440,15 +440,15 @@ text MAP <<'END_MAP'
                     THE CAPTAIN'S MAP
 
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   ~~       ______________________________          ~~
-   ~~      /   jungle         ruins       \___      ~~
-   ~~     |   ~~~river~~~      [##]           \     ~~
-   ~~     |                                    |    ~~
-   ~~     |   old temple   cave   fortress     |    ~~
-   ~~      \     [^]       (@@)    [==]       /     ~~
-   ~~       \______beach________shipwreck___/       ~~
-   ~~                                         X     ~~
-   ~~                                  skull island ~~
+   ~~       ______________________________            ~~
+   ~~      /   jungle         ruins       \___        ~~
+   ~~     |   ~~~river~~~      [##]           \       ~~
+   ~~     |                                    |      ~~
+   ~~     |   old temple   cave    fort        |      ~~
+   ~~      \     [^]       (@@)    [==]       /       ~~
+   ~~       \______beach________shipwreck___/         ~~
+   ~~                                         X       ~~
+   ~~                                  skull island   ~~
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    Do not lose this map.
@@ -463,7 +463,7 @@ THE DIARY OF THE CAPTAIN
   |  How to read a long file with less:                      |
   |                                                          |
   |  - Arrow keys or Space: move down and up.                |
-  |  - Type /dragon and press Enter: search for "dragon".    |
+  |  - Type /octopus and press Enter: search for "octopus".  |
   |  - Press n: go to the next match.                        |
   |  - Press q: quit less, and go back to your shell.        |
   +----------------------------------------------------------+
@@ -471,8 +471,9 @@ THE DIARY OF THE CAPTAIN
 END_DIARY_START
 
 text DIARY_CLUE <<'END_DIARY_CLUE'
-We reached the island at last. I buried the key in the cave, behind
-the dragon. Nobody will ever take it: the dragon never wakes up.
+We reached the island at last. I buried the key in the sea cave,
+behind the octopus. Nobody will ever take it: the octopus never
+wakes up.
 END_DIARY_CLUE
 
 text DIARY_END <<'END_DIARY_END'
@@ -488,16 +489,16 @@ the diary explain how to move in less, and how to quit it. Then type:
 END_DIARY_END
 
 # ---------------------------------------------------------------------------
-# The dragon
+# The octopus
 # ---------------------------------------------------------------------------
 
 text CAVE_HINT <<'END_CAVE_HINT'
 HINT
 
-The dragon is a program. To run a program in the directory you are
+The octopus is a program. To run a program in the directory you are
 in, write ./ before its name:
 
-    ./dragon
+    ./octopus
 
 This one never stops by itself. To interrupt a program that is
 running, press Ctrl-C.
@@ -506,15 +507,15 @@ See "Run a program" in the command line cheatsheet:
 @@CHEATSHEET@@#run-a-program-program
 END_CAVE_HINT
 
-text DRAGON <<'END_DRAGON'
+text OCTOPUS <<'END_OCTOPUS'
 #!/bin/bash
-# A dragon. It is sleeping. Do not wake it up.
+# A giant octopus. It is sleeping. Do not wake it up.
 HUNT='@@HUNT@@'
 @@UNPACK@@
 
-if [ -d "$HUNT/cave/lair" ]; then
+if [ -d "$HUNT/cave/den" ]; then
   reveal <<'SEALED'
-The dragon is gone. Only its lair is left.
+The octopus is gone. Only its den is left.
 SEALED
   exit 0
 fi
@@ -522,50 +523,50 @@ fi
 wake_up() {
   echo
   reveal <<'SEALED'
-The dragon opens one eye. You interrupted its sleep!
+The octopus opens one eye. You interrupted its sleep!
 
-It is very angry... and very lazy. It flies away to sleep somewhere
-quieter.
+It turns white, then red. It fills the water with ink, and it is
+gone: eight arms into a crack in the rock, and a quieter pool on the
+other side.
 
-            __                                 __
-           /  \__                           __/  \
-          /      \__                     __/      \
-         /   /\     \__               __/     /\   \
-        /___/  \___    \__   , ,   __/    ___/  \___\
-                 \___  \__  (o o)  __/  ___/
-                       \___ \ v / ___/
-                            \|_|/
-                             | |
-                             |_|
+               _.-"""-._
+             .'  o   o  '.         ::::::::::::
+            (      _      )      ::::::::::::::::
+             \ \   |   / /        ::::::::::::
+              '  '  '  '
 
-Behind the place where it slept, there is a hole in the rock: its
-lair.
+Where it slept, there is a hole in the rock: its den. An octopus
+keeps its treasures at the door, and this one kept shells, a crab
+claw, and something else.
 SEALED
-  mkdir "$HUNT/cave/lair" &&
-  unpack "$HUNT/cave/lair/rusty-key" 644 <<'SEALED_RUSTY_KEY' &&
+  mkdir "$HUNT/cave/den" &&
+  unpack "$HUNT/cave/den/rusty-key" 644 <<'SEALED_RUSTY_KEY' &&
 @@RUSTY_KEY@@
 SEALED_RUSTY_KEY
-  unpack "$HUNT/cave/lair/.hint" 644 <<'SEALED_LAIR_HINT'
-@@LAIR_HINT@@
-SEALED_LAIR_HINT
+  unpack "$HUNT/cave/den/.hint" 644 <<'SEALED_DEN_HINT'
+@@DEN_HINT@@
+SEALED_DEN_HINT
   exit 0
 }
 
 trap wake_up INT
 
 reveal <<'SEALED'
-              /\___/\
-       ___   (  -.-  )   z
-      /   \_/         \ z
-     <  ~~~            >~~~~~
-      \_______________/
+              .-"""""-.
+            .'  -   -  '.
+           (      ~      )
+            '-.._____..-'
+            /  /  |  \  \
+           (  (   |   )  )
+      ~~~~~~~~~~~~~~~~~~~~~~~~
 
-A huge dragon sleeps in the cave. Nothing can wake it up...
+The sea comes into this cave. In the pool at the back, a giant
+octopus sleeps. Nothing can wake it up...
 
 Words are scratched on the wall of the cave:
 
-    "NO NOISE WILL EVER WAKE THE DRAGON.
-     BUT A PROGRAM, EVEN A DRAGON, CAN BE STOPPED
+    "NO NOISE WILL EVER WAKE THE OCTOPUS.
+     BUT A PROGRAM, EVEN AN OCTOPUS, CAN BE STOPPED
      WITH TWO KEYS PRESSED TOGETHER.
      THE GREAT BOOK OF COMMANDS KNOWS WHICH ONES."
 
@@ -573,17 +574,17 @@ Words are scratched on the wall of the cave:
 
 SEALED
 
-# The snores grow on one line before the next one starts, so that the dragon
+# The bubbles grow on one line before the next one starts, so that the octopus
 # stays on screen for a while.
 while true; do
   printf '   '
-  for snore in z zz Zzz ZZzz ZZZzz; do
-    printf ' %s' "$snore"
+  for bubble in . o O o O; do
+    printf ' %s' "$bubble"
     sleep 1
   done
   echo
 done
-END_DRAGON
+END_OCTOPUS
 
 text RUSTY_KEY <<'END_RUSTY_KEY'
    .---.
@@ -594,12 +595,12 @@ text RUSTY_KEY <<'END_RUSTY_KEY'
 
 RUSTY KEY
 
-An old, heavy key. A word is written on it: FORTRESS.
+An old, heavy key, green with salt. A word is written on it: FORT.
 
 Do not leave it lying here: put it in your bag.
 END_RUSTY_KEY
 
-text LAIR_HINT <<'END_LAIR_HINT'
+text DEN_HINT <<'END_DEN_HINT'
 HINT
 
 You found a key! Pick it up: move it into your bag with mv. Your bag
@@ -607,20 +608,20 @@ is in ~/treasure-hunt/bag. From here, that is two levels up:
 
     mv rusty-key ../../bag/
 
-Then take the key to the fortress.
+Then take the key to the fort.
 
 See "Move stuff" in the command line cheatsheet:
 @@CHEATSHEET@@#move-stuff-mv
-END_LAIR_HINT
+END_DEN_HINT
 
 # ---------------------------------------------------------------------------
 # Part 2: changing things
 # ---------------------------------------------------------------------------
 
-text FORTRESS_HINT <<'END_FORTRESS_HINT'
+text FORT_HINT <<'END_FORT_HINT'
 HINT
 
-The door of the fortress is a program. To run a program in the
+The door of the fort is a program. To run a program in the
 directory you are in, write ./ before its name:
 
     ./door
@@ -633,22 +634,22 @@ mv moves a file. It can also give it a new name, at the same time:
     mv ../bag/rusty-key key
 
 Then run ./door again.
-END_FORTRESS_HINT
+END_FORT_HINT
 
 text DOOR <<'END_DOOR'
 #!/bin/bash
-# The door of the fortress. It is locked.
+# The door of the fort. It is locked.
 HUNT='@@HUNT@@'
 @@UNPACK@@
 
-if [ -d "$HUNT/fortress/courtyard" ]; then
+if [ -d "$HUNT/fort/courtyard" ]; then
   reveal <<'SEALED'
 The door is open. The courtyard is behind it.
 SEALED
   exit 0
 fi
 
-if [ ! -f "$HUNT/fortress/key" ]; then
+if [ ! -f "$HUNT/fort/key" ]; then
   reveal <<'SEALED'
             _________
           .'    |    '.
@@ -666,20 +667,20 @@ SEALED
   exit 1
 fi
 
-if ! grep -q 'RUSTY KEY' "$HUNT/fortress/key"; then
+if ! grep -q 'RUSTY KEY' "$HUNT/fort/key"; then
   reveal <<'SEALED'
 This is not the right key. It does not turn.
 SEALED
   exit 1
 fi
 
-mkdir "$HUNT/fortress/courtyard" &&
-unpack "$HUNT/fortress/courtyard/guardian" 755 <<'SEALED_GUARDIAN' &&
-@@GUARDIAN@@
-SEALED_GUARDIAN
-unpack "$HUNT/fortress/courtyard/.hint" 644 <<'SEALED_GUARDIAN_HINT' || exit 1
-@@GUARDIAN_HINT@@
-SEALED_GUARDIAN_HINT
+mkdir "$HUNT/fort/courtyard" &&
+unpack "$HUNT/fort/courtyard/mapmaker" 755 <<'SEALED_MAPMAKER' &&
+@@MAPMAKER@@
+SEALED_MAPMAKER
+unpack "$HUNT/fort/courtyard/.hint" 644 <<'SEALED_MAPMAKER_HINT' || exit 1
+@@MAPMAKER_HINT@@
+SEALED_MAPMAKER_HINT
 
 mkdir -p "$HUNT/bag"
 reveal > "$HUNT/bag/coin-1" <<'SEALED'
@@ -702,90 +703,96 @@ A gold coin falls out of the lock. You put it in your bag.
 
 @@COIN1@@
 
-Behind the door is the courtyard of the fortress. Someone is waiting
-for you there:
+Behind the door is the courtyard of the fort. Someone is waiting for
+you there:
 
-        .---.   /\
-        |=|=|  <||\
-        |___|   ||/
-        /|+|\==(||)
-         | |    ||
-         / \    ||
+          ___
+         /___\
+         (o o)
+        (  ~  )
+      ___|   |___
+     /   |   |   \
+    (____|___|____)
 SEALED
 END_DOOR
 
-text GUARDIAN_HINT <<'END_GUARDIAN_HINT'
+text MAPMAKER_HINT <<'END_MAPMAKER_HINT'
 HINT
 
-The guardian is a program. Talk to it by running it:
+The mapmaker is a program. Talk to the mapmaker by running it:
 
-    ./guardian
+    ./mapmaker
 
-It wants a copy of the captain's map. cp copies a file. The copy can
-have another name, and be in another place. mv would move the
-original, and the guardian wants it to stay in the shipwreck.
+The mapmaker wants a copy of the captain's map. cp copies a file.
+The copy can have another name, and be in another place. mv would
+move the original, and the original must stay in the shipwreck.
 
 From the courtyard, the shipwreck is two levels up, then down:
 
     cp ../../shipwreck/map.txt map-copy.txt
 
-Then run ./guardian again.
+Then run ./mapmaker again.
 
 See "Copy stuff" in the command line cheatsheet:
 @@CHEATSHEET@@#copy-stuff-cp
-END_GUARDIAN_HINT
+END_MAPMAKER_HINT
 
-text GUARDIAN <<'END_GUARDIAN'
+text MAPMAKER <<'END_MAPMAKER'
 #!/bin/bash
-# The guardian of the fortress. It loves maps.
+# The mapmaker, left on this island a long time ago. Loves maps.
 HUNT='@@HUNT@@'
 @@UNPACK@@
 
-here="$HUNT/fortress/courtyard"
+here="$HUNT/fort/courtyard"
 original="$HUNT/shipwreck/map.txt"
 copy="$here/map-copy.txt"
 
 if [ -f "$here/rest" ]; then
   reveal <<'SEALED'
-The guardian nods. You may pass.
+The mapmaker nods. You may pass.
 SEALED
   exit 0
 fi
 
 reveal <<'SEALED'
-                      /\
-         _______      ||
-        |       |   <=||\
-        | ==|== |     || )
-        | : : : |     ||/
-        |_______|     ||
-      ___\_____/___   ||
-     /   |     |   \  ||
-    /  o |  +  | o  \ ||
-   /    /|     |\    \||
-  (____/ |_____| \___(||)
-         |  |  |      ||
-         |  |  |      ||
-         |__|__|      ||
-        (___|___)     ||
-                      ||
+                ___
+               /___\
+               (o o)
+              (  ~  )
+            ___|   |___
+           /   |   |   \
+          /    |   |    \
+         (_____|   |_____)
+               |   |
+              /|   |\
+               |   |
+              _/   \_
+             (__) (__)
+        ___     ___     ___
+       /__/    /__/    /__/
+
+An old mapmaker, in rags, left on this island long before you came.
+Papers everywhere: every stone of the island, drawn again and again.
 
 SEALED
 
 if [ ! -f "$original" ]; then
   reveal <<'SEALED'
-"Where is the captain's map? The original must stay in the shipwreck!
- Put it back there. Then bring me a copy."
+"Where is the captain's map? A map that is taken is a map that is
+ lost! Put it back in the shipwreck. Then bring me a copy."
 SEALED
   exit 1
 fi
 
 if [ ! -f "$copy" ]; then
   reveal <<'SEALED'
-The guardian blocks your way.
+The mapmaker stands in your way.
 
-"Halt! Bring me a copy of the captain's map. Put it here, next to me,
- and name it map-copy.txt. The original must stay in the shipwreck."
+"Stop there. I have drawn this island for thirty years, but never the
+ sea around it, and the captain's map has the sea on it.
+
+ Bring me a copy of that map. Put it here, next to me, and name it
+ map-copy.txt. A copy, mind: the map itself stays in the shipwreck."
 SEALED
   exit 1
 fi
@@ -805,11 +812,12 @@ unpack "$here/.hint" 644 <<'SEALED_REST_HINT' || exit 1
 SEALED_REST_HINT
 
 reveal <<'SEALED'
-The guardian looks at the map for a long time. Then it nods.
+The mapmaker looks at the copy for a long time, and nods.
 
-"You may pass. But night is falling. You should rest first."
+"Two maps now, and neither of them lost. You may pass. But night is
+ falling. You should rest first."
 SEALED
-END_GUARDIAN
+END_MAPMAKER
 
 text REST_HINT <<'END_REST_HINT'
 HINT
@@ -836,7 +844,7 @@ text REST <<'END_REST'
 HUNT='@@HUNT@@'
 @@UNPACK@@
 
-here="$HUNT/fortress/courtyard"
+here="$HUNT/fort/courtyard"
 
 if [ -f "$here/lever" ]; then
   reveal <<'SEALED'
@@ -845,7 +853,7 @@ SEALED
   exit 0
 fi
 
-# The sun sets behind the walls of the fortress until the camp is ready.
+# The sun sets behind the walls of the fort until the camp is ready.
 sunset() {
   reveal <<'SEALED'
         .              *                .           *
@@ -910,10 +918,10 @@ The fire is warm. You lie down next to it, and you fall asleep.
 
 SEALED
 
-# The snores grow on one line, as the dragon's do, but they stop on their own
-# after three seconds: the dragon's snores never stop, and a student who met it
-# first is quick to reach for Ctrl-C. They only take their time in a terminal,
-# where someone is watching them.
+# The snores grow on one line, as the octopus's bubbles do, but they stop on
+# their own after three seconds: the octopus never stops, and a student who met
+# it first is quick to reach for Ctrl-C. They only take their time in a
+# terminal, where someone is watching them.
 printf '   '
 for snore in z zz Zzz; do
   printf ' %s' "$snore"
@@ -981,7 +989,7 @@ text LEVER <<'END_LEVER'
 HUNT='@@HUNT@@'
 @@UNPACK@@
 
-here="$HUNT/fortress/courtyard"
+here="$HUNT/fort/courtyard"
 
 if [ -d "$here/tower" ]; then
   reveal <<'SEALED'
@@ -1143,7 +1151,7 @@ text STAIRS <<'END_STAIRS'
 HUNT='@@HUNT@@'
 @@UNPACK@@
 
-here="$HUNT/fortress/courtyard/tower"
+here="$HUNT/fort/courtyard/tower"
 
 if [ -d "$here/top" ]; then
   reveal <<'SEALED'
@@ -1213,7 +1221,7 @@ Read the path one piece at a time, starting from here:
 
     ..               up once: the tower
     ../..            up twice: the courtyard
-    ../../..         the fortress
+    ../../..         the fort
     ../../../..      the start of the hunt
     beach            then into the beach
     .                "the directory I am in": this changes nothing
@@ -1238,7 +1246,7 @@ SEALED
   exit 0
 fi
 
-if [ ! -f "$HUNT/fortress/courtyard/tower/top/parrot.txt" ]; then
+if [ ! -f "$HUNT/fort/courtyard/tower/top/parrot.txt" ]; then
   reveal <<'SEALED'
 DING! Nothing happens. It is not the right time.
 SEALED
@@ -1507,7 +1515,7 @@ END_TREASURE
 
 # The captain's diary: about 500 lines, the clue in the middle, the help for
 # less at the top, and a pointer to it at the end, which is what cat leaves on
-# screen. No line but the clue and the help says "dragon".
+# screen. No line but the clue and the help says "octopus".
 diary() {
   local sentences day i clue_day=83
   sentences=(
@@ -1583,14 +1591,14 @@ text SCRIPT_END <<'END_SCRIPT_END'
 #
 #    HALT, EXPLORER!
 #
-#    This is not a scroll to read. It is a magic spell, and you are
-#    looking at the words inside it. Reading a spell does nothing:
-#    you have to cast it. Run it like this:
+#    This is not a page to read. These are the captain's orders, and
+#    you are looking at the words inside them. Reading orders does
+#    nothing: they have to be carried out. Like this:
 #
 #        @@RUN@@
 #
-#    (Curious explorers are allowed to read spells. Some find
-#    interesting things inside. But nothing happens until you cast it.)
+#    (Curious explorers are allowed to read the orders. Some find
+#    interesting things inside. But nothing happens until you run it.)
 #
 # ======================================================================
 # ======================================================================
@@ -1634,9 +1642,9 @@ SEALED
 }
 
 build() {
-  script_end DRAGON './dragon'
+  script_end OCTOPUS './octopus'
   script_end DOOR './door'
-  script_end GUARDIAN './guardian'
+  script_end MAPMAKER './mapmaker'
   script_end REST './rest'
   script_end LEVER './lever'
   script_end STAIRS './stairs'
@@ -1645,7 +1653,7 @@ build() {
   script_end TREASURE '~/treasure-hunt/bag/treasure'
 
   local program
-  for program in DRAGON DOOR GUARDIAN REST LEVER STAIRS BELL CHEST TREASURE; do
+  for program in OCTOPUS DOOR MAPMAKER REST LEVER STAIRS BELL CHEST TREASURE; do
     seal_messages "$program"
   done
 
@@ -1665,12 +1673,12 @@ build() {
   embed REST DRAWBRIDGE_CONF DRAWBRIDGE_CONF
   embed REST LEVER LEVER
   embed REST DRAWBRIDGE_HINT DRAWBRIDGE_HINT
-  embed GUARDIAN REST REST
-  embed GUARDIAN REST_HINT REST_HINT
-  embed DOOR GUARDIAN GUARDIAN
-  embed DOOR GUARDIAN_HINT GUARDIAN_HINT
-  embed DRAGON RUSTY_KEY RUSTY_KEY
-  embed DRAGON LAIR_HINT LAIR_HINT
+  embed MAPMAKER REST REST
+  embed MAPMAKER REST_HINT REST_HINT
+  embed DOOR MAPMAKER MAPMAKER
+  embed DOOR MAPMAKER_HINT MAPMAKER_HINT
+  embed OCTOPUS RUSTY_KEY RUSTY_KEY
+  embed OCTOPUS DEN_HINT DEN_HINT
 
   mkdir -p \
     "$HUNT/bag" \
@@ -1680,7 +1688,7 @@ build() {
     "$HUNT/jungle/ruins/catacombs" \
     "$HUNT/shipwreck" \
     "$HUNT/cave" \
-    "$HUNT/fortress" || return 1
+    "$HUNT/fort" || return 1
 
   put "$HUNT/start.txt" "$START"
   put "$HUNT/.hint" "$START_HINT"
@@ -1708,11 +1716,11 @@ build() {
   put "$HUNT/shipwreck/map.txt" "$MAP"
   put "$HUNT/shipwreck/.hint" "$SHIPWRECK_HINT"
 
-  put "$HUNT/cave/dragon" "$DRAGON" 755
+  put "$HUNT/cave/octopus" "$OCTOPUS" 755
   put "$HUNT/cave/.hint" "$CAVE_HINT"
 
-  put "$HUNT/fortress/door" "$DOOR" 755
-  put "$HUNT/fortress/.hint" "$FORTRESS_HINT"
+  put "$HUNT/fort/door" "$DOOR" 755
+  put "$HUNT/fort/.hint" "$FORT_HINT"
 }
 
 # Asks before deleting a hunt that already exists. The question is read from
