@@ -1198,8 +1198,10 @@ nothing at all. Whenever you are lost, press `Esc` and look there.
 
 ### Normal mode
 
-The **Normal** mode of Vim is the one you're in when it starts.
-In this mode, you can move the cursor around with the arrow keys.
+The **Normal** mode of Vim is the one you're in when it starts. What you type
+in this mode does not go into your file: each key is a command instead, which is
+why typing into Vim when it has just opened seems to do nothing, or something
+strange.
 
 ![Vim in normal mode](images/vim-normal-mode.png)
 
@@ -1211,16 +1213,7 @@ screen of them.
 
 {% endnote %}
 
-You can also use some commands to interact with the text:
-
-| Command | Effect                                                          |
-| :------ | :-------------------------------------------------------------- |
-| `x`     | Delete the character under the cursor                           |
-| `dw`    | Delete a word, with the cursor standing before the first letter |
-| `dd`    | Delete the complete line the cursor is on                       |
-| `u`     | Undo the last command                                           |
-| `i`     | Enter **Insert** mode (to type text)                            |
-| `:`     | Enter **Command** mode (to save and/or quit)                    |
+To write something, you first have to switch to the **Insert** mode.
 
 {% note type: tip %}
 
@@ -1228,9 +1221,42 @@ At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
 
 {% endnote %}
 
+### Insert mode
+
+The **Insert** mode is the one in which Vim behaves like the editor you expect:
+what you type goes into the file.
+
+You enter it from the **Normal** mode, with the key that matches where you want
+to start typing:
+
+| Command | Effect                                           |
+| :------ | :----------------------------------------------- |
+| `i`     | **I**nsert before the character under the cursor |
+| `a`     | **A**ppend after the character under the cursor  |
+| `o`     | **O**pen a new empty line below the current one  |
+
+Vim prints `-- INSERT --` in the bottom-left corner to tell you that you are in
+this mode. Type your text, then press `Esc` to go back to the **Normal** mode.
+
+![Vim in insert mode](images/vim-insert-mode.png)
+
+### Back in normal mode: moving and editing
+
+Now that your file has some text in it, you can move the cursor around with the
+arrow keys.
+
+You can also use some commands to interact with the text:
+
+| Command | Effect                                             |
+| :------ | :------------------------------------------------- |
+| `x`     | Delete the character under the cursor              |
+| `dw`    | Delete a word, with the cursor on its first letter |
+| `dd`    | Delete the complete line the cursor is on          |
+| `u`     | Undo the last command                              |
+
 #### Moving without the arrow keys
 
-The arrow keys work, but Vim users move with four letters instead, sitting
+The arrow keys work, but Vim power users move with four letters instead, sitting
 right under the fingers of your right hand on the home row:
 
 | Key | Moves the cursor |
@@ -1255,25 +1281,6 @@ to move around: `less`, `man` pages and many other terminal tools do too, so
 the habit pays off outside Vim.
 
 {% endnote %}
-
-### Insert mode
-
-The **Insert** mode is the one in which Vim behaves like the editor you expect:
-what you type goes into the file.
-
-You enter it from the **Normal** mode, with the key that matches where you want
-to start typing:
-
-| Command | Effect                                           |
-| :------ | :----------------------------------------------- |
-| `i`     | **I**nsert before the character under the cursor |
-| `a`     | **A**ppend after the character under the cursor  |
-| `o`     | **O**pen a new empty line below the current one  |
-
-Vim prints `-- INSERT --` in the bottom-left corner to tell you that you are in
-this mode. Type your text, then press `Esc` to go back to the **Normal** mode.
-
-![Vim in insert mode](images/vim-insert-mode.png)
 
 ### Command mode
 
