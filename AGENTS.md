@@ -15,8 +15,8 @@ exhaustive index.
 - **Whole project** — repository layout, cross-component tooling, project-wide
   coding and security guidelines: [`CONTRIBUTING.md`][contributing]
 - **Course material** — writing guidelines, document types, front matter, the
-  Liquid tags a document may use, slides:
-  [`course/CONTRIBUTING.md`](./course/CONTRIBUTING.md)
+  Liquid tags a document may use, slides, the tutor notes that change with each
+  chapter: [`course/CONTRIBUTING.md`](./course/CONTRIBUTING.md)
 - **Year-end rollover** — freezing and publishing the edition that has ended,
   pointing the repository at the next one, and correcting a frozen edition:
   [`docs/rollover.md`](./docs/rollover.md)

@@ -436,6 +436,18 @@ the material again.
    so that the tutor uses the same words.
 4. **Used in**: which exercises apply which parts of it.
 
+**Notes change with their chapter, in the same change.** Notes that describe a
+previous version of a chapter mislead the tutor more than missing notes would,
+and nothing checks them against the page:
+
+- Editing a chapter means checking its notes: steps, headings (notes name them
+  by their text), placeholders, expected outputs, pitfalls and what the chapter
+  covers.
+- Renaming, renumbering, moving or removing a chapter means searching the other
+  chapters' notes for its number and title, which their "Starting point", "Where
+  it leads" and "Used in" sections may name.
+- A chapter without notes, or whose notes are still a skeleton, needs nothing.
+
 ### Special Tags and Features
 
 This section describes special Liquid tags and features available for use in

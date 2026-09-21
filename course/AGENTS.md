@@ -12,3 +12,10 @@ and automated agents interacting with this project.
 - The Liquid tags in the Markdown of this directory are implemented in
   [`ArchiDep.CourseSite.Renderer`](../app/lib/archidep/course_site/CONTRIBUTING.md).
   A tag that does not exist there does not exist.
+- **Keeping [tutor notes](./CONTRIBUTING.md#tutor-notes) in step with the course
+  material is your responsibility** whenever you change a chapter, as that
+  section describes. Update the notes in the same change rather than leaving it
+  to the human, and tell the human reviewer which notes you changed and anything
+  in them you could not check, such as an expected output you could not run.
+  Only keep existing notes up to date: writing a chapter's notes from scratch is
+  a task of its own, done when asked.
