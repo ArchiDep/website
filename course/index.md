@@ -27,11 +27,52 @@ In pursuit of this goal, you will learn:
 This course is a [Media Engineering][media-engineering] web development course
 taught at [HEIG-VD][heig].
 
-## What you will need
+## Getting started
 
-- A Unix CLI
-  - Linux/macOS users can use their standard Terminal
-  - Windows users should install the [Windows Subsystem for Linux (WSL)][wsl]
+All you need to start the course is a Unix command line:
+
+- Linux and macOS users can use their standard Terminal.
+- Windows users must install the [Windows Subsystem for Linux (WSL)][wsl] before
+  the first session.
+
+### Following the course
+
+This site follows the course as it happens. After each session, the cards at
+the top of this page are updated:
+
+- **Previously (green)**: what the last session covered.
+- **Due next (yellow)**: the exercises from the last session that you should
+  finish before the next one.
+- **Next time (blue)**: what the next session will cover.
+
+The sidebar uses the same colours as the cards: a bar on the right of each
+subject and exercise shows whether it has been covered, has work due or is
+coming next. Chapters the course has not reached yet are faded out. Exercise
+solutions appear once their chapter has been covered.
+
+### If this site is down
+
+A backup copy of this site is available at [backup.archidep.ch][backup]. It may
+lag a little behind this site, but it is enough to keep working on the
+exercises.
+
+### PDFs
+
+Each page is downloadable as a PDF.
+
+{% note type: warning %}
+
+These PDFs are not final. They are **not** the reference material for this
+course. Course material **will change** until the end of the semester. The only
+up-to-date material is what is on this site.
+
+{% endnote %}
+
+### Tools for later sessions
+
+You will need these as the course goes on. Install them when the subject that
+uses them comes up; you do not need them for the first session.
+
 - [Git][git-downloads]
   - macOS users should [install the command-line tools][macos-cli]
   - Windows users should install [Git for Windows][git-for-windows]
@@ -42,16 +83,6 @@ apt install git` command][install-git-on-linux], or with their other
 - [Google Chrome][chrome] (recommended, any browser with developer tools will do)
   - [Firefox][firefox] (optional, required for one network exercise)
 - A free [Render][render] account
-
-## Resources
-
-{% note type: warning %}
-
-Each page is downloadable as a PDF. These are not final. They are **not** the
-reference material for this course. Course material **will change** until the
-end of the semester. The only up-to-date material is what is on this site.
-
-{% endnote %}
 
 ## References
 
@@ -135,6 +166,7 @@ and related articles:
 - All the people I undoubtedly forgot to mention (let me know).
 
 [azure]: https://azure.microsoft.com
+[backup]: https://backup.archidep.ch
 [chrome]: https://www.google.com/chrome/
 [firefox]: https://www.mozilla.org/en-US/firefox/
 [git-downloads]: https://git-scm.com/downloads
