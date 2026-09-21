@@ -152,14 +152,24 @@
   />
 
   <div class="mt-4 mb-2 flex justify-between items-end">
-    <h3 class="text-xl font-bold">
+    <h3 class="text-xl font-bold flex items-center gap-x-2">
       {gettext("Students")}
-      <small :if={not Enum.empty?(@students)} class="ml-2 text-base-content/75">
+      <small :if={not Enum.empty?(@students)} class="text-base-content/75">
         {gettext("{count}/{total} registered",
-          count: Enum.count(@students, &(&1.user_id != nil)),
-          total: length(@students)
+          count: Enum.count(StudentFilters.filter(@filters, @students), &(&1.user_id != nil)),
+          total: length(StudentFilters.filter(@filters, @students))
         )}
       </small>
+      <.link
+        :if={StudentFilters.active?(@filters)}
+        id="clear-student-filters"
+        class="badge badge-primary badge-sm"
+        patch={~p"/admin/classes/#{@class.id}"}
+        title={gettext("Clear all filters")}
+      >
+        <span>{gettext("Filtered")}</span>
+        <Heroicons.x_mark class="size-3" />
+      </.link>
     </h3>
 
     <div class="join">
@@ -215,6 +225,54 @@
     class={@class}
   />
 
+  <form
+    :if={not Enum.empty?(@students)}
+    id="student-filters"
+    class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm"
+    phx-change="filter"
+  >
+    <label
+      :if={length(StudentFilters.academic_class_options(@filters, @students)) >= 2}
+      class="flex items-center gap-x-2"
+    >
+      <span>{gettext("Academic class")}</span>
+      <select
+        name="academic_class"
+        class={["select select-sm w-auto", @filters.academic_class && "select-primary"]}
+      >
+        <option value="">{gettext("All")}</option>
+        <option
+          :for={academic_class <- StudentFilters.academic_class_options(@filters, @students)}
+          value={StudentFilters.academic_class_param(academic_class)}
+          selected={@filters.academic_class == academic_class}
+        >
+          {academic_class_label(academic_class)}
+        </option>
+      </select>
+    </label>
+    <label class="flex items-center gap-x-2">
+      <span>{gettext("Registered")}</span>
+      <select
+        name="registered"
+        class={["select select-sm w-auto", @filters.registered != nil && "select-primary"]}
+      >
+        <option value="">{gettext("All")}</option>
+        <option
+          value={StudentFilters.registered_param(true)}
+          selected={@filters.registered == true}
+        >
+          {gettext("Registered")}
+        </option>
+        <option
+          value={StudentFilters.registered_param(false)}
+          selected={@filters.registered == false}
+        >
+          {gettext("Not registered")}
+        </option>
+      </select>
+    </label>
+  </form>
+
   <table class="table">
     <thead>
       <tr>
@@ -232,8 +290,20 @@
           <.no_data text={gettext("No students in this class")} />
         </td>
       </tr>
+      <tr :if={
+        not Enum.empty?(@students) and Enum.empty?(StudentFilters.filter(@filters, @students))
+      }>
+        <td colspan="1000">
+          <span class="flex items-center gap-x-2">
+            <.no_data text={gettext("No students match the current filters")} />
+            <.link class="link" patch={~p"/admin/classes/#{@class.id}"}>
+              {gettext("Clear filters")}
+            </.link>
+          </span>
+        </td>
+      </tr>
       <tr
-        :for={student <- @students}
+        :for={student <- StudentFilters.filter(@filters, @students)}
         :key={student.id}
         id={"student-#{student.id}"}
         class="hover:bg-base-300 even:bg-base-200 cursor-pointer"

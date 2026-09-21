@@ -15,6 +15,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   alias ArchiDepWeb.Admin.Classes.EditClassExpectedServerPropertiesDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
+  alias ArchiDepWeb.Admin.Classes.StudentFilters
   alias ArchiDepWeb.LiveRefresh
 
   @impl LiveView
@@ -48,9 +49,18 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   end
 
   @impl LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
-  end
+  def handle_params(params, _url, socket),
+    do:
+      socket
+      |> assign(:filters, StudentFilters.from_params(params))
+      |> noreply()
+
+  @impl LiveView
+  def handle_event("filter", params, socket),
+    do:
+      socket
+      |> push_patch(to: class_path(socket.assigns.class, StudentFilters.from_params(params)))
+      |> noreply()
 
   @impl LiveView
   def handle_info(
@@ -87,4 +97,14 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
       socket
     end
   end
+
+  defp class_path(class, filters) do
+    case StudentFilters.to_params(filters) do
+      params when map_size(params) == 0 -> ~p"/admin/classes/#{class.id}"
+      params -> ~p"/admin/classes/#{class.id}?#{params}"
+    end
+  end
+
+  defp academic_class_label(:none), do: gettext("None")
+  defp academic_class_label(academic_class), do: academic_class
 end

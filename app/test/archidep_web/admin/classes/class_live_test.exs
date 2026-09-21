@@ -829,6 +829,15 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       assert class_page(html, class) == %{
                students: %{
                  registered: "1/2 registered",
+                 filtered_badge: nil,
+                 filters: %{
+                   academic_class: %{
+                     selected: gettext("All"),
+                     highlighted: false,
+                     options: [gettext("All"), "INF-1", gettext("None")]
+                   },
+                   registered: unfiltered_select()
+                 },
                  empty_message: nil,
                  rows: [
                    %{
@@ -862,11 +871,149 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       assert class_page(html, class) == %{
                students: %{
                  registered: nil,
+                 filtered_badge: nil,
+                 filters: nil,
                  rows: [],
                  empty_message: gettext("No students in this class")
                },
                delete_blocked: false
              }
+    end
+  end
+
+  describe "the student filters" do
+    setup :register_and_log_in_root
+
+    setup %{auth: auth} do
+      {class, server_group} = build_class_and_group()
+
+      stub_class_page_calls(auth,
+        class: class,
+        server_group: server_group,
+        students: [
+          filterable_student(class, "Alice", "INF-1", true),
+          filterable_student(class, "Bob", "INF-1", false),
+          filterable_student(class, "Carol", "INF-2", false),
+          filterable_student(class, "Dave", nil, false)
+        ]
+      )
+
+      %{class: class}
+    end
+
+    test "list every student without any filter", %{conn: conn, class: class} do
+      {:ok, _view, html} = live(conn, "/admin/classes/#{class.id}")
+
+      assert class_page(html, class) ==
+               filtered_class_page(
+                 "1/4 registered",
+                 nil,
+                 academic_class_select(gettext("All"), false),
+                 unfiltered_select(),
+                 ["Alice", "Bob", "Carol", "Dave"]
+               )
+    end
+
+    test "filter the students by academic class", %{conn: conn, class: class} do
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view
+      |> form("#student-filters", academic_class: "INF-1", registered: "")
+      |> render_change()
+
+      assert_patch(view, "/admin/classes/#{class.id}?academic_class=INF-1")
+
+      assert class_page(render(view), class) ==
+               filtered_class_page(
+                 "1/2 registered",
+                 gettext("Filtered"),
+                 academic_class_select("INF-1", true),
+                 unfiltered_select(),
+                 ["Alice", "Bob"]
+               )
+    end
+
+    test "filter the unregistered students without an academic class", %{
+      conn: conn,
+      class: class
+    } do
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view
+      |> form("#student-filters", academic_class: " ", registered: "no")
+      |> render_change()
+
+      assert_patch(view, "/admin/classes/#{class.id}?academic_class=+&registered=no")
+
+      assert class_page(render(view), class) ==
+               filtered_class_page(
+                 "0/1 registered",
+                 gettext("Filtered"),
+                 academic_class_select(gettext("None"), true),
+                 %{selected: gettext("Not registered"), highlighted: true},
+                 ["Dave"]
+               )
+    end
+
+    test "apply the filters from the URL", %{conn: conn, class: class} do
+      {:ok, _view, html} = live(conn, "/admin/classes/#{class.id}?registered=yes")
+
+      assert class_page(html, class) ==
+               filtered_class_page(
+                 "1/1 registered",
+                 gettext("Filtered"),
+                 academic_class_select(gettext("All"), false),
+                 %{selected: gettext("Registered"), highlighted: true},
+                 ["Alice"]
+               )
+    end
+
+    test "clear every filter from the filtered badge", %{conn: conn, class: class} do
+      {:ok, view, _html} =
+        live(conn, "/admin/classes/#{class.id}?academic_class=INF-2&registered=no")
+
+      view |> element("#clear-student-filters") |> render_click()
+
+      assert_patch(view, "/admin/classes/#{class.id}")
+
+      assert class_page(render(view), class) ==
+               filtered_class_page(
+                 "1/4 registered",
+                 nil,
+                 academic_class_select(gettext("All"), false),
+                 unfiltered_select(),
+                 ["Alice", "Bob", "Carol", "Dave"]
+               )
+    end
+
+    test "render an empty state when no student matches the filters", %{
+      conn: conn,
+      class: class
+    } do
+      {:ok, view, html} = live(conn, "/admin/classes/#{class.id}?academic_class=INF-9")
+
+      assert class_page(html, class) == %{
+               students: %{
+                 registered: "0/0 registered",
+                 filtered_badge: gettext("Filtered"),
+                 filters: %{
+                   academic_class: %{
+                     selected: "INF-9",
+                     highlighted: true,
+                     options: [gettext("All"), "INF-1", "INF-2", "INF-9", gettext("None")]
+                   },
+                   registered: unfiltered_select()
+                 },
+                 rows: [],
+                 empty_message:
+                   "#{gettext("No students match the current filters")} #{gettext("Clear filters")}"
+               },
+               delete_blocked: false
+             }
+
+      view |> element("table a", gettext("Clear filters")) |> render_click()
+
+      assert_patch(view, "/admin/classes/#{class.id}")
     end
   end
 
@@ -1440,12 +1587,15 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
       |> Enum.map(fn notification -> {notification.type, notification.message} end)
 
   # Projects the whole page region this chunk owns: the students section (the
-  # registered count, every row, and the empty-state message) and whether the
-  # delete-class affordance is blocked by linked servers.
+  # registered count, the filtered badge, the filter controls, every row, and
+  # the empty-state message) and whether the delete-class affordance is blocked
+  # by linked servers.
   defp class_page(html, class) do
     %{
       students: %{
         registered: students_registered(html),
+        filtered_badge: filtered_badge(html),
+        filters: student_filters(html),
         rows: students_table(html),
         empty_message: empty_students_message(html)
       },
@@ -1457,21 +1607,138 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     do: %{
       students: %{
         registered: nil,
+        filtered_badge: nil,
+        filters: nil,
         rows: [],
         empty_message: gettext("No students in this class")
       },
       delete_blocked: false
     }
 
+  # Every listed student shares one academic class, so there is nothing to
+  # filter by academic class and only the registration filter is shown.
   defp listed_class_page(_class, registered, names),
     do: %{
       students: %{
         registered: registered,
+        filtered_badge: nil,
+        filters: %{academic_class: nil, registered: unfiltered_select()},
         rows: Enum.map(names, &listed_row(&1, "#{String.downcase(&1)}@example.org")),
         empty_message: nil
       },
       delete_blocked: false
     }
+
+  defp unfiltered_select, do: %{selected: gettext("All"), highlighted: false}
+
+  # The students of the filter tests, fully pinned so that each filtered page
+  # can be asserted whole: Alice (INF-1, registered), Bob (INF-1), Carol (INF-2)
+  # and Dave (no academic class).
+  defp filterable_student(class, name, academic_class, registered?) do
+    id = UUID.generate()
+
+    CourseFactory.build(:student,
+      id: id,
+      class_id: class.id,
+      name: name,
+      academic_class: academic_class,
+      email: "#{String.downcase(name)}@example.org",
+      username: String.downcase(name),
+      username_confirmed: true,
+      active: true,
+      user:
+        if(registered?, do: CourseFactory.build(:user, student: nil, student_id: id), else: nil)
+    )
+  end
+
+  @filterable_academic_classes %{
+    "Alice" => "INF-1",
+    "Bob" => "INF-1",
+    "Carol" => "INF-2",
+    "Dave" => "-"
+  }
+
+  defp filtered_class_page(registered, filtered_badge, academic_class, registered_filter, names),
+    do: %{
+      students: %{
+        registered: registered,
+        filtered_badge: filtered_badge,
+        filters: %{academic_class: academic_class, registered: registered_filter},
+        rows:
+          Enum.map(
+            names,
+            &%{
+              name: &1,
+              academic_class: Map.fetch!(@filterable_academic_classes, &1),
+              email: "#{String.downcase(&1)}@example.org",
+              username: String.downcase(&1),
+              active: :active,
+              user_account: if(&1 == "Alice", do: "alice", else: gettext("Not registered yet"))
+            }
+          ),
+        empty_message: nil
+      },
+      delete_blocked: false
+    }
+
+  defp academic_class_select(selected, highlighted),
+    do: %{
+      selected: selected,
+      highlighted: highlighted,
+      options: [gettext("All"), "INF-1", "INF-2", gettext("None")]
+    }
+
+  defp filtered_badge(html) do
+    case find_html_elements(html, "#clear-student-filters") do
+      [badge] -> html_element_text(badge)
+      [] -> nil
+    end
+  end
+
+  # Projects the filter form: for each select, the option shown as selected
+  # (the first one when none is marked, as a browser would) and whether it is
+  # highlighted as an active filter; the academic class select also lists its
+  # options, since they are derived from the students.
+  defp student_filters(html) do
+    case find_html_elements(html, "#student-filters") do
+      [form] ->
+        %{
+          academic_class:
+            case find_html_elements(form, ~s(select[name="academic_class"])) do
+              [select] ->
+                Map.put(filter_select(select), :options, select_options(select))
+
+              [] ->
+                nil
+            end,
+          registered:
+            form |> find_html_elements(~s(select[name="registered"])) |> hd() |> filter_select()
+        }
+
+      [] ->
+        nil
+    end
+  end
+
+  defp filter_select(select) do
+    selected =
+      case find_html_elements(select, "option[selected]") do
+        [option] -> option
+        [] -> select |> find_html_elements("option") |> hd()
+      end
+
+    %{
+      selected: html_element_text(selected),
+      highlighted:
+        select
+        |> html_element_attribute("class")
+        |> String.split()
+        |> Enum.member?("select-primary")
+    }
+  end
+
+  defp select_options(select),
+    do: select |> find_html_elements("option") |> Enum.map(&html_element_text/1)
 
   # Projects each student row (keyed by its `student-<id>` row) to its
   # meaningful cells; the active icon projects to `:active`/`:inactive`.
