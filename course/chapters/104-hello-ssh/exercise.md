@@ -13,7 +13,14 @@ command and other SSH-based tools. Your username and password for this server
 are shown on the [dashboard][dashboard], along with the fingerprints of the
 server's SSH host keys.
 
-![The SSH exercise server's dashboard, showing the username, password and host key fingerprints](images/dashboard-username-password-host-key-fingerprints.png)
+<div class="text-center">
+  <a href="/app" class="btn btn-primary btn-xl">
+    <span class="flex items-center gap-2">
+      <span>🛠️</span>
+      <span class="font-title">Go to the dashboard</span>
+    </span>
+  </a>
+</div>
 
 As we've seen, the basic syntax of the SSH command is as follows:
 
