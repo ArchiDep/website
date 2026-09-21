@@ -102,11 +102,10 @@ and related articles:
 
 ## Credits & thanks
 
-- _Me_
-- Simon Pinkas contributed the Docker subject, the Hello Shell command line
-  exercise and various other material. He sometimes teaches parts of the course
-  when I feel too lazy (his words), and helps students navigate through this
-  mess along with me during exercise sessions.
+- Simon Pinkas contributed the Docker subject, the original idea for the Hello
+  Shell command line exercise and various other material. He used to teach parts
+  of the course when I felt too lazy (his words), and to help students navigate
+  through this mess along with me during exercise sessions.
 - My ~~test subjects~~ early adopters: students who helped test, debug and
   improve the course.
 - David Goetschmann, my current boss at [Square
