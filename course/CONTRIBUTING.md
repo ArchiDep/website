@@ -13,6 +13,7 @@ for AI assistants and automated agents.
   - [Integration With Other Components](#integration-with-other-components)
   - [Standalone Mode](#standalone-mode)
 - [Site Structure](#site-structure)
+  - [Exercise Scripts](#exercise-scripts)
 - [Course Material](#course-material)
   - [Writing Guidelines](#writing-guidelines)
   - [Document Types](#document-types)
