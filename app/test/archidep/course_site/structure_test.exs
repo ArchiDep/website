@@ -50,7 +50,10 @@ defmodule ArchiDep.CourseSite.StructureTest do
       }
 
       declarations = %{
-        "sections" => [%{"title" => "Introduction"}, %{"title" => "Version Control"}],
+        "sections" => [
+          %{"title" => "Introduction", "description" => "The command line and SSH."},
+          %{"title" => "Version Control"}
+        ],
         "cheatsheets" => ["git", "command-line"]
       }
 
@@ -58,20 +61,25 @@ defmodule ArchiDep.CourseSite.StructureTest do
                {:ok,
                 %Structure{
                   sections: [
-                    Section.new(1, "Introduction", [
-                      Chapter.new(
-                        DocumentRef.new(101, "command-line", :subject),
-                        "Command Line",
-                        slides: DocumentRef.new(101, "command-line", :slides)
-                      ),
-                      Chapter.new(
-                        DocumentRef.new(102, "hello-shell", :exercise),
-                        "Hello Shell"
-                      ),
-                      Chapter.new(DocumentRef.new(103, "ssh", :subject), "Secure Shell",
-                        slides: DocumentRef.new(103, "ssh", :slides)
-                      )
-                    ]),
+                    Section.new(
+                      1,
+                      "Introduction",
+                      [
+                        Chapter.new(
+                          DocumentRef.new(101, "command-line", :subject),
+                          "Command Line",
+                          slides: DocumentRef.new(101, "command-line", :slides)
+                        ),
+                        Chapter.new(
+                          DocumentRef.new(102, "hello-shell", :exercise),
+                          "Hello Shell"
+                        ),
+                        Chapter.new(DocumentRef.new(103, "ssh", :subject), "Secure Shell",
+                          slides: DocumentRef.new(103, "ssh", :slides)
+                        )
+                      ],
+                      "The command line and SSH."
+                    ),
                     Section.new(2, "Version Control", [
                       Chapter.new(DocumentRef.new(201, "git", :slides), "Git Branching"),
                       Chapter.new(
@@ -153,6 +161,26 @@ defmodule ArchiDep.CourseSite.StructureTest do
                 [
                   {:malformed_declarations,
                    ~s|expected "sections" to be a list of mappings each with a non-empty title, got: [%{"title" => "Introduction"}, %{"name" => "Security"}]|}
+                ]}
+    end
+
+    test "refuses a section description that is not a non-empty string" do
+      {:ok, tree} = ContentTree.plan([])
+
+      assert Structure.plan(tree, %{}, %{
+               "sections" => [
+                 %{"title" => "Introduction", "description" => "The command line and SSH."},
+                 %{"title" => "Version Control", "description" => " "},
+                 %{"title" => "Security", "description" => 42}
+               ],
+               "cheatsheets" => []
+             }) ==
+               {:error,
+                [
+                  {:malformed_declarations,
+                   ~s{expected the description of section "Version Control" to be a non-empty string, got: " "}},
+                  {:malformed_declarations,
+                   ~s{expected the description of section "Security" to be a non-empty string, got: 42}}
                 ]}
     end
 

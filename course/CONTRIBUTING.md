@@ -103,7 +103,10 @@ the dashboard functionality is only available during the current semester).
     202, etc).
   - `course.yml`: The definition of the overall course sections into which the
     materials are organized, and the order the cheatsheets are listed in. Both
-    are things no single document states.
+    are things no single document states. A section may have a `description`:
+    one paragraph on what the section teaches and how deep it goes. It
+    introduces the section in `/llms.txt` (see [Tutor Notes](#tutor-notes)),
+    where it tells an AI tutor at what level to answer.
   - `cheatsheets`: Cheatsheets for students to quickly reference key concepts
     and commands.
   - `icons`: SVG icons the course's tags draw by name.
@@ -446,6 +449,8 @@ and nothing checks them against the page:
 - Renaming, renumbering, moving or removing a chapter means searching the other
   chapters' notes for its number and title, which their "Starting point", "Where
   it leads" and "Used in" sections may name.
+- Changing what a section teaches, or how deep, means checking its `description`
+  in `course.yml`.
 - A chapter without notes, or whose notes are still a skeleton, needs nothing.
 
 ### Special Tags and Features

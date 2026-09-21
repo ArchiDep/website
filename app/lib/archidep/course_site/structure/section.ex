@@ -1,7 +1,7 @@
 defmodule ArchiDep.CourseSite.Structure.Section do
   @moduledoc """
-  One section of the course: a title and the chapters numbered for it, in
-  reading order.
+  One section of the course: a title, what the section is about if the course
+  says, and the chapters numbered for it, in reading order.
 
   A section is **declared** rather than discovered — a chapter names its section
   with the first digit of its number, and the titles are written down elsewhere
@@ -14,11 +14,12 @@ defmodule ArchiDep.CourseSite.Structure.Section do
   alias ArchiDep.CourseSite.Structure.Chapter
 
   @enforce_keys [:index, :title]
-  defstruct [:index, :title, chapters: []]
+  defstruct [:index, :title, :description, chapters: []]
 
   @type t :: %__MODULE__{
           index: pos_integer(),
           title: String.t(),
+          description: String.t() | nil,
           chapters: [Chapter.t()]
         }
 
@@ -26,13 +27,14 @@ defmodule ArchiDep.CourseSite.Structure.Section do
   @slug_rejected ~r/[^a-z0-9-]/
 
   @doc """
-  Build a section from its position among the declared sections, its title and
-  the chapters numbered for it.
+  Build a section from its position among the declared sections, its title, the
+  chapters numbered for it and its description, if it has one.
   """
-  @spec new(pos_integer(), String.t(), [Chapter.t()]) :: t()
-  def new(index, title, chapters \\ [])
-      when is_integer(index) and index > 0 and is_binary(title) and is_list(chapters),
-      do: %__MODULE__{index: index, title: title, chapters: chapters}
+  @spec new(pos_integer(), String.t(), [Chapter.t()], String.t() | nil) :: t()
+  def new(index, title, chapters \\ [], description \\ nil)
+      when is_integer(index) and index > 0 and is_binary(title) and is_list(chapters) and
+             (is_binary(description) or is_nil(description)),
+      do: %__MODULE__{index: index, title: title, description: description, chapters: chapters}
 
   @doc """
   The number of a section, which is what a chapter's number is built on and what

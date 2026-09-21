@@ -78,9 +78,10 @@ defmodule ArchiDep.CourseSite.Structure do
   Work out what the course is from what a build has read of it.
 
   The declarations are the decoded contents of the course's data file: a mapping
-  with a `sections` list of titles, in order, and a `cheatsheets` list of slugs,
-  also in order. They are validated here rather than by whatever read the file,
-  so that `ArchiDep.CourseSite.Build` stays the one place that fetches bytes.
+  with a `sections` list, in order, each with a title and optionally a
+  description, and a `cheatsheets` list of slugs, also in order. They are
+  validated here rather than by whatever read the file, so that
+  `ArchiDep.CourseSite.Build` stays the one place that fetches bytes.
 
   The front matter must cover every document and cheatsheet of the tree. A page
   missing from it is the caller having read one thing and planned another, not a
@@ -90,8 +91,8 @@ defmodule ArchiDep.CourseSite.Structure do
           {:ok, t()} | {:error, nonempty_list(error())}
   def plan(%ContentTree{} = tree, front_matter, declarations) when is_map(front_matter) do
     case declared(declarations) do
-      {:ok, {section_titles, cheatsheet_slugs}} ->
-        build(tree, front_matter, section_titles, cheatsheet_slugs)
+      {:ok, {section_declarations, cheatsheet_slugs}} ->
+        build(tree, front_matter, section_declarations, cheatsheet_slugs)
 
       {:error, errors} ->
         {:error, errors}
@@ -255,11 +256,13 @@ defmodule ArchiDep.CourseSite.Structure do
   defp chapter_pages(%Chapter{slides: %DocumentRef{} = deck} = chapter),
     do: [Chapter.page_ref(chapter), {:document, deck}]
 
-  defp build(tree, front_matter, section_titles, cheatsheet_slugs) do
+  defp build(tree, front_matter, section_declarations, cheatsheet_slugs) do
     sections =
-      section_titles
+      section_declarations
       |> Enum.with_index(1)
-      |> Enum.map(fn {title, index} -> Section.new(index, title) end)
+      |> Enum.map(fn {{title, description}, index} ->
+        Section.new(index, title, [], description)
+      end)
 
     errors =
       duplicate_section_slugs(sections) ++
@@ -463,7 +466,7 @@ defmodule ArchiDep.CourseSite.Structure do
     titles = Enum.map(sections, &section_title/1)
 
     if Enum.all?(titles, &(&1 != :error)),
-      do: {:ok, titles},
+      do: section_descriptions(sections, titles),
       else:
         malformed(
           ~s{expected "sections" to be a list of mappings each with a non-empty title, got: #{inspect(sections)}}
@@ -478,6 +481,36 @@ defmodule ArchiDep.CourseSite.Structure do
   end
 
   defp section_title(_section), do: :error
+
+  defp section_descriptions(sections, titles) do
+    described = Enum.zip_with(sections, titles, &section_description/2)
+
+    case Enum.flat_map(described, &errors_of/1) do
+      [] -> {:ok, Enum.map(described, &value_of/1)}
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
+  defp section_description(section, title) do
+    case Map.get(section, "description") do
+      nil ->
+        {:ok, {title, nil}}
+
+      description when is_binary(description) ->
+        if String.trim(description) == "",
+          do: invalid_section_description(title, description),
+          else: {:ok, {title, description}}
+
+      other ->
+        invalid_section_description(title, other)
+    end
+  end
+
+  defp invalid_section_description(title, description),
+    do:
+      malformed(
+        ~s{expected the description of section #{inspect(title)} to be a non-empty string, got: #{inspect(description)}}
+      )
 
   defp declared_cheatsheets(nil), do: malformed(~s{the "cheatsheets" key is missing})
 

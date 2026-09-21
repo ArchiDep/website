@@ -1,9 +1,9 @@
 defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   @moduledoc """
   The index of the course an AI agent reads, following the
-  [`/llms.txt`](https://llmstxt.org) convention: every chapter of the edition
-  being taught, what each is, where it is, and the tutor notes of those that
-  have some.
+  [`/llms.txt`](https://llmstxt.org) convention: every section of the edition
+  being taught with what it teaches, every chapter with what it is and where it
+  is, and the tutor notes of those that have some.
 
   ## Who reads it, and what that decides
 
@@ -162,9 +162,14 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
     """
     ## #{Section.num(section)} #{section.title}
 
-    #{Enum.map_join(section.chapters, &chapter(&1, summaries, urls))}\
+    #{section_description(section)}#{Enum.map_join(section.chapters, &chapter(&1, summaries, urls))}\
     """
   end
+
+  # What a section teaches is what tells the reader how deep its chapters go, so
+  # it is given whole rather than cut down like a chapter's summary.
+  defp section_description(%Section{description: nil}), do: ""
+  defp section_description(%Section{description: description}), do: wrap(description) <> "\n"
 
   defp chapter(%Chapter{} = chapter, summaries, urls) do
     page = Chapter.page_ref(chapter)

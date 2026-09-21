@@ -22,10 +22,16 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxtTest do
 
       structure = %Structure{
         sections: [
-          Section.new(1, "Introduction", [
-            Chapter.new(cli, "Command Line", slides: cli_slides),
-            Chapter.new(hello_shell, "Hello Shell")
-          ]),
+          Section.new(
+            1,
+            "Introduction",
+            [
+              Chapter.new(cli, "Command Line", slides: cli_slides),
+              Chapter.new(hello_shell, "Hello Shell")
+            ],
+            "The command line and remote access to a server with SSH, which every later " <>
+              "section relies on."
+          ),
           Section.new(2, "Version Control", [
             Chapter.new(branching, "Git Branching"),
             Chapter.new(todolist, "PHP Todolist", graded?: true)
@@ -100,6 +106,9 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxtTest do
              Built from revision f00dcafe.
 
              ## 100 Introduction
+
+             The command line and remote access to a server with SSH, which every later
+             section relies on.
 
              - [101 Command Line](https://archidep.example.com/2026/course/101-command-line/): subject.
                Learn to use the command line.

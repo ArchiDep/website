@@ -194,10 +194,11 @@ list falls back to its title the same way.
 
 ### What the course declares about itself
 
-Two things no document states: which sections the course has, and in what order
-its cheatsheets go. Both are declared in `course/course.yml`, read by
-[`Build.declarations/1`](./build.ex) and validated by `Structure.plan/3` — bytes
-in the one module that fetches them, rules in the pure one beside it.
+Two things no document states: which sections the course has, with what each
+teaches, and in what order its cheatsheets go. Both are declared in
+`course/course.yml`, read by [`Build.declarations/1`](./build.ex) and validated
+by `Structure.plan/3` — bytes in the one module that fetches them, rules in the
+pure one beside it.
 
 The cheatsheet list is **closed**: a cheatsheet the list does not name, or a
 name with no cheatsheet behind it, is refused: a cheatsheet has no number to be
