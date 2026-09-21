@@ -390,9 +390,10 @@ the student. The live site lists every chapter in an index for AI agents,
 index.
 
 - **They are published as they are written**, as a file of the chapter's page
-  under a digested name, not rendered. So no Liquid: refer to another chapter by
-  its number ("see 504"), which the agent can look up in the index, and to a
-  heading of the exercise by its text.
+  under a digested name, not rendered. So no Liquid: refer to an earlier chapter
+  by its number ("see 504"), which the agent can look up in the index, to a
+  later one by its title, since a chapter not taught yet may be renumbered, and
+  to a heading of the exercise by its text.
 - **They are public.** Nothing links to them from the site's pages, but anyone
   who reads `/llms.txt` can read them, students included.
 - Write them in English, like the rest of the material.
@@ -407,14 +408,17 @@ apply:
 
 1. **Starting point**: the earlier exercises the chapter builds on, and what
    should already be installed, configured or running when it starts.
-2. **Learning objectives**: what the chapter is meant to teach.
+2. **Learning objectives**: what the chapter is meant to teach, and how deep it
+   goes: what it deliberately leaves out, so that the tutor does not explain it.
 3. **Mental model**: what the student should understand afterwards.
-4. **Stages**: for an exercise a program guides, what each of its stages asks
+4. **Where it leads**: the later chapters that rely on it, and for what. It is
+   what answers a student asking what the exercise was for.
+5. **Stages**: for an exercise a program guides, what each of its stages asks
    and what the student sees.
-5. **Common pitfalls**: where students usually get stuck, with the symptom they
+6. **Common pitfalls**: where students usually get stuck, with the symptom they
    see.
-6. **Hints**: for each pitfall, hints from the smallest to the most explicit.
-7. **Key steps**: the steps worth checking, each with the question to ask before
+7. **Hints**: for each pitfall, hints from the smallest to the most explicit.
+8. **Key steps**: the steps worth checking, each with the question to ask before
    and after it and the output to expect.
 
 ### Special Tags and Features
