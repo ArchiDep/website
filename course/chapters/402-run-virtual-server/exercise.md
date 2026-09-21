@@ -54,19 +54,24 @@ machine's name, region, image and size):
 
 {% callout animate: true %}
 
-**Make sure to select the `Ubuntu 26.04` image (x64) and the `B2ats_v2` size.**
-If you select a VM size that is too expensive, **YOU WILL RUN OUT OF FREE
-CREDITS BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new VM
-and will have to reinstall your VM from scratch (including all deployment
-exercises you may already have completed).
+**Make sure to select the `Ubuntu 26.04` image (x64) and the `B2ats_v2` size**
+(or the `B1s` size if `B2ats_v2` is not available in any of your regions). If
+you select a VM size that is too expensive, **YOU WILL RUN OUT OF FREE CREDITS
+BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new VM and will
+have to reinstall your VM from scratch (including all deployment exercises you
+may already have completed).
 
 {% endcallout %}
 
 {% note type: troubleshooting %}
 
 If the correct size is not selected, you can select it from the complete list of
-VM sizes. If you cannot select the `B2ats_v2` size, try selecting another
-availability zone (or another of the regions you are allowed to use).
+VM sizes. If you cannot select the `B2ats_v2` size (for example, if it is listed
+under **Insufficient quota**), try selecting another availability zone (or
+another of the regions you are allowed to use).
+
+If `B2ats_v2` is not available in any of your regions, select the `B1s` size
+instead.
 
 ![Azure: virtual machine size](images/azure-vm-size.png)
 
@@ -207,7 +212,8 @@ your disposal for this course.
 
 ### :exclamation: Create your server
 
-Double-check that you are launching one virtual machine of size `B2ats_v2`.
+Double-check that you are launching one virtual machine of size `B2ats_v2` (or
+`B1s`).
 
 🎉 Create your virtual machine!
 
