@@ -813,13 +813,7 @@ opens an editor when you describe a change, and on many systems that editor is
 Vim. You find yourself in a full-screen editor where what you type does nothing,
 or something you did not ask for, and where none of the usual ways out work.
 
-<!-- TODO: screenshot — the Vim ambush. Run `git commit` with staged changes
-     and `EDITOR=vim`, and capture the editor it opens: the empty first line
-     with the cursor on it, the `#` comment lines below explaining what to
-     write, and the status line at the bottom. This is the screen students
-     actually meet by accident, so it is the one worth recognising. Save it as
-     images/vim-git-commit.png and replace this comment with:
-     ![Vim opened by git commit](images/vim-git-commit.png) -->
+![Vim opened by git commit](images/vim-git-message.png)
 
 If this happens (_and it will_), there's **one** imperative rule to follow:
 
@@ -1207,15 +1201,7 @@ nothing at all. Whenever you are lost, press `Esc` and look there.
 The **Normal** mode of Vim is the one you're in when it starts.
 In this mode, you can move the cursor around with the arrow keys.
 
-<!-- TODO: screenshot — Normal mode. Open a file that already contains two or
-     three lines of text with `vim test.txt` and capture it untouched: the
-     text, the cursor as a solid block on the first character, the column of
-     `~` characters marking the lines past the end of the file, and the bottom
-     line showing the name of the file and no `-- INSERT --`. Shoot this one,
-     the Insert mode one and the Command mode one on the same file and in the
-     same window, so that the three can be compared. Save it as
-     images/vim-normal-mode.png and replace this comment with:
-     ![Vim in normal mode](images/vim-normal-mode.png) -->
+![Vim in normal mode](images/vim-normal-mode.png)
 
 {% note %}
 
@@ -1287,12 +1273,7 @@ to start typing:
 Vim prints `-- INSERT --` in the bottom-left corner to tell you that you are in
 this mode. Type your text, then press `Esc` to go back to the **Normal** mode.
 
-<!-- TODO: screenshot — Insert mode. Same file and window as the Normal mode
-     screenshot, after pressing `i` and typing a few words, so that the two
-     images differ only by the typed text and the indicator. The
-     `-- INSERT --` in the bottom-left corner must be legible. Save it as
-     images/vim-insert-mode.png and replace this comment with:
-     ![Vim in insert mode](images/vim-insert-mode.png) -->
+![Vim in insert mode](images/vim-insert-mode.png)
 
 ### Command mode
 
@@ -1304,6 +1285,8 @@ To enter the **Command** mode, hit the `:` key. The colon appears at the
 is never typed into your text. Press `Enter` to run it, or `Esc` to abandon it
 and go back to the **Normal** mode.
 
+![Typing the :wq command in Vim](images/vim-command-mode.png)
+
 From there, you can use some commands:
 
 | Command     | Effect                                                                |
@@ -1312,14 +1295,6 @@ From there, you can use some commands:
 | `w`         | **W**rite (save) the file and all its modifications                   |
 | `q!`        | Force (**!**) Vim to **q**uit (any unsaved modification will be lost) |
 | `wq` or `x` | **W**rite and **q**uit, i.e. save the file then quit Vim.             |
-
-<!-- TODO: screenshot — Command mode. Same file and window as the other two
-     screenshots, in the middle of typing `:wq`, captured before pressing
-     `Enter`, so that `:wq` is visible at the bottom of the window with the
-     cursor after it. The point is that the command went to the bottom line and
-     not into the text. Save it as images/vim-command-mode.png and replace this
-     comment with:
-     ![Typing the :wq command in Vim](images/vim-command-mode.png) -->
 
 ### Trying it yourself
 
