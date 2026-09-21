@@ -136,19 +136,30 @@ the dashboard functionality is only available during the current semester).
     generating PDFs and building the search index.
   - `src/shared/**/*.{ts,tsx}`: Common TypeScript code used in many client-side
     scripts and build-time tasks.
-  - `test/treasure-hunt.test.sh`: Plays the whole treasure hunt that students
-    set up in "Hello Shell". CI runs it on macOS and Ubuntu; the file says how to
-    run it locally.
-  - `test/avalon.test.sh`: Plays the remote land of Avalon of "Hello SSH", from
-    a student's computer against the SSH exercise server, both in Docker
-    containers built from `test/avalon/`. CI runs it on Ubuntu; the file says
-    how to run it locally.
   - `tsconfig.json`: Base TypeScript configuration file.
   - `tsconfig.assets.json`: TypeScript configuration for client-side
     assets.
   - `tsconfig.scripts.json`: TypeScript configuration for build-time scripts.
   - `webpack.config.cjs`: Webpack configuration file for bundling client-side
     assets.
+
+### Exercise Scripts
+
+Some exercises have students run scripts, each tested by a script in `test/`
+that plays it the way a student would:
+
+- `chapters/102-hello-shell/treasure-hunt.sh`: The treasure hunt of "Hello
+  Shell", which students set up on their own computer. Tested by
+  `test/treasure-hunt.test.sh`, which CI runs on macOS and Ubuntu.
+- `chapters/104-hello-ssh/avalon/`: The remote land of Avalon of "Hello SSH", on
+  the SSH exercise server: the `dock` that builds it, and the `impostor` server.
+  Tested by `test/avalon.test.sh`, from a student's computer against the server,
+  both in Docker containers built from `test/avalon/`. CI runs it on Ubuntu.
+
+The Avalon test also plays the treasure hunt, to bring its treasure to Avalon,
+so it depends on the treasure hunt as much as on Avalon. Run both tests locally
+whenever you change either script or either test, rather than waiting for CI.
+Each test file says how to run it.
 
 ---
 

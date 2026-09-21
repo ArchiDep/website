@@ -19,3 +19,6 @@ and automated agents interacting with this project.
   in them you could not check, such as an expected output you could not run.
   Only keep existing notes up to date: writing a chapter's notes from scratch is
   a task of its own, done when asked.
+- **Run the [script tests](./CONTRIBUTING.md#exercise-scripts) yourself** when a
+  change touches what they play, and report their result. If you cannot run
+  one, say so instead of reporting the change as done.
