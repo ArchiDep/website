@@ -841,173 +841,20 @@ editor](#setting-nano-as-the-default-editor).
 
 {% endnote %}
 
-### WHY?!
+### Should you learn it?
 
-Why would you want to learn it?
+Knowing how to escape Vim is enough for this course: nano is the editor we
+suggest you use, and every exercise that asks you to edit a file on a server
+works with it.
 
-Sometimes it's just the **only editor you have** (e.g. on a server). It is also
-much more powerful than nano and will let you edit text at the speed of light
-once you know your way around it. Some developers use nothing else.
+Vim is worth more than that, though, if you want to be at home on the command
+line. Sometimes it's just the **only editor you have** (e.g. on a server). It is
+also much more powerful than nano and will let you edit text at the speed of
+light once you know your way around it. Some developers use nothing else.
 
-Open a file by running the `vim` command with the path to the file you want to
-create/edit:
-
-```bash
-$> vim test.txt
-```
-
-### How Vim works
-
-Vim can be unsettling at first, until you know how it works.
-
-**Let go of your fear. And your mouse**, it's mostly useless in Vim. You control
-Vim by **typing**.
-
-The first thing to understand with Vim is that it has _3 modes_:
-
-- **Normal** mode (the one you're in when Vim starts).
-- **Insert** mode (the one to use to insert text).
-- **Command** mode (the one to use to save and/or quit).
-
-To go into each mode, use these keys:
-
-| From           | Type  | To go to |
-| :------------- | :---- | :------- |
-| Normal         | `i`   | Insert   |
-| Normal         | `:`   | Command  |
-| Insert/Command | `Esc` | Normal   |
-
-Since the same keys do different things in different modes, you must always
-know which one you are in. **The bottom line of the window tells you**: in
-**Insert** mode, Vim prints `-- INSERT --` in the bottom-left corner; in
-**Command** mode, it shows the `:` and the command you are typing there; in
-**Normal** mode, it shows neither, only the name of the file it opened, or
-nothing at all. Whenever you are lost, press `Esc` and look there.
-
-### Normal mode
-
-The **Normal** mode of Vim is the one you're in when it starts.
-In this mode, you can move the cursor around with the arrow keys.
-
-<!-- TODO: screenshot — Normal mode. Open a file that already contains two or
-     three lines of text with `vim test.txt` and capture it untouched: the
-     text, the cursor as a solid block on the first character, the column of
-     `~` characters marking the lines past the end of the file, and the bottom
-     line showing the name of the file and no `-- INSERT --`. Shoot this one,
-     the Insert mode one and the Command mode one on the same file and in the
-     same window, so that the three can be compared. Save it as
-     images/vim-normal-mode.png and replace this comment with:
-     ![Vim in normal mode](images/vim-normal-mode.png) -->
-
-{% note %}
-
-The `~` characters down the left side of the window are **not** in your file.
-Vim draws them to mark the lines after the last one, so an empty file is a full
-screen of them.
-
-{% endnote %}
-
-You can also use some commands to interact with the text:
-
-| Command | Effect                                                          |
-| :------ | :-------------------------------------------------------------- |
-| `x`     | Delete the character under the cursor                           |
-| `dw`    | Delete a word, with the cursor standing before the first letter |
-| `dd`    | Delete the complete line the cursor is on                       |
-| `u`     | Undo the last command                                           |
-| `i`     | Enter **Insert** mode (to type text)                            |
-| `:`     | Enter **Command** mode (to save and/or quit)                    |
-
-{% note type: tip %}
-
-At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
-
-{% endnote %}
-
-### Insert mode
-
-The **Insert** mode is the one in which Vim behaves like the editor you expect:
-what you type goes into the file.
-
-You enter it from the **Normal** mode, with the key that matches where you want
-to start typing:
-
-| Command | Effect                                           |
-| :------ | :----------------------------------------------- |
-| `i`     | **I**nsert before the character under the cursor |
-| `a`     | **A**ppend after the character under the cursor  |
-| `o`     | **O**pen a new empty line below the current one  |
-
-Vim prints `-- INSERT --` in the bottom-left corner to tell you that you are in
-this mode. Type your text, then press `Esc` to go back to the **Normal** mode.
-
-<!-- TODO: screenshot — Insert mode. Same file and window as the Normal mode
-     screenshot, after pressing `i` and typing a few words, so that the two
-     images differ only by the typed text and the indicator. The
-     `-- INSERT --` in the bottom-left corner must be legible. Save it as
-     images/vim-insert-mode.png and replace this comment with:
-     ![Vim in insert mode](images/vim-insert-mode.png) -->
-
-### Command mode
-
-The **Command** mode, which you can only access from the **Normal** mode,
-is the one you'll mostly use to save and/or quit.
-
-To enter the **Command** mode, hit the `:` key. The colon appears at the
-**bottom of the window**, and so does everything you type after it: a command
-is never typed into your text. Press `Enter` to run it, or `Esc` to abandon it
-and go back to the **Normal** mode.
-
-From there, you can use some commands:
-
-| Command     | Effect                                                                |
-| :---------- | :-------------------------------------------------------------------- |
-| `q`         | **Q**uit Vim (will fail if you have unsaved modifications)            |
-| `w`         | **W**rite (save) the file and all its modifications                   |
-| `q!`        | Force (**!**) Vim to **q**uit (any unsaved modification will be lost) |
-| `wq` or `x` | **W**rite and **q**uit, i.e. save the file then quit Vim.             |
-
-<!-- TODO: screenshot — Command mode. Same file and window as the other two
-     screenshots, in the middle of typing `:wq`, captured before pressing
-     `Enter`, so that `:wq` is visible at the bottom of the window with the
-     cursor after it. The point is that the command went to the bottom line and
-     not into the text. Save it as images/vim-command-mode.png and replace this
-     comment with:
-     ![Typing the :wq command in Vim](images/vim-command-mode.png) -->
-
-### Trying it yourself
-
-The quickest way to stop being afraid of Vim is to go through one complete edit
-from beginning to end. Move to a directory where you can safely create a file,
-then:
-
-1. Run `vim test.txt` to open a new, empty file. You are in **Normal** mode:
-   there is no `-- INSERT --` at the bottom of the window.
-2. Press `i` to switch to **Insert** mode. `-- INSERT --` appears in the
-   bottom-left corner.
-3. Type a line of text, for example `Hello from Vim.`
-4. Press `Esc` to go back to **Normal** mode. The `-- INSERT --` indicator
-   disappears.
-5. Type `:wq`. The three characters appear at the bottom of the window instead
-   of in your text. Press `Enter`: Vim saves the file and quits.
-6. Run `cat test.txt` to check that your line is there.
-
-Do it a few times, and the three modes stop being mysterious.
-
-### Learning more
-
-This subject covers just enough Vim to survive meeting it. If you want to
-actually learn it, Vim comes with its own interactive tutorial, which takes
-roughly half an hour:
-
-```bash
-$> vimtutor
-```
-
-It is installed together with Vim on most systems. If your own machine does not
-have it, the [exercise server]({% link chapters/104-hello-ssh/exercise.md %})
-you will connect to later in this course does. [Open
-Vim](https://openvim.com) is an equivalent tutorial that runs in your browser.
+If that tempts you, [the appendix on Vim](#appendix-vim) at the end of this page
+explains how it works, walks you through one complete edit, and points you at a
+tutorial.
 
 ## The `PATH` variable
 
@@ -1269,9 +1116,13 @@ The next time you run a command, your shell will **first look** in this director
 - You must re-open your CLI for the change to take effect: the shell
   configuration file (e.g. `~/.bashrc`) is only applied when the shell starts.
 
-## Unleash your terminal
+## Appendix: unleash your terminal
 
 <img class='w100' src='images/unleash-your-terminal.png' />
+
+This appendix is a collection of things you may enjoy once the command line
+stops feeling foreign. None of it is needed for this course, and none of it is
+installed for you.
 
 ### Oh My Zsh
 
@@ -1309,6 +1160,200 @@ A Terminal [multiplexer](https://en.wikipedia.org/wiki/Multiplexer) like:
 ![Terminal multiplexer](images/terminal-multiplexer.png)
 
 {% endcols %}
+
+## Appendix: Vim
+
+This appendix is for the curious. Nothing in this course requires Vim — nano
+does everything the exercises ask for — but if you want to learn the editor
+rather than merely escape it, this is where to start.
+
+Open a file by running the `vim` command with the path to the file you want to
+create/edit:
+
+```bash
+$> vim test.txt
+```
+
+### How Vim works
+
+Vim can be unsettling at first, until you know how it works.
+
+**Let go of your fear. And your mouse**, it's mostly useless in Vim. You control
+Vim by **typing**.
+
+The first thing to understand with Vim is that it has _3 modes_:
+
+- **Normal** mode (the one you're in when Vim starts).
+- **Insert** mode (the one to use to insert text).
+- **Command** mode (the one to use to save and/or quit).
+
+To go into each mode, use these keys:
+
+| From           | Type  | To go to |
+| :------------- | :---- | :------- |
+| Normal         | `i`   | Insert   |
+| Normal         | `:`   | Command  |
+| Insert/Command | `Esc` | Normal   |
+
+Since the same keys do different things in different modes, you must always
+know which one you are in. **The bottom line of the window tells you**: in
+**Insert** mode, Vim prints `-- INSERT --` in the bottom-left corner; in
+**Command** mode, it shows the `:` and the command you are typing there; in
+**Normal** mode, it shows neither, only the name of the file it opened, or
+nothing at all. Whenever you are lost, press `Esc` and look there.
+
+### Normal mode
+
+The **Normal** mode of Vim is the one you're in when it starts.
+In this mode, you can move the cursor around with the arrow keys.
+
+<!-- TODO: screenshot — Normal mode. Open a file that already contains two or
+     three lines of text with `vim test.txt` and capture it untouched: the
+     text, the cursor as a solid block on the first character, the column of
+     `~` characters marking the lines past the end of the file, and the bottom
+     line showing the name of the file and no `-- INSERT --`. Shoot this one,
+     the Insert mode one and the Command mode one on the same file and in the
+     same window, so that the three can be compared. Save it as
+     images/vim-normal-mode.png and replace this comment with:
+     ![Vim in normal mode](images/vim-normal-mode.png) -->
+
+{% note %}
+
+The `~` characters down the left side of the window are **not** in your file.
+Vim draws them to mark the lines after the last one, so an empty file is a full
+screen of them.
+
+{% endnote %}
+
+You can also use some commands to interact with the text:
+
+| Command | Effect                                                          |
+| :------ | :-------------------------------------------------------------- |
+| `x`     | Delete the character under the cursor                           |
+| `dw`    | Delete a word, with the cursor standing before the first letter |
+| `dd`    | Delete the complete line the cursor is on                       |
+| `u`     | Undo the last command                                           |
+| `i`     | Enter **Insert** mode (to type text)                            |
+| `:`     | Enter **Command** mode (to save and/or quit)                    |
+
+{% note type: tip %}
+
+At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
+
+{% endnote %}
+
+#### Moving without the arrow keys
+
+The arrow keys work, but Vim users move with four letters instead, sitting
+right under the fingers of your right hand on the home row:
+
+| Key | Moves the cursor |
+| :-- | :--------------- |
+| `h` | Left             |
+| `j` | Down             |
+| `k` | Up               |
+| `l` | Right            |
+
+`h` and `l` are the leftmost and rightmost of the four, which is the easiest way
+to remember which is which. `j` looks like an arrow pointing down, which takes
+care of the other two.
+
+This only works in **Normal** mode: in **Insert** mode, those keys type the
+letters `h`, `j`, `k` and `l` into your file, as they should.
+
+{% note type: tip %}
+
+It feels pointless until you stop moving your hand to the arrow keys and back
+several times a minute. Vim is far from the only program that uses these keys
+to move around: `less`, `man` pages and many other terminal tools do too, so
+the habit pays off outside Vim.
+
+{% endnote %}
+
+### Insert mode
+
+The **Insert** mode is the one in which Vim behaves like the editor you expect:
+what you type goes into the file.
+
+You enter it from the **Normal** mode, with the key that matches where you want
+to start typing:
+
+| Command | Effect                                           |
+| :------ | :----------------------------------------------- |
+| `i`     | **I**nsert before the character under the cursor |
+| `a`     | **A**ppend after the character under the cursor  |
+| `o`     | **O**pen a new empty line below the current one  |
+
+Vim prints `-- INSERT --` in the bottom-left corner to tell you that you are in
+this mode. Type your text, then press `Esc` to go back to the **Normal** mode.
+
+<!-- TODO: screenshot — Insert mode. Same file and window as the Normal mode
+     screenshot, after pressing `i` and typing a few words, so that the two
+     images differ only by the typed text and the indicator. The
+     `-- INSERT --` in the bottom-left corner must be legible. Save it as
+     images/vim-insert-mode.png and replace this comment with:
+     ![Vim in insert mode](images/vim-insert-mode.png) -->
+
+### Command mode
+
+The **Command** mode, which you can only access from the **Normal** mode,
+is the one you'll mostly use to save and/or quit.
+
+To enter the **Command** mode, hit the `:` key. The colon appears at the
+**bottom of the window**, and so does everything you type after it: a command
+is never typed into your text. Press `Enter` to run it, or `Esc` to abandon it
+and go back to the **Normal** mode.
+
+From there, you can use some commands:
+
+| Command     | Effect                                                                |
+| :---------- | :-------------------------------------------------------------------- |
+| `q`         | **Q**uit Vim (will fail if you have unsaved modifications)            |
+| `w`         | **W**rite (save) the file and all its modifications                   |
+| `q!`        | Force (**!**) Vim to **q**uit (any unsaved modification will be lost) |
+| `wq` or `x` | **W**rite and **q**uit, i.e. save the file then quit Vim.             |
+
+<!-- TODO: screenshot — Command mode. Same file and window as the other two
+     screenshots, in the middle of typing `:wq`, captured before pressing
+     `Enter`, so that `:wq` is visible at the bottom of the window with the
+     cursor after it. The point is that the command went to the bottom line and
+     not into the text. Save it as images/vim-command-mode.png and replace this
+     comment with:
+     ![Typing the :wq command in Vim](images/vim-command-mode.png) -->
+
+### Trying it yourself
+
+The quickest way to stop being afraid of Vim is to go through one complete edit
+from beginning to end. Move to a directory where you can safely create a file,
+then:
+
+1. Run `vim test.txt` to open a new, empty file. You are in **Normal** mode:
+   there is no `-- INSERT --` at the bottom of the window.
+2. Press `i` to switch to **Insert** mode. `-- INSERT --` appears in the
+   bottom-left corner.
+3. Type a line of text, for example `Hello from Vim.`
+4. Press `Esc` to go back to **Normal** mode. The `-- INSERT --` indicator
+   disappears.
+5. Type `:wq`. The three characters appear at the bottom of the window instead
+   of in your text. Press `Enter`: Vim saves the file and quits.
+6. Run `cat test.txt` to check that your line is there.
+
+Do it a few times, and the three modes stop being mysterious.
+
+### Learning more
+
+You now know enough Vim to open a file, change it and get out again. To go
+further, Vim comes with its own interactive tutorial, which takes roughly half
+an hour:
+
+```bash
+$> vimtutor
+```
+
+It is installed together with Vim on most systems. If your own machine does not
+have it, the [SSH exercise server]({% link chapters/104-hello-ssh/exercise.md
+%}) you will connect to later in this course does. [Open
+Vim](https://openvim.com) is an equivalent tutorial that runs in your browser.
 
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [building-the-future-of-the-command-line]: https://github.com/readme/featured/future-of-the-command-line
