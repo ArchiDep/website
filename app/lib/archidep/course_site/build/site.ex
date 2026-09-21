@@ -50,6 +50,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
 
   alias ArchiDep.CourseSite.Build.ContentTree
   alias ArchiDep.CourseSite.Build.LinkCheck
+  alias ArchiDep.CourseSite.Build.LlmsTxt
   alias ArchiDep.CourseSite.Build.NotFound
   alias ArchiDep.CourseSite.Build.PdfNames
   alias ArchiDep.CourseSite.Build.SearchIndex
@@ -100,6 +101,11 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # `ArchiDep.CourseSite.Build.NotFound`.
   @not_found_file "/404.html"
 
+  # What an AI agent reads to find its way around the course. It sits at the
+  # mount point with the 404 page, being the one address an agent is told, and
+  # only the live build writes one — see `ArchiDep.CourseSite.Build.LlmsTxt`.
+  @llms_file "/llms.txt"
+
   @enforce_keys [:files, :pages]
   defstruct [:files, :pages]
 
@@ -127,12 +133,12 @@ defmodule ArchiDep.CourseSite.Build.Site do
       |> pages()
       |> Enum.reduce({[], []}, fn planned_page, {planned, errors} ->
         case page(planned_page, inputs, options, statuses) do
-          {:ok, files, pages, entries} -> {[{files, pages, entries} | planned], errors}
+          {:ok, planned_files} -> {[planned_files | planned], errors}
           {:error, page_errors} -> {planned, Enum.reverse(page_errors) ++ errors}
         end
       end)
 
-    collect(planned, errors, build_files(inputs, options, statuses), options)
+    collect(planned, errors, build_files(inputs, options, statuses), inputs.structure, options)
   end
 
   @doc """
@@ -148,24 +154,49 @@ defmodule ArchiDep.CourseSite.Build.Site do
   # The index goes in over the pages rather than under them, being derived from
   # what they say: a page is a directory holding an `index.html`, so there is no
   # path it could take from one.
-  defp collect(planned, [], build, options) do
-    {files, pages, entries} =
-      planned |> Enum.reverse() |> Enum.reduce({build, [], []}, &merge/2)
+  defp collect(planned, [], build, structure, options) do
+    {files, pages, entries, summaries} =
+      planned |> Enum.reverse() |> Enum.reduce({build, [], [], %{}}, &merge/2)
 
     indexed = entries ++ SearchIndex.application_entries(UrlContext.local(options.urls))
 
     {:ok,
      %__MODULE__{
-       files: Map.put(files, search_path(options.urls), search_json(indexed)),
+       files:
+         files
+         |> Map.put(search_path(options.urls), search_json(indexed))
+         |> put_llms_txt(structure, summaries, options),
        pages: pages
      }}
   end
 
-  defp collect(_planned, [_first | _rest] = errors, _build, _options),
+  defp collect(_planned, [_first | _rest] = errors, _build, _structure, _options),
     do: {:error, Enum.sort(Enum.reverse(errors))}
 
-  defp merge({page_files, page_pages, page_entries}, {files, pages, entries}),
-    do: {Map.merge(files, page_files), pages ++ page_pages, entries ++ page_entries}
+  defp merge(
+         {page_files, page_pages, page_entries, page_summaries},
+         {files, pages, entries, summaries}
+       ),
+       do:
+         {Map.merge(files, page_files), pages ++ page_pages, entries ++ page_entries,
+          Map.merge(summaries, page_summaries)}
+
+  # The index is derived from what the pages say of themselves, so it goes in
+  # with the search index, over the pages rather than under them.
+  defp put_llms_txt(
+         files,
+         structure,
+         summaries,
+         %Options{urls: %UrlContext{mode: :live}} = options
+       ),
+       do:
+         Map.put(
+           files,
+           @llms_file,
+           LlmsTxt.text(structure, summaries, options.urls, options.llms_site_url, options.site)
+         )
+
+  defp put_llms_txt(files, _structure, _summaries, %Options{}), do: files
 
   # Every page of the site, in the order the site is read: the home page, then a
   # chapter's own page and the deck it presents, section by section, and the
@@ -205,7 +236,9 @@ defmodule ArchiDep.CourseSite.Build.Site do
     with {:ok, content} <- render(page, context, source_path),
          {:ok, html} <- lay_out(page, content, context, entry, section, inputs, options, statuses),
          {:ok, entries} <- index(page, entry, content, context, options) do
-      {:ok, page_files(page, options.urls, html), link_check_pages(page, content, html), entries}
+      {:ok,
+       {page_files(page, options.urls, html), link_check_pages(page, content, html), entries,
+        %{page => PageMetadata.summary(context, excerpt(content))}}}
     end
   end
 

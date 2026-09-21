@@ -75,7 +75,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       dirs = course_fixture(tmp_dir)
       urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 42)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 43)}
       assert written(dirs.output_dir) == expected_build("/2026")
     end
 
@@ -91,7 +91,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
           absolute_base_url: "https://archidep.example.com"
         )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 42)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 43)}
 
       assert written(dirs.output_dir) == %{
                expected_build("/2026")
@@ -110,7 +110,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
           live_site_url: "https://archidep.example.com"
         )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 41)}
       assert written(dirs.output_dir) == expected_build("/2025", false, :archive)
     end
 
@@ -274,7 +274,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         "---\ntitle: Command Line\n---\n\n![CLI](images/cli.jpg)\n"
       )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 42)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 43)}
     end
 
     test "says which of an edition's links lead nowhere", %{tmp_dir: tmp_dir} do
@@ -296,8 +296,8 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     end
   end
 
-  # The smallest course a build can be run over: one chapter with a picture
-  # beside it, the home page, the two files the course declares itself with, the
+  # The smallest course a build can be run over: one chapter with a picture and
+  # tutor notes beside it, the home page, the two files the course declares itself with, the
   # files anchored at the mount point and one asset.
   defp course_fixture(tmp_dir) do
     dirs = %{
@@ -323,6 +323,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     )
 
     write!(dirs.course_dir, "chapters/101-command-line/images/cli.jpg", "a picture")
+    write!(dirs.course_dir, "chapters/101-command-line/tutor.md", "# Tutor notes\n")
 
     write!(
       dirs.course_dir,
@@ -364,24 +365,26 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       ] ++ build_opts
   end
 
-  # A build that writes the home page twice writes one file more, which is the
-  # only thing an edition changes about what a build reports of itself.
+  # A build that writes the home page twice writes one file more, and a build
+  # that is not the live site one file less, having no llms.txt: those are the
+  # only things that change what a build reports of itself.
   defp expected_report(dirs, overrides \\ []),
     do: %Report{
       output_dir: dirs.output_dir,
       pages: 2,
       chapters: 1,
-      files: Keyword.get(overrides, :files, 41),
-      page_assets: 1,
+      files: Keyword.get(overrides, :files, 42),
+      page_assets: 2,
       assets: 1
     }
 
   # The whole of what a build leaves behind: the two pages as the test layout
   # writes them down, the three files a build makes of itself, the marks
-  # anchored at its mount point, the picture beside a page and the asset the
-  # build carries. An edition holds all of its own under its prefix; what is
-  # anchored at the mount point sits beside it, and so does a second copy of the
-  # home page for as long as that edition is the one being taught.
+  # anchored at its mount point, the picture and tutor notes beside a page and
+  # the asset the build carries. An edition holds all of its own under its
+  # prefix; what is anchored at the mount point sits beside it, and so do a
+  # second copy of the home page for as long as that edition is the one being
+  # taught and, on the live site, the index an agent reads.
   defp expected_build(edition \\ "", home_at_base? \\ true, mode \\ :live) do
     home = "/|index.md|Architecture & Deployment · ArchiDep|||CLI|page:::<p>Welcome.</p>"
     home_url = if home_at_base?, do: "/", else: edition <> "/"
@@ -392,6 +395,8 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         "/course/101-command-line/|chapters/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|CLI|page:::<p>Type.</p>",
       (edition <> "/course/101-command-line/images/cli-#{digest("a picture")}.jpg") =>
         "a picture",
+      (edition <> "/course/101-command-line/tutor-#{digest("# Tutor notes\n")}.md") =>
+        "# Tutor notes\n",
       (edition <> "/assets/theme/theme.css") => "body {}",
       (edition <> "/archidep.json") => archidep_json(edition, home_url),
       (edition <> "/search-test.json") => search_json(edition, home_url, mode),
@@ -403,6 +408,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       |> Map.new(&{"/" <> &1, &1})
       |> Map.put("/404.html", not_found_html(home_url))
       |> then(&if home_at_base?, do: Map.put(&1, "/index.html", home), else: &1)
+      |> then(&if mode == :live, do: Map.put(&1, "/llms.txt", llms_txt(edition)), else: &1)
 
     Map.merge(edition_files, mount_point)
   end
@@ -487,6 +493,31 @@ defmodule ArchiDep.CourseSite.BuilderTest do
 
   defp version_json do
     json(object(version: "1.2.3", git: object(branch: "main", revision: "abc123")))
+  end
+
+  defp llms_txt(edition) do
+    """
+    # ArchiDep
+
+    > The course material of ArchiDep, the media engineering architecture and deployment course, 2025-2026 edition.
+
+    Home page: https://archidep.ch/
+
+    This index lists the chapters of the edition being taught. Past editions stay published under their own year and are not listed here.
+
+    A chapter is identified by its number: the number of its section, a multiple of 100, plus its place in that section (402 is the second chapter of section 400). How far the class has got is published at https://archidep.ch/api/progress as a list of sessions, each recording the section and chapter numbers it finished (`done`), set work on (`due`) and announced for next time (`next`). A number is the first of done, due and next that any session lists it as; a number no session lists has not been reached yet. A session is recorded on the day it is taught, but what it covered may only be filled in at the end of that day. Chapters not reached yet are still being written: they may be renumbered, renamed, rewritten or removed before they are taught, so only what has been taught is final.
+
+    In the course pages, `jde` stands for the student's own username and `W.X.Y.Z` for the IP address of their server. An exercise's "Requirements" section, when it has one, names the earlier exercises whose results it builds on. Some values, such as the details of a student's server, are only shown in the browser of a logged-in student.
+
+    Some chapters have tutor notes, written for an AI tutor helping a student through the chapter: what it teaches, where students usually get stuck, hints, and the questions worth asking at its key steps. They are linked from the chapter's entry.
+
+    Built from revision abc123.
+
+    ## 100 Introduction
+
+    - [101 Command Line](https://archidep.ch#{edition}/course/101-command-line/): subject.
+      - Tutor notes: https://archidep.ch#{edition}/course/101-command-line/tutor-#{digest("# Tutor notes\n")}.md
+    """
   end
 
   defp object(pairs), do: Jason.OrderedObject.new(pairs)

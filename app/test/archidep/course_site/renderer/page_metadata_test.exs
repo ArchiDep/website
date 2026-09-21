@@ -197,6 +197,32 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
     end
   end
 
+  describe "summary/2" do
+    test "says what a page is about in the words of its opening" do
+      assert summary_of(
+               @subject,
+               %{"title" => "Secure Shell (SSH)"},
+               "<p>Learn about <em>SSH</em>.</p>"
+             ) ==
+               "Learn about SSH."
+    end
+
+    test "prefers the description a page declares to its opening" do
+      variables = %{"title" => "How to improve", "description" => "What the course fixes."}
+
+      assert summary_of(@subject, variables, "<p>The deployment has several flaws:</p>") ==
+               "What the course fixes."
+    end
+
+    test "says nothing of a page whose opening says nothing, rather than what the site is about" do
+      assert summary_of(@subject, %{"title" => "Secure Shell (SSH)"}, "<hr />") == nil
+    end
+
+    test "says nothing of a deck that declares nothing, rather than that it is a deck" do
+      assert summary_of(@deck, %{"title" => "Secure Shell (SSH)"}, nil) == nil
+    end
+  end
+
   describe "to_html/1" do
     test "writes what a page says about itself as the tags a head carries" do
       metadata = %PageMetadata{
@@ -317,6 +343,17 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadataTest do
       )
 
     PageMetadata.of(context, excerpt_html)
+  end
+
+  defp summary_of(page, variables, excerpt_html) do
+    context =
+      CourseSiteFactory.build(:render_context,
+        page: page,
+        page_variables: variables,
+        urls: CourseSiteFactory.build(:url_context, [])
+      )
+
+    PageMetadata.summary(context, excerpt_html)
   end
 
   defp page_variables(nil), do: %{}

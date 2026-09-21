@@ -14,14 +14,17 @@ defmodule ArchiDep.CourseSite.Build.Site.Options do
   alias ArchiDep.CourseSite.SiteInfo
   alias ArchiDep.CourseSite.Urls.UrlContext
 
+  @llms_site_url "https://archidep.ch"
+
   @enforce_keys [:urls, :site]
-  defstruct [:urls, :site, layout: Chrome, render_options: nil]
+  defstruct [:urls, :site, layout: Chrome, render_options: nil, llms_site_url: @llms_site_url]
 
   @type t :: %__MODULE__{
           urls: UrlContext.t(),
           site: SiteInfo.t(),
           layout: module(),
-          render_options: RenderOptions.t()
+          render_options: RenderOptions.t(),
+          llms_site_url: String.t()
         }
 
   @doc """
@@ -41,6 +44,12 @@ defmodule ArchiDep.CourseSite.Build.Site.Options do
     `RenderOptions.new/0`, which is what every real build wants: its passes are
     not preferences, and a build that dropped one would publish wrong anchors
     and undigested file names.
+  - `:llms_site_url` — the site `llms.txt` links to, with no trailing slash.
+    Defaults to `"https://archidep.ch"`: the index is read by an agent that has
+    been told where it is, so it points at the main site whatever copy of the
+    site wrote it, and it is its own option rather than `:live_site_url`
+    because nothing else about a live build should change with it. See
+    `ArchiDep.CourseSite.Build.LlmsTxt`.
   """
   @spec new(keyword()) :: t()
   def new(opts) when is_list(opts) do
@@ -48,7 +57,8 @@ defmodule ArchiDep.CourseSite.Build.Site.Options do
       urls: urls!(opts),
       site: site!(opts),
       layout: layout!(opts),
-      render_options: render_options!(opts)
+      render_options: render_options!(opts),
+      llms_site_url: llms_site_url!(opts)
     }
   end
 
@@ -91,6 +101,18 @@ defmodule ArchiDep.CourseSite.Build.Site.Options do
       other ->
         raise ArgumentError,
               "Render options must be a #{inspect(RenderOptions)}, got: #{inspect(other)}"
+    end
+  end
+
+  defp llms_site_url!(opts) do
+    url = Keyword.get(opts, :llms_site_url, @llms_site_url)
+
+    if is_binary(url) and String.starts_with?(url, ["http://", "https://"]) and
+         not String.ends_with?(url, "/") do
+      url
+    else
+      raise ArgumentError,
+            "The site llms.txt links to must be an absolute URL with no trailing slash, got: #{inspect(url)}"
     end
   end
 end

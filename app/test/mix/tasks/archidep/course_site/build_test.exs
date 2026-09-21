@@ -61,7 +61,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 43 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
 
@@ -93,7 +93,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 43 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
 
@@ -152,7 +152,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 43 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end
@@ -189,8 +189,9 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       Build.run(args(dirs, progress_file: nil) ++ archive_args())
 
-      # One file fewer than the builds above: an archive keeps its home page
-      # under the edition prefix rather than also at the mount point.
+      # Two files fewer than the builds above: an archive keeps its home page
+      # under the edition prefix rather than also at the mount point, and only
+      # the live site has an index for AI agents.
       assert shell_output() == [
                {:info,
                 "Rendered 2 pages and 1 chapters into 41 files, beside 1 files next to a page and 1 global assets"},
@@ -229,7 +230,7 @@ defmodule Mix.Tasks.Archidep.CourseSite.BuildTest do
 
       assert shell_output() == [
                {:info,
-                "Rendered 2 pages and 1 chapters into 42 files, beside 1 files next to a page and 1 global assets"},
+                "Rendered 2 pages and 1 chapters into 43 files, beside 1 files next to a page and 1 global assets"},
                {:info, "Wrote #{dirs.output_dir}, and every link of it resolves"}
              ]
     end

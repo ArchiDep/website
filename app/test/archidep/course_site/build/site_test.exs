@@ -46,7 +46,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/archidep.json" => archidep_json(),
                "/search-abc123.json" => search_json(),
                "/version.json" => version_json(),
-               "/404.html" => not_found_html()
+               "/404.html" => not_found_html(),
+               "/llms.txt" => llms_txt()
              }
     end
 
@@ -69,6 +70,36 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       assert printed == %{
                served
                | files: %{served.files | "/404.html" => not_found_html(absolute <> "/")}
+             }
+    end
+
+    test "writes no index for agents on a build that is not the live site" do
+      options =
+        options(mode: :backup, live_site_url: "https://archidep.example.com")
+
+      assert {:ok, live} = Site.plan(inputs(), options())
+      assert {:ok, backup} = Site.plan(inputs(), options)
+
+      assert backup == %Site{
+               live
+               | files: %{
+                   "/index.html" =>
+                     "/|index.md|Architecture & Deployment · ArchiDep|||Session|page:::<p>Welcome.</p>",
+                   "/course/101-command-line/index.html" =>
+                     "/course/101-command-line/|chapters/101-command-line/subject.md|Command Line · ArchiDep|Command Line|Introduction|Session|page::what:<h2 id=\"what\">What<a href=\"#what\" aria-label=\"Link to heading 'What'\" data-heading-content=\"What\" class=\"anchor\"></a></h2>",
+                   "/course/101-command-line/slides/index.html" =>
+                     "/course/101-command-line/slides/|chapters/101-command-line/slides.md|Command Line Slides · ArchiDep|Command Line|Introduction|Session|deck:# Command Line\n",
+                   "/course/202-git-branching/slides/index.html" =>
+                     "/course/202-git-branching/slides/|chapters/202-git-branching/slides.md|Git Branching · ArchiDep|Git Branching|Version Control|Session|deck:# Branching\n",
+                   "/course/205-php-todolist/index.html" =>
+                     "/course/205-php-todolist/|chapters/205-php-todolist/exercise.md|PHP Todolist · ArchiDep|PHP Todolist|Version Control|Session|page:::<p>Build it.</p>",
+                   "/cheatsheets/git/index.html" =>
+                     "/cheatsheets/git/|cheatsheets/git/cheatsheet.md|Git Cheatsheet · ArchiDep|Git Cheatsheet||Session|page:::<p>Commit.</p>",
+                   "/archidep.json" => archidep_json(),
+                   "/search-abc123.json" => search_json(dashboard: false),
+                   "/version.json" => version_json(),
+                   "/404.html" => not_found_html()
+                 }
              }
     end
 
@@ -99,7 +130,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                "/archidep.json" => archidep_json(),
                "/search-abc123.json" => search_json(),
                "/version.json" => version_json(),
-               "/404.html" => not_found_html()
+               "/404.html" => not_found_html(),
+               "/llms.txt" => llms_txt()
              }
     end
 
@@ -207,11 +239,11 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     Site.Options.new(
       urls:
         build(:url_context,
-          mode: :live,
+          mode: Keyword.get(overrides, :mode, :live),
           base_path: "",
           version: nil,
           build_id: "abc123",
-          live_site_url: nil,
+          live_site_url: Keyword.get(overrides, :live_site_url),
           absolute_base_url: Keyword.get(overrides, :absolute_base_url),
           pdfs: Keyword.get(overrides, :pdfs, PdfManifest.new(:site, %{}))
         ),
@@ -248,7 +280,10 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       {:document, @cli_slides} =>
         source("---\ntitle: Command Line Slides\n---\n\n# Command Line\n"),
       {:document, @branching} => source("---\ntitle: Git Branching\n---\n\n# Branching\n"),
-      {:document, @todolist} => source("---\ntitle: PHP Todolist\n---\n\nBuild it.\n"),
+      {:document, @todolist} =>
+        source(
+          "---\ntitle: PHP Todolist\ndescription: Deploy the PHP todolist.\n---\n\nBuild it.\n"
+        ),
       {:cheatsheet, "git"} => source("---\ntitle: Git Cheatsheet\n---\n\nCommit.\n")
     }
   end
@@ -364,8 +399,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     )
   end
 
-  defp search_json do
-    json([
+  defp search_json(opts \\ []) do
+    pages = [
       object(
         id: "/",
         type: "home",
@@ -419,7 +454,10 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         subtitle: "Git Cheatsheet",
         text: "Commit.",
         extraText: ""
-      ),
+      )
+    ]
+
+    dashboard = [
       object(
         id: "/app",
         type: "dashboard",
@@ -429,7 +467,43 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
         text: "Manage your user account for the course and register a server for the exercises.",
         extraText: ""
       )
-    ])
+    ]
+
+    json(if Keyword.get(opts, :dashboard, true), do: pages ++ dashboard, else: pages)
+  end
+
+  defp llms_txt do
+    """
+    # ArchiDep
+
+    > The course material of ArchiDep, the media engineering architecture and deployment course, 2025-2026 edition.
+
+    Home page: https://archidep.ch/
+
+    This index lists the chapters of the edition being taught. Past editions stay published under their own year and are not listed here.
+
+    A chapter is identified by its number: the number of its section, a multiple of 100, plus its place in that section (402 is the second chapter of section 400). How far the class has got is published at https://archidep.ch/api/progress as a list of sessions, each recording the section and chapter numbers it finished (`done`), set work on (`due`) and announced for next time (`next`). A number is the first of done, due and next that any session lists it as; a number no session lists has not been reached yet. A session is recorded on the day it is taught, but what it covered may only be filled in at the end of that day. Chapters not reached yet are still being written: they may be renumbered, renamed, rewritten or removed before they are taught, so only what has been taught is final.
+
+    In the course pages, `jde` stands for the student's own username and `W.X.Y.Z` for the IP address of their server. An exercise's "Requirements" section, when it has one, names the earlier exercises whose results it builds on. Some values, such as the details of a student's server, are only shown in the browser of a logged-in student.
+
+    Some chapters have tutor notes, written for an AI tutor helping a student through the chapter: what it teaches, where students usually get stuck, hints, and the questions worth asking at its key steps. They are linked from the chapter's entry.
+
+    Built from revision abc123.
+
+    ## 100 Introduction
+
+    - [101 Command Line](https://archidep.ch/course/101-command-line/): subject.
+      - Slides: https://archidep.ch/course/101-command-line/slides/
+
+    ## 200 Version Control
+
+    - [202 Git Branching](https://archidep.ch/course/202-git-branching/slides/): slides.
+    - [205 PHP Todolist](https://archidep.ch/course/205-php-todolist/): exercise. Deploy the PHP todolist.
+
+    ## Cheatsheets
+
+    - [Git Cheatsheet](https://archidep.ch/cheatsheets/git/)
+    """
   end
 
   defp version_json do

@@ -19,6 +19,7 @@ for AI assistants and automated agents.
   - [File Naming Conventions](#file-naming-conventions)
   - [Document Front Matter](#document-front-matter)
   - [Progress Tracking](#progress-tracking)
+  - [Tutor Notes](#tutor-notes)
   - [Special Tags and Features](#special-tags-and-features)
     - [Notes](#notes)
     - [Callouts](#callouts)
@@ -274,6 +275,9 @@ to extract metadata from filenames and directory structures.
   - Subjects, slides and exercices can have additional files, such as images or
     data files, placed in an `images` subdirectory next to their respective
     Markdown files.
+  - A chapter can have [tutor notes](#tutor-notes) in a `tutor.md` file at the
+    root of its subdirectory. It is the only other Markdown file a chapter may
+    hold; any other **fails the build**.
 - Store cheatsheets in the [`cheatsheets` directory](./cheatsheets).
   - Each cheatsheet should have its own subdirectory named with a short
     URL-friendly name, e.g. `command-line`, `git`.
@@ -375,6 +379,43 @@ archived edition — has no database to read, so it is told where to look with
 The same record is served publicly at `GET /api/progress`, which is what those
 builds read. A build run only to see whether the material builds needs no such
 record: `--progress none` renders a course nobody has taught yet.
+
+### Tutor Notes
+
+A chapter may have **tutor notes**: a `tutor.md` at the root of its directory,
+written for an AI tutor helping a student through the chapter rather than for
+the student. The live site lists every chapter in an index for AI agents,
+`/llms.txt`, which links to each chapter's notes; nothing else links to them.
+[`LlmsTxt`](../app/lib/archidep/course_site/build/llms_txt.ex) documents that
+index.
+
+- **They are published as they are written**, as a file of the chapter's page
+  under a digested name, not rendered. So no Liquid: refer to another chapter by
+  its number ("see 504"), which the agent can look up in the index, and to a
+  heading of the exercise by its text.
+- **They are public.** Nothing links to them from the site's pages, but anyone
+  who reads `/llms.txt` can read them, students included.
+- Write them in English, like the rest of the material.
+
+**They are what gives the tutor the context of the exercise.** An agent may
+only get a summary of a long page from its fetch tool, never sees what a
+student sees in the browser or on their server, and cannot read the
+instructions of an exercise that a program the student runs gives step by step.
+Notes are short and plain text, so they survive where the page does not. Write
+them in these sections, in this order, leaving out a section that does not
+apply:
+
+1. **Starting point**: the earlier exercises the chapter builds on, and what
+   should already be installed, configured or running when it starts.
+2. **Learning objectives**: what the chapter is meant to teach.
+3. **Mental model**: what the student should understand afterwards.
+4. **Stages**: for an exercise a program guides, what each of its stages asks
+   and what the student sees.
+5. **Common pitfalls**: where students usually get stuck, with the symptom they
+   see.
+6. **Hints**: for each pitfall, hints from the smallest to the most explicit.
+7. **Key steps**: the steps worth checking, each with the question to ask before
+   and after it and the output to expect.
 
 ### Special Tags and Features
 

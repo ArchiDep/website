@@ -73,6 +73,39 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                 }}
     end
 
+    test "sorts a chapter's tutor notes as a file of its page rather than as a document" do
+      assert ContentTree.plan([
+               "chapters/102-hello-shell/exercise.md",
+               "chapters/102-hello-shell/tutor.md"
+             ]) ==
+               {:ok,
+                %ContentTree{
+                  documents: %{
+                    DocumentRef.new(102, "hello-shell", :exercise) =>
+                      "chapters/102-hello-shell/exercise.md"
+                  },
+                  cheatsheets: %{},
+                  page_assets: %{
+                    "/course/102-hello-shell/tutor.md" => "chapters/102-hello-shell/tutor.md"
+                  },
+                  ignored: []
+                }}
+    end
+
+    test "refuses tutor notes anywhere but at the root of a chapter directory" do
+      assert ContentTree.plan([
+               "chapters/104-hello-ssh/images/tutor.md",
+               "cheatsheets/git/tutor.md",
+               "images/tutor.md"
+             ]) ==
+               {:error,
+                [
+                  {:unknown_source, "chapters/104-hello-ssh/images/tutor.md"},
+                  {:unknown_source, "cheatsheets/git/tutor.md"},
+                  {:unknown_source, "images/tutor.md"}
+                ]}
+    end
+
     test "sorts a cheatsheet" do
       assert ContentTree.plan([
                "cheatsheets/sysadmin/cheatsheet.md",

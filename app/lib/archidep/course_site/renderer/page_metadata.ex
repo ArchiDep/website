@@ -152,6 +152,20 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
   def title(@site_title), do: @site_title
   def title(page_title), do: page_title <> @title_separator <> @site_title
 
+  @doc """
+  What a page says it is about in its own words, given the opening the site
+  shows of it: the description it declares, or else its opening. `nil` for a
+  page that says nothing of itself, which is where its description falls back
+  on what the site or its deck is.
+
+  That fallback is right for a `<head>`, which must describe the page somehow,
+  and wrong for a listing of the course, where it would claim the same thing of
+  every page it stands in for.
+  """
+  @spec summary(RenderContext.t(), String.t() | nil) :: String.t() | nil
+  def summary(%RenderContext{} = context, excerpt_html),
+    do: declared(context) || from_excerpt(excerpt_html)
+
   defp meta(attributes), do: element("meta", attributes)
   defp link(attributes), do: element("link", attributes)
 
@@ -179,7 +193,7 @@ defmodule ArchiDep.CourseSite.Renderer.PageMetadata do
   end
 
   defp description(context, page_title, excerpt_html) do
-    declared(context) || from_excerpt(excerpt_html) || slides_description(context, page_title) ||
+    summary(context, excerpt_html) || slides_description(context, page_title) ||
       @site_description
   end
 

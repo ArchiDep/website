@@ -587,6 +587,7 @@ it, documented there rather than here:
 | [`Site`](./build/site.ex)                         | every file a build writes and what is in each, which `site_inputs/1` chains the reads for      |
 | [`Builder`](./builder.ex)                         | the order those steps are run in, for a caller that is not a Mix task                          |
 | [`NotFound`](./build/not_found.ex)                | what a static host shows for a path the build never wrote                                      |
+| [`LlmsTxt`](./build/llms_txt.ex)                  | the index of the course an AI agent reads, written by the live build alone                     |
 | [`Structure`](./structure.ex)                     | what the course is, which `course!/2` chains the reads for                                     |
 | [`Headings`](./headings.ex)                       | what a page's headings are called, which `headings!/3` chains the reads for                    |
 | [`Archives.Mapping`](./archives/mapping.ex)       | what each page of a past edition has become, which `archives!/3` chains the reads for          |

@@ -30,6 +30,11 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   content. A Markdown file the content layout does not recognise is an error
   instead, since publishing it raw would serve Markdown as text.
 
+  The one Markdown file that *is* meant to be served as text is a chapter's
+  tutor notes, a `tutor.md` at the root of its directory: it is read by an AI
+  agent rather than by a browser, so it is published as a file of the chapter's
+  page, digest and all, and `ArchiDep.CourseSite.Build.LlmsTxt` links to it.
+
   ## What a chapter may hold
 
   Two rules govern the documents of a chapter, and this is where they are
@@ -100,6 +105,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   @chapter_regex ~r{\Achapters/([1-9]\d\d-[^/]+)/(.+)\z}
   @cheatsheet_regex ~r{\Acheatsheets/([^/]+)/(.+)\z}
   @home_regex ~r{\Aimages/(.+)\z}
+  @tutor_notes_regex ~r{\Achapters/[1-9]\d\d-[^/]+/tutor\.md\z}
 
   # Why a published path must not need percent-encoding:
   # `ArchiDep.CourseSite.Urls.PageAssetManifest`.
@@ -203,6 +209,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   defp classify(source_path) do
     cond do
       littered?(source_path) -> {:ok, :ignored}
+      Regex.match?(@tutor_notes_regex, source_path) -> page_asset(source_path)
       String.ends_with?(source_path, ".md") -> page(source_path)
       true -> page_asset(source_path)
     end
