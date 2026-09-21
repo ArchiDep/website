@@ -66,7 +66,7 @@ working on the exercises if the main site is temporarily down.
 
 ### PDFs
 
-Each page is downloadable as a PDF.
+Each page (subject, slides, exercise) is downloadable as a PDF.
 
 {% note type: warning %}
 
