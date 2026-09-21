@@ -5,6 +5,8 @@ excerpt_separator: <!-- more -->
 
 Learn the basics of Unix networking and how to make TCP connections.
 
+<!-- more -->
+
 **You will need**
 
 - A Unix CLI
@@ -14,8 +16,6 @@ Learn the basics of Unix networking and how to make TCP connections.
 
 - [Unix Basics & Administration]({% link chapters/404-unix-basics/subject.md %})
 - [Unix Processes]({% link chapters/406-unix-processes/subject.md %})
-
-<!-- more -->
 
 ## Useful commands
 

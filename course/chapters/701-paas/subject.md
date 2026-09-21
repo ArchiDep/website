@@ -7,6 +7,8 @@ Learn to deploy web applications on Platform-as-a-Service (PaaS) cloud
 application platforms such as [GitHub Pages][github-pages], [Netlify][netlify]
 and [Render][render].
 
+<!-- more -->
+
 **You will need**
 
 - [Git][git]
@@ -19,8 +21,6 @@ and [Render][render].
   chapters/202-git-branching/slides.md %}), [Collaborating with Git]({% link
   chapters/203-git-collaborating/slides.md %}), [Git hooks]({% link
   chapters/601-git-hooks/subject.md %})
-
-<!-- more -->
 
 ## What is PaaS?
 

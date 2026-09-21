@@ -6,6 +6,8 @@ excerpt_separator: <!-- more -->
 Learn about environment variables, a powerful way to configure applications and
 processes in Unix-like operating systems, and how to manage them.
 
+<!-- more -->
+
 **You will need**
 
 - A Unix CLI
@@ -13,8 +15,6 @@ processes in Unix-like operating systems, and how to manage them.
 **Recommended reading**
 
 - [Unix Processes]({% link chapters/406-unix-processes/subject.md %})
-
-<!-- more -->
 
 ## What is an environment variable?
 

@@ -5,6 +5,8 @@ excerpt_separator: <!-- more -->
 
 Learn what a reverse proxy is, and put it in practice using nginx.
 
+<!-- more -->
+
 **You will need**
 
 - A Unix CLI
@@ -14,8 +16,6 @@ Learn what a reverse proxy is, and put it in practice using nginx.
 
 - [Unix Administration]({% link chapters/404-unix-basics/subject.md %})
 - [Unix Networking]({% link chapters/408-unix-networking/subject.md %})
-
-<!-- more -->
 
 ## Installing nginx
 

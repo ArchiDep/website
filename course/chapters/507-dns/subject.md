@@ -6,6 +6,8 @@ excerpt_separator: <!-- more -->
 Learn the basics of the [Domain Name System (DNS)][dns] and configure a domain
 name for your server with [Gandi.net][gandi].
 
+<!-- more -->
+
 **You will need**
 
 - A server with a public IP address
@@ -14,8 +16,6 @@ name for your server with [Gandi.net][gandi].
 **Recommended reading**
 
 - [Unix Networking]({% link chapters/408-unix-networking/subject.md %})
-
-<!-- more -->
 
 ## DNS zone
 

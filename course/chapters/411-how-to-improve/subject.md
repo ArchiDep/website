@@ -3,7 +3,9 @@ title: How to improve our basic deployment
 ---
 
 The basic SFTP deployment of the PHP TodoList has several flaws which we will
-fix during the rest of the course:
+fix during the rest of the course.
+
+<!-- more -->
 
 - Transfering files manually through SFTP is slow and error-prone. We will use
   **Git** to reliably transfer files [from our central

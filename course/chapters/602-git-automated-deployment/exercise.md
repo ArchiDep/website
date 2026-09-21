@@ -7,10 +7,10 @@ excerpt_separator: <!-- more -->
 This guide describes how to automatically deploy a PHP application when pushing
 commits to a server.
 
+<!-- more -->
+
 It assumes that you have performed the previous [nginx & PHP-FPM exercise]({%
 link chapters/512-nginx-php-fpm-deployment/exercise.md %}).
-
-<!-- more -->
 
 ## :exclamation: Set up directories
 

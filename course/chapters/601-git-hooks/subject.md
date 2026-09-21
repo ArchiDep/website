@@ -5,6 +5,8 @@ excerpt_separator: <!-- more -->
 
 Learn the basics of Git hooks.
 
+<!-- more -->
+
 **You will need**
 
 - A Unix CLI
@@ -17,8 +19,6 @@ Learn the basics of Git hooks.
 - [Collaborating with Git]({% link chapters/203-git-collaborating/slides.md %})
 - [Collaborating with Git]({% link chapters/204-hello-github/exercise.md %})
 - [Shell Scripting]({% link cheatsheets/shell-scripting/cheatsheet.md %})
-
-<!-- more -->
 
 ## What is a Git hook?
 
