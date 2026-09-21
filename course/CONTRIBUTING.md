@@ -393,18 +393,20 @@ index.
   under a digested name, not rendered. So no Liquid: refer to an earlier chapter
   by its number ("see 504"), which the agent can look up in the index, to a
   later one by its title, since a chapter not taught yet may be renumbered, and
-  to a heading of the exercise by its text.
+  to a heading of the chapter's page by its text.
 - **They are public.** Nothing links to them from the site's pages, but anyone
   who reads `/llms.txt` can read them, students included.
 - Write them in English, like the rest of the material.
 
-**They are what gives the tutor the context of the exercise.** An agent may
-only get a summary of a long page from its fetch tool, never sees what a
-student sees in the browser or on their server, and cannot read the
-instructions of an exercise that a program the student runs gives step by step.
-Notes are short and plain text, so they survive where the page does not. Write
-them in these sections, in this order, leaving out a section that does not
-apply:
+**They are what gives the tutor the context of the chapter.** An agent may only
+get a summary of a long page from its fetch tool, never sees what a student sees
+in the browser or on their server, and cannot read the instructions of an
+exercise that a program the student runs gives step by step. Notes are short and
+plain text, so they survive where the page does not. In both of the lists
+below, write the sections in the order given, leaving out any that does not
+apply.
+
+An **exercise's** notes:
 
 1. **Starting point**: the earlier exercises the chapter builds on, and what
    should already be installed, configured or running when it starts.
@@ -420,6 +422,19 @@ apply:
 7. **Hints**: for each pitfall, hints from the smallest to the most explicit.
 8. **Key steps**: the steps worth checking, each with the question to ask before
    and after it and the output to expect.
+
+A **subject's** notes are a map of it, not a summary: a summary would repeat the
+subject and drift from it as soon as the subject is edited, where what it covers
+changes much less often. They are what makes the tutor answer at the depth the
+course teaches, and let an exercise's notes point to them rather than explain
+the material again.
+
+1. **Scope**: what the subject teaches, and how deep.
+2. **Left out**: what it deliberately does not cover, so that the tutor does not
+   bring it in.
+3. **Key concepts and vocabulary**: the terms and mental models the course uses,
+   so that the tutor uses the same words.
+4. **Used in**: which exercises apply which parts of it.
 
 ### Special Tags and Features
 
