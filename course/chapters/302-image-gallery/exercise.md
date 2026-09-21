@@ -2,7 +2,9 @@
 title: The Image Gallery
 ---
 
-An exercise to illustrate a security flaw.
+A demonstration of a security flaw, performed in class by one volunteer while
+the others follow along. If you are not the volunteer, you do not need to do
+anything on this page (unless you wish to reproduce the demonstration).
 
 ## :exclamation: Get your public SSH key
 
