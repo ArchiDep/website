@@ -54,19 +54,19 @@ machine's name, region, image and size):
 
 {% callout animate: true %}
 
-**Make sure to select the `Ubuntu 24.04` image and the `B1s` size.** If you
-select a VM size that is too expensive, **YOU WILL RUN OUT OF FREE CREDITS
-BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new VM and will
-have to reinstall your VM from scratch (including all deployment exercises you
-may already have completed).
+**Make sure to select the `Ubuntu 26.04` image (x64) and the `B2ats_v2` size.**
+If you select a VM size that is too expensive, **YOU WILL RUN OUT OF FREE
+CREDITS BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new VM
+and will have to reinstall your VM from scratch (including all deployment
+exercises you may already have completed).
 
 {% endcallout %}
 
 {% note type: troubleshooting %}
 
 If the correct size is not selected, you can select it from the complete list of
-VM sizes. If you cannot select the `B1s` size, try selecting another
-availability zone (or another region that is not too expensive).
+VM sizes. If you cannot select the `B2ats_v2` size, try selecting another
+availability zone (or another of the regions you are allowed to use).
 
 ![Azure: virtual machine size](images/azure-vm-size.png)
 
@@ -75,14 +75,16 @@ availability zone (or another region that is not too expensive).
 {% note type: tip %}
 
 As a student, you are not allowed to run your virtual machine in any region.
-Choose one of the regions that are recommended for you (these may be different
-for each student):
+Azure only allows each student a handful of regions, and **they are different
+for each student**. Choose one of the regions listed as **Recommended** for you;
+those listed as **Ineligible** will not work:
 
 ![Azure: recommended regions](images/azure-vm-recommended-regions.png)
 
-In general, choosing a region closer to where you are (or where your customers
-are) will reduce latency, and the North/West European regions are among the
-cheapest.
+Among your allowed regions, choosing one closer to where you are (or where your
+customers are) will reduce latency. Prices vary slightly between regions: the
+[cost review](#review-your-monthly-cost) below will tell you if your choice is
+too expensive.
 
 {% endnote %}
 
@@ -205,17 +207,17 @@ your disposal for this course.
 
 ### :exclamation: Create your server
 
-Double-check that you are launching one virtual machine of size `B1s` (**1 X
-Standard B1s**).
+Double-check that you are launching one virtual machine of size `B2ats_v2`.
 
 🎉 Create your virtual machine!
 
 {% note type: troubleshooting %}
 
 If Azure tells you that you cannot create a virtual machine in the region you
-have selected, go back to the [basic
-settings](#configure-basic-settings) and find a region that works.
-**Make sure to re-check your estimated monthly cost afterwards.**
+have selected (some regions, like West Europe, may not accept new customers even
+if they are allowed), go back to the [basic settings](#configure-basic-settings)
+and find a region that works. **Make sure to re-check your estimated monthly
+cost afterwards.**
 
 {% endnote %}
 
@@ -409,7 +411,7 @@ that you can still connect:
 
 ```bash
 $> ssh jde@87.65.43.210
-Welcome to Ubuntu 24.04 LTS
+Welcome to Ubuntu 26.04 LTS
 ...
 ```
 

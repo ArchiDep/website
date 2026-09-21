@@ -10,11 +10,11 @@ defmodule ArchiDep.Support.UbuntuServerContainer do
   round-trip needs a real host. The setup playbook additionally drives
   `ansible.builtin.systemd` (daemon-reload, enabling a unit), which needs a live
   systemd/dbus. This module builds the `test/docker/ubuntu-server` image (Ubuntu
-  noble booting `/sbin/init`, matching the student-VM fleet and authorizing the
-  `test/priv/ssh` client fixture) and runs it as a privileged container, mapping
-  its SSH port to an ephemeral host port. The returned address plugs straight
-  into `ArchiDep.Servers.Ansible.Runner`, whose connection options use the same
-  fixture key.
+  resolute booting `/sbin/init`, matching the student-VM fleet and authorizing
+  the `test/priv/ssh` client fixture) and runs it as a privileged container,
+  mapping its SSH port to an ephemeral host port. The returned address plugs
+  straight into `ArchiDep.Servers.Ansible.Runner`, whose connection options use
+  the same fixture key.
 
   The container runs privileged so systemd can manage its own cgroups; on the
   cgroup-v2 hosts we target (GitHub `ubuntu-24.04` runners, Docker Desktop,

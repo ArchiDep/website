@@ -668,7 +668,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                       expected_placeholder(
                         @selected_group,
                         :distribution_release,
-                        gettext("e.g. noble")
+                        gettext("e.g. resolute")
                       )
                     }
                   />
@@ -704,7 +704,7 @@ defmodule ArchiDepWeb.Servers.ServerFormComponent do
                       expected_placeholder(
                         @selected_group,
                         :distribution_version,
-                        gettext("e.g. 24.04")
+                        gettext("e.g. 26.04")
                       )
                     }
                   />

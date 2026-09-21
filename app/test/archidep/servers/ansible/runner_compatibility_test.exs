@@ -81,8 +81,8 @@ defmodule ArchiDep.Servers.Ansible.RunnerCompatibilityTest do
     assert is_integer(memory) and memory > 0
     assert is_integer(swap) and swap >= 0
 
-    # The container is a fixed Ubuntu-noble image, so the OS-identity facts are
-    # pinned exactly; the validated hardware facts are folded back in so the
+    # The container is a fixed Ubuntu-resolute image, so the OS-identity facts
+    # are pinned exactly; the validated hardware facts are folded back in so the
     # whole struct is asserted at once (nothing unexpected resolved or dropped).
     assert properties == %ServerProperties{
              id: id,
@@ -97,8 +97,8 @@ defmodule ArchiDep.Servers.Ansible.RunnerCompatibilityTest do
              system: "Linux",
              os_family: "Debian",
              distribution: "Ubuntu",
-             distribution_release: "noble",
-             distribution_version: "24.04"
+             distribution_release: "resolute",
+             distribution_version: "26.04"
            }
   end
 

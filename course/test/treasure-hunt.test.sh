@@ -10,7 +10,7 @@
 #
 # and with the GNU tools of Ubuntu, which the WSL uses:
 #
-#     docker run --rm -v "$PWD/course:/course" ubuntu:24.04 \
+#     docker run --rm -v "$PWD/course:/course" ubuntu:26.04 \
 #       bash /course/test/treasure-hunt.test.sh
 
 set -u

@@ -231,7 +231,7 @@ typically [Bash][bash] on Linux servers:
 ```bash
 $> ssh jde@192.168.50.4
 jde@192.168.50.4's password:
-Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.8.0-71-generic x86_64)
+Welcome to Ubuntu 26.04 LTS (GNU/Linux 7.0.0-31-generic x86_64)
 
   System information as of Thu Sep 24 08:29:00 UTC 2026
   ...

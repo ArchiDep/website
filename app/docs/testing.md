@@ -1800,7 +1800,7 @@ Servers.SSH.Client.SystemClient)` — even though the mocks are Hammox-defined (
   needs a real host — and the setup playbook also drives
   `ansible.builtin.systemd`, which needs a live systemd/dbus — so
   [`UbuntuServerContainer`][ubuntu-server-container] builds and runs the
-  [`ubuntu-server`][ubuntu-server-dockerfile] image (Ubuntu noble booting
+  [`ubuntu-server`][ubuntu-server-dockerfile] image (Ubuntu resolute booting
   systemd with `python3`, matching the student-VM fleet, authorizing the
   `test/priv/ssh` fixture key) as a privileged container via Testcontainers and
   returns its mapped address.

@@ -9,8 +9,9 @@ default_name=archidep-test
 default_user=jde
 default_domain=archidep1.ch
 default_image=26.04
-# The shape of the Azure B1s instance the course requires students to select.
-default_cpus=1
+# The shape of the Azure B2ats_v2 instance the course requires students to
+# select.
+default_cpus=2
 default_memory=1G
 default_disk=30G
 default_key="$HOME/.ssh/id_ed25519.pub"
@@ -28,10 +29,11 @@ usage() {
 Usage: scripts/test-vm [command] [options]
 
 Launch a local Multipass virtual machine standing in for the cloud server the
-course has students create on Azure: Ubuntu $default_image on the shape of a B1s
-instance, with a course Unix username whose authorized keys hold your public key
-and the application's, the course hostname, and 2G of swap. Each of those last
-three can be left out to produce a half-configured machine to test against.
+course has students create on Azure: Ubuntu $default_image on the shape of a
+B2ats_v2 instance, with a course Unix username whose authorized keys hold your
+public key and the application's, the course hostname, and 2G of swap. Each of
+those last three can be left out to produce a half-configured machine to test
+against.
 
 Commands:
   create      Launch the virtual machine (the default).

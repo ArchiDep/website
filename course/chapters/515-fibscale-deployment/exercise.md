@@ -53,7 +53,7 @@ You can check that everything has been correctly installed with the following
 commands:
 
 ```bash
-# Ruby 3.x will be installed by default on Ubuntu 24.04:
+# Ruby 3.x will be installed by default on Ubuntu 26.04:
 $> ruby --version
 ruby 3.x.y (202v-wx-yz revision 0000000000) [x86_64-linux-gnu]
 ```

@@ -380,12 +380,6 @@ msgstr ""
 msgid "e.g. 2048"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:189
-#: lib/archidep_web/servers/server_form_component.ex:707
-#, elixir-autogen, icu-format
-msgid "e.g. 24.04"
-msgstr ""
-
 #: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:148
 #: lib/archidep_web/servers/server_form_component.ex:597
 #, elixir-autogen, icu-format
@@ -402,12 +396,6 @@ msgstr ""
 #: lib/archidep_web/servers/server_form_component.ex:635
 #, elixir-autogen, icu-format
 msgid "e.g. Ubuntu"
-msgstr ""
-
-#: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:176
-#: lib/archidep_web/servers/server_form_component.ex:671
-#, elixir-autogen, icu-format
-msgid "e.g. noble"
 msgstr ""
 
 #: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:135
@@ -2396,4 +2384,16 @@ msgstr ""
 #: lib/archidep_web/admin/course_sessions/course_sessions_live.html.heex:88
 #, elixir-autogen, icu-format
 msgid "{numbers} no longer in the course"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:189
+#: lib/archidep_web/servers/server_form_component.ex:707
+#, elixir-autogen, icu-format
+msgid "e.g. 26.04"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:176
+#: lib/archidep_web/servers/server_form_component.ex:671
+#, elixir-autogen, icu-format
+msgid "e.g. resolute"
 msgstr ""

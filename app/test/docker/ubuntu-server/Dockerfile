@@ -1,4 +1,4 @@
-FROM ubuntu:noble
+FROM ubuntu:resolute
 
 LABEL maintainer="contact@archidep.ch"
 
@@ -28,8 +28,8 @@ RUN apt-get update -y && \
 
 ARG JDE_UID=1000
 
-# Ubuntu noble ships a default `ubuntu` user at UID 1000; remove it so `jde` can
-# take that UID.
+# Ubuntu resolute ships a default `ubuntu` user at UID 1000; remove it so `jde`
+# can take that UID.
 RUN userdel --remove ubuntu 2>/dev/null || true && \
     useradd --comment "John Doe" --create-home --shell /bin/bash jde --uid "$JDE_UID" && \
     mkdir -p /home/jde/.ssh && \
