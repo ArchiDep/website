@@ -34,7 +34,7 @@ defmodule ArchiDep.CourseSiteWatcher do
   # per rebuild. `archives.yml` sits beside `course.yml` and is deliberately not
   # here: it is compiled into `ArchiDep.CourseSite.Archives` rather than read by
   # a build, so a rebuild on it would write the same bytes again.
-  @watched_dirs ["chapters", "cheatsheets", "favicons", "icons"]
+  @watched_dirs ["chapters", "cheatsheets", "favicons", "icons", "images"]
   @watched_files ["course.yml", "favicon.ico", "index.md"]
 
   @enforce_keys [:course_dir, :rebuilder]

@@ -17,7 +17,8 @@ defmodule ArchiDep.CourseSiteWatcherTest do
             "/archidep/course/icons/tip.html",
             "/archidep/course/favicons/heig.png",
             "/archidep/course/favicon.ico",
-            "/archidep/course/index.md"
+            "/archidep/course/index.md",
+            "/archidep/course/images/sidebar.png"
           ] do
         assert CourseSiteWatcher.rebuild?(path, @course_dir) == true,
                "expected #{path} to rebuild"

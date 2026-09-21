@@ -17,6 +17,24 @@ defmodule ArchiDep.CourseSite.Renderer.PageAssetsTest do
              }) == {~s(<p><img src="images/zone-1a2b3c.png" alt="A zone file" /></p>), []}
     end
 
+    test "resolves the image the home page shows under the edition, for both of its copies" do
+      context =
+        CourseSiteFactory.build(:render_context,
+          source_path: "index.md",
+          page: :home,
+          urls:
+            CourseSiteFactory.build(:url_context,
+              mode: :live,
+              base_path: "",
+              version: "2026",
+              page_assets: PageAssetManifest.new(%{"/images/sidebar.png" => "sidebar-4c5d6e.png"})
+            )
+        )
+
+      assert Markdown.to_html("![The sidebar](images/sidebar.png)\n", context) ==
+               {~s(<p><img src="/2026/images/sidebar-4c5d6e.png" alt="The sidebar" /></p>), []}
+    end
+
     test "resolves the file a page links to" do
       assert run("Read the [handout](handouts/dns.pdf) first.\n", %{
                "/course/507-dns/handouts/dns.pdf" => "dns-2b3c4d.pdf"

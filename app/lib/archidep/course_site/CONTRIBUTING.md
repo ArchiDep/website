@@ -461,7 +461,8 @@ of it:
    rather than with the content; see [Generated PDFs](#generated-pdfs).
 2. **Assets co-located with a page stay relative to that page**, so no knob
    touches them at all: they are immune to the mount point, the edition prefix
-   and the origin alike.
+   and the origin alike. The home page's are the one exception, for the
+   reason [`Urls`](./urls.ex) gives.
 
 A fragment within the page being rendered stays a bare `#id`, so navigation
 inside a page — or inside an exported PDF — never leaves it.

@@ -34,8 +34,9 @@ defmodule ArchiDep.CourseSite.Build.Site do
   The home page is the one page that may be written **twice**: while its edition
   is being taught it answers at the mount point as well as under the edition,
   and only an archived edition keeps it under its own prefix alone. The same
-  bytes serve both, which holds because a page's own URLs are the seam's and the
-  home page has no file sitting next to it to address relatively.
+  bytes serve both, which holds because a page's own URLs are the seam's, and
+  the seam addresses the files next to the home page under the edition rather
+  than relatively to either copy.
 
   ## What is handed to the link check
 

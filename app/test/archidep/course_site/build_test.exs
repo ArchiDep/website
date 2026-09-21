@@ -69,6 +69,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
       write!(content_dir, "chapters/101-command-line/subject.md", "# Command line")
       write!(content_dir, "chapters/101-command-line/.DS_Store", "litter")
       write!(content_dir, "cheatsheets/git/cheatsheet.md", "# Git")
+      write!(content_dir, "images/sidebar.png", "the sidebar")
       File.mkdir_p!(Path.join(content_dir, "chapters/510-empty"))
 
       # The content roots share a directory with everything else the course
@@ -82,7 +83,8 @@ defmodule ArchiDep.CourseSite.BuildTest do
                "chapters/101-command-line/.DS_Store",
                "chapters/101-command-line/subject.md",
                "chapters/509-reverse-proxy/subject.md",
-               "cheatsheets/git/cheatsheet.md"
+               "cheatsheets/git/cheatsheet.md",
+               "images/sidebar.png"
              ]
     end
 

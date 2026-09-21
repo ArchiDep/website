@@ -336,6 +336,39 @@ defmodule ArchiDep.CourseSite.UrlsTest do
       assert Urls.resolve(archived, reference) == {:ok, "../images/whale-3c4d5e.png"}
     end
 
+    test "resolves an image next to the home page under the edition prefix" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          mode: :backup,
+          base_path: "/website",
+          version: "2026",
+          page_assets: PageAssetManifest.new(%{"/images/sidebar.png" => "sidebar-5d6e7f.png"})
+        )
+
+      assert Urls.resolve(context, {:page_asset, :home, "./images/sidebar.png"}) ==
+               {:ok, "/website/2026/images/sidebar-5d6e7f.png"}
+    end
+
+    test "resolves an image next to the home page of an unversioned build at its mount point" do
+      context =
+        CourseSiteFactory.build(:url_context,
+          mode: :live,
+          base_path: "/website",
+          version: nil,
+          page_assets: PageAssetManifest.new(%{"/images/cards.png" => "cards-6e7f8a.png"})
+        )
+
+      assert Urls.resolve(context, {:page_asset, :home, "images/cards.png"}) ==
+               {:ok, "/website/images/cards-6e7f8a.png"}
+    end
+
+    test "reports an image next to the home page that is not in the manifest" do
+      context = CourseSiteFactory.build(:url_context, page_assets: PageAssetManifest.new(%{}))
+
+      assert Urls.resolve(context, {:page_asset, :home, "images/sidebar.pgn"}) ==
+               {:error, {:unknown_page_asset, :home, "images/sidebar.pgn", "/images/sidebar.pgn"}}
+    end
+
     test "encodes a name that is not safe in a URL" do
       context =
         CourseSiteFactory.build(:url_context,
@@ -920,6 +953,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                same_page_heading: "#create-your-server",
                other_page_heading: "/2026/course/402-run-virtual-server/#create-your-server",
                page_asset: "../images/cloud-9f8e7d.png",
+               home_page_asset: "/2026/images/sidebar-5d6e7f.png",
                asset: "/2026/assets/theme/theme-1a2b3c.css",
                build_file: "/2026/lunr-abc123.json",
                site_file: "/2026/archidep.json",
@@ -947,6 +981,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                other_page_heading:
                  "/website/2026/course/402-run-virtual-server/#create-your-server",
                page_asset: "../images/cloud-9f8e7d.png",
+               home_page_asset: "/website/2026/images/sidebar-5d6e7f.png",
                asset: "/website/2026/assets/theme/theme-1a2b3c.css",
                build_file: "/website/2026/lunr-abc123.json",
                site_file: "/website/2026/archidep.json",
@@ -973,6 +1008,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                same_page_heading: "#create-your-server",
                other_page_heading: "/2025/course/402-run-virtual-server/#create-your-server",
                page_asset: "../images/cloud-9f8e7d.png",
+               home_page_asset: "/2025/images/sidebar-5d6e7f.png",
                asset: "/2025/assets/theme/theme-1a2b3c.css",
                build_file: "/2025/lunr-abc123.json",
                site_file: "/2025/archidep.json",
@@ -1000,6 +1036,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                other_page_heading:
                  "/website/2025/course/402-run-virtual-server/#create-your-server",
                page_asset: "../images/cloud-9f8e7d.png",
+               home_page_asset: "/website/2025/images/sidebar-5d6e7f.png",
                asset: "/website/2025/assets/theme/theme-1a2b3c.css",
                build_file: "/website/2025/lunr-abc123.json",
                site_file: "/website/2025/archidep.json",
@@ -1027,6 +1064,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
                other_page_heading:
                  "https://archidep.example.com/2026/course/402-run-virtual-server/#create-your-server",
                page_asset: "../images/cloud-9f8e7d.png",
+               home_page_asset: "/2026/images/sidebar-5d6e7f.png",
                asset: "/2026/assets/theme/theme-1a2b3c.css",
                build_file: "/2026/lunr-abc123.json",
                site_file: "/2026/archidep.json",
@@ -1041,7 +1079,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
   end
 
   describe "resolve/3 invariants" do
-    property "an asset next to a page is unaffected by how the build is published" do
+    property "an asset next to a page other than the home page is unaffected by how the build is published" do
       page_assets =
         PageAssetManifest.new(%{"/course/403-docker/images/whale.png" => "whale-3c4d5e.png"})
 
@@ -1126,7 +1164,8 @@ defmodule ArchiDep.CourseSite.UrlsTest do
             AssetManifest.new(%{"/assets/theme/theme.css" => "/assets/theme/theme-1a2b3c.css"}),
           page_assets:
             PageAssetManifest.new(%{
-              "/course/401-cloud-computing/images/cloud.png" => "cloud-9f8e7d.png"
+              "/course/401-cloud-computing/images/cloud.png" => "cloud-9f8e7d.png",
+              "/images/sidebar.png" => "sidebar-5d6e7f.png"
             }),
           pdfs:
             PdfManifest.new(:site, %{
@@ -1155,6 +1194,7 @@ defmodule ArchiDep.CourseSite.UrlsTest do
         ),
       page_asset:
         Urls.resolve!(context, {:page_asset, {:document, slides}, "../images/cloud.png"}),
+      home_page_asset: Urls.resolve!(context, {:page_asset, :home, "images/sidebar.png"}),
       asset: Urls.resolve!(context, {:asset, "/assets/theme/theme.css"}),
       build_file: Urls.resolve!(context, {:build_file, "lunr.json"}),
       site_file: Urls.resolve!(context, {:site_file, "archidep.json"}),

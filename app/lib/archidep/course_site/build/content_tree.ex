@@ -11,8 +11,10 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   tree mirrors the output tree for everything but Markdown: a file under a
   chapter directory keeps its path relative to that chapter, verbatim, and a
   file under a cheatsheet directory keeps its path relative to that cheatsheet.
-  Only a document moves, to the page path `ArchiDep.CourseSite.PageRef` gives
-  it.
+  The home page is written at the root of the course directory and published at
+  the root of its edition, so its files — the `images` directory beside it —
+  keep their path as it is. Only a document moves, to the page path
+  `ArchiDep.CourseSite.PageRef` gives it.
 
   That is what makes the mapping **per chapter directory rather than per
   document**, and it is why a deck written at the root of a chapter refers to
@@ -93,10 +95,11 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
           | {:subject_and_exercise, String.t(), [String.t()]}
           | {:exercise_with_slides, String.t(), [String.t()]}
 
-  @roots ["chapters", "cheatsheets"]
+  @roots ["chapters", "cheatsheets", "images"]
 
   @chapter_regex ~r{\Achapters/([1-9]\d\d-[^/]+)/(.+)\z}
   @cheatsheet_regex ~r{\Acheatsheets/([^/]+)/(.+)\z}
+  @home_regex ~r{\Aimages/(.+)\z}
 
   # Why a published path must not need percent-encoding:
   # `ArchiDep.CourseSite.Urls.PageAssetManifest`.
@@ -112,7 +115,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   is another pipeline's input or this one's output.
 
       iex> ContentTree.roots()
-      ["chapters", "cheatsheets"]
+      ["chapters", "cheatsheets", "images"]
   """
   @spec roots() :: [String.t()]
   def roots, do: @roots
@@ -225,6 +228,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   defp output_path(source_path) do
     chapter = Regex.run(@chapter_regex, source_path)
     cheatsheet = Regex.run(@cheatsheet_regex, source_path)
+    home = Regex.run(@home_regex, source_path)
 
     cond do
       chapter != nil ->
@@ -234,6 +238,10 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
       cheatsheet != nil ->
         [_whole, slug, rest] = cheatsheet
         {:ok, "/cheatsheets/#{slug}/#{rest}"}
+
+      home != nil ->
+        [_whole, rest] = home
+        {:ok, "/images/#{rest}"}
 
       true ->
         {:error, {:unknown_source, source_path}}

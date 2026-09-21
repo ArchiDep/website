@@ -36,7 +36,7 @@ defmodule ArchiDep.CourseSite.Urls do
   | `:home`                                    | mount point while taught, edition prefix once archived | no       | yes               |
   | `{:document, _}`, `{:cheatsheet, _}`       | yes                                                    | no       | yes               |
   | `{:heading, _, _}`                         | yes, unless it is a heading of the page being rendered | no       | ditto             |
-  | `{:page_asset, _, _}`                      | no — document-relative                                 | yes      | no                |
+  | `{:page_asset, _, _}`                      | no — document-relative, but the home page's: yes       | yes      | no                |
   | `{:asset, _}`                              | yes                                                    | yes      | no                |
   | `{:site_file, _}`                          | yes                                                    | no       | no                |
   | `{:build_file, _}`                         | yes                                                    | build ID | no                |
@@ -49,7 +49,9 @@ defmodule ArchiDep.CourseSite.Urls do
   links may be absolutized while assets never are**, so a build can be served
   from a throwaway local server and still print links to the main site; and
   **assets co-located with a page stay relative to it**, so they are immune to
-  the mount point, the edition prefix and the origin alike.
+  the mount point, the edition prefix and the origin alike. The home page's are
+  the exception: the same bytes are its page at the mount point and under the
+  edition, so its files are addressed under the edition from both.
   """
 
   alias ArchiDep.CourseSite.DocumentRef
@@ -319,9 +321,21 @@ defmodule ArchiDep.CourseSite.Urls do
     with :ok <- validate_relative_asset_path(page, path),
          {:ok, output_path} <- page_asset_output_path(page, path),
          {:ok, digested} <- fetch_page_asset(context, page, path, output_path) do
-      {:ok, UrlPath.encode(UrlPath.join(UrlPath.dirname(path), digested))}
+      {:ok, digested_page_asset_url(context, page, path, output_path, digested)}
     end
   end
+
+  # The home page is written twice while its edition is taught — at the mount
+  # point and under the edition — and one set of bytes serves both, so what it
+  # shows cannot be relative to either. Its files are published under the
+  # edition alone, where every other file of the edition is.
+  defp digested_page_asset_url(context, :home, _path, output_path, digested) do
+    published = UrlPath.join(UrlPath.dirname(output_path), digested)
+    UrlContext.content_prefix(context) <> UrlPath.encode(published)
+  end
+
+  defp digested_page_asset_url(_context, _page, path, _output_path, digested),
+    do: UrlPath.encode(UrlPath.join(UrlPath.dirname(path), digested))
 
   defp validate_relative_asset_path(page, path) do
     cond do

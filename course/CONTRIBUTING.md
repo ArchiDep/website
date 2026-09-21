@@ -95,6 +95,8 @@ the dashboard functionality is only available during the current semester).
 
 - **Main Parts**
   - `index.md`: The home page of the course material site.
+  - `images`: The files the home page shows, [referred to like any file next
+    to a document](#home-page).
   - `chapters`: The main course materials, including subjects, slides and
     exercises, all identified with a simple numeric code (101, 102, 103, 201,
     202, etc).
@@ -890,6 +892,10 @@ cards â€” what was covered previously, what is due next, and what is coming up â
 built by the application from the most recent [progress
 documents](#progress-tracking). An archived edition holds none of them, its
 progress having stopped meaning anything the day it was frozen.
+
+The files the home page shows go in the `images` directory beside it and are
+written as a relative path (`images/sidebar.png`), like the files next to any
+other document.
 
 ---
 

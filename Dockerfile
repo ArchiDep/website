@@ -345,6 +345,7 @@ COPY ./docker/archives.sh /usr/local/bin/archives.sh
 # The course material a build reads.
 COPY ./course/chapters/ /usr/share/archidep/course/chapters/
 COPY ./course/cheatsheets/ /usr/share/archidep/course/cheatsheets/
+COPY ./course/images/ /usr/share/archidep/course/images/
 COPY ./course/icons/ /usr/share/archidep/course/icons/
 COPY ./course/favicons/ /usr/share/archidep/course/favicons/
 COPY ./course/course.yml ./course/index.md ./course/favicon.ico /usr/share/archidep/course/

@@ -90,6 +90,25 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                 }}
     end
 
+    test "sorts a file next to the home page" do
+      assert ContentTree.plan(["images/sidebar.png", "images/progress/cards.png"]) ==
+               {:ok,
+                %ContentTree{
+                  documents: %{},
+                  cheatsheets: %{},
+                  page_assets: %{
+                    "/images/sidebar.png" => "images/sidebar.png",
+                    "/images/progress/cards.png" => "images/progress/cards.png"
+                  },
+                  ignored: []
+                }}
+    end
+
+    test "refuses a Markdown file next to the home page" do
+      assert ContentTree.plan(["images/notes.md"]) ==
+               {:error, [{:unknown_source, "images/notes.md"}]}
+    end
+
     test "records the litter it skips rather than dropping it" do
       assert ContentTree.plan([
                "chapters/.DS_Store",
@@ -426,7 +445,8 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
         {"chapters/205-php-todolist/images/architecture.pdf",
          {:document, DocumentRef.new(205, "php-todolist", :exercise)},
          "./images/architecture.pdf"},
-        {"cheatsheets/sysadmin/images/htop.png", {:cheatsheet, "sysadmin"}, "images/htop.png"}
+        {"cheatsheets/sysadmin/images/htop.png", {:cheatsheet, "sysadmin"}, "images/htop.png"},
+        {"images/sidebar.png", :home, "images/sidebar.png"}
       ]
 
       page_assets =
