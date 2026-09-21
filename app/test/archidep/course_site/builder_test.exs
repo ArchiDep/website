@@ -499,17 +499,36 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     """
     # ArchiDep
 
-    > The course material of ArchiDep, the media engineering architecture and deployment course, 2025-2026 edition.
+    > The course material of ArchiDep, the media engineering architecture and
+    > deployment course, 2025-2026 edition.
 
     Home page: https://archidep.ch/
 
-    This index lists the chapters of the edition being taught. Past editions stay published under their own year and are not listed here.
+    This index lists the chapters of the edition being taught. Past editions stay
+    published under their own year and are not listed here.
 
-    A chapter is identified by its number: the number of its section, a multiple of 100, plus its place in that section (402 is the second chapter of section 400). How far the class has got is published at https://archidep.ch/api/progress as a list of sessions, each recording the section and chapter numbers it finished (`done`), set work on (`due`) and announced for next time (`next`). A number is the first of done, due and next that any session lists it as; a number no session lists has not been reached yet. A session is recorded on the day it is taught, but what it covered may only be filled in at the end of that day. Chapters not reached yet are still being written: they may be renumbered, renamed, rewritten or removed before they are taught, so only what has been taught is final.
+    A chapter is identified by its number: the number of its section, a multiple of
+    100, plus its place in that section (402 is the second chapter of section 400).
+    How far the class has got is published at https://archidep.ch/api/progress as a
+    list of sessions, each recording the section and chapter numbers it finished
+    (`done`), set work on (`due`) and announced for next time (`next`). A number is
+    the first of done, due and next that any session lists it as; a number no
+    session lists has not been reached yet. A session is recorded on the day it is
+    taught, but what it covered may only be filled in at the end of that day.
+    Chapters not reached yet are still being written: they may be renumbered,
+    renamed, rewritten or removed before they are taught, so only what has been
+    taught is final.
 
-    In the course pages, `jde` stands for the student's own username and `W.X.Y.Z` for the IP address of their server. An exercise's "Requirements" section, when it has one, names the earlier exercises whose results it builds on. Some values, such as the details of a student's server, are only shown in the browser of a logged-in student.
+    In the course pages, `jde` stands for the student's own username and `W.X.Y.Z`
+    for the IP address of their server. An exercise's "Requirements" section, when
+    it has one, names the earlier exercises whose results it builds on. Some values,
+    such as the details of a student's server, are only shown in the browser of a
+    logged-in student.
 
-    Some chapters have tutor notes, written for an AI tutor helping a student through the chapter: what it teaches, where students usually get stuck, hints, and the questions worth asking at its key steps. They are linked from the chapter's entry.
+    Some chapters have tutor notes, written for an AI tutor helping a student
+    through the chapter: what it teaches, where students usually get stuck, hints,
+    and the questions worth asking at its key steps. They are linked from the
+    chapter's entry.
 
     Built from revision abc123.
 
