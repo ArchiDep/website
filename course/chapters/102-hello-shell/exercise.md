@@ -452,11 +452,86 @@ twice, that is a script asking to be written.
 
 {% endsolution %}
 
+## :boom: Troubleshooting
+
+Here's a few tips about some problems you may encounter during this exercise.
+
+### :boom: The command that prepares the hunt fails
+
+If the `curl` command that prepares the hunt fails with an error about its
+options, or says that `bash` is not found, you probably typed it in PowerShell
+or in the Windows command prompt. Open the WSL (Ubuntu) and run it there.
+
+### :boom: My shell's configuration file lost its content
+
+If you typed `>` instead of `>>` when you added a line to `~/.bashrc` or
+`~/.zshrc`, the file now contains only that line. `>` replaces the content of a
+file, while `>>` adds to its end (see [the `echo` command][command-line-echo] in
+"Command Line").
+
+In the WSL, get Ubuntu's default `~/.bashrc` back, then add your line again with
+`>>`:
+
+```bash
+$> cp /etc/skel/.bashrc ~/
+```
+
+On macOS, there is no default `~/.zshrc` to get back: the file does not exist
+until something creates it. Add back the lines you know were in it. Or delete it
+and open a new terminal: macOS will create a new `~/.zshrc` with the default
+content.
+
+### :boom: My terminal seems frozen
+
+A program is probably still running. Read what is on the screen: it may tell you
+how to stop it. Otherwise:
+
+- `Ctrl-C` stops most programs (see [Stop a running command][cheatsheet-stop] in
+  the cheatsheet).
+- Press `q` to quit `less` or a scrolling help page.
+- Press `Ctrl-X` to quit nano.
+- Press `Esc`, type `:q!` and press `Enter` to quit Vim (see [Help, Vim opened
+  and I can't get out][command-line-vim] in "Command Line").
+
+### :boom: `treasure` is still not found after I changed my `PATH`
+
+Check these, in this order:
+
+- Did you open a new terminal? Your shell only reads its configuration file
+  when it starts.
+- Did you add the directory `~/treasure-hunt/bag`, and not the file
+  `~/treasure-hunt/bag/treasure`? The `PATH` is a list of directories.
+- Did you edit the right file? It is `~/.bashrc` in the WSL and `~/.zshrc` on
+  macOS. `echo $0` tells you which shell you are using.
+- Is your line exactly the one on this page? Write `$HOME`, not `~`: Zsh does
+  not replace a `~` inside quotes with your home directory.
+
+In a new terminal, `echo $PATH` shows whether your bag is in your `PATH`.
+
+### :boom: Every command is now `command not found`
+
+If even `ls` or `nano` is now `command not found`, the line you added probably
+does not end with `:$PATH`. Your `PATH` then contains only your bag, and your
+shell does not find any other command.
+
+Run nano with its full path to open your configuration file:
+
+```bash
+$> /usr/bin/nano ~/.bashrc  # in the WSL
+$> /usr/bin/nano ~/.zshrc   # on macOS
+```
+
+Fix the line so that it is exactly the one on this page, save, and open a new
+terminal.
+
 [cheatsheet-chmod]: {% link cheatsheets/command-line/cheatsheet.md %}#make-a-file-executable-chmod-x
 [cheatsheet-run]: {% link cheatsheets/command-line/cheatsheet.md %}#run-a-program-program
+[cheatsheet-stop]: {% link cheatsheets/command-line/cheatsheet.md %}#stop-a-running-command-ctrl-c
 [command-line]: {% link chapters/101-command-line/subject.md %}
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}
+[command-line-echo]: {% link chapters/101-command-line/subject.md %}#the-echo-command
 [command-line-editor]: {% link chapters/101-command-line/subject.md %}#setting-nano-as-the-default-editor
 [command-line-path]: {% link chapters/101-command-line/subject.md %}#the-path-variable
+[command-line-vim]: {% link chapters/101-command-line/subject.md %}#help-vim-opened-and-i-cant-get-out
 [hello-ssh]: {% link chapters/104-hello-ssh/exercise.md %}
 [shell-scripting]: {% link cheatsheets/shell-scripting/cheatsheet.md %}

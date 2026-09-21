@@ -207,6 +207,18 @@ check "the prophecy reads with Bash $BASH_VERSION too" output_contains "The word
 echo "The Lady of the Lake"
 step "she does not speak to someone logged in" 1 "ssh -tt $LOGIN ./avalon/lady $WORD"
 check "she tells them to leave" output_contains "stay on Avalon"
+# The student, logged in, calls her across the sea from the server itself: by
+# the server's name, and by localhost.
+for address in ssh.archidep.ch localhost; do
+  step "she does not speak to a call from the server itself ($address)" 1 "
+    ssh $LOGIN 'sshpass -p secret ssh -o StrictHostKeyChecking=no \
+      -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no \
+      jde@$address ./avalon/lady $WORD'"
+  check "she says the call comes from the server ($address)" \
+    output_contains "you sent it from this server"
+done
+check "no message appears on the shore yet" \
+  on_server "test ! -e /home/jde/avalon/message.txt"
 step "she wants the word" 1 "ssh $LOGIN ./avalon/lady"
 step "she refuses a wrong word" 1 "ssh $LOGIN ./avalon/lady NOTTHEWORD"
 lower=$(printf '%s' "$WORD" | tr 'A-Z' 'a-z')

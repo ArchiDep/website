@@ -11,6 +11,15 @@
 @theme {
   --breakpoint-xs: 30rem;
   --font-title: 'Bitcount Prop Single', 'PT Sans', sans-serif;
+
+  /* How wide a page's column of content must be, beside the course menu when
+   * it is open, for the page to show more: the headings beside the text, then
+   * the text at each larger size with the headings still beside it. A page is
+   * laid out by the room it actually has rather than by the width of the
+   * window, because the menu takes a fixed part of the window from `lg` up. */
+  --container-toc: 56rem;
+  --container-prose-xl: 66rem;
+  --container-prose-2xl: 80rem;
 }
 
 @source inline("peer/section-{0..10}");

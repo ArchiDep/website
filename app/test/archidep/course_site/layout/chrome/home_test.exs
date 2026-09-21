@@ -20,12 +20,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   describe "title/1" do
     test "names the course, who teaches it, and how it is doing" do
       assert render(&Home.title/1, %{links: @links, badges?: true}) ==
-               expected_title(badges: badges_markup())
+               expected_title(build: build_badge(), status: status_badge())
     end
 
     test "keeps the licence but drops what reports on the live site" do
       assert render(&Home.title/1, %{links: @links, badges?: false}) ==
-               expected_title(badges: "\n        ")
+               expected_title(build: "", status: "")
     end
   end
 
@@ -100,14 +100,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
 
   defp expected_cards(cards) do
     String.trim_trailing("""
-    <div class="not-prose my-4 grid grid-cols-1 xl:grid-cols-3 gap-4 print:hidden">
+    <div class="not-prose my-4 grid grid-cols-1 @prose-xl:grid-cols-3 gap-4 print:hidden">
       #{Enum.join(cards)}
     </div>
     """)
   end
 
   defp card_markup(title, card_class, line_class, link_class, entries) do
-    ~s(<div class="card card-sm 2xl:card-md #{card_class}">\n) <>
+    ~s(<div class="card card-sm @prose-2xl:card-md #{card_class}">\n) <>
       ~s(    <div class="card-body">\n) <>
       ~s(      <p class="card-title font-title text-2xl mt-0 flex-none">\n) <>
       ~s(        #{title}\n) <>
@@ -138,8 +138,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   defp expected_title(parts) do
     String.trim_trailing("""
     <div class="flex flex-wrap xs:flex-nowrap items-center gap-4">
-      <div class="flex items-center gap-4">
-        <picture>
+      <div class="flex items-center gap-4 xs:shrink-0">
+        <picture class="max-xs:my-0">
           <source media="(prefers-reduced-motion: reduce)" type="image/png" srcset="/favicons/archidep-logo-2x.png 1x, /favicons/archidep-logo-4x.png 2x, /favicons/archidep-logo-6x.png 3x">
           <img src="/favicons/archidep-logo-2x.png" srcset="/favicons/archidep-logo-2x.webp 1x, /favicons/archidep-logo-4x.webp 2x, /favicons/archidep-logo-6x.webp 3x" width="186" height="116" alt="ArchiDep logo" class="!m-0 w-[186px] [image-rendering:pixelated]">
         </picture>
@@ -163,12 +163,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
           </span>
 
           <ul class="not-prose flex flex-wrap md:flex-nowrap items-center gap-2">
-            #{Keyword.fetch!(parts, :badges)}
+            #{Keyword.fetch!(parts, :build)}
             <li>
               <a href="https://opensource.org/licenses/MIT">
-                <img class="!m-0" src="https://img.shields.io/static/v1?label=license&amp;message=MIT&amp;color=informational" alt="MIT License">
+                <img class="!m-0" src="https://img.shields.io/static/v1?label=license&amp;message=MIT&amp;color=informational" width="78" height="20" alt="MIT License">
               </a>
             </li>
+            #{Keyword.fetch!(parts, :status)}
           </ul>
         </div>
       </div>
@@ -176,10 +177,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
     """)
   end
 
-  defp badges_markup, do: Enum.join([status_badge(), build_badge()], "\n        ")
-
   defp status_badge,
-    do: badge("https://status.archidep.ch", status_badge_url(), "Status", "print:hidden")
+    do:
+      badge(
+        "https://status.archidep.ch",
+        status_badge_url(),
+        "Status",
+        "print:hidden min-w-[68px]"
+      )
 
   defp build_badge,
     do:
@@ -187,7 +192,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
         "https://github.com/ArchiDep/website/actions/workflows/build.yml",
         "https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg",
         "Build",
-        "print:hidden"
+        "print:hidden min-w-[104px]"
       )
 
   defp status_badge_url,
@@ -197,7 +202,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   defp badge(href, src, alt, class) do
     ~s(<li class="#{class}">\n) <>
       ~s(          <a href="#{href}">\n) <>
-      ~s(            <img class="!m-0" src="#{src}" alt="#{alt}">\n) <>
+      ~s(            <img class="!m-0 h-5" src="#{src}" alt="#{alt}">\n) <>
       ~s(          </a>\n) <>
       ~s(        </li>)
   end

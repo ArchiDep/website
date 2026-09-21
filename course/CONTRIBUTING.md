@@ -190,6 +190,14 @@ materials.
   do next and it carries its own hints. Its page says how to start it, what
   kinds of things it makes them do, and what is left to do once it is over —
   plus its [solutions](#solutions), which are hidden until revealed.
+- **An exercise's "Troubleshooting" section is always its last section**, after
+  "What have I done?" and after any optional or extra section (a clean-up, an
+  architecture diagram, a challenge). It is reference material a student jumps
+  to when something breaks: at the end, it stays out of the way of a student who
+  succeeds, and it is in the same place on every page. Write each problem as a
+  `###` heading naming what the student sees, the error message itself where
+  there is one, and the fix under it. The [tutor notes](#tutor-notes) list the
+  section by those headings.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.
@@ -404,11 +412,17 @@ the student. The live site lists every chapter in an index for AI agents,
 [`LlmsTxt`](../app/lib/archidep/course_site/build/llms_txt.ex) documents that
 index.
 
-- **They are published as they are written**, as a file of the chapter's page
-  under a digested name, not rendered. So no Liquid: refer to an earlier chapter
-  by its number ("see 504"), which the agent can look up in the index, to a
-  later one by its title, since a chapter not taught yet may be renumbered, and
-  to a heading of the chapter's page by its text.
+- **They are published as they are written, followed by a map of the page's
+  "Troubleshooting" section** that the build adds, under a digested name next
+  to the chapter's page. The notes themselves are not rendered. So no Liquid:
+  refer to an earlier chapter by its number ("see 504"), which the agent can
+  look up in the index, to a later one by its title, since a chapter not taught
+  yet may be renumbered, and to a heading of the chapter's page by its text.
+- **The build writes the "Troubleshooting on the page" section**, and fails on
+  notes that write it themselves. It links the page's "Troubleshooting" section
+  and lists each of its `###` entries by the text of its heading, with its
+  anchor ([`TutorNotes`](../app/lib/archidep/course_site/build/tutor_notes.ex)
+  says why), or says that an exercise has no such section.
 - **They are public.** Nothing links to them from the site's pages, but anyone
   who reads `/llms.txt` can read them, students included.
 - Write them in English, like the rest of the material.
@@ -424,22 +438,37 @@ say only what the tutor cannot get elsewhere: not what the page says, what
 `description` already tells. In both of the lists below, write the sections in
 the order given, leaving out any that does not apply.
 
+**An exercise's notes never walk through its solution.** They are public, and a
+tutor holding the answers tends to hand them out. They say what each step asks
+and practises, and where its solution is: the page's [solutions](#solutions), or
+the hints of a program the exercise is played through.
+
 An **exercise's** notes:
 
 1. **Starting point**: the earlier exercises the chapter builds on, and what
    should already be installed, configured or running when it starts.
 2. **Learning objectives**: what the chapter is meant to teach, and how deep it
    goes: what it deliberately leaves out, so that the tutor does not explain it.
-3. **Mental model**: what the student should understand afterwards.
-4. **Where it leads**: the later chapters that rely on it, and for what. It is
-   what answers a student asking what the exercise was for.
-5. **Stages**: for an exercise a program guides, what each of its stages asks
-   and what the student sees.
-6. **Common pitfalls**: where students usually get stuck, with the symptom they
-   see.
-7. **Hints**: for each pitfall, hints from the smallest to the most explicit.
-8. **Key steps**: the steps worth checking, each with the question to ask before
-   and after it and the output to expect.
+   Name the section of the page that states what the student should understand
+   afterwards, usually "What have I done?", rather than restating it.
+3. **Where it leads**: how much of the course relies on it, then the later
+   chapters that lean on particular parts, and for what. It is what answers a
+   student asking what the exercise was for.
+4. **Key steps**: the steps worth checking, by heading, each with the question
+   to ask before and after it and the output to expect.
+5. **Common pitfalls**: where students get stuck that the page's
+   "Troubleshooting" section does not cover, each with the symptom they see,
+   its cause, and hints from the smallest to the most explicit. A symptom the
+   page's section does cover is left out: the map the build adds already leads
+   the tutor to it. List one only for what the page cannot hold, such as the
+   questions that lead the student to the fix, or what the fix would give away
+   of the exercise, and neither name the entry nor repeat its fix.
+
+The exception is an exercise, or part of one, [played through a program the
+student runs](#writing-guidelines): its steps are in the program, which the
+tutor cannot see. For that part, a section named after the program replaces the
+key steps: how the program works (its hints, how to start over), and what each
+of its stages practises, with the questions worth asking at it.
 
 A **subject's** notes are a map of it, not a summary: a summary would repeat the
 subject and drift from it as soon as the subject is edited, where what it covers

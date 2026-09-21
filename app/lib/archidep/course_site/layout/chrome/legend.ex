@@ -6,7 +6,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Legend do
   of them explains itself where it is used. So the key is drawn once, by the
   layout, above every exercise — which is also why no exercise has to remember
   to include it, and why they cannot drift into explaining the same picture
-  differently.
+  differently. The course index for AI agents
+  (`ArchiDep.CourseSite.Build.LlmsTxt`) describes the same key, so a change to
+  it is a change there too.
 
   A graded exercise says so first and plainly. Whether an exercise counts
   towards a grade is the thing a reader most needs to know before starting one,

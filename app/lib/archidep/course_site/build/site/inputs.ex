@@ -19,7 +19,9 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
   the fixed handful `ArchiDep.CourseSite.Build` names and none of them is large,
   so carrying them through the plan is cheap and buys them the writing every
   other planned file already gets — unlike the files sitting next to a page,
-  which are copied.
+  which are copied. A chapter's tutor notes are held the same way, as bytes
+  keyed by the chapter directory they are written in, because what is published
+  of them is only settled once the chapter's page is rendered.
   """
 
   alias ArchiDep.CourseSite.Build.ContentTree
@@ -39,7 +41,8 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
     :includes,
     :root_files,
     :assets,
-    :page_assets
+    :page_assets,
+    :tutor_notes
   ]
   defstruct [
     :tree,
@@ -50,7 +53,8 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
     :includes,
     :root_files,
     :assets,
-    :page_assets
+    :page_assets,
+    :tutor_notes
   ]
 
   @type t :: %__MODULE__{
@@ -62,6 +66,7 @@ defmodule ArchiDep.CourseSite.Build.Site.Inputs do
           includes: %{String.t() => Solid.Template.t()},
           root_files: %{String.t() => binary()},
           assets: AssetManifest.t(),
-          page_assets: PageAssetManifest.t()
+          page_assets: PageAssetManifest.t(),
+          tutor_notes: %{String.t() => binary()}
         }
 end

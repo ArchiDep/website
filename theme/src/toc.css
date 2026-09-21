@@ -6,8 +6,10 @@ aside .toc ul {
   @apply flex flex-col;
 }
 
+/* A heading that names a file or a command is one long word, which has to
+ * break somewhere in a column this narrow rather than run out of it. */
 aside .toc ul li a {
-  @apply inline-block text-base-content/75 hover:text-base-content;
+  @apply inline-block wrap-anywhere text-base-content/75 hover:text-base-content;
 }
 
 aside .toc ul a {
@@ -50,11 +52,14 @@ aside .toc .toc-h3 > a {
   }
 }
 
+/* Below the third level, a heading is indented by less than above it: what a
+ * reader looks for in the list is which sections a section has, and a column
+ * this narrow would soon have little room left for the deeper ones. */
 aside .toc .toc-h4 > a {
-  @apply pl-9;
+  @apply pl-8;
 
   &:has(> img.emoji) {
-    @apply pl-[calc(var(--spacing)*9+25px)];
+    @apply pl-[calc(var(--spacing)*8+25px)];
   }
 
   & > img.emoji {
@@ -63,10 +68,10 @@ aside .toc .toc-h4 > a {
 }
 
 aside .toc .toc-h5 > a {
-  @apply pl-12;
+  @apply pl-10;
 
   &:has(> img.emoji) {
-    @apply pl-[calc(var(--spacing)*12+25px)];
+    @apply pl-[calc(var(--spacing)*10+25px)];
   }
 
   & > img.emoji {
@@ -75,10 +80,10 @@ aside .toc .toc-h5 > a {
 }
 
 aside .toc .toc-h6 > a {
-  @apply pl-14;
+  @apply pl-12;
 
   &:has(> img.emoji) {
-    @apply pl-[calc(var(--spacing)*14+25px)];
+    @apply pl-[calc(var(--spacing)*12+25px)];
   }
 
   & > img.emoji {

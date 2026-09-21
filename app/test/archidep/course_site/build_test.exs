@@ -464,6 +464,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
                     "/course/509-reverse-proxy/images/proxy.png" =>
                       "chapters/509-reverse-proxy/images/proxy.png"
                   },
+                  tutor_notes: %{},
                   ignored: ["chapters/509-reverse-proxy/.DS_Store"]
                 }}
     end
@@ -474,7 +475,13 @@ defmodule ArchiDep.CourseSite.BuildTest do
 
       assert Build.content_tree(content_dir) ==
                {:ok,
-                %ContentTree{documents: %{}, cheatsheets: %{}, page_assets: %{}, ignored: []}}
+                %ContentTree{
+                  documents: %{},
+                  cheatsheets: %{},
+                  page_assets: %{},
+                  tutor_notes: %{},
+                  ignored: []
+                }}
     end
   end
 
@@ -797,6 +804,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
           "/course/803-docker-isolation/images/gone.png" =>
             "chapters/803-docker-isolation/images/gone.png"
         },
+        tutor_notes: %{},
         ignored: []
       }
 
@@ -929,6 +937,7 @@ defmodule ArchiDep.CourseSite.BuildTest do
   describe "site_inputs/1" do
     test "reads everything a build decides from", %{tmp_dir: tmp_dir} do
       dirs = site_fixture(tmp_dir)
+      write!(dirs.content_dir, "chapters/101-command-line/tutor.md", "# Notes of 101\n")
 
       assert {:ok, inputs} = Build.site_inputs(site_options(dirs))
 
@@ -992,7 +1001,8 @@ defmodule ArchiDep.CourseSite.BuildTest do
                  AssetManifest.new(%{
                    "/assets/theme/theme.css" => "/assets/theme/theme-abc123.css"
                  }),
-               page_assets: page_assets
+               page_assets: page_assets,
+               tutor_notes: %{"101-command-line" => "# Notes of 101\n"}
              }
     end
 

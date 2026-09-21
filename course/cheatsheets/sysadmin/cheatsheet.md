@@ -1,5 +1,5 @@
 ---
-title: System Administation Cheatsheet
+title: System Administration Cheatsheet
 sidebar_title: System Administration
 ---
 

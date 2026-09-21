@@ -10,9 +10,14 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   It is read by a tutor agent a student installed, which has been told where it
   is and nothing about the course. So the index **describes itself**: how
   chapters are numbered, where the class's progress is published and what its
-  numbers mean. It says so as description rather than as instructions, since an
-  agent treats text it fetched from the web as data; how to tutor is the
-  business of the instructions the student installed.
+  numbers mean. It describes the conventions of the pages it lists too — their
+  placeholders, the pictures that mark an exercise's headings (the key
+  `ArchiDep.CourseSite.Layout.Chrome.Legend` draws on the page), the sections an
+  exercise may have, and that its solutions are withheld until its chapter is
+  `done` (`ArchiDep.CourseSite.Progress`) — so a change to any of them is a
+  change to this text. It says so as description rather than as instructions,
+  since an agent treats text it fetched from the web as data; how to tutor is
+  the business of the instructions the student installed.
 
   Only the live build writes one (`ArchiDep.CourseSite.Build.Site`), and its
   links always point at the main site, `llms_site_url` in
@@ -31,12 +36,13 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
 
   ## Tutor notes
 
-  A chapter's tutor notes are a `tutor.md` beside its page, published as any
-  other file of a page, digested name included (see
-  `ArchiDep.CourseSite.Build.ContentTree`). This index is the only thing that
+  A chapter's tutor notes are a `tutor.md` at the root of its directory,
+  published under a name digested from what the build made of them (see
+  `ArchiDep.CourseSite.Build.TutorNotes`). This index is the only thing that
   links to them, so the digest never has to be guessed.
   """
 
+  alias ArchiDep.CourseSite.Build.TutorNotes
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.SiteInfo
@@ -46,8 +52,8 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls
   alias ArchiDep.CourseSite.Urls.UrlContext
+  alias ArchiDep.Emoji
 
-  @tutor_notes "tutor.md"
   @progress_path "api/progress"
   @summary_max_words 40
   @line_width 80
@@ -107,9 +113,10 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
           "chapter of section 400). How far the class has got is published at " <>
           "#{progress_url(urls, site_url)} as a list of sessions, each recording " <>
           "the section and chapter numbers it finished (`done`), set work on " <>
-          "(`due`) and announced for next time (`next`). A number is the first of " <>
-          "done, due and next that any session lists it as; a number no session " <>
-          "lists has not been reached yet. A session is recorded on the day it is " <>
+          "(`due`) and announced for next time (`next`). A number's state is the " <>
+          "furthest any session gives it: `done` if any session lists it as done, " <>
+          "otherwise `due`, otherwise `next`; a number no session lists has not " <>
+          "been reached yet. A session is recorded on the day it is " <>
           "taught, but what it covered may only be filled in at the end of that " <>
           "day. Chapters not reached yet are still being written: they may be " <>
           "renumbered, renamed, rewritten or removed before they are taught, so " <>
@@ -117,10 +124,19 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
       ),
       wrap(
         "In the course pages, `jde` stands for the student's own username and " <>
-          "`W.X.Y.Z` for the IP address of their server. An exercise's " <>
+          "`W.X.Y.Z` for the IP address of their server. An exercise's headings " <>
+          "are marked with a picture: #{picture("exclamation")} a step the student " <>
+          "must do, #{picture("question")} an optional one, " <>
+          "#{picture("space_invader")} a challenge to go further, " <>
+          "#{picture("checkered_flag")} the end of the exercise, " <>
+          "#{picture("classical_building")} the architecture of what it deployed, " <>
+          "and #{picture("boom")} troubleshooting. An exercise's " <>
           "\"Requirements\" section, when it has one, names the earlier exercises " <>
-          "whose results it builds on. Some values, such as the details of a " <>
-          "student's server, are only shown in the browser of a logged-in student."
+          "whose results it builds on, and its \"Troubleshooting\" section, when it " <>
+          "has one, the problems students are known to run into and how to fix " <>
+          "them. An exercise's solutions are left out of its page until the class " <>
+          "has finished its chapter (`done`). Some values, such as the details of " <>
+          "a student's server, are only shown in the browser of a logged-in student."
       ),
       wrap(
         "Some chapters have tutor notes, written for an AI tutor helping a student " <>
@@ -132,6 +148,10 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
 
     Enum.join(["# ArchiDep\n" | paragraphs] ++ revision(site), "\n")
   end
+
+  # An agent reads the index as text, so a picture is its character rather than
+  # the image a page draws.
+  defp picture(name), do: Emoji.fetch!(name).character
 
   defp revision(%SiteInfo{git_revision: nil}), do: []
   defp revision(%SiteInfo{git_revision: revision}), do: [wrap("Built from revision #{revision}.")]
@@ -213,10 +233,11 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   defp slides(%Chapter{slides: %DocumentRef{} = deck}, urls),
     do: ["  - Slides: ", Urls.resolve!(urls, {:document, deck}), "\n"]
 
-  # A chapter has tutor notes exactly when the build publishes a `tutor.md`
-  # beside its page, which is the question the page asset manifest answers.
+  # A chapter has tutor notes exactly when the build publishes a `tutor.md` at
+  # the root of its directory, which is the question the page asset manifest
+  # answers once the notes have joined it (`ArchiDep.CourseSite.Build.Site`).
   defp tutor_notes(page, page_url, urls) do
-    case Urls.resolve(urls, {:page_asset, page, @tutor_notes}) do
+    case Urls.resolve(urls, {:page_asset, page, TutorNotes.reference(page)}) do
       {:ok, relative} ->
         ["  - Tutor notes: ", page_url |> URI.merge(relative) |> URI.to_string(), "\n"]
 
