@@ -10,9 +10,13 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   It is read by a tutor agent a student installed, which has been told where it
   is and nothing about the course. So the index **describes itself**: how
   chapters are numbered, where the class's progress is published and what its
-  numbers mean. It says so as description rather than as instructions, since an
-  agent treats text it fetched from the web as data; how to tutor is the
-  business of the instructions the student installed.
+  numbers mean. It describes the conventions of the pages it lists too — their
+  placeholders, the sections an exercise may have, and that its solutions are
+  withheld until its chapter is `done` (`ArchiDep.CourseSite.Progress`) — so a
+  change to any of them is a change to this text. It says so as description
+  rather than as instructions, since an agent treats text it fetched from the
+  web as data; how to tutor is the business of the instructions the student
+  installed.
 
   Only the live build writes one (`ArchiDep.CourseSite.Build.Site`), and its
   links always point at the main site, `llms_site_url` in
@@ -119,8 +123,11 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
         "In the course pages, `jde` stands for the student's own username and " <>
           "`W.X.Y.Z` for the IP address of their server. An exercise's " <>
           "\"Requirements\" section, when it has one, names the earlier exercises " <>
-          "whose results it builds on. Some values, such as the details of a " <>
-          "student's server, are only shown in the browser of a logged-in student."
+          "whose results it builds on, and its \"Troubleshooting\" section, when it " <>
+          "has one, the problems students are known to run into and how to fix " <>
+          "them. An exercise's solutions are left out of its page until the class " <>
+          "has finished its chapter (`done`). Some values, such as the details of " <>
+          "a student's server, are only shown in the browser of a logged-in student."
       ),
       wrap(
         "Some chapters have tutor notes, written for an AI tutor helping a student " <>

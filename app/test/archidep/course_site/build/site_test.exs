@@ -498,9 +498,12 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
 
     In the course pages, `jde` stands for the student's own username and `W.X.Y.Z`
     for the IP address of their server. An exercise's "Requirements" section, when
-    it has one, names the earlier exercises whose results it builds on. Some values,
-    such as the details of a student's server, are only shown in the browser of a
-    logged-in student.
+    it has one, names the earlier exercises whose results it builds on, and its
+    "Troubleshooting" section, when it has one, the problems students are known to
+    run into and how to fix them. An exercise's solutions are left out of its page
+    until the class has finished its chapter (`done`). Some values, such as the
+    details of a student's server, are only shown in the browser of a logged-in
+    student.
 
     Some chapters have tutor notes, written for an AI tutor helping a student
     through the chapter: what it teaches, where students usually get stuck, hints,

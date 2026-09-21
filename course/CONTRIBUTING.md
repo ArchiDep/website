@@ -424,22 +424,35 @@ say only what the tutor cannot get elsewhere: not what the page says, what
 `description` already tells. In both of the lists below, write the sections in
 the order given, leaving out any that does not apply.
 
+**An exercise's notes never walk through its solution.** They are public, and a
+tutor holding the answers tends to hand them out. They say what each step asks
+and practises, and where its solution is: the page's [solutions](#solutions), or
+the hints of a program the exercise is played through.
+
 An **exercise's** notes:
 
 1. **Starting point**: the earlier exercises the chapter builds on, and what
    should already be installed, configured or running when it starts.
 2. **Learning objectives**: what the chapter is meant to teach, and how deep it
    goes: what it deliberately leaves out, so that the tutor does not explain it.
-3. **Mental model**: what the student should understand afterwards.
-4. **Where it leads**: the later chapters that rely on it, and for what. It is
-   what answers a student asking what the exercise was for.
-5. **Stages**: for an exercise a program guides, what each of its stages asks
-   and what the student sees.
-6. **Common pitfalls**: where students usually get stuck, with the symptom they
-   see.
-7. **Hints**: for each pitfall, hints from the smallest to the most explicit.
-8. **Key steps**: the steps worth checking, each with the question to ask before
-   and after it and the output to expect.
+   Name the section of the page that states what the student should understand
+   afterwards, usually "What have I done?", rather than restating it.
+3. **Where it leads**: how much of the course relies on it, then the later
+   chapters that lean on particular parts, and for what. It is what answers a
+   student asking what the exercise was for.
+4. **Key steps**: the steps worth checking, by heading, each with the question
+   to ask before and after it and the output to expect.
+5. **Common pitfalls**: where students get stuck that the page's
+   "Troubleshooting" section does not cover, each with the symptom they see,
+   its cause, and hints from the smallest to the most explicit. When a symptom
+   leads to one of the page's troubleshooting entries, name it rather than
+   repeat its fix.
+
+The exception is an exercise, or part of one, [played through a program the
+student runs](#writing-guidelines): its steps are in the program, which the
+tutor cannot see. For that part, a section named after the program replaces the
+key steps: how the program works (its hints, how to start over), and what each
+of its stages practises, with the questions worth asking at it.
 
 A **subject's** notes are a map of it, not a summary: a summary would repeat the
 subject and drift from it as soon as the subject is edited, where what it covers
