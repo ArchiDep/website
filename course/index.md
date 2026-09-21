@@ -45,16 +45,24 @@ the top of this page are updated:
   finish before the next one.
 - **Next time (blue)**: what the next session will cover.
 
-The sidebar uses the same colours as the cards: a bar on the right of each
+{% cols %}
+
+The sidebar uses the same colors as the cards: a bar on the right of each
 subject and exercise shows whether it has been covered, has work due or is
 coming next. Chapters the course has not reached yet are faded out. Exercise
-solutions appear once their chapter has been covered.
+solutions appear within each exercise page once their chapter has been covered.
+
+<!-- col -->
+
+![The sidebar, showing chapters that have been covered, have work due, come next and have not been reached yet](images/sidebar.png)
+
+{% endcols %}
 
 ### If this site is down
 
 A backup copy of this site is available at [backup.archidep.ch][backup]. It may
-lag a little behind this site, but it is enough to keep working on the
-exercises.
+lag a little behind this site, but it is enough to keep reading the material and
+working on the exercises if the main site is temporarily down.
 
 ### PDFs
 
