@@ -796,13 +796,13 @@ $> sudo update-alternatives --config editor
 
 ## Vim
 
-[**Vim**][vim] is an infamous CLI editor originally developed in 1976 (WHAT?!)
-for the Unix operating system.
+[**Vim**][vim] is an infamous CLI editor originally developed in 1991 for the
+Unix operating system.
 
 {% note %}
 
 The name comes from "**vi** i**m**proved", because Vim is an improved clone of
-an earlier editor: [vi][vi] (from **vi**sual).
+an earlier editor: [vi][vi] (from "**vi**sual"), developed in 1976.
 
 {% endnote %}
 
@@ -812,6 +812,14 @@ an earlier editor: [vi][vi] (from **vi**sual).
 opens an editor when you describe a change, and on many systems that editor is
 Vim. You find yourself in a full-screen editor where what you type does nothing,
 or something you did not ask for, and where none of the usual ways out work.
+
+<!-- TODO: screenshot — the Vim ambush. Run `git commit` with staged changes
+     and `EDITOR=vim`, and capture the editor it opens: the empty first line
+     with the cursor on it, the `#` comment lines below explaining what to
+     write, and the status line at the bottom. This is the screen students
+     actually meet by accident, so it is the one worth recognising. Save it as
+     images/vim-git-commit.png and replace this comment with:
+     ![Vim opened by git commit](images/vim-git-commit.png) -->
 
 If this happens (_and it will_), there's **one** imperative rule to follow:
 
@@ -858,21 +866,46 @@ Vim by **typing**.
 The first thing to understand with Vim is that it has _3 modes_:
 
 - **Normal** mode (the one you're in when Vim starts).
-- **Command** mode (the one to use to save and/or quit).
 - **Insert** mode (the one to use to insert text).
+- **Command** mode (the one to use to save and/or quit).
 
 To go into each mode, use these keys:
 
 | From           | Type  | To go to |
 | :------------- | :---- | :------- |
-| Normal         | `:`   | Command  |
 | Normal         | `i`   | Insert   |
-| Command/Insert | `Esc` | Normal   |
+| Normal         | `:`   | Command  |
+| Insert/Command | `Esc` | Normal   |
+
+Since the same keys do different things in different modes, you must always
+know which one you are in. **The bottom line of the window tells you**: in
+**Insert** mode, Vim prints `-- INSERT --` in the bottom-left corner; in
+**Command** mode, it shows the `:` and the command you are typing there; in
+**Normal** mode, it shows neither, only the name of the file it opened, or
+nothing at all. Whenever you are lost, press `Esc` and look there.
 
 ### Normal mode
 
 The **Normal** mode of Vim is the one you're in when it starts.
 In this mode, you can move the cursor around with the arrow keys.
+
+<!-- TODO: screenshot — Normal mode. Open a file that already contains two or
+     three lines of text with `vim test.txt` and capture it untouched: the
+     text, the cursor as a solid block on the first character, the column of
+     `~` characters marking the lines past the end of the file, and the bottom
+     line showing the name of the file and no `-- INSERT --`. Shoot this one,
+     the Insert mode one and the Command mode one on the same file and in the
+     same window, so that the three can be compared. Save it as
+     images/vim-normal-mode.png and replace this comment with:
+     ![Vim in normal mode](images/vim-normal-mode.png) -->
+
+{% note %}
+
+The `~` characters down the left side of the window are **not** in your file.
+Vim draws them to mark the lines after the last one, so an empty file is a full
+screen of them.
+
+{% endnote %}
 
 You can also use some commands to interact with the text:
 
@@ -882,8 +915,8 @@ You can also use some commands to interact with the text:
 | `dw`    | Delete a word, with the cursor standing before the first letter |
 | `dd`    | Delete the complete line the cursor is on                       |
 | `u`     | Undo the last command                                           |
-| `:`     | Enter **Command** mode (to save and/or quit)                    |
 | `i`     | Enter **Insert** mode (to type text)                            |
+| `:`     | Enter **Command** mode (to save and/or quit)                    |
 
 {% note type: tip %}
 
@@ -891,12 +924,40 @@ At anytime, you can hit the `Esc` key to go back to the **Normal** mode.
 
 {% endnote %}
 
+### Insert mode
+
+The **Insert** mode is the one in which Vim behaves like the editor you expect:
+what you type goes into the file.
+
+You enter it from the **Normal** mode, with the key that matches where you want
+to start typing:
+
+| Command | Effect                                           |
+| :------ | :----------------------------------------------- |
+| `i`     | **I**nsert before the character under the cursor |
+| `a`     | **A**ppend after the character under the cursor  |
+| `o`     | **O**pen a new empty line below the current one  |
+
+Vim prints `-- INSERT --` in the bottom-left corner to tell you that you are in
+this mode. Type your text, then press `Esc` to go back to the **Normal** mode.
+
+<!-- TODO: screenshot — Insert mode. Same file and window as the Normal mode
+     screenshot, after pressing `i` and typing a few words, so that the two
+     images differ only by the typed text and the indicator. The
+     `-- INSERT --` in the bottom-left corner must be legible. Save it as
+     images/vim-insert-mode.png and replace this comment with:
+     ![Vim in insert mode](images/vim-insert-mode.png) -->
+
 ### Command mode
 
 The **Command** mode, which you can only access from the **Normal** mode,
 is the one you'll mostly use to save and/or quit.
 
-To enter the **Command** mode, hit the `:` key.
+To enter the **Command** mode, hit the `:` key. The colon appears at the
+**bottom of the window**, and so does everything you type after it: a command
+is never typed into your text. Press `Enter` to run it, or `Esc` to abandon it
+and go back to the **Normal** mode.
+
 From there, you can use some commands:
 
 | Command     | Effect                                                                |
@@ -906,7 +967,47 @@ From there, you can use some commands:
 | `q!`        | Force (**!**) Vim to **q**uit (any unsaved modification will be lost) |
 | `wq` or `x` | **W**rite and **q**uit, i.e. save the file then quit Vim.             |
 
-<!-- TODO: add link http://www.openvim.com/ -->
+<!-- TODO: screenshot — Command mode. Same file and window as the other two
+     screenshots, in the middle of typing `:wq`, captured before pressing
+     `Enter`, so that `:wq` is visible at the bottom of the window with the
+     cursor after it. The point is that the command went to the bottom line and
+     not into the text. Save it as images/vim-command-mode.png and replace this
+     comment with:
+     ![Typing the :wq command in Vim](images/vim-command-mode.png) -->
+
+### Trying it yourself
+
+The quickest way to stop being afraid of Vim is to go through one complete edit
+from beginning to end. Move to a directory where you can safely create a file,
+then:
+
+1. Run `vim test.txt` to open a new, empty file. You are in **Normal** mode:
+   there is no `-- INSERT --` at the bottom of the window.
+2. Press `i` to switch to **Insert** mode. `-- INSERT --` appears in the
+   bottom-left corner.
+3. Type a line of text, for example `Hello from Vim.`
+4. Press `Esc` to go back to **Normal** mode. The `-- INSERT --` indicator
+   disappears.
+5. Type `:wq`. The three characters appear at the bottom of the window instead
+   of in your text. Press `Enter`: Vim saves the file and quits.
+6. Run `cat test.txt` to check that your line is there.
+
+Do it a few times, and the three modes stop being mysterious.
+
+### Learning more
+
+This subject covers just enough Vim to survive meeting it. If you want to
+actually learn it, Vim comes with its own interactive tutorial, which takes
+roughly half an hour:
+
+```bash
+$> vimtutor
+```
+
+It is installed together with Vim on most systems. If your own machine does not
+have it, the [exercise server]({% link chapters/104-hello-ssh/exercise.md %})
+you will connect to later in this course does. [Open
+Vim](https://openvim.com) is an equivalent tutorial that runs in your browser.
 
 ## The `PATH` variable
 
