@@ -12,6 +12,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+- [Serve course files at short, edition-scoped addresses](#serve-course-files-at-short-edition-scoped-addresses)
 - [Verify SSH host keys when Ansible connects](#verify-ssh-host-keys-when-ansible-connects)
 - [Break-glass recovery for root users when Switch edu-ID is unavailable](#break-glass-recovery-for-root-users-when-switch-edu-id-is-unavailable)
 - [Automated SSH exercise VM setup with Ansible](#automated-ssh-exercise-vm-setup-with-ansible)
@@ -28,6 +29,73 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Stop publishing source maps with the course assets](#stop-publishing-source-maps-with-the-course-assets)
 
 <!-- END doctoc -->
+
+## Serve course files at short, edition-scoped addresses
+
+**Problem:** The treasure hunt of [Hello Shell][hello-shell-exercise] starts
+with
+`curl -fsSL https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/102-hello-shell/treasure-hunt.sh | bash`.
+The address is long to type, depends on GitHub, and names the `main` branch
+rather than an edition. Once the course rolls over, an archived edition's
+exercise downloads the next edition's script, which may no longer match the
+instructions beside it.
+
+**Why it is not being done now:** the address is correct for the edition being
+taught and only goes wrong at the rollover, so this has to land before the 2027
+edition is published.
+
+**Proposed approach:** declare short names in the course and have the build
+publish a copy of each target under the edition, at `/<edition>/go/<name>` —
+e.g. `https://archidep.ch/2026/go/treasure.sh`.
+
+- A `links:` map in [`course.yml`](../../course/course.yml), from a name to a
+  file of the course, e.g.
+  `treasure.sh: chapters/102-hello-shell/treasure-hunt.sh`. It is validated with
+  the rest of the course's declarations ([what the course
+  refuses][course-site-refusals]): a name that is not URL-safe, or a target with
+  no file behind it, is a build failure.
+- The build copies each target to `go/<name>` under the edition, in every mode.
+  The file published beside its page keeps its digested name; the copy is a
+  second, stable name for the same content.
+- The content refers to a link through the URL seam — a Liquid tag or a
+  reference kind of [`Urls`](../lib/archidep/course_site/urls.ex) — rather than
+  writing the address, so the edition prefix is not hard-coded and a name the
+  course does not declare is a build error.
+- Routing is unchanged: the static server's `^/[0-9]{4}/` location serves the
+  build and falls back to the archives, so a frozen edition's copy keeps
+  answering for that edition with the script as it was, and the rollover gains
+  no step.
+- The copies need a location of their own, `^/[0-9]{4}/go/`, sending
+  `Cache-Control: no-cache`. Unlike a digested file, a stable name keeps the
+  same address while its content changes during the edition, and a response
+  with no caching headers is one a browser or proxy may reuse by heuristic.
+  `no-cache` still lets a client revalidate with the `ETag` the static server
+  sends, so an unchanged file costs a `304`.
+
+It is a copy rather than a redirect because `curl` follows only HTTP redirects,
+and every `/<edition>/` request goes to a static server that has no data to
+redirect from. External links are left out: they cannot be copied, and nothing
+needs one yet.
+
+**Open questions to resolve when scheduling this**
+
+- Where the absolute address printed in the exercise comes from. `curl` needs an
+  origin and a live build knows none: `live_site_url` is only required of the
+  other modes, and `absolute_base_url` belongs to the PDF export.
+- What `Content-Type` the static server sends for a `.sh` file. The exercise
+  also links to the script so it can be read before it is run, and a browser
+  downloads a file served as `application/octet-stream` instead of showing it;
+  raw.githubusercontent.com serves `text/plain`.
+- Whether a name must keep its target's extension, which is what gives the copy
+  a type at all.
+- Whether caching should be an option of each link in `course.yml` rather than
+  one rule for all of them. The static server cannot read that data, so an
+  option would have to show in what the build writes: a different directory per
+  policy, or configuration generated for the server, which the design otherwise
+  avoids.
+- Whether a finished edition's copies may be cached for longer, since they
+  never change again. They are served through the archives fallback, which is a
+  location of its own and would need the same distinction.
 
 ## Verify SSH host keys when Ansible connects
 
@@ -625,5 +693,7 @@ does.
   the published tree and is not specific to source maps.
 
 [coveralls-config]: ../coveralls.json
+[course-site-refusals]: ../lib/archidep/course_site/CONTRIBUTING.md#what-it-refuses
+[hello-shell-exercise]: ../../course/chapters/102-hello-shell/exercise.md
 [ssh-exercise-vm-automation]: #automated-ssh-exercise-vm-setup-with-ansible
 [verify-ansible-host-keys]: #verify-ssh-host-keys-when-ansible-connects
