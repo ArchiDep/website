@@ -64,6 +64,27 @@ A backup copy of this site is available at [backup.archidep.ch][backup]. It may
 lag a little behind this site, but it is enough to keep reading the material and
 working on the exercises if the main site is temporarily down.
 
+### An AI tutor
+
+If you use an AI agent (Claude Code, Codex, Cursor, ChatGPT, etc.), remember
+that it can do any exercise of this course for you in a few minutes. But a
+finished exercise is not the goal: what you understand while you do it is. If
+the agent does the work, you learn nothing.
+
+The [ArchiDep tutor][tutor] turns your agent into a tutor for this course. It
+knows the course material and how far the class has got. It asks what you tried,
+gives you the smallest useful hint, and lets you type the commands yourself. You
+can also ask it to go through an exercise with you. Its page explains how to
+install it.
+
+{% note type: warning %}
+
+The tutor is an AI and it can be wrong. Check what it tells you, especially
+before you run a command on your server. When in doubt, this site and your
+teachers are the reference.
+
+{% endnote %}
+
 ### PDFs
 
 Each page (subject, slides, exercise) is downloadable as a PDF.
@@ -185,4 +206,5 @@ and related articles:
 [macos-cli]: https://www.freecodecamp.org/news/install-xcode-command-line-tools/
 [media-engineering]: https://heig-vd.ch/formation/bachelor/ingenierie-des-medias/
 [render]: https://render.com
+[tutor]: https://github.com/ArchiDep/tutor
 [wsl]: https://learn.microsoft.com/en-us/windows/wsl/about
