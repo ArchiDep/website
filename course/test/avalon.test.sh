@@ -275,16 +275,16 @@ set -e
 bash /course/chapters/102-hello-shell/treasure-hunt.sh
 H=~/treasure-hunt
 set -m
-(cd "$H/cave" && exec ./dragon > /dev/null 2>&1) &
-dragon=$!
+(cd "$H/cave" && exec ./octopus > /dev/null 2>&1) &
+octopus=$!
 set +m
 sleep 1
-kill -INT "$dragon"
-wait "$dragon" || true
-mv "$H/cave/lair/rusty-key" "$H/bag/"
-mv "$H/bag/rusty-key" "$H/fortress/key"
-cd "$H/fortress" && ./door
-cd courtyard && cp ../../shipwreck/map.txt map-copy.txt && ./guardian
+kill -INT "$octopus"
+wait "$octopus" || true
+mv "$H/cave/den/rusty-key" "$H/bag/"
+mv "$H/bag/rusty-key" "$H/fort/key"
+cd "$H/fort" && ./door
+cd courtyard && cp ../../shipwreck/map.txt map-copy.txt && ./mapmaker
 mkdir camp && echo lit > camp/fire && ./rest
 sed -i 's/state=closed/state=open/' drawbridge.conf && ./lever
 cd tower && rm cursed-chest.txt trap-*.txt && ./stairs
