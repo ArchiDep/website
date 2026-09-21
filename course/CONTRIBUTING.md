@@ -417,9 +417,12 @@ index.
 get a summary of a long page from its fetch tool, never sees what a student sees
 in the browser or on their server, and cannot read the instructions of an
 exercise that a program the student runs gives step by step. Notes are short and
-plain text, so they survive where the page does not. In both of the lists
-below, write the sections in the order given, leaving out any that does not
-apply.
+plain text, so they survive where the page does not. A student's agent reads
+them in every conversation about the chapter, at the student's expense, so they
+say only what the tutor cannot get elsewhere: not what the page says, what
+`/llms.txt` says about notes, or how deep the section goes, which its
+`description` already tells. In both of the lists below, write the sections in
+the order given, leaving out any that does not apply.
 
 An **exercise's** notes:
 
@@ -444,12 +447,21 @@ changes much less often. They are what makes the tutor answer at the depth the
 course teaches, and let an exercise's notes point to them rather than explain
 the material again.
 
-1. **Scope**: what the subject teaches, and how deep.
+1. **Scope**: where each part is, by heading, and whether in the subject or
+   its slides, which the tutor may not fetch; what is optional.
 2. **Left out**: what it deliberately does not cover, so that the tutor does not
-   bring it in.
+   bring it in, split into what a later chapter teaches (named) and what the
+   course never does.
 3. **Key concepts and vocabulary**: the terms and mental models the course uses,
    so that the tutor uses the same words.
-4. **Used in**: which exercises apply which parts of it.
+4. **Misconceptions**: the wrong models students bring, and where the course
+   explains something differently from how it is usually explained. They are
+   what the tutor checks a student's own explanation against. Label each as a
+   `**Misconception:**` followed by its `**Correction:**`, so that no false
+   statement stands unmarked for an agent reading only part of the notes.
+5. **Used in**: how much of the course relies on it, stated first so that the
+   list is not read as the only places it is used, then the exercises that lean
+   on particular parts of it.
 
 **Notes change with their chapter, in the same change.** Notes that describe a
 previous version of a chapter mislead the tutor more than missing notes would,
