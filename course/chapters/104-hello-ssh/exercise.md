@@ -13,6 +13,8 @@ command and other SSH-based tools. Your username and password for this server
 are shown on the [dashboard][dashboard], along with the fingerprints of the
 server's SSH host keys.
 
+![The SSH exercise server's dashboard, showing the username, password and host key fingerprints](images/dashboard-username-password-host-key-fingerprints.png)
+
 As we've seen, the basic syntax of the SSH command is as follows:
 
 ```bash
