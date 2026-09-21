@@ -757,12 +757,13 @@ As you can see, it tells you the name of the file you opened. Now you can:
 Editing the shell configuration will depend on your shell: for Zsh (the default
 terminal shell on macOS) or Bash shell (the default in the WSL and most Linux
 systems), you have to set the `$EDITOR` environment variable. You can do that by
-adding the following line to your **`~/.zshrc` or `~/.bashrc` file**
-depending on which shell you are using:
+adding the line `export EDITOR=nano` to your **`~/.zshrc` or `~/.bashrc` file**
+depending on which shell you are using. Run the command for your shell to add it
+at the end of the file:
 
 ```bash
-export EDITOR=nano >> ~/.bashrc  # on WSL or Linux
-export EDITOR=nano >> ~/.zshrc   # on macOS
+$> echo 'export EDITOR=nano' >> ~/.bashrc  # on WSL or Linux
+$> echo 'export EDITOR=nano' >> ~/.zshrc   # on macOS
 ```
 
 Remember that you must **relaunch your terminal** for this change to take
