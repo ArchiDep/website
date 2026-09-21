@@ -47,55 +47,34 @@ infrastructure:
 
 ### :exclamation: Configure basic settings
 
+You will now configure your virtual machine.
+
+{% callout animate: true %}
+
+**Make sure to select the `Ubuntu 26.04` image (x64) and the `B2ats_v2` or `B1s`
+size**. If you select a VM size that is too expensive, **YOU WILL RUN OUT OF
+FREE CREDITS BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new
+VM and will have to reinstall your VM from scratch (including all deployment
+exercises you may already have completed).
+
+{% endcallout %}
+
 In the **Basics** settings, configure the **virtual machine details** (the
 machine's name, region, image and size):
 
 ![Azure: VM instance details](images/azure-vm-instance-details.png)
 
-{% callout animate: true %}
-
-**Make sure to select the `Ubuntu 26.04` image (x64) and the `B2ats_v2` size**
-(or the `B1s` size if `B2ats_v2` is not available in any of your regions). If
-you select a VM size that is too expensive, **YOU WILL RUN OUT OF FREE CREDITS
-BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new VM and will
-have to reinstall your VM from scratch (including all deployment exercises you
-may already have completed).
-
-{% endcallout %}
-
-{% note type: troubleshooting %}
-
-If the correct size is not selected, you can select it from the complete list of
-VM sizes. If you cannot select the `B2ats_v2` size (for example, if it is listed
-under **Insufficient quota**), try selecting another availability zone (or
-another of the regions you are allowed to use).
-
-If `B2ats_v2` is not available in any of your regions, select the `B1s` size
-instead.
-
-![Azure: virtual machine size](images/azure-vm-size.png)
-
-{% endnote %}
-
 {% note type: tip %}
 
-As a student, you are not allowed to run your virtual machine in any region.
-Azure only allows each student a handful of regions, and **they are different
-for each student**. Choose one of the regions listed as **Recommended** for you;
-those listed as **Ineligible** will not work:
-
-![Azure: recommended regions](images/azure-vm-recommended-regions.png)
-
-Among your allowed regions, choosing one closer to where you are (or where your
-customers are) will reduce latency. Prices vary slightly between regions: the
-[cost review](#review-your-monthly-cost) below will tell you if your choice is
-too expensive.
+If you cannot select the right size, [see
+below](#i-cant-select-the-right-size-or-region) for troubleshooting.
 
 {% endnote %}
 
 #### :exclamation: Configure your administrator account
 
-Under the **Administrator account** settings, configure your username.
+Still in the **Basics** settings, just below, under the **Administrator
+account** settings, configure your username.
 
 {% callout type: exercise %}
 
@@ -123,6 +102,35 @@ name that starts with a letter (a-z) and contains only alphanumeric characters
 
 Choose a username that is simple to type because you will need to type it often.
 If necessary, you can [change it later][sysadmin-cheatsheet-change-username].
+
+{% endnote %}
+
+#### :question: I can't select the right size or region
+
+{% note type: troubleshooting %}
+
+If the correct size is not selected, you can select it from the complete list of
+VM sizes. If you can select neither `B1s` nor `B2ats_v2` (for example, if they
+are listed under **Insufficient quota**), try selecting another availability
+zone, or another of the regions you are allowed to use.
+
+![Azure: virtual machine size](images/azure-vm-size.png)
+
+{% endnote %}
+
+{% note type: tip %}
+
+As a student, you are not allowed to run your virtual machine in any region.
+Azure only allows each student a handful of regions, and **they are different
+for each student**. Choose one of the regions listed as **Recommended** for you;
+those listed as **Ineligible** will not work:
+
+![Azure: recommended regions](images/azure-vm-recommended-regions.png)
+
+Among your allowed regions, choosing one closer to where you are (or where your
+customers are) will reduce latency. Prices vary slightly between regions: the
+[cost review](#review-your-monthly-cost) below will tell you if your choice is
+too expensive.
 
 {% endnote %}
 
@@ -212,8 +220,8 @@ your disposal for this course.
 
 ### :exclamation: Create your server
 
-Double-check that you are launching one virtual machine of size `B2ats_v2` (or
-`B1s`).
+Double-check that you are launching one virtual machine of size `B2ats_v2` or
+`B1s`.
 
 🎉 Create your virtual machine!
 
