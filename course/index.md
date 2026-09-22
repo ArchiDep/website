@@ -209,4 +209,5 @@ and related articles:
 [render]: https://render.com
 [tutor]: https://github.com/ArchiDep/tutor
 [wsl]: https://learn.microsoft.com/en-us/windows/wsl/about
+
 [wsl-install]: {% link chapters/101-command-line/subject.md %}#appendix-installing-the-wsl-step-by-step
