@@ -120,6 +120,10 @@ for area in cave/den fort/courtyard skull-island; do
 done
 check "the ruins' hint shows the way to the shipwreck" \
   grep -qF "cd ../../shipwreck" "$HUNT/jungle/ruins/.hint"
+check "the shipwreck's hint shows how to read the diary from the beginning" \
+  grep -qF "less diary.txt" "$HUNT/shipwreck/.hint"
+check "the shipwreck's hint shows the way to the cave" \
+  grep -qF "cd ../cave" "$HUNT/shipwreck/.hint"
 
 # tells_how_to_run <directory> <command>: the hint of a place that holds a
 # program names the command that runs it, for a student who reads the hint
@@ -171,7 +175,10 @@ wait "$octopus"
 STATUS=$?
 check "Ctrl-C makes the octopus flee (exit status $STATUS)" [ "$STATUS" -eq 0 ]
 check "the den appears" [ -f "$HUNT/cave/den/rusty-key" ]
-check "the den has a hint" [ -f "$HUNT/cave/den/.hint" ]
+check "the cave's hint now shows the way into the den" \
+  grep -qF "cd den" "$HUNT/cave/.hint"
+check "the den's hint shows the way to the fort" \
+  grep -qF "cd ../../fort" "$HUNT/cave/den/.hint"
 check "the key itself asks to be put in the bag" \
   grep -q "put it in your bag" "$HUNT/cave/den/rusty-key"
 gate "the octopus is gone afterwards" 0 "$HUNT/cave" ./octopus
@@ -187,6 +194,8 @@ gate "the door opens with the rusty key" 0 "$HUNT/fort" ./door
 check "the courtyard appears with the mapmaker" is_executable "$HUNT/fort/courtyard/mapmaker"
 check "the courtyard's hint tells how to run the mapmaker" \
   tells_how_to_run "$HUNT/fort/courtyard" ./mapmaker
+check "the fort's hint now shows the way into the courtyard" \
+  grep -qF "cd courtyard" "$HUNT/fort/.hint"
 check "the door drops coin 1" [ -n "$(digit_of "$HUNT/bag/coin-1")" ]
 check "the rest does not exist yet" [ ! -e "$HUNT/fort/courtyard/rest" ]
 
@@ -225,6 +234,8 @@ check "the lever drops coin 2" [ -n "$(digit_of "$HUNT/bag/coin-2")" ]
 check "the tower appears with its stairs" is_executable "$COURTYARD/tower/stairs"
 check "the tower's hint tells how to run the stairs" \
   tells_how_to_run "$COURTYARD/tower" ./stairs
+check "the courtyard's hint now shows the way into the tower" \
+  grep -qF "cd tower" "$COURTYARD/.hint"
 
 TOWER="$COURTYARD/tower"
 
@@ -236,6 +247,8 @@ check "the stairs name the trap that is left" output_contains trap-spiders.txt
 (cd "$TOWER" && rm trap-spiders.txt)
 gate "the stairs let you climb once everything is gone" 0 "$TOWER" ./stairs
 check "the parrot appears" [ -f "$TOWER/top/parrot.txt" ]
+check "the tower's hint now shows the way to the top" \
+  grep -qF "cd top" "$TOWER/.hint"
 
 echo "The bell"
 gate "the bell does nothing from the tower" 1 "$TOWER/top" "$HUNT/bell"

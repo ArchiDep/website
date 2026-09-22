@@ -433,7 +433,15 @@ text SHIPWRECK_HINT <<'END_SHIPWRECK_HINT'
 HINT
 
 The diary is long. cat prints all of it, and you only see the end.
-Read the end first: it tells you what to do.
+To read it from the beginning, use less. The first lines of the diary
+explain how to move in it, and how to quit it:
+
+    less diary.txt
+
+The captain buried the key in the sea cave, behind the octopus. The
+cave is next to the shipwreck:
+
+    cd ../cave
 END_SHIPWRECK_HINT
 
 text MAP <<'END_MAP'
@@ -507,6 +515,16 @@ See "Run a program" in the command line cheatsheet:
 @@CHEATSHEET@@#run-a-program-program
 END_CAVE_HINT
 
+# What the cave says once the octopus has fled, in place of the hint that
+# explains how to wake it up.
+text CAVE_HINT_AFTER <<'END_CAVE_HINT_AFTER'
+HINT
+
+The octopus is gone. Where it slept, its den is open:
+
+    cd den
+END_CAVE_HINT_AFTER
+
 text OCTOPUS <<'END_OCTOPUS'
 #!/bin/bash
 # A giant octopus. It is sleeping. Do not wake it up.
@@ -543,9 +561,12 @@ SEALED
   unpack "$HUNT/cave/den/rusty-key" 644 <<'SEALED_RUSTY_KEY' &&
 @@RUSTY_KEY@@
 SEALED_RUSTY_KEY
-  unpack "$HUNT/cave/den/.hint" 644 <<'SEALED_DEN_HINT'
+  unpack "$HUNT/cave/den/.hint" 644 <<'SEALED_DEN_HINT' &&
 @@DEN_HINT@@
 SEALED_DEN_HINT
+  unpack "$HUNT/cave/.hint" 644 <<'SEALED_CAVE_HINT_AFTER'
+@@CAVE_HINT_AFTER@@
+SEALED_CAVE_HINT_AFTER
   exit 0
 }
 
@@ -608,7 +629,9 @@ is in ~/treasure-hunt/bag. From here, that is two levels up:
 
     mv rusty-key ../../bag/
 
-Then take the key to the fort.
+Then go to the fort, which is also two levels up:
+
+    cd ../../fort
 
 See "Move stuff" in the command line cheatsheet:
 @@CHEATSHEET@@#move-stuff-mv
@@ -635,6 +658,16 @@ mv moves a file. It can also give it a new name, at the same time:
 
 Then run ./door again.
 END_FORT_HINT
+
+# What the fort says once its door is open, in place of the hint that explains
+# how to unlock it.
+text FORT_HINT_AFTER <<'END_FORT_HINT_AFTER'
+HINT
+
+The door is open. The courtyard of the fort is behind it:
+
+    cd courtyard
+END_FORT_HINT_AFTER
 
 text DOOR <<'END_DOOR'
 #!/bin/bash
@@ -678,9 +711,12 @@ mkdir "$HUNT/fort/courtyard" &&
 unpack "$HUNT/fort/courtyard/mapmaker" 755 <<'SEALED_MAPMAKER' &&
 @@MAPMAKER@@
 SEALED_MAPMAKER
-unpack "$HUNT/fort/courtyard/.hint" 644 <<'SEALED_MAPMAKER_HINT' || exit 1
+unpack "$HUNT/fort/courtyard/.hint" 644 <<'SEALED_MAPMAKER_HINT' &&
 @@MAPMAKER_HINT@@
 SEALED_MAPMAKER_HINT
+unpack "$HUNT/fort/.hint" 644 <<'SEALED_FORT_HINT_AFTER' || exit 1
+@@FORT_HINT_AFTER@@
+SEALED_FORT_HINT_AFTER
 
 mkdir -p "$HUNT/bag"
 reveal > "$HUNT/bag/coin-1" <<'SEALED'
@@ -983,6 +1019,16 @@ then Enter. Quit with Ctrl-X. (Vim works too, if you know it.)
 Then run ./lever again.
 END_DRAWBRIDGE_HINT
 
+# What the courtyard says once the drawbridge is down, in place of the hint
+# that explains how to open it.
+text COURTYARD_HINT_AFTER <<'END_COURTYARD_HINT_AFTER'
+HINT
+
+The drawbridge is down. The tower is on the other side of it:
+
+    cd tower
+END_COURTYARD_HINT_AFTER
+
 text LEVER <<'END_LEVER'
 #!/bin/bash
 # The lever of the drawbridge.
@@ -1024,9 +1070,12 @@ SEALED_TRAP_SPIDERS
 unpack "$here/tower/stairs" 755 <<'SEALED_STAIRS' &&
 @@STAIRS@@
 SEALED_STAIRS
-unpack "$here/tower/.hint" 644 <<'SEALED_TOWER_HINT' || exit 1
+unpack "$here/tower/.hint" 644 <<'SEALED_TOWER_HINT' &&
 @@TOWER_HINT@@
 SEALED_TOWER_HINT
+unpack "$here/.hint" 644 <<'SEALED_COURTYARD_HINT_AFTER' || exit 1
+@@COURTYARD_HINT_AFTER@@
+SEALED_COURTYARD_HINT_AFTER
 
 mkdir -p "$HUNT/bag"
 reveal > "$HUNT/bag/coin-2" <<'SEALED'
@@ -1145,6 +1194,16 @@ See "Delete stuff" in the command line cheatsheet:
 @@CHEATSHEET@@#delete-stuff-rm
 END_TOWER_HINT
 
+# What the tower says once the stairs have been climbed, in place of the hint
+# that explains how to clear them.
+text TOWER_HINT_AFTER <<'END_TOWER_HINT_AFTER'
+HINT
+
+You climbed the stairs. The top of the tower is one place further:
+
+    cd top
+END_TOWER_HINT_AFTER
+
 text STAIRS <<'END_STAIRS'
 #!/bin/bash
 # The stairs of the tower.
@@ -1181,9 +1240,12 @@ mkdir "$here/top" &&
 unpack "$here/top/parrot.txt" 644 <<'SEALED_PARROT' &&
 @@PARROT@@
 SEALED_PARROT
-unpack "$here/top/.hint" 644 <<'SEALED_TOP_HINT' || exit 1
+unpack "$here/top/.hint" 644 <<'SEALED_TOP_HINT' &&
 @@TOP_HINT@@
 SEALED_TOP_HINT
+unpack "$here/.hint" 644 <<'SEALED_TOWER_HINT_AFTER' || exit 1
+@@TOWER_HINT_AFTER@@
+SEALED_TOWER_HINT_AFTER
 
 reveal <<'SEALED'
 The curse is gone. You climb the stairs, all the way to the top.
@@ -1664,12 +1726,14 @@ build() {
   embed BELL BOAT_HINT_AFTER BOAT_HINT_AFTER
   embed STAIRS PARROT PARROT
   embed STAIRS TOP_HINT TOP_HINT
+  embed STAIRS TOWER_HINT_AFTER TOWER_HINT_AFTER
   embed LEVER CURSED_CHEST CURSED_CHEST
   embed LEVER TRAP_SPIKES TRAP_SPIKES
   embed LEVER TRAP_SNAKES TRAP_SNAKES
   embed LEVER TRAP_SPIDERS TRAP_SPIDERS
   embed LEVER STAIRS STAIRS
   embed LEVER TOWER_HINT TOWER_HINT
+  embed LEVER COURTYARD_HINT_AFTER COURTYARD_HINT_AFTER
   embed REST DRAWBRIDGE_CONF DRAWBRIDGE_CONF
   embed REST LEVER LEVER
   embed REST DRAWBRIDGE_HINT DRAWBRIDGE_HINT
@@ -1677,8 +1741,10 @@ build() {
   embed MAPMAKER REST_HINT REST_HINT
   embed DOOR MAPMAKER MAPMAKER
   embed DOOR MAPMAKER_HINT MAPMAKER_HINT
+  embed DOOR FORT_HINT_AFTER FORT_HINT_AFTER
   embed OCTOPUS RUSTY_KEY RUSTY_KEY
   embed OCTOPUS DEN_HINT DEN_HINT
+  embed OCTOPUS CAVE_HINT_AFTER CAVE_HINT_AFTER
 
   mkdir -p \
     "$HUNT/bag" \
