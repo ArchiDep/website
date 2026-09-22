@@ -7,11 +7,14 @@ sections:
       further: navigating and manipulating files in a Unix shell, getting help,
       editing files with nano, running programs and the `PATH`, then connecting
       to a remote server with SSH and authenticating with a key pair. What
-      students must understand of SSH's security is why they check a server's
-      key fingerprint on the first connection instead of blindly accepting it.
-      The cryptography in the slides (encryption, key exchange, hashes) is
-      general background for that point, which students are not expected to
-      explain. Vim, shell customization and OpenSSL are optional extras.
+      students must understand of SSH's security is that both sides prove their
+      identity the same way, in opposite directions: a digital signature made
+      with a private key and checked with the matching public key. That is why
+      they check a server's key fingerprint on the first connection instead of
+      blindly accepting it, and why their private key never leaves their
+      machine. The rest of the cryptography in the slides (encryption, key
+      exchange, hashes) is general background, which students are not expected
+      to remember. Vim, shell customization and OpenSSL are optional extras.
       Everything later relies on the shell, and on the SSH key made here.
   - title: Version Control
     description: >-

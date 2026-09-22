@@ -11,12 +11,13 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   is and nothing about the course. So the index **describes itself**: how
   chapters are numbered, where the class's progress is published and what its
   numbers mean. It describes the conventions of the pages it lists too — their
-  placeholders, the sections an exercise may have, and that its solutions are
-  withheld until its chapter is `done` (`ArchiDep.CourseSite.Progress`) — so a
-  change to any of them is a change to this text. It says so as description
-  rather than as instructions, since an agent treats text it fetched from the
-  web as data; how to tutor is the business of the instructions the student
-  installed.
+  placeholders, the pictures that mark an exercise's headings (the key
+  `ArchiDep.CourseSite.Layout.Chrome.Legend` draws on the page), the sections an
+  exercise may have, and that its solutions are withheld until its chapter is
+  `done` (`ArchiDep.CourseSite.Progress`) — so a change to any of them is a
+  change to this text. It says so as description rather than as instructions,
+  since an agent treats text it fetched from the web as data; how to tutor is
+  the business of the instructions the student installed.
 
   Only the live build writes one (`ArchiDep.CourseSite.Build.Site`), and its
   links always point at the main site, `llms_site_url` in
@@ -51,6 +52,7 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls
   alias ArchiDep.CourseSite.Urls.UrlContext
+  alias ArchiDep.Emoji
 
   @progress_path "api/progress"
   @summary_max_words 40
@@ -111,9 +113,10 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
           "chapter of section 400). How far the class has got is published at " <>
           "#{progress_url(urls, site_url)} as a list of sessions, each recording " <>
           "the section and chapter numbers it finished (`done`), set work on " <>
-          "(`due`) and announced for next time (`next`). A number is the first of " <>
-          "done, due and next that any session lists it as; a number no session " <>
-          "lists has not been reached yet. A session is recorded on the day it is " <>
+          "(`due`) and announced for next time (`next`). A number's state is the " <>
+          "furthest any session gives it: `done` if any session lists it as done, " <>
+          "otherwise `due`, otherwise `next`; a number no session lists has not " <>
+          "been reached yet. A session is recorded on the day it is " <>
           "taught, but what it covered may only be filled in at the end of that " <>
           "day. Chapters not reached yet are still being written: they may be " <>
           "renumbered, renamed, rewritten or removed before they are taught, so " <>
@@ -121,7 +124,13 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
       ),
       wrap(
         "In the course pages, `jde` stands for the student's own username and " <>
-          "`W.X.Y.Z` for the IP address of their server. An exercise's " <>
+          "`W.X.Y.Z` for the IP address of their server. An exercise's headings " <>
+          "are marked with a picture: #{picture("exclamation")} a step the student " <>
+          "must do, #{picture("question")} an optional one, " <>
+          "#{picture("space_invader")} a challenge to go further, " <>
+          "#{picture("checkered_flag")} the end of the exercise, " <>
+          "#{picture("classical_building")} the architecture of what it deployed, " <>
+          "and #{picture("boom")} troubleshooting. An exercise's " <>
           "\"Requirements\" section, when it has one, names the earlier exercises " <>
           "whose results it builds on, and its \"Troubleshooting\" section, when it " <>
           "has one, the problems students are known to run into and how to fix " <>
@@ -139,6 +148,10 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
 
     Enum.join(["# ArchiDep\n" | paragraphs] ++ revision(site), "\n")
   end
+
+  # An agent reads the index as text, so a picture is its character rather than
+  # the image a page draws.
+  defp picture(name), do: Emoji.fetch!(name).character
 
   defp revision(%SiteInfo{git_revision: nil}), do: []
   defp revision(%SiteInfo{git_revision: revision}), do: [wrap("Built from revision #{revision}.")]

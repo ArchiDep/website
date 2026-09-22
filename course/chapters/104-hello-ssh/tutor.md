@@ -139,6 +139,13 @@ identities found`. Hint: does the prompt name a key file?
   the session was opened with `-o PubkeyAuthentication=no` in "Is your password
   gone?" and kept open. Hint: log out, and log in with plain `ssh`. If that asks
   for a password, see the previous pitfall.
+- **`WARNING: UNPROTECTED PRIVATE KEY FILE!`**, then a password prompt or a
+  refusal (Windows): the private key is under `/mnt/c`, or was copied from
+  there, and looks readable by anyone. The warning under "Do I already have a
+  key pair?" is the reference. Hints: in which directory is the key, a Windows
+  or a Linux one? Then: generate the key pair in the WSL's `~/.ssh`. A key
+  already copied there works again after `chmod 600 ~/.ssh/id_ed25519`, as a
+  recipe ("Unix Permissions").
 - **`REMOTE HOST IDENTIFICATION HAS CHANGED` for `ssh.archidep.ch`.** Hint:
   what could have changed, and how would you know it is not an attack?
 - **`scp` asks whether to trust `ssh.archidep.ch`, asks for a password, or says
@@ -155,9 +162,10 @@ identities found`. Hint: does the prompt name a key file?
   covers it, with the chest of 102.
 - **The command sent to the Lady of the Lake fails before she speaks**:
   - `No such file or directory` with a path of the student's own computer
-    (`/Users/…`): their shell turned `~` into their own home directory before
-    `ssh` sent the command. Hint: which machine expanded `~`? The hint writes
-    the path relative to the home directory on the server.
+    (`/Users/…` on macOS, `/home/…` in the WSL): their shell turned `~` into
+    their own home directory before `ssh` sent the command. Hint: which machine
+    expanded `~`? The hint writes the path relative to the home directory on the
+    server.
   - `command not found`: she is not in the server's `PATH`, like the treasure.
   - `ssh … cd avalon && ./lady …`: the part after `&&` runs on the student's
     computer. Hint: how many commands did `ssh` receive?

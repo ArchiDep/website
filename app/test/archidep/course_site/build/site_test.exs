@@ -596,22 +596,24 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     100, plus its place in that section (402 is the second chapter of section 400).
     How far the class has got is published at https://archidep.ch/api/progress as a
     list of sessions, each recording the section and chapter numbers it finished
-    (`done`), set work on (`due`) and announced for next time (`next`). A number is
-    the first of done, due and next that any session lists it as; a number no
-    session lists has not been reached yet. A session is recorded on the day it is
-    taught, but what it covered may only be filled in at the end of that day.
-    Chapters not reached yet are still being written: they may be renumbered,
-    renamed, rewritten or removed before they are taught, so only what has been
-    taught is final.
+    (`done`), set work on (`due`) and announced for next time (`next`). A number's
+    state is the furthest any session gives it: `done` if any session lists it as
+    done, otherwise `due`, otherwise `next`; a number no session lists has not been
+    reached yet. A session is recorded on the day it is taught, but what it covered
+    may only be filled in at the end of that day. Chapters not reached yet are still
+    being written: they may be renumbered, renamed, rewritten or removed before they
+    are taught, so only what has been taught is final.
 
     In the course pages, `jde` stands for the student's own username and `W.X.Y.Z`
-    for the IP address of their server. An exercise's "Requirements" section, when
-    it has one, names the earlier exercises whose results it builds on, and its
-    "Troubleshooting" section, when it has one, the problems students are known to
-    run into and how to fix them. An exercise's solutions are left out of its page
-    until the class has finished its chapter (`done`). Some values, such as the
-    details of a student's server, are only shown in the browser of a logged-in
-    student.
+    for the IP address of their server. An exercise's headings are marked with a
+    picture: ❗ a step the student must do, ❓ an optional one, 👾 a challenge to go
+    further, 🏁 the end of the exercise, 🏛️ the architecture of what it deployed, and
+    💥 troubleshooting. An exercise's "Requirements" section, when it has one, names
+    the earlier exercises whose results it builds on, and its "Troubleshooting"
+    section, when it has one, the problems students are known to run into and how to
+    fix them. An exercise's solutions are left out of its page until the class has
+    finished its chapter (`done`). Some values, such as the details of a student's
+    server, are only shown in the browser of a logged-in student.
 
     Some chapters have tutor notes, written for an AI tutor helping a student
     through the chapter: what it teaches, where students usually get stuck, hints,
