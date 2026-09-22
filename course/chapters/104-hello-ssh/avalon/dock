@@ -578,6 +578,38 @@ SEALED
   exit 1
 fi
 
+# A command this server sends to itself, with "ssh <server> <command>" typed
+# while logged in, gets no terminal either, but it comes from Avalon all the
+# same. SSH_CONNECTION begins with the address the connection came from, which
+# is then one of this machine's own.
+from=${SSH_CONNECTION%% *}
+here=no
+case "$from" in
+  127.* | ::1) here=yes ;;
+  *)
+    for address in $(hostname -I 2> /dev/null); do
+      if [ "$address" = "$from" ]; then
+        here=yes
+      fi
+    done
+    ;;
+esac
+
+if [ "$here" = yes ]; then
+  reveal <<'SEALED'
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The lake is still. Nobody answers.
+
+The Lady of the Lake does not speak to travellers who stay on Avalon,
+and your call comes from Avalon itself: you sent it from this server.
+Leave with exit, and call her from your own computer.
+SEALED
+  exit 1
+fi
+
 if [ "$#" -eq 0 ]; then
   reveal <<'SEALED'
 A voice rises from the lake: "Who calls me? Say the word, traveller.

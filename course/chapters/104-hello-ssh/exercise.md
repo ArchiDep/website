@@ -159,7 +159,7 @@ By default, SSH keys are stored in the `.ssh` directory in your home directory:
 
 ```bash
 $> ls ~/.ssh
-id_ed25519  id_ed25519.pub
+id_ed25519  id_ed25519.pub  known_hosts
 ```
 
 If you have the `id_ed25519` and `id_ed25519.pub` files, you're good to go, since
@@ -169,7 +169,11 @@ algorithm, such as an [ECDSA][ecdsa] key pair with files named `id_ecdsa` and
 `id_ecdsa.pub`, or an [RSA][rsa] key pair with files named `id_rsa` and
 `id_rsa.pub` if your system has an older SSH client.
 
-If the directory doesn't exist or is empty, you don't have a key pair yet.
+The `known_hosts` file is where your SSH client remembers the servers you
+trusted: it was created when you first connected to any server over SSH.
+
+If the directory doesn't exist or only contains `known_hosts`, you don't have a
+key pair yet.
 
 {% note %}
 
@@ -223,7 +227,6 @@ algorithm:
 $> ssh-keygen
 Generating public/private ed25519 key pair.
 Enter file in which to save the key (/home/jde/.ssh/id_ed25519):
-Created directory '/home/jde/.ssh'.
 Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
 Your identification has been saved in /home/jde/.ssh/id_ed25519.
@@ -271,7 +274,7 @@ SSH directory:
 
 ```bash
 $> ls ~/.ssh
-id_ed25519 id_ed25519.pub
+id_ed25519  id_ed25519.pub  known_hosts
 ```
 
 ### :exclamation: Use `ssh-copy-id` to copy your public key to the server
@@ -397,6 +400,16 @@ server's own keys are in the `/etc/ssh` directory.
 | `/etc/ssh/ssh_host_ed25519_key`     |         |          |         |
 | `/etc/ssh/ssh_host_ed25519_key.pub` |         |          |         |
 
+{% note type: tip %}
+
+In modern Ubuntu (WSL included), the lines of your `~/.ssh/known_hosts` file
+start with `|1|` and a jumble of characters instead of `ssh.archidep.ch`. Ubuntu
+hides the names of the servers you connect to, in case someone reads the file.
+The rest of each line is unchanged: a key type such as `ssh-ed25519`, then a
+server's public key.
+
+{% endnote %}
+
 Then answer these questions:
 
 - Which of these files is used to prove to the server that you are you?
@@ -461,8 +474,8 @@ A path on the server that does not start with `/` starts in your home directory
 **on the server**. `jde@ssh.archidep.ch:hello.txt` is the file `~/hello.txt` of
 the `jde` user, on the server.
 
-You will use `scp` at the end of this exercise, on your way to the remote land
-of Avalon.
+You will use `scp` later in the exercise, on your way to the remote land of
+Avalon.
 
 {% note type: tip %}
 
@@ -973,11 +986,18 @@ computer:
 - Open your shell's configuration file with nano (`~/.bashrc` in the WSL,
   `~/.zshrc` on macOS), and delete the line you added to your `PATH` in [Hello
   Shell][hello-shell]. Then open a new terminal.
-- Delete the prophecy you brought home from Avalon, and `land.txt` if you made
-  one:
+- Delete the prophecy you brought home from Avalon. It is in the directory you
+  ran `scp` in:
 
   ```bash
-  $> rm prophecy land.txt
+  $> rm prophecy
+  ```
+
+- If you made a `land.txt` file on your way to Avalon, delete it too, in the
+  directory you made it in:
+
+  ```bash
+  $> rm land.txt
   ```
 
 - If you signed a message with your key, delete it and its signature:
