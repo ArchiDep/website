@@ -100,14 +100,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
 
   defp expected_cards(cards) do
     String.trim_trailing("""
-    <div class="not-prose my-4 grid grid-cols-1 xl:grid-cols-3 gap-4 print:hidden">
+    <div class="not-prose my-4 grid grid-cols-1 @prose-xl:grid-cols-3 gap-4 print:hidden">
       #{Enum.join(cards)}
     </div>
     """)
   end
 
   defp card_markup(title, card_class, line_class, link_class, entries) do
-    ~s(<div class="card card-sm 2xl:card-md #{card_class}">\n) <>
+    ~s(<div class="card card-sm @prose-2xl:card-md #{card_class}">\n) <>
       ~s(    <div class="card-body">\n) <>
       ~s(      <p class="card-title font-title text-2xl mt-0 flex-none">\n) <>
       ~s(        #{title}\n) <>

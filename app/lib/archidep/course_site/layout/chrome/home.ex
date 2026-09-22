@@ -174,11 +174,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
     ~H"""
     <div
       :if={@cards != []}
-      class="not-prose my-4 grid grid-cols-1 xl:grid-cols-3 gap-4 print:hidden"
+      class="not-prose my-4 grid grid-cols-1 @prose-xl:grid-cols-3 gap-4 print:hidden"
     >
       <div
         :for={card <- @cards}
-        class={["card card-sm 2xl:card-md", style(card.kind).card_class]}
+        class={["card card-sm @prose-2xl:card-md", style(card.kind).card_class]}
       >
         <div class="card-body">
           <p class="card-title font-title text-2xl mt-0 flex-none">

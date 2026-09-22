@@ -4,13 +4,17 @@ git-memoir {
   @apply bg-zinc-400 border-slate-800 min-h-[var(--memoir-min-height)] my-4;
 }
 
-/* A code block whose values are randomized is moved inside the element that
+/* A code block is drawn across the padding around the text, as far as the edges
+ * of the box the text is in (see `--content-pad` in
+ * `ArchiDep.CourseSite.Layout.Chrome.Article`).
+ *
+ * A code block whose values are randomized is moved inside the element that
  * announces it, which is what carries the reminder tooltip (see
  * `course/src/assets/course/randomize.ts`), so it is a block of the page all
  * the same and is drawn as widely as the rest. */
 main > pre.lumis,
 main > .archidep-randomize > pre.lumis {
-  @apply -ml-4 lg:-ml-6 xl:-ml-8 -mr-4 lg:-mr-6 xl:-mr-8;
+  @apply -mx-(--content-pad);
 }
 
 /* A code block scrolls sideways, so a marked line must be as wide as the code
@@ -54,35 +58,35 @@ ul.legend {
   @apply m-0 p-0 list-none flex flex-col gap-2;
 
   & li {
-    @apply m-0 py-0 pr-0 pl-[calc(var(--spacing)*7)] 2xl:pl-[calc(var(--spacing)*10)] flex items-start gap-4;
+    @apply m-0 py-0 pr-0 pl-[calc(var(--spacing)*7)] @prose-2xl:pl-[calc(var(--spacing)*10)] flex items-start gap-4;
 
     & > img.emoji {
-      @apply mt-1 size-5 lg:size-6 xl:size-6 2xl:size-7 float-left -ml-[calc(var(--spacing)*7)] 2xl:-ml-[calc(var(--spacing)*10)];
+      @apply mt-1 size-5 @3xl:size-6 @prose-2xl:size-7 float-left -ml-[calc(var(--spacing)*7)] @prose-2xl:-ml-[calc(var(--spacing)*10)];
     }
   }
 }
 
 main img.emoji {
-  @apply size-5 xl:size-6 2xl:size-7;
+  @apply size-5 @prose-xl:size-6 @prose-2xl:size-7;
 }
 
 main h2 {
   &:has(> img.emoji) {
-    @apply pl-[calc(var(--spacing)*10)] 2xl:pl-[calc(var(--spacing)*13)];
+    @apply pl-[calc(var(--spacing)*10)] @prose-2xl:pl-[calc(var(--spacing)*13)];
   }
 
   & > img.emoji {
-    @apply size-9 lg:size-9 xl:size-9 2xl:size-11 float-left -ml-[calc(var(--spacing)*10)] 2xl:-ml-[calc(var(--spacing)*13)];
+    @apply size-9 @prose-2xl:size-11 float-left -ml-[calc(var(--spacing)*10)] @prose-2xl:-ml-[calc(var(--spacing)*13)];
   }
 }
 
 main h3 {
   &:has(> img.emoji) {
-    @apply pl-[calc(var(--spacing)*9)] 2xl:pl-[calc(var(--spacing)*12)];
+    @apply pl-[calc(var(--spacing)*9)] @prose-2xl:pl-[calc(var(--spacing)*12)];
   }
 
   & > img.emoji {
-    @apply size-8 lg:size-8 xl:size-8 2xl:size-10 float-left -ml-[calc(var(--spacing)*9)] 2xl:-ml-[calc(var(--spacing)*12)];
+    @apply size-8 @prose-2xl:size-10 float-left -ml-[calc(var(--spacing)*9)] @prose-2xl:-ml-[calc(var(--spacing)*12)];
   }
 }
 
@@ -90,11 +94,11 @@ main h4,
 main h5,
 main h6 {
   &:has(> img.emoji) {
-    @apply pl-[calc(var(--spacing)*7)] 2xl:pl-[calc(var(--spacing)*10)];
+    @apply pl-[calc(var(--spacing)*7)] @prose-2xl:pl-[calc(var(--spacing)*10)];
   }
 
   & > img.emoji {
-    @apply size-6 lg:size-6 xl:size-6 2xl:size-8 float-left -ml-[calc(var(--spacing)*7)] 2xl:-ml-[calc(var(--spacing)*10)];
+    @apply size-6 @prose-2xl:size-8 float-left -ml-[calc(var(--spacing)*7)] @prose-2xl:-ml-[calc(var(--spacing)*10)];
   }
 }
 
@@ -187,8 +191,14 @@ main .solution pre.lumis:last-child {
   @apply -mb-4;
 }
 
+/* A callout reaches past the padding around the text (see `--content-pad` in
+ * `ArchiDep.CourseSite.Layout.Chrome.Article`) by `--callout-ribbon`, and the
+ * corner drawn above that overhang makes it look like a ribbon folded behind
+ * the page. The overhang is drawn into the gutter around the page's box, which
+ * only exists from `md` up. */
 .callout {
-  @apply shadow-lg print:shadow-none print:border print:border-black print:rounded-xl p-4 relative md:before:content-[''] md:before:size-2 lg:before:size-3 md:before:-top-2 lg:before:-top-3 md:before:absolute md:before:border-[0.25rem] lg:before:border-[0.375rem] md:before:border-solid md:before:border-white;
+  @apply [--callout-ribbon:0px] md:[--callout-ribbon:--spacing(2)] lg:[--callout-ribbon:--spacing(3)];
+  @apply shadow-lg print:shadow-none print:border print:border-black print:rounded-xl p-4 relative before:content-[''] before:absolute before:size-(--callout-ribbon) before:-top-(--callout-ribbon) before:border-[calc(var(--callout-ribbon)/2)] before:border-solid before:border-white;
   @apply my-5 text-white print:text-black;
   @apply flex items-start gap-4;
 
@@ -209,11 +219,11 @@ main .solution pre.lumis:last-child {
   }
 
   &.callout-more {
-    @apply md:ml-[10%] lg:ml-[15%] has-checked:ml-0 group-has-[#always-tell-me-more]/body:ml-0 -mr-4 md:-mr-6 lg:-mr-9 xl:-mr-11 print:mr-0 rounded-tl-lg rounded-bl-lg md:before:right-0 md:before:border-t-transparent md:before:border-r-transparent;
+    @apply md:ml-[10%] lg:ml-[15%] has-checked:ml-0 group-has-[#always-tell-me-more]/body:ml-0 -mr-[calc(var(--content-pad,0px)+var(--callout-ribbon))] print:mr-0 rounded-tl-lg rounded-bl-lg md:before:right-0 md:before:border-t-transparent md:before:border-r-transparent;
   }
 
   &:not(.callout-more) {
-    @apply -ml-4 md:-ml-6 lg:-ml-9 xl:-ml-11 print:ml-0 rounded-tr-lg rounded-br-lg md:before:left-0 md:before:border-t-transparent md:before:border-l-transparent;
+    @apply -ml-[calc(var(--content-pad,0px)+var(--callout-ribbon))] print:ml-0 rounded-tr-lg rounded-br-lg md:before:left-0 md:before:border-t-transparent md:before:border-l-transparent;
   }
 
   & .more,

@@ -158,9 +158,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
 
   defp expected(parts) do
     String.trim_trailing("""
-    <div class="flex flex-wrap xl:flex-nowrap justify-center gap-4 mx-auto">
-      <div class="p-4 lg:p-6 xl:p-8 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full bg-linear-to-br from-transparent to-zinc-200 dark:from-transparent dark:to-zinc-800/40 md:w-auto">
-        <main class="prose prose-lg xl:prose-xl 2xl:prose-2xl sm:max-md:max-w-none #{Keyword.get(parts, :page_class, "course-cheatsheet")}">
+    <div class="@container flex justify-center-safe gap-4">
+      <div class="[--content-pad:--spacing(4)] @3xl:[--content-pad:--spacing(6)] @prose-xl:[--content-pad:--spacing(8)] p-(--content-pad) min-w-0 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full bg-linear-to-br from-transparent to-zinc-200 dark:from-transparent dark:to-zinc-800/40 @3xl:w-auto">
+        <main class="prose prose-lg @prose-xl:prose-xl @prose-2xl:prose-2xl @max-3xl:max-w-none #{Keyword.get(parts, :page_class, "course-cheatsheet")}">
           #{Keyword.get(parts, :title, title_markup("Git Cheatsheet"))}
 
           <div class="my-4"><p>Open.</p></div>
@@ -173,14 +173,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
 
           <p>Body.</p>
 
-          <div class="xl:hidden w-full flex justify-center items-center">
+          <div class="@toc:hidden w-full flex justify-center items-center">
             <a href="#top" id="back-to-top-bottom" class="btn btn-ghost btn-sm">
               #{icon(:arrow_up, "size-4")} Back to top
             </a>
           </div>
         </main>
       </div>
-      <aside class="hidden xl:block xl:w-xs">
+      <aside class="hidden @toc:block w-64 @prose-2xl:w-xs shrink-0">
         <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
         <nav class="toc" aria-labelledby="on-this-page-title">
           #{Keyword.get(parts, :toc, toc_markup([@entry]))}
@@ -204,13 +204,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
 
   defp title_markup(title),
     do:
-      ~s(<h1 class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-5xl !mb-0">\n) <>
+      ~s(<h1 class="text-2xl @2xl:text-3xl @3xl:text-4xl @prose-xl:text-5xl !mb-0">\n) <>
         ~s(  #{title}\n) <>
         ~s(</h1>)
 
   defp inline_toc_markup,
     do:
-      ~s(<div class="my-4 toc collapse screen:collapse-arrow print:collapse-open bg-neutral/25 dark:bg-neutral border-base-300 border xl:hidden">\n) <>
+      ~s(<div class="my-4 toc collapse screen:collapse-arrow print:collapse-open bg-neutral/25 dark:bg-neutral border-base-300 border @toc:hidden">\n) <>
         ~s(        <input type="checkbox">\n) <>
         ~s(        <div id="on-this-page-inline-title" class="collapse-title text-xl font-bold">\n) <>
         ~s(          <span class="print:hidden">On this page</span>\n) <>
@@ -226,7 +226,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
   defp cloud_server_markup(mode),
     do:
       ~s(<div class="pt-2 sticky top-0 z-10">\n) <>
-        ~s(        <div class="cloud-server-data not-prose xl:hidden" data-mode="#{mode}" data-layout="horizontal">\n) <>
+        ~s(        <div class="cloud-server-data not-prose @toc:hidden" data-mode="#{mode}" data-layout="horizontal">\n) <>
         ~s(        </div>\n) <>
         ~s(      </div>)
 

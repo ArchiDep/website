@@ -20,6 +20,17 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
   headings *this* module draws — a chapter's presentation, an exercise's legend
   — because those are what a reader meets first.
 
+  ## Wide is how much room the page has, not how wide the window is
+
+  Whether the headings sit beside the text, and how large the text is, depends
+  on the width of the column the page is drawn in rather than on the window's:
+  from `lg` up the course menu takes a fixed part of the window, so a window
+  wide enough by its own measure can still leave too little room. The sizes
+  that decide it are named in `theme/src/theme.css`.
+
+  The text's padding is set as `--content-pad` because what reaches out of the
+  text into the padding — a code block, a callout — must know how far to go.
+
   ## What the aside offers
 
   A page offers itself as a PDF when one has been published for it, and always
@@ -60,10 +71,10 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
   @spec article(map()) :: Rendered.t()
   def article(assigns) do
     ~H"""
-    <div class="flex flex-wrap xl:flex-nowrap justify-center gap-4 mx-auto">
-      <div class="p-4 lg:p-6 xl:p-8 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full bg-linear-to-br from-transparent to-zinc-200 dark:from-transparent dark:to-zinc-800/40 md:w-auto">
+    <div class="@container flex justify-center-safe gap-4">
+      <div class="[--content-pad:--spacing(4)] @3xl:[--content-pad:--spacing(6)] @prose-xl:[--content-pad:--spacing(8)] p-(--content-pad) min-w-0 rounded md:rounded-lg lg:rounded-xl xl:rounded-2xl w-full bg-linear-to-br from-transparent to-zinc-200 dark:from-transparent dark:to-zinc-800/40 @3xl:w-auto">
         <main class={[
-          "prose prose-lg xl:prose-xl 2xl:prose-2xl sm:max-md:max-w-none",
+          "prose prose-lg @prose-xl:prose-xl @prose-2xl:prose-2xl @max-3xl:max-w-none",
           @page.page_class
         ]}>
           <.title page={@page} />
@@ -72,7 +83,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
 
           <div
             :if={@page.toc != []}
-            class="my-4 toc collapse screen:collapse-arrow print:collapse-open bg-neutral/25 dark:bg-neutral border-base-300 border xl:hidden"
+            class="my-4 toc collapse screen:collapse-arrow print:collapse-open bg-neutral/25 dark:bg-neutral border-base-300 border @toc:hidden"
           >
             <input type="checkbox" />
             <div id="on-this-page-inline-title" class="collapse-title text-xl font-bold">
@@ -86,7 +97,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
 
           <div :if={@page.cloud_server} class="pt-2 sticky top-0 z-10">
             <div
-              class="cloud-server-data not-prose xl:hidden"
+              class="cloud-server-data not-prose @toc:hidden"
               data-mode={@page.cloud_server}
               data-layout="horizontal"
             >
@@ -97,14 +108,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
 
           {Phoenix.HTML.raw(@page.content.html)}
 
-          <div class="xl:hidden w-full flex justify-center items-center">
+          <div class="@toc:hidden w-full flex justify-center items-center">
             <a href={"##{top_id()}"} id="back-to-top-bottom" class="btn btn-ghost btn-sm">
               <Heroicons.arrow_up class="size-4" /> Back to top
             </a>
           </div>
         </main>
       </div>
-      <aside class="hidden xl:block xl:w-xs">
+      <aside class="hidden @toc:block w-64 @prose-2xl:w-xs shrink-0">
         <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
         <nav class="toc" aria-labelledby="on-this-page-title">
           <Toc.toc entries={@page.toc} />
@@ -170,7 +181,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
 
   defp title(assigns) do
     ~H"""
-    <h1 class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-5xl !mb-0">
+    <h1 class="text-2xl @2xl:text-3xl @3xl:text-4xl @prose-xl:text-5xl !mb-0">
       {@page.title}
     </h1>
     """
