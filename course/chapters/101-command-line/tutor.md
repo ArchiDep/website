@@ -27,6 +27,20 @@ On the page:
 
 Optional: the appendices "Unleash your terminal" and "Vim".
 
+The appendix "Installing the WSL step by step" is a reference for Windows users
+rather than optional reading. It walks the installation with screenshots, and
+answers two things the official instructions do not:
+
+- **How to open the WSL again** once it is installed — the Ubuntu application in
+  the start menu, not PowerShell and not the installation command. A student who
+  does not know this is stuck before the exercises, at home or at the start of
+  the next session.
+- **The machine whose firmware has virtualization disabled**, which stops the
+  installation of Ubuntu outright. The Task Manager's Performance tab, CPU,
+  `Virtualization` line is how a student checks it; enabling it is a trip into
+  the firmware settings, so a student in that state is not going to be typing
+  commands for the rest of the session.
+
 `cp`, `mv`, `rm`, `less` and `find` are not on the page. Hello Shell has
 students look them up in the Command Line cheatsheet.
 

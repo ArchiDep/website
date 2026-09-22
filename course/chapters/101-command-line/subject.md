@@ -70,7 +70,7 @@ documentation of some modern command line tools.
 
 {% endnote %}
 
-### Install WSL (Windows users only)
+### Install WSL (Windows only)
 
 You're going to install the [**Windows Subsystem for Linux (WSL)**][wsl], a tool
 that allows you to run a Linux environment on your Windows machine, without
@@ -78,13 +78,20 @@ using a virtual machine or setting up a dual boot.
 
 ![WSL](images/wsl-ubuntu.jpg)
 
-Follow [the installation instructions for the WSL][wsl-install]. The default
-Linux distribution installed will be Ubuntu, which is perfect for the purposes
-of this course.
+The default Linux distribution installed will be Ubuntu, which is perfect for
+the purposes of this course. The installation will ask you for a **username**
+and a **password**. We suggest you use the same username as for the rest of the
+course, and that you use the same password as your Windows user account's.
 
-It will ask you for a **username** and a **password**. We suggest you use the
-same username as for the rest of the course, and that you use the same password
-as your Windows user account's.
+Two pages describe the installation:
+
+- [The appendix at the end of this
+  page](#appendix-installing-the-wsl-step-by-step) walks through it with
+  screenshots of each command and its output, shows how to open your Linux
+  system again once it is installed, and covers the machine where the
+  installation stops because virtualization is not enabled.
+- [The official installation instructions][wsl-install] are Microsoft's own
+  reference.
 
 ### Windows users: drives and copy/paste
 
@@ -101,8 +108,9 @@ $> cd /mnt/d/foo
 In a terminal, `Ctrl-C` already means something else: it **stops the command
 that is running** (see [stopping running
 commands](#stopping-running-commands)). It therefore **can't** be used as a
-shortcut to copy things from the CLI. Instead, the **W**indows **S**ubsystem for
-**L**inux (WSL) has two custom shortcuts:
+shortcut to copy things from the CLI. Instead, the terminal window that the
+**W**indows **S**ubsystem for **L**inux (WSL) runs in has two shortcuts of its
+own:
 
 - `Ctrl-Shift-C` to **copy** things from the CLI
 - `Ctrl-Shift-V` to **paste** things to the CLI
@@ -485,21 +493,18 @@ $> pwd
 /Users/Batman
 ```
 
-You can also drag and drop a directory from your Explorer or your Finder to the CLI to see its absolute path automatically written:
+On **macOS**, you can also drag and drop a directory from the Finder to the CLI
+to see its absolute path automatically written:
 
 ```bash
 $> cd
-(Drag and drop a directory from your Explorer/Finder, and...)
+(Drag and drop a directory from the Finder, and...)
 $> cd /Users/Batman/Pictures/
 ```
 
-{% note type: warning %}
-
-**Windows users:** dropping a directory into the WSL may write a Windows path
-such as `C:\Users\jde\Pictures`, which your Linux shell does not understand. In
-that case, write the path yourself in the `/mnt/c/...` form.
-
-{% endnote %}
+This does not work in the WSL: dropping a directory from the Explorer writes a
+Windows path such as `C:\Users\jde\Pictures`, which your Linux shell does not
+understand. Write the path yourself in the `/mnt/c/...` form instead.
 
 At any time and from anywhere, you can return to your **home directory** with
 the `cd` command, without any argument or with a `~` (tilde):
@@ -1338,9 +1343,137 @@ have it, the [SSH exercise server]({% link chapters/104-hello-ssh/exercise.md
 %}) you will connect to later in this course does. [Open
 Vim](https://openvim.com) is an equivalent tutorial that runs in your browser.
 
+## Appendix: installing the WSL step by step
+
+This appendix is for **Windows users**, and shows the installation of the
+[WSL](#install-wsl-windows-only) as it actually happens, command by
+command, so that you can compare what your screen shows with what it should
+show. [The official instructions][wsl-install] are the reference.
+
+### Do you already have it?
+
+Type `Ubuntu` in the start menu. If an **Ubuntu** application is there and opens
+on a prompt, **the WSL is already installed** and there is nothing to do here:
+that application is your command line for this course, as [the last section of
+this appendix](#open-the-wsl-again-later) shows.
+
+If it is not there, install it as follows.
+
+### Install the WSL itself
+
+{% cols columns: 5 %}
+
+<!-- col md:col-span-3 -->
+
+Type `PowerShell` in the start menu and open **Windows PowerShell**.
+
+<!-- col md:col-span-2 -->
+
+![The Windows PowerShell application](images/wsl-powershell.png)
+
+{% endcols %}
+
+Run the installation command in the window that opens:
+
+```powershell
+PS C:\WINDOWS\system32> wsl --install
+```
+
+![Installing the WSL](images/wsl-install.png)
+
+It downloads and installs the Windows Subsystem for Linux, then enables the
+Windows components it needs:
+
+![The WSL asking for a reboot](images/wsl-install-reboot.png)
+
+**Reboot your machine before going further**, as the last two lines ask. The
+components that were just enabled are not active until you do.
+
+### Install Ubuntu
+
+After the reboot, open PowerShell again and install the Linux distribution used
+in this course:
+
+```powershell
+PS C:\WINDOWS\system32> wsl --install -d Ubuntu
+```
+
+It asks you for the **username** and **password** of the Linux user account it
+creates. They have nothing to do with your Windows account: this is a user of
+the Linux system you just installed.
+
+{% note type: tip %}
+
+**If you don't know what username to pick, we suggest you choose the username
+shown on your [dashboard][dashboard]**, the one you will use for the rest of the
+course. You will type it often, and you will see it in the prompt every time you
+open the WSL. You can always change it later.
+
+{% endnote %}
+
+![Creating the default Unix user account](images/wsl-create-user.png)
+
+{% note type: warning %}
+
+Did the installation stop with an error instead of asking you for a username?
+See [if it says virtualization is not
+enabled](#if-it-says-virtualization-is-not-enabled).
+
+{% endnote %}
+
+Once the account is created, the installation leaves you in your new Linux
+system, in that same PowerShell window.
+
+### Open the WSL again later
+
+{% cols columns: 5 %}
+
+<!-- col md:col-span-4 -->
+
+The installation also put an **Ubuntu** application in your start menu. **This
+is how you come back to your Linux system** — the next session, or whenever you
+work on an exercise at home. You do not install anything again, and you do not
+go through PowerShell: type `Ubuntu` in the start menu and open it.
+
+<!-- col md:col-span-1 -->
+
+![The Ubuntu application](images/wsl-ubuntu-app.png)
+
+{% endcols %}
+
+It opens on the prompt you will be working in for the rest of this course:
+
+![The WSL command line](images/wsl-prompt.png)
+
+The `jde@example` part names your Linux user and machine, so yours will show the
+username you chose during the installation.
+
+### If it says virtualization is not enabled
+
+The installation of Ubuntu may stop with this error:
+
+![The WSL failing to start for lack of virtualization](images/wsl-install-virtualization-error.png)
+
+The WSL runs Linux in a lightweight virtual machine, and your processor can only
+do that if **virtualization is enabled in your machine's firmware** (the BIOS or
+UEFI settings). It is disabled by default on some machines. Nothing you type in
+Windows can turn it on.
+
+To check, open the **Task Manager**, go to the **Performance** tab and select
+**CPU**. Look at the **Virtualization** line:
+
+![The Task Manager showing virtualization disabled](images/wsl-virtualization-disabled.png)
+
+If it says `Disabled`, reboot your machine and enter its firmware settings —
+which key to press depends on the manufacturer, and the boot screen usually says
+it (typically a function key like F2 or F12). Look for an option named
+`Virtualization Technology`, `SVM Mode`, `Intel VT-x` or `AMD-V`, enable it,
+save and reboot. Then run the installation command again.
+
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [building-the-future-of-the-command-line]: https://github.com/readme/featured/future-of-the-command-line
 [cli]: https://en.wikipedia.org/wiki/Command-line_interface
+[dashboard]: /app
 [nano]: https://en.wikipedia.org/wiki/GNU_nano
 [oh-my-zsh]: https://ohmyz.sh
 [oh-my-zsh-plugins]: https://github.com/ohmyzsh/ohmyzsh/wiki/Plugins
