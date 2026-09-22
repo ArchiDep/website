@@ -544,7 +544,7 @@ may not be named exactly like this.
 
 {% endnote %}
 
-For example, here's how to do it with Cyberduck:
+For example, here's how to do it with Cyberduck on macOS:
 
 ![Cyberduck SFTP public key authentication](images/cyberduck-sftp-pubkey.png)
 
