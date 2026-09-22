@@ -148,6 +148,13 @@ identities found`. Hint: does the prompt name a key file?
   recipe ("Unix Permissions").
 - **`REMOTE HOST IDENTIFICATION HAS CHANGED` for `ssh.archidep.ch`.** Hint:
   what could have changed, and how would you know it is not an attack?
+- **An SFTP application on Windows refuses the key, or fails with an error of
+  its own** before it ever reaches the server. Not every Windows application can
+  read a file from the WSL: Cyberduck cannot, WinSCP can. "Windows: give your
+  key to WinSCP" is the reference. Two things bite before the connection: the
+  file selection window does not list the **Linux** entry the file explorer has,
+  so the path is typed, and both keys show as `id_ed25519` because Windows hides
+  extensions, so the private one is picked by its `File` type.
 - **`scp` asks whether to trust `ssh.archidep.ch`, asks for a password, or says
   the file to copy does not exist**: it was run on the server. Hints:
   `hostname`; the page says on which machine `scp` runs.
