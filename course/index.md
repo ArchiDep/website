@@ -33,7 +33,8 @@ All you need to start the course is a Unix command line:
 
 - Linux and macOS users can use their standard Terminal.
 - Windows users must install the [Windows Subsystem for Linux (WSL)][wsl] before
-  the first session.
+  the first session. [Installing the WSL step by step][wsl-install] walks
+  through it, and starts with how to tell whether you already have it.
 
 ### Following the course
 
@@ -208,3 +209,4 @@ and related articles:
 [render]: https://render.com
 [tutor]: https://github.com/ArchiDep/tutor
 [wsl]: https://learn.microsoft.com/en-us/windows/wsl/about
+[wsl-install]: {% link chapters/101-command-line/subject.md %}#appendix-installing-the-wsl-step-by-step

@@ -10,6 +10,16 @@ Line][command-line]. On the way, you meet a few new commands.
 
 <!-- more -->
 
+## :exclamation: Install WSL (Windows only)
+
+Skip this step if you are on macOS or Linux.
+
+**Windows users:** this exercise, and everything that follows in this course,
+happens in the [Windows Subsystem for Linux (WSL)][command-line-wsl], not in
+PowerShell or the Windows command prompt. If you have not installed it yet, do
+so before you start: [installing the WSL step by step][command-line-wsl-install]
+walks through it.
+
 ## :exclamation: Set your editor
 
 You will edit a file during the hunt, and later in the course other programs
@@ -533,5 +543,7 @@ terminal.
 [command-line-editor]: {% link chapters/101-command-line/subject.md %}#setting-nano-as-the-default-editor
 [command-line-path]: {% link chapters/101-command-line/subject.md %}#the-path-variable
 [command-line-vim]: {% link chapters/101-command-line/subject.md %}#help-vim-opened-and-i-cant-get-out
+[command-line-wsl]: {% link chapters/101-command-line/subject.md %}#install-wsl-windows-only
+[command-line-wsl-install]: {% link chapters/101-command-line/subject.md %}#appendix-installing-the-wsl-step-by-step
 [hello-ssh]: {% link chapters/104-hello-ssh/exercise.md %}
 [shell-scripting]: {% link cheatsheets/shell-scripting/cheatsheet.md %}
