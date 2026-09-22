@@ -515,9 +515,9 @@ therefore poses fewer security risks.
 
 Most modern FTP clients support SFTP. Here's a couple:
 
-- [FileZilla][filezilla]
 - [WinSCP][winscp]
 - [Cyberduck][cyberduck]
+- [FileZilla][filezilla]
 
 Many code editors also have SFTP support available through plugins.
 
@@ -528,7 +528,7 @@ information:
 
 - **Protocol:** SFTP
 - **Host, hostname or server address:** `ssh.archidep.ch`
-- **Username**: the username shown on the dashboard
+- **Username**: the username shown on the [dashboard][dashboard]
 - **Port:** 22 (the standard SSH port)
 - **Private key** (or key file): your private key, `~/.ssh/id_ed25519`
 
@@ -555,21 +555,10 @@ private key:
 
 - On macOS, use the `Cmd-Shift-.` shortcut in the file selection window to
   display hidden files and directories.
-- On Windows, your private key is in the WSL, not in your Windows files. Type
-  `\\wsl.localhost\` in the address bar of the file selection window, then open
-  your Linux distribution's directory (e.g. `Ubuntu`), then `home`, your Linux
-  username, and `.ssh`. You can also find your Linux files under **Linux** in
-  the sidebar of the Windows file explorer.
+- On Windows, your private key is in the WSL, not in your Windows files. Follow
+  [the Windows instructions below](#give-your-key-to-winscp-windows-only).
 - On most Linux distributions, the file manager will have an option to show
   hidden files under its menu.
-
-{% endnote %}
-
-{% note type: tip %}
-
-On Windows, FileZilla and WinSCP may ask you to convert your private key to
-another format. You can do so. The converted file is a copy of your private
-key: keep it as private as the original.
 
 {% endnote %}
 
@@ -587,6 +576,84 @@ drag-and-drop files to and from the server. Play with it a bit and see what you
 can do.
 
 Now you know another way to copy files over SSH.
+
+### :exclamation: Give your key to WinSCP (Windows only)
+
+This section is for **Windows users**. Your private key is in the WSL, not in
+your Windows files, and a Windows application must be told where to find it. We
+suggest [WinSCP][winscp], which can read it where it is.
+
+Install it, then fill in its **Login** window: the **File protocol** is `SFTP`,
+the **Host name** is `ssh.archidep.ch`, the **Port number** is `22`, and the
+**User name** is the one from your [dashboard][dashboard]. **Leave the password
+empty**, and click **Advanced...**:
+
+![WinSCP's login window](images/winscp-login.png)
+
+Under **SSH > Authentication**, click the **...** button next to **Private key
+file**:
+
+![WinSCP's authentication settings](images/winscp-authentication.png)
+
+The file selection window that opens does **not** show the **Linux** entry that
+the Windows file explorer has in its sidebar. Type the path to your `.ssh`
+directory in the address bar instead, replacing `jde` with your Linux username:
+
+```text
+\\wsl.localhost\Ubuntu\home\jde\.ssh
+```
+
+![Selecting the private key in the WSL](images/winscp-key-chooser.png)
+
+{% note type: warning %}
+
+Windows hides file extensions, so your **private** key `id_ed25519` and your
+**public** key `id_ed25519.pub` are both shown as `id_ed25519`. Tell them apart
+with the **Type** column: the private key is a plain `File`, while Windows
+believes the public key to be a `Microsoft Publisher Document`. Select the plain
+`File`.
+
+If your key does not appear at all, the window is only showing the file types it
+knows: choose **All Files** in the drop-down list next to the file name.
+
+{% endnote %}
+
+WinSCP only reads private keys in its own format, so it offers to convert yours:
+
+![WinSCP offering to convert the key](images/winscp-convert-key.png)
+
+Accept. It then asks where to save the converted key, and suggests your `.ssh`
+directory, next to the original. Keep it there:
+
+![WinSCP saving the converted key](images/winscp-save-converted-key.png)
+
+{% note type: warning %}
+
+You now have **two private keys** in your `.ssh` directory: the original
+`id_ed25519` and the converted `id_ed25519.ppk`. The conversion changes the
+format, not the secret: the `.ppk` file must be kept as private as the original.
+
+Only WinSCP uses it. The `ssh` command goes on using `id_ed25519`.
+
+{% endnote %}
+
+Click **OK**, then **Login**. WinSCP shows you the server's host key the first
+time you connect, just like the `ssh` command did:
+
+![WinSCP showing the server's host key](images/winscp-host-key.png)
+
+{% note type: warning %}
+
+**Check this fingerprint against the one on your [dashboard][dashboard]** before
+accepting it. WinSCP shows the SHA256 fingerprint without the `SHA256:` prefix
+your dashboard displays: compare the characters that follow it.
+
+{% endnote %}
+
+Once connected, your Windows files are on the left and the server's files on the
+right, and you can drag and drop between them:
+
+![WinSCP connected to the server](images/winscp-connected.png)
 
 ## :question: Sign a message with your key
 
@@ -1083,6 +1150,11 @@ You probably selected your public key (`id_ed25519.pub`) instead of your
 private key (`id_ed25519`), or no key file at all. See the tips under [Copy
 files with an SFTP application](#copy-files-with-an-sftp-application) to select
 the right file, including how to find it when it is hidden or in the WSL.
+
+On Windows, some applications cannot read a file from the WSL at all, and fail
+with an error of their own instead of asking for your key again. Cyberduck is
+one of them. Use [WinSCP](#give-your-key-to-winscp-windows-only), which reads your
+key where it is.
 
 ### :boom: `zsh: no matches found` with `ssh-keygen -R`
 
