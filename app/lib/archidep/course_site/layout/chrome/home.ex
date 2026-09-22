@@ -130,11 +130,6 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
 
           <ul class="not-prose flex flex-wrap md:flex-nowrap items-center gap-2">
             <li :if={@badges?} class="print:hidden">
-              <a href={status_url()}>
-                <img class="!m-0" src={status_badge_url()} alt="Status" />
-              </a>
-            </li>
-            <li :if={@badges?} class="print:hidden">
               <a href={build_url()}>
                 <img class="!m-0" src={build_badge_url()} alt="Build" />
               </a>
@@ -142,6 +137,11 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
             <li>
               <a href={licence_url()}>
                 <img class="!m-0" src={licence_badge_url()} alt="MIT License" />
+              </a>
+            </li>
+            <li :if={@badges?} class="print:hidden">
+              <a href={status_url()}>
+                <img class="!m-0" src={status_badge_url()} alt="Status" />
               </a>
             </li>
           </ul>

@@ -20,12 +20,12 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   describe "title/1" do
     test "names the course, who teaches it, and how it is doing" do
       assert render(&Home.title/1, %{links: @links, badges?: true}) ==
-               expected_title(badges: badges_markup())
+               expected_title(build: build_badge(), status: status_badge())
     end
 
     test "keeps the licence but drops what reports on the live site" do
       assert render(&Home.title/1, %{links: @links, badges?: false}) ==
-               expected_title(badges: "\n        ")
+               expected_title(build: "", status: "")
     end
   end
 
@@ -163,20 +163,19 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
           </span>
 
           <ul class="not-prose flex flex-wrap md:flex-nowrap items-center gap-2">
-            #{Keyword.fetch!(parts, :badges)}
+            #{Keyword.fetch!(parts, :build)}
             <li>
               <a href="https://opensource.org/licenses/MIT">
                 <img class="!m-0" src="https://img.shields.io/static/v1?label=license&amp;message=MIT&amp;color=informational" alt="MIT License">
               </a>
             </li>
+            #{Keyword.fetch!(parts, :status)}
           </ul>
         </div>
       </div>
     </div>
     """)
   end
-
-  defp badges_markup, do: Enum.join([status_badge(), build_badge()], "\n        ")
 
   defp status_badge,
     do: badge("https://status.archidep.ch", status_badge_url(), "Status", "print:hidden")
