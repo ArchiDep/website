@@ -138,8 +138,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   defp expected_title(parts) do
     String.trim_trailing("""
     <div class="flex flex-wrap xs:flex-nowrap items-center gap-4">
-      <div class="flex items-center gap-4">
-        <picture>
+      <div class="flex items-center gap-4 xs:shrink-0">
+        <picture class="max-xs:my-0">
           <source media="(prefers-reduced-motion: reduce)" type="image/png" srcset="/favicons/archidep-logo-2x.png 1x, /favicons/archidep-logo-4x.png 2x, /favicons/archidep-logo-6x.png 3x">
           <img src="/favicons/archidep-logo-2x.png" srcset="/favicons/archidep-logo-2x.webp 1x, /favicons/archidep-logo-4x.webp 2x, /favicons/archidep-logo-6x.webp 3x" width="186" height="116" alt="ArchiDep logo" class="!m-0 w-[186px] [image-rendering:pixelated]">
         </picture>
@@ -166,7 +166,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
             #{Keyword.fetch!(parts, :build)}
             <li>
               <a href="https://opensource.org/licenses/MIT">
-                <img class="!m-0" src="https://img.shields.io/static/v1?label=license&amp;message=MIT&amp;color=informational" alt="MIT License">
+                <img class="!m-0" src="https://img.shields.io/static/v1?label=license&amp;message=MIT&amp;color=informational" width="78" height="20" alt="MIT License">
               </a>
             </li>
             #{Keyword.fetch!(parts, :status)}
@@ -178,7 +178,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   end
 
   defp status_badge,
-    do: badge("https://status.archidep.ch", status_badge_url(), "Status", "print:hidden")
+    do:
+      badge(
+        "https://status.archidep.ch",
+        status_badge_url(),
+        "Status",
+        "print:hidden min-w-[68px]"
+      )
 
   defp build_badge,
     do:
@@ -186,7 +192,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
         "https://github.com/ArchiDep/website/actions/workflows/build.yml",
         "https://github.com/ArchiDep/website/actions/workflows/build.yml/badge.svg",
         "Build",
-        "print:hidden"
+        "print:hidden min-w-[104px]"
       )
 
   defp status_badge_url,
@@ -196,7 +202,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.HomeTest do
   defp badge(href, src, alt, class) do
     ~s(<li class="#{class}">\n) <>
       ~s(          <a href="#{href}">\n) <>
-      ~s(            <img class="!m-0" src="#{src}" alt="#{alt}">\n) <>
+      ~s(            <img class="!m-0 h-5" src="#{src}" alt="#{alt}">\n) <>
       ~s(          </a>\n) <>
       ~s(        </li>)
   end

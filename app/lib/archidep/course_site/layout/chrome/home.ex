@@ -88,8 +88,8 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
   def title(assigns) do
     ~H"""
     <div class="flex flex-wrap xs:flex-nowrap items-center gap-4">
-      <div class="flex items-center gap-4">
-        <picture>
+      <div class="flex items-center gap-4 xs:shrink-0">
+        <picture class="max-xs:my-0">
           <source
             media="(prefers-reduced-motion: reduce)"
             type="image/png"
@@ -129,19 +129,19 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Home do
           </span>
 
           <ul class="not-prose flex flex-wrap md:flex-nowrap items-center gap-2">
-            <li :if={@badges?} class="print:hidden">
+            <li :if={@badges?} class="print:hidden min-w-[104px]">
               <a href={build_url()}>
-                <img class="!m-0" src={build_badge_url()} alt="Build" />
+                <img class="!m-0 h-5" src={build_badge_url()} alt="Build" />
               </a>
             </li>
             <li>
               <a href={licence_url()}>
-                <img class="!m-0" src={licence_badge_url()} alt="MIT License" />
+                <img class="!m-0" src={licence_badge_url()} width="78" height="20" alt="MIT License" />
               </a>
             </li>
-            <li :if={@badges?} class="print:hidden">
+            <li :if={@badges?} class="print:hidden min-w-[68px]">
               <a href={status_url()}>
-                <img class="!m-0" src={status_badge_url()} alt="Status" />
+                <img class="!m-0 h-5" src={status_badge_url()} alt="Status" />
               </a>
             </li>
           </ul>
