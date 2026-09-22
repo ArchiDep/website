@@ -190,6 +190,14 @@ materials.
   do next and it carries its own hints. Its page says how to start it, what
   kinds of things it makes them do, and what is left to do once it is over —
   plus its [solutions](#solutions), which are hidden until revealed.
+- **An exercise's "Troubleshooting" section is always its last section**, after
+  "What have I done?" and after any optional or extra section (a clean-up, an
+  architecture diagram, a challenge). It is reference material a student jumps
+  to when something breaks: at the end, it stays out of the way of a student who
+  succeeds, and it is in the same place on every page. Write each problem as a
+  `###` heading naming what the student sees, the error message itself where
+  there is one, and the fix under it. The [tutor notes](#tutor-notes) list the
+  section by those headings.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.
@@ -404,11 +412,17 @@ the student. The live site lists every chapter in an index for AI agents,
 [`LlmsTxt`](../app/lib/archidep/course_site/build/llms_txt.ex) documents that
 index.
 
-- **They are published as they are written**, as a file of the chapter's page
-  under a digested name, not rendered. So no Liquid: refer to an earlier chapter
-  by its number ("see 504"), which the agent can look up in the index, to a
-  later one by its title, since a chapter not taught yet may be renumbered, and
-  to a heading of the chapter's page by its text.
+- **They are published as they are written, followed by a map of the page's
+  "Troubleshooting" section** that the build adds, under a digested name next
+  to the chapter's page. The notes themselves are not rendered. So no Liquid:
+  refer to an earlier chapter by its number ("see 504"), which the agent can
+  look up in the index, to a later one by its title, since a chapter not taught
+  yet may be renumbered, and to a heading of the chapter's page by its text.
+- **The build writes the "Troubleshooting on the page" section**, and fails on
+  notes that write it themselves. It links the page's "Troubleshooting" section
+  and lists each of its `###` entries by the text of its heading, with its
+  anchor ([`TutorNotes`](../app/lib/archidep/course_site/build/tutor_notes.ex)
+  says why), or says that an exercise has no such section.
 - **They are public.** Nothing links to them from the site's pages, but anyone
   who reads `/llms.txt` can read them, students included.
 - Write them in English, like the rest of the material.
@@ -444,9 +458,11 @@ An **exercise's** notes:
    to ask before and after it and the output to expect.
 5. **Common pitfalls**: where students get stuck that the page's
    "Troubleshooting" section does not cover, each with the symptom they see,
-   its cause, and hints from the smallest to the most explicit. When a symptom
-   leads to one of the page's troubleshooting entries, name it rather than
-   repeat its fix.
+   its cause, and hints from the smallest to the most explicit. A symptom the
+   page's section does cover is left out: the map the build adds already leads
+   the tutor to it. List one only for what the page cannot hold, such as the
+   questions that lead the student to the fix, or what the fix would give away
+   of the exercise, and neither name the entry nor repeat its fix.
 
 The exception is an exercise, or part of one, [played through a program the
 student runs](#writing-guidelines): its steps are in the program, which the

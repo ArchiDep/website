@@ -22,6 +22,7 @@ defmodule ArchiDep.CourseSite.Build do
   alias ArchiDep.CourseSite.Build.PageAssetDigest
   alias ArchiDep.CourseSite.Build.ProgressFile
   alias ArchiDep.CourseSite.Build.Site
+  alias ArchiDep.CourseSite.Build.TutorNotes
   alias ArchiDep.CourseSite.Headings
   alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.Progress
@@ -839,6 +840,9 @@ defmodule ArchiDep.CourseSite.Build do
   def format_error({:exercise_with_slides, _chapter, _sources} = error),
     do: ContentTree.format_error(error)
 
+  def format_error({:tutor_notes_without_chapter, _source_path} = error),
+    do: ContentTree.format_error(error)
+
   def format_error({:digested_name_collision, _path, _owners} = error),
     do: PageAssetDigest.format_error(error)
 
@@ -881,10 +885,21 @@ defmodule ArchiDep.CourseSite.Build do
     includes = includes(Keyword.fetch!(opts, :includes_dir))
     root_files = root_file_contents(Keyword.fetch!(opts, :root_files_dir))
     page_assets = page_asset_manifest(tree, content_dir)
+    tutor_notes = tutor_notes(tree, content_dir)
     assets = assets(Keyword.fetch!(opts, :static_dir), Keyword.get(opts, :digested, true))
     structure = structure(tree, sources, declarations)
 
-    reads = [sources, home, declarations, includes, root_files, page_assets, assets, structure]
+    reads = [
+      sources,
+      home,
+      declarations,
+      includes,
+      root_files,
+      page_assets,
+      tutor_notes,
+      assets,
+      structure
+    ]
 
     case Enum.sort(errors_of(reads)) do
       [] ->
@@ -898,7 +913,8 @@ defmodule ArchiDep.CourseSite.Build do
            includes: value_of(includes),
            root_files: value_of(root_files),
            assets: value_of(assets),
-           page_assets: value_of(page_assets)
+           page_assets: value_of(page_assets),
+           tutor_notes: value_of(tutor_notes)
          }}
 
       [_first | _rest] = errors ->
@@ -943,6 +959,30 @@ defmodule ArchiDep.CourseSite.Build do
       end)
 
     case Enum.reverse(errors) do
+      [] -> {:ok, contents}
+      [_first | _rest] = errors -> {:error, errors}
+    end
+  end
+
+  # Notes are read rather than copied, since what is published is what the build
+  # makes of them — see `ArchiDep.CourseSite.Build.TutorNotes`. There is one
+  # short file per chapter at most.
+  defp tutor_notes(%ContentTree{tutor_notes: sources}, content_dir) do
+    {contents, errors} =
+      Enum.reduce(sources, {%{}, []}, fn {chapter, source_path}, {contents, errors} ->
+        file = Path.join(content_dir, source_path)
+
+        case File.read(file) do
+          {:ok, bytes} ->
+            {Map.put(contents, chapter, bytes), errors}
+
+          {:error, reason} ->
+            {contents,
+             [{:unreadable_source, TutorNotes.output_path(chapter), file, reason} | errors]}
+        end
+      end)
+
+    case Enum.sort(errors) do
       [] -> {:ok, contents}
       [_first | _rest] = errors -> {:error, errors}
     end

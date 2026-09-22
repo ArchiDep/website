@@ -1033,6 +1033,72 @@ entire home directory.
 
 {% endcallout %}
 
+## :boom: Troubleshooting
+
+Here's a few tips about some problems you may encounter during this exercise.
+
+### :boom: `Please type 'yes', 'no' or the fingerprint:`
+
+If SSH asks you this after you pasted a fingerprint, the fingerprint you pasted
+does not match the key the server sent. The dashboard shows one fingerprint per
+key type, and the question names one type, usually `ED25519`. Paste the
+fingerprint of that type, all of it, starting with `SHA256:`.
+
+If it still does not match, answer `no`, and tell the teacher.
+
+### :boom: `WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!`
+
+Your SSH client remembers another key for `ssh.archidep.ch`, for example the key
+of a server that was there before. See [how to handle this
+warning][ssh-host-key-changed] in "Secure Shell (SSH)". Check the new
+fingerprint against the dashboard **before** you remove the old key with
+`ssh-keygen -R`. If it does not match, do not connect, and tell the teacher.
+
+### :boom: I am still asked for my password after `ssh-copy-id`
+
+If `ssh-copy-id` says `No identities found`, or if the server still asks for
+your password after it, your key pair is probably not on the machine you run
+`ssh` from. For example, you ran `ssh-keygen` while you were connected to the
+server, or on Windows, you generated the key in PowerShell and you connect from
+the WSL.
+
+Run `hostname` to see which machine your terminal is on. Then run `ls ~/.ssh`
+on your own computer (in the WSL on Windows). If `id_ed25519` is not there,
+generate your key pair there, and run `ssh-copy-id` again.
+
+### :boom: `scp` finishes without error, but nothing arrives on the server
+
+You probably forgot the colon (`:`) after the address of the server. Without it,
+both sides of the command are on your computer: `scp hello.txt
+jde@ssh.archidep.ch` copies `hello.txt` to a new file on your computer, named
+`jde@ssh.archidep.ch`. Delete that file, and add the colon:
+
+```bash
+$> scp hello.txt jde@ssh.archidep.ch:
+```
+
+### :boom: My SFTP application asks for a password or refuses my key
+
+You probably selected your public key (`id_ed25519.pub`) instead of your
+private key (`id_ed25519`), or no key file at all. See the tips under [Copy
+files with an SFTP application](#copy-files-with-an-sftp-application) to select
+the right file, including how to find it when it is hidden or in the WSL.
+
+### :boom: `zsh: no matches found` with `ssh-keygen -R`
+
+Zsh reads the square brackets in `[ssh.archidep.ch]:2222` as a pattern of file
+names. Put the address in quotes, as on this page:
+
+```bash
+$> ssh-keygen -R '[ssh.archidep.ch]:2222'
+```
+
+### :boom: `ssh -p` ends with `Connection timed out`
+
+The network you are on probably blocks that port: some networks only let a few
+ports through. Try again from another network, such as your phone's hotspot. If
+that does not work either, tell the teacher.
+
 [chmod]: https://man7.org/linux/man-pages/man1/chmod.1.html
 [cp-command]: https://linuxize.com/post/cp-command-in-linux/
 [cyberduck]: https://cyberduck.io
@@ -1049,6 +1115,7 @@ entire home directory.
 [rsa]: https://en.wikipedia.org/wiki/RSA_(cryptosystem)
 [scp-command]: https://linuxize.com/post/how-to-use-scp-command-to-securely-transfer-files/
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
+[ssh-host-key-changed]: {% link chapters/103-ssh/subject.md %}#preventing-future-man-in-the-middle-attacks
 [ssh-agent]: https://man7.org/linux/man-pages/man1/ssh-agent.1.html
 [ssh-agent-run]: https://www.ssh.com/academy/ssh/agent
 [ssh-agent-run-github]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent

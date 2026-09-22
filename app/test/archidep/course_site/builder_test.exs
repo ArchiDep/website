@@ -75,7 +75,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       dirs = course_fixture(tmp_dir)
       urls = UrlContext.new(mode: :live, build_id: "test", version: "2026")
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 43)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 44)}
       assert written(dirs.output_dir) == expected_build("/2026")
     end
 
@@ -91,7 +91,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
           absolute_base_url: "https://archidep.example.com"
         )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 43)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 44)}
 
       assert written(dirs.output_dir) == %{
                expected_build("/2026")
@@ -110,7 +110,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
           live_site_url: "https://archidep.example.com"
         )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 41)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 42)}
       assert written(dirs.output_dir) == expected_build("/2025", false, :archive)
     end
 
@@ -274,7 +274,7 @@ defmodule ArchiDep.CourseSite.BuilderTest do
         "---\ntitle: Command Line\n---\n\n![CLI](images/cli.jpg)\n"
       )
 
-      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 43)}
+      assert Builder.build(opts(dirs, urls: urls)) == {:ok, expected_report(dirs, files: 44)}
     end
 
     test "says which of an edition's links lead nowhere", %{tmp_dir: tmp_dir} do
@@ -373,8 +373,8 @@ defmodule ArchiDep.CourseSite.BuilderTest do
       output_dir: dirs.output_dir,
       pages: 2,
       chapters: 1,
-      files: Keyword.get(overrides, :files, 42),
-      page_assets: 2,
+      files: Keyword.get(overrides, :files, 43),
+      page_assets: 1,
       assets: 1
     }
 

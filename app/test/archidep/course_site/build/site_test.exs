@@ -135,6 +135,81 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
              }
     end
 
+    test "publishes a chapter's tutor notes with the map of its page, linked from the index" do
+      sources =
+        Map.put(
+          sources(),
+          {:document, @todolist},
+          source(
+            "---\ntitle: PHP Todolist\ndescription: Deploy the PHP todolist.\n---\n\n" <>
+              "Build it.\n\n## Troubleshooting\n\n### It fails\n"
+          )
+        )
+
+      tutor_notes = %{
+        "101-command-line" => "# Notes of 101\n",
+        "202-git-branching" => "# Notes of 202\n",
+        "205-php-todolist" => "# Notes of 205\n"
+      }
+
+      todolist_notes = """
+      # Notes of 205
+
+      ## Troubleshooting on the page
+
+      The page's "Troubleshooting" section: https://archidep.ch/course/205-php-todolist/#troubleshooting
+
+      Its entries, with their anchors on that page:
+
+      - It fails (#it-fails)
+      """
+
+      assert {:ok, without_notes} = Site.plan(inputs(sources: sources), options())
+
+      assert {:ok, with_notes} =
+               Site.plan(inputs(sources: sources, tutor_notes: tutor_notes), options())
+
+      assert with_notes == %Site{
+               without_notes
+               | files:
+                   Map.merge(without_notes.files, %{
+                     "/course/101-command-line/tutor-#{digest("# Notes of 101\n")}.md" =>
+                       "# Notes of 101\n",
+                     "/course/202-git-branching/tutor-#{digest("# Notes of 202\n")}.md" =>
+                       "# Notes of 202\n",
+                     "/course/205-php-todolist/tutor-#{digest(todolist_notes)}.md" =>
+                       todolist_notes,
+                     "/llms.txt" =>
+                       llms_txt("""
+                       ## 100 Introduction
+
+                       - [101 Command Line](https://archidep.ch/course/101-command-line/): subject.
+                         - Slides: https://archidep.ch/course/101-command-line/slides/
+                         - Tutor notes: https://archidep.ch/course/101-command-line/tutor-#{digest("# Notes of 101\n")}.md
+
+                       ## 200 Version Control
+
+                       - [202 Git Branching](https://archidep.ch/course/202-git-branching/slides/): slides.
+                         - Tutor notes: https://archidep.ch/course/202-git-branching/tutor-#{digest("# Notes of 202\n")}.md
+                       - [205 PHP Todolist](https://archidep.ch/course/205-php-todolist/): exercise.
+                         Deploy the PHP todolist.
+                         - Tutor notes: https://archidep.ch/course/205-php-todolist/tutor-#{digest(todolist_notes)}.md
+                       """)
+                   })
+             }
+    end
+
+    test "reports tutor notes it cannot publish" do
+      tutor_notes = %{"205-php-todolist" => "# Notes\n\n## Troubleshooting on the page\n"}
+
+      assert Site.plan(inputs(tutor_notes: tutor_notes), options()) ==
+               {:error,
+                [
+                  {:invalid_tutor_notes, "chapters/205-php-todolist/tutor.md",
+                   {:reserved_tutor_notes_heading, "## Troubleshooting on the page"}}
+                ]}
+    end
+
     test "hands the link check a deck as the Markdown it stays and as what was written" do
       assert {:ok, site} = Site.plan(inputs(), options())
 
@@ -213,6 +288,14 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
                  RenderError.message(error)
     end
 
+    test "describes tutor notes that could not be published" do
+      assert Site.format_error(
+               {:invalid_tutor_notes, "chapters/506-systemd-deployment/tutor.md",
+                {:reserved_tutor_notes_heading, "## Troubleshooting on the page"}}
+             ) ==
+               ~s{Tutor notes chapters/506-systemd-deployment/tutor.md could not be published: Tutor notes must not write the heading "## Troubleshooting on the page", which the build adds}
+    end
+
     test "describes a page that could not be laid out" do
       assert Site.format_error(
                {:unlayoutable_page, {:cheatsheet, "git"}, {:unknown_asset, "/assets/missing.css"}}
@@ -221,9 +304,17 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     end
   end
 
+  defp digest(text), do: :md5 |> :crypto.hash(text) |> Base.encode16(case: :lower)
+
   defp inputs(overrides \\ []) do
+    tutor_notes = Keyword.get(overrides, :tutor_notes, %{})
+
     %Site.Inputs{
-      tree: tree(),
+      tree: %ContentTree{
+        tree()
+        | tutor_notes:
+            Map.new(tutor_notes, fn {dir, _text} -> {dir, "chapters/#{dir}/tutor.md"} end)
+      },
       sources: Keyword.get(overrides, :sources, sources()),
       home_source_path: "index.md",
       structure: Keyword.get(overrides, :structure, structure()),
@@ -231,7 +322,8 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       includes: %{},
       root_files: Keyword.get(overrides, :root_files, %{}),
       assets: AssetManifest.new(%{}),
-      page_assets: PageAssetManifest.new(%{})
+      page_assets: PageAssetManifest.new(%{}),
+      tutor_notes: tutor_notes
     }
   end
 
@@ -269,6 +361,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
       },
       cheatsheets: %{"git" => "cheatsheets/git/cheatsheet.md"},
       page_assets: %{},
+      tutor_notes: %{},
       ignored: []
     }
   end
@@ -472,7 +565,22 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
     json(if Keyword.get(opts, :dashboard, true), do: pages ++ dashboard, else: pages)
   end
 
-  defp llms_txt do
+  defp llms_txt(chapters \\ nil) do
+    chapters =
+      chapters ||
+        """
+        ## 100 Introduction
+
+        - [101 Command Line](https://archidep.ch/course/101-command-line/): subject.
+          - Slides: https://archidep.ch/course/101-command-line/slides/
+
+        ## 200 Version Control
+
+        - [202 Git Branching](https://archidep.ch/course/202-git-branching/slides/): slides.
+        - [205 PHP Todolist](https://archidep.ch/course/205-php-todolist/): exercise.
+          Deploy the PHP todolist.
+        """
+
     """
     # ArchiDep
 
@@ -512,17 +620,7 @@ defmodule ArchiDep.CourseSite.Build.SiteTest do
 
     Built from revision abc123.
 
-    ## 100 Introduction
-
-    - [101 Command Line](https://archidep.ch/course/101-command-line/): subject.
-      - Slides: https://archidep.ch/course/101-command-line/slides/
-
-    ## 200 Version Control
-
-    - [202 Git Branching](https://archidep.ch/course/202-git-branching/slides/): slides.
-    - [205 PHP Todolist](https://archidep.ch/course/205-php-todolist/): exercise.
-      Deploy the PHP todolist.
-
+    #{chapters}
     ## Cheatsheets
 
     - [Git Cheatsheet](https://archidep.ch/cheatsheets/git/)

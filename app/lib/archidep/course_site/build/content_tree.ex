@@ -32,8 +32,11 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
 
   The one Markdown file that *is* meant to be served as text is a chapter's
   tutor notes, a `tutor.md` at the root of its directory: it is read by an AI
-  agent rather than by a browser, so it is published as a file of the chapter's
-  page, digest and all, and `ArchiDep.CourseSite.Build.LlmsTxt` links to it.
+  agent rather than by a browser. It is neither a document nor a file that is
+  copied, since what is published is the notes as written followed by what the
+  build adds from the chapter's rendered page, so it is sorted into
+  `tutor_notes`, keyed by its chapter directory — see
+  `ArchiDep.CourseSite.Build.TutorNotes`.
 
   ## What a chapter may hold
 
@@ -81,13 +84,14 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.PageRef
 
-  @enforce_keys [:documents, :cheatsheets, :page_assets, :ignored]
-  defstruct [:documents, :cheatsheets, :page_assets, :ignored]
+  @enforce_keys [:documents, :cheatsheets, :page_assets, :tutor_notes, :ignored]
+  defstruct [:documents, :cheatsheets, :page_assets, :tutor_notes, :ignored]
 
   @type t :: %__MODULE__{
           documents: %{DocumentRef.t() => String.t()},
           cheatsheets: %{String.t() => String.t()},
           page_assets: %{String.t() => String.t()},
+          tutor_notes: %{String.t() => String.t()},
           ignored: [String.t()]
         }
 
@@ -99,13 +103,14 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
           | {:duplicate_chapter_number, pos_integer(), [String.t()]}
           | {:subject_and_exercise, String.t(), [String.t()]}
           | {:exercise_with_slides, String.t(), [String.t()]}
+          | {:tutor_notes_without_chapter, String.t()}
 
   @roots ["chapters", "cheatsheets", "images"]
 
   @chapter_regex ~r{\Achapters/([1-9]\d\d-[^/]+)/(.+)\z}
   @cheatsheet_regex ~r{\Acheatsheets/([^/]+)/(.+)\z}
   @home_regex ~r{\Aimages/(.+)\z}
-  @tutor_notes_regex ~r{\Achapters/[1-9]\d\d-[^/]+/tutor\.md\z}
+  @tutor_notes_regex ~r{\Achapters/([1-9]\d\d-[^/]+)/tutor\.md\z}
 
   # Why a published path must not need percent-encoding:
   # `ArchiDep.CourseSite.Urls.PageAssetManifest`.
@@ -145,7 +150,8 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
       unplaceable(classified) ++
         collisions(classified) ++
         duplicate_documents(classified) ++
-        duplicate_chapter_numbers(classified) ++ chapter_invariants(classified)
+        duplicate_chapter_numbers(classified) ++
+        chapter_invariants(classified) ++ tutor_notes_without_chapter(classified)
 
     case errors do
       [] -> {:ok, tree(classified)}
@@ -183,11 +189,21 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
     do:
       "Chapter #{inspect(chapter)} is an exercise and has slides, written by #{Enum.map_join(source_paths, " and ", &inspect/1)}"
 
+  def format_error({:tutor_notes_without_chapter, source_path}),
+    do:
+      "Tutor notes #{inspect(source_path)} are in a chapter directory holding no subject, exercise or slides"
+
   defp tree(classified) do
     tree =
       Enum.reduce(
         classified,
-        %__MODULE__{documents: %{}, cheatsheets: %{}, page_assets: %{}, ignored: []},
+        %__MODULE__{
+          documents: %{},
+          cheatsheets: %{},
+          page_assets: %{},
+          tutor_notes: %{},
+          ignored: []
+        },
         fn {source_path, {:ok, entry}}, tree -> add(tree, entry, source_path) end
       )
 
@@ -203,17 +219,22 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
   defp add(tree, {:page_asset, output_path}, source_path),
     do: %{tree | page_assets: Map.put(tree.page_assets, output_path, source_path)}
 
+  defp add(tree, {:tutor_notes, chapter}, source_path),
+    do: %{tree | tutor_notes: Map.put(tree.tutor_notes, chapter, source_path)}
+
   defp add(tree, :ignored, source_path),
     do: %{tree | ignored: [source_path | tree.ignored]}
 
   defp classify(source_path) do
     cond do
       littered?(source_path) -> {:ok, :ignored}
-      Regex.match?(@tutor_notes_regex, source_path) -> page_asset(source_path)
+      tutor_notes = Regex.run(@tutor_notes_regex, source_path) -> tutor_notes(tutor_notes)
       String.ends_with?(source_path, ".md") -> page(source_path)
       true -> page_asset(source_path)
     end
   end
+
+  defp tutor_notes([_whole, chapter]), do: {:ok, {:tutor_notes, chapter}}
 
   defp littered?(source_path),
     do: source_path |> String.split("/") |> Enum.any?(&String.starts_with?(&1, "."))
@@ -334,6 +355,25 @@ defmodule ArchiDep.CourseSite.Build.ContentTree do
 
       subject_and_exercise(chapter, by_type) ++ exercise_with_slides(chapter, by_type)
     end)
+  end
+
+  # Notes are added to their chapter's page, so notes beside no page would be
+  # dropped without a word rather than published.
+  defp tutor_notes_without_chapter(classified) do
+    chapters =
+      classified |> documents() |> MapSet.new(fn {ref, _source_path} -> DocumentRef.dir(ref) end)
+
+    classified
+    |> Enum.flat_map(fn
+      {source_path, {:ok, {:tutor_notes, chapter}}} ->
+        if MapSet.member?(chapters, chapter),
+          do: [],
+          else: [{:tutor_notes_without_chapter, source_path}]
+
+      {_source_path, _other} ->
+        []
+    end)
+    |> Enum.sort()
   end
 
   defp documents(classified) do

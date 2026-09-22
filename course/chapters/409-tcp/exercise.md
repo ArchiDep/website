@@ -158,13 +158,6 @@ Once you're done, you can close the connection with `Ctrl-C`.
 If you open your browser, visit `http://www.google.com` and display the source
 code of the page, you should see the same result.
 
-## :boom: Troubleshooting
-
-- If you get a `400 Bad Request` response, it means that your HTTP request is
-  invalid. You probably did not type exactly the text above.
-- If you don’t get a response, it may be because you took too long to type the
-  text, and the request has timed out. Try again a little faster.
-
 ## :checkered_flag: What have I done?
 
 Contratulations!
@@ -198,6 +191,20 @@ This is a simplified architecture of the main running processes and
 communication flow during this exercise:
 
 ![Architecture diagram](images/architecture.png)
+
+## :boom: Troubleshooting
+
+Here's a few tips about some problems you may encounter during this exercise.
+
+### :boom: `400 Bad Request`
+
+If you get a `400 Bad Request` response, it means that your HTTP request is
+invalid. You probably did not type exactly the text above.
+
+### :boom: I don't get a response
+
+If you don’t get a response, it may be because you took too long to type the
+text, and the request has timed out. Try again a little faster.
 
 [http]: https://en.wikipedia.org/wiki/HTTP
 [nc]: https://en.wikipedia.org/wiki/Netcat

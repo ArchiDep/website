@@ -83,16 +83,9 @@ treasure` print, before and after, and why does it need a new terminal?
 
 ## Common pitfalls
 
-- **The setup command fails with an error about its options**, or `bash` is not
-  found: it was typed in PowerShell or `cmd`. Hint: which program is this
-  terminal? Open the WSL (Ubuntu).
-- **The configuration file lost its content**: `>` was typed instead of `>>`,
-  which replaces the file. Hints: compare the two operators in "The `echo`
-  command" of 101; in the WSL, `cp /etc/skel/.bashrc ~/` restores Ubuntu's
-  default before adding the line again.
-- **A line added to the wrong file** has no effect: macOS uses Zsh and
-  `~/.zshrc`, the WSL uses Bash and `~/.bashrc`. Hint: `echo $0` names the
-  shell.
+- **The setup command fails.** Hint: which program is this terminal?
+- **The configuration file lost its content.** Hint: compare the two operators
+  in "The `echo` command" of 101.
 - **`cd old temple` fails** (`too many arguments` in Bash,
   `string not in pwd` in Zsh). Hints: how many arguments did `cd` get? Quotes,
   a backslash, or `Tab`.
@@ -102,18 +95,10 @@ treasure` print, before and after, and why does it need a new terminal?
 - **`command not found` when running a program**: `./` is missing. **The
   program's code is shown**: it was read with `cat` instead of run.
 - **The terminal seems frozen**: a program is running, which is the task at one
-  point. Hints: what does the screen say about stopping it? The cheatsheet's
-  "Stop a running command". Otherwise `q` leaves `less`, `Ctrl-X` leaves nano,
-  and Vim is left with `Esc`, `:q!`, `Enter`.
+  point. Hint: what does the screen say about stopping it?
 - **The map was moved instead of copied**: the gate asks for it back. Hint: move
   it back, then compare `cp` and `mv`.
 - **"Permission denied" on Skull Island** is expected; the island's hint covers
   it.
-- **`treasure` is still not found after the `PATH` change.** Causes, most
-  common first: no new terminal was opened; the path of the file was added
-  instead of its directory; the wrong configuration file; the line differs from
-  the page's (`~` for `$HOME` inside the quotes is not expanded by Zsh). Hints:
-  `echo $PATH` in a new terminal, then compare with the page's line.
-- **Every command is now `not found`**, `nano` included: the line left out
-  `:$PATH`, replacing the list. Hint: `/usr/bin/nano ~/.bashrc` (or
-  `~/.zshrc`) runs nano by its path; fix the line, then open a new terminal.
+- **Every command is now `not found`**, `nano` included. Hint: what did the
+  line do to the list of directories?

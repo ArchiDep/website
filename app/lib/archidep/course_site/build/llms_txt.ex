@@ -35,12 +35,13 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
 
   ## Tutor notes
 
-  A chapter's tutor notes are a `tutor.md` beside its page, published as any
-  other file of a page, digested name included (see
-  `ArchiDep.CourseSite.Build.ContentTree`). This index is the only thing that
+  A chapter's tutor notes are a `tutor.md` at the root of its directory,
+  published under a name digested from what the build made of them (see
+  `ArchiDep.CourseSite.Build.TutorNotes`). This index is the only thing that
   links to them, so the digest never has to be guessed.
   """
 
+  alias ArchiDep.CourseSite.Build.TutorNotes
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.PageRef
   alias ArchiDep.CourseSite.SiteInfo
@@ -51,7 +52,6 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   alias ArchiDep.CourseSite.Urls
   alias ArchiDep.CourseSite.Urls.UrlContext
 
-  @tutor_notes "tutor.md"
   @progress_path "api/progress"
   @summary_max_words 40
   @line_width 80
@@ -220,10 +220,11 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
   defp slides(%Chapter{slides: %DocumentRef{} = deck}, urls),
     do: ["  - Slides: ", Urls.resolve!(urls, {:document, deck}), "\n"]
 
-  # A chapter has tutor notes exactly when the build publishes a `tutor.md`
-  # beside its page, which is the question the page asset manifest answers.
+  # A chapter has tutor notes exactly when the build publishes a `tutor.md` at
+  # the root of its directory, which is the question the page asset manifest
+  # answers once the notes have joined it (`ArchiDep.CourseSite.Build.Site`).
   defp tutor_notes(page, page_url, urls) do
-    case Urls.resolve(urls, {:page_asset, page, @tutor_notes}) do
+    case Urls.resolve(urls, {:page_asset, page, TutorNotes.reference(page)}) do
       {:ok, relative} ->
         ["  - Tutor notes: ", page_url |> URI.merge(relative) |> URI.to_string(), "\n"]
 

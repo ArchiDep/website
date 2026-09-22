@@ -57,6 +57,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   alias ArchiDep.CourseSite.Build.SearchIndex.Entry
   alias ArchiDep.CourseSite.Build.Site.Inputs
   alias ArchiDep.CourseSite.Build.Site.Options
+  alias ArchiDep.CourseSite.Build.TutorNotes
   alias ArchiDep.CourseSite.DocumentRef
   alias ArchiDep.CourseSite.Layout.LayoutContext
   alias ArchiDep.CourseSite.PageRef
@@ -74,6 +75,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   alias ArchiDep.CourseSite.Structure.Cheatsheet
   alias ArchiDep.CourseSite.Structure.Section
   alias ArchiDep.CourseSite.Urls
+  alias ArchiDep.CourseSite.Urls.PageAssetManifest
   alias ArchiDep.CourseSite.Urls.UrlContext
   alias ArchiDep.CourseSite.Urls.UrlPath
 
@@ -117,6 +119,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
   @type error ::
           {:unrenderable_document, String.t(), RenderError.t()}
           | {:unlayoutable_page, PageRef.t(), Urls.error()}
+          | {:invalid_tutor_notes, String.t(), TutorNotes.error()}
 
   @doc """
   Work out every file a build writes.
@@ -151,12 +154,15 @@ defmodule ArchiDep.CourseSite.Build.Site do
   def format_error({:unlayoutable_page, page, error}),
     do: "Page #{PageRef.output_path(page)} could not be laid out: #{Urls.format_error(error)}"
 
+  def format_error({:invalid_tutor_notes, source_path, error}),
+    do: "Tutor notes #{source_path} could not be published: #{TutorNotes.format_error(error)}"
+
   # The index goes in over the pages rather than under them, being derived from
   # what they say: a page is a directory holding an `index.html`, so there is no
   # path it could take from one.
   defp collect(planned, [], build, structure, options) do
-    {files, pages, entries, summaries} =
-      planned |> Enum.reverse() |> Enum.reduce({build, [], [], %{}}, &merge/2)
+    {files, pages, entries, summaries, notes} =
+      planned |> Enum.reverse() |> Enum.reduce({build, [], [], %{}, %{}}, &merge/2)
 
     indexed = entries ++ SearchIndex.application_entries(UrlContext.local(options.urls))
 
@@ -165,7 +171,7 @@ defmodule ArchiDep.CourseSite.Build.Site do
        files:
          files
          |> Map.put(search_path(options.urls), search_json(indexed))
-         |> put_llms_txt(structure, summaries, options),
+         |> put_llms_txt(structure, summaries, with_tutor_notes(options, notes)),
        pages: pages
      }}
   end
@@ -174,12 +180,24 @@ defmodule ArchiDep.CourseSite.Build.Site do
     do: {:error, Enum.sort(Enum.reverse(errors))}
 
   defp merge(
-         {page_files, page_pages, page_entries, page_summaries},
-         {files, pages, entries, summaries}
+         {page_files, page_pages, page_entries, page_summaries, page_notes},
+         {files, pages, entries, summaries, notes}
        ),
        do:
          {Map.merge(files, page_files), pages ++ page_pages, entries ++ page_entries,
-          Map.merge(summaries, page_summaries)}
+          Map.merge(summaries, page_summaries), Map.merge(notes, page_notes)}
+
+  # The notes are named after what the build made of them, so they are only
+  # known once every page is rendered, and only the index links to them: they
+  # join the files of the pages it resolves them against, and no other.
+  defp with_tutor_notes(
+         %Options{urls: %UrlContext{page_assets: %PageAssetManifest{} = manifest} = urls} =
+           options,
+         notes
+       ) do
+    manifest = PageAssetManifest.new(Map.merge(manifest.page_assets, notes))
+    %{options | urls: %{urls | page_assets: manifest}}
+  end
 
   # The index is derived from what the pages say of themselves, so it goes in
   # with the search index, over the pages rather than under them.
@@ -235,12 +253,45 @@ defmodule ArchiDep.CourseSite.Build.Site do
 
     with {:ok, content} <- render(page, context, source_path),
          {:ok, html} <- lay_out(page, content, context, entry, section, inputs, options, statuses),
-         {:ok, entries} <- index(page, entry, content, context, options) do
+         {:ok, entries} <- index(page, entry, content, context, options),
+         {:ok, notes} <- tutor_notes(page, entry, content, inputs, options) do
       {:ok,
-       {page_files(page, options.urls, html), link_check_pages(page, content, html), entries,
-        %{page => PageMetadata.summary(context, excerpt(content))}}}
+       {Map.merge(page_files(page, options.urls, html), notes_files(notes, options.urls)),
+        link_check_pages(page, content, html), entries,
+        %{page => PageMetadata.summary(context, excerpt(content))}, notes_manifest(notes)}}
     end
   end
+
+  # A chapter's notes are published with its page, the one they describe, rather
+  # than with the deck it presents.
+  defp tutor_notes(page, %Chapter{page: document} = chapter, content, inputs, options) do
+    dir = DocumentRef.dir(document)
+
+    with true <- page == Chapter.page_ref(chapter),
+         {:ok, written} <- Map.fetch(inputs.tutor_notes, dir) do
+      case TutorNotes.text(written, page, content, options.urls, options.llms_site_url) do
+        {:ok, text} ->
+          {:ok, {TutorNotes.output_path(dir), text}}
+
+        {:error, error} ->
+          {:error, [{:invalid_tutor_notes, Map.fetch!(inputs.tree.tutor_notes, dir), error}]}
+      end
+    else
+      _none -> {:ok, nil}
+    end
+  end
+
+  defp tutor_notes(_page, _entry, _content, _inputs, _options), do: {:ok, nil}
+
+  defp notes_files(nil, _urls), do: %{}
+
+  defp notes_files({output_path, text}, urls),
+    do: %{
+      (UrlContext.edition_prefix(urls) <> TutorNotes.published_path(output_path, text)) => text
+    }
+
+  defp notes_manifest(nil), do: %{}
+  defp notes_manifest({output_path, text}), do: %{output_path => TutorNotes.file_name(text)}
 
   defp page_files(:home, urls, html) do
     path = PageRef.output_path(:home) <> @page_file

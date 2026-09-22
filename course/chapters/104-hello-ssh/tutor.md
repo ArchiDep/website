@@ -133,36 +133,19 @@ What each stage practises, and the question worth asking at it:
 
 ## Common pitfalls
 
-The page has no "Troubleshooting" section.
-
-- **Still asked for a password after `ssh-copy-id`**, or `ssh-copy-id` says
-  `No identities found`: the key pair is on another machine. Usually
-  `ssh-keygen` was run while logged in to the server, or, on Windows, in
-  PowerShell while `ssh` runs in the WSL (or the reverse). Hints: read the
-  prompt: does it name a key file? On which machine is this terminal
-  (`hostname`)? `ls ~/.ssh` on their own computer, in the WSL; then generate
-  the key there and run `ssh-copy-id` again.
+- **Still asked for a password after `ssh-copy-id`**, or `ssh-copy-id` says `No
+identities found`. Hint: does the prompt name a key file?
 - **The dock says the student came with a password, though their key works**:
   the session was opened with `-o PubkeyAuthentication=no` in "Is your password
   gone?" and kept open. Hint: log out, and log in with plain `ssh`. If that asks
   for a password, see the previous pitfall.
-- **The first-connection question repeats
-  `Please type 'yes', 'no' or the fingerprint:`**: the pasted fingerprint does
-  not match. The dashboard lists one fingerprint per key type and the question
-  names one, usually ED25519, or the paste was cut short. Hints: which key type
-  does the question name? Paste that type's fingerprint, all of it.
-- **`REMOTE HOST IDENTIFICATION HAS CHANGED` for `ssh.archidep.ch`**: the client
-  remembers another key for this address, for example from an earlier
-  connection to a server that has since been rebuilt. "SSH known hosts" in 103
-  is the procedure: check the new fingerprint against the dashboard before
-  `ssh-keygen -R`, and ask the teacher if it does not match.
+- **`REMOTE HOST IDENTIFICATION HAS CHANGED` for `ssh.archidep.ch`.** Hint:
+  what could have changed, and how would you know it is not an attack?
 - **`scp` asks whether to trust `ssh.archidep.ch`, asks for a password, or says
   the file to copy does not exist**: it was run on the server. Hints:
   `hostname`; the page says on which machine `scp` runs.
-- **`scp` ends without an error but nothing arrives on the server**, and a file
-  named like the address appears on the student's computer: the colon is
-  missing, so both sides are local. Hint: what does the colon mean in the
-  page's examples?
+- **`scp` ends without an error but nothing arrives on the server.** Hint: what
+  does the colon mean in the page's examples?
 - **Merlin still asks for a gift after the copy**: the file is not in
   `~/avalon` under the name he asked for. It went to the home directory
   (nothing or something else after the colon), was renamed, or came inside a
@@ -184,14 +167,5 @@ The page has no "Troubleshooting" section.
 - **The shore: no question is asked, and a message appears at once**: the
   student answered `yes` earlier, perhaps before a restart, and their client
   trusts that server on that port. The hint in `~/avalon` covers it.
-- **`ssh-keygen -R [ssh.archidep.ch]:2222` prints `zsh: no matches found`**: Zsh
-  reads the brackets as a pattern. Hint: compare with the page, which quotes
-  them.
-- **`ssh -p` hangs, then says `Connection timed out`**: the network the student
-  is on blocks that port. Hints: try another network, such as a phone's
-  hotspot; otherwise tell the teacher.
-- **The SFTP application asks for a password or refuses the key**: the `.pub`
-  file was chosen, or no key file at all. The page's tips under "Copy files with
-  an SFTP application" cover it, including where the key is from Windows.
 - **`ssh-keygen -Y sign` cannot load the key**: it was run on the server, where
   there is no private key. Hint: which machine holds `id_ed25519`?

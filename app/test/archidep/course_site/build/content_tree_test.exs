@@ -28,6 +28,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                     "/course/401-cloud-computing/images/cloud.png" =>
                       "chapters/401-cloud-computing/images/cloud.png"
                   },
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
@@ -49,6 +50,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                     "/course/104-ssh/slides/images/hash.png" =>
                       "chapters/104-ssh/slides/images/hash.png"
                   },
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
@@ -69,27 +71,48 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                     "/course/205-php-todolist/images/architecture.pdf" =>
                       "chapters/205-php-todolist/images/architecture.pdf"
                   },
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
 
-    test "sorts a chapter's tutor notes as a file of its page rather than as a document" do
+    test "sorts a chapter's tutor notes by their chapter rather than as a document or a file" do
       assert ContentTree.plan([
                "chapters/102-hello-shell/exercise.md",
-               "chapters/102-hello-shell/tutor.md"
+               "chapters/102-hello-shell/tutor.md",
+               "chapters/202-git-branching/slides.md",
+               "chapters/202-git-branching/tutor.md"
              ]) ==
                {:ok,
                 %ContentTree{
                   documents: %{
                     DocumentRef.new(102, "hello-shell", :exercise) =>
-                      "chapters/102-hello-shell/exercise.md"
+                      "chapters/102-hello-shell/exercise.md",
+                    DocumentRef.new(202, "git-branching", :slides) =>
+                      "chapters/202-git-branching/slides.md"
                   },
                   cheatsheets: %{},
-                  page_assets: %{
-                    "/course/102-hello-shell/tutor.md" => "chapters/102-hello-shell/tutor.md"
+                  page_assets: %{},
+                  tutor_notes: %{
+                    "102-hello-shell" => "chapters/102-hello-shell/tutor.md",
+                    "202-git-branching" => "chapters/202-git-branching/tutor.md"
                   },
                   ignored: []
                 }}
+    end
+
+    test "refuses tutor notes in a chapter directory holding no document" do
+      assert ContentTree.plan([
+               "chapters/103-ssh/subject.md",
+               "chapters/104-hello-ssh/tutor.md",
+               "chapters/104-hello-ssh/images/ssh.png",
+               "chapters/105-gone/tutor.md"
+             ]) ==
+               {:error,
+                [
+                  {:tutor_notes_without_chapter, "chapters/104-hello-ssh/tutor.md"},
+                  {:tutor_notes_without_chapter, "chapters/105-gone/tutor.md"}
+                ]}
     end
 
     test "refuses tutor notes anywhere but at the root of a chapter directory" do
@@ -119,6 +142,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                     "/cheatsheets/sysadmin/images/htop.png" =>
                       "cheatsheets/sysadmin/images/htop.png"
                   },
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
@@ -133,6 +157,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                     "/images/sidebar.png" => "images/sidebar.png",
                     "/images/progress/cards.png" => "images/progress/cards.png"
                   },
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
@@ -156,6 +181,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                   },
                   cheatsheets: %{},
                   page_assets: %{},
+                  tutor_notes: %{},
                   ignored: [
                     "chapters/.DS_Store",
                     "chapters/803-docker-isolation/images/.DS_Store"
@@ -166,7 +192,13 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
     test "sorts nothing at all" do
       assert ContentTree.plan([]) ==
                {:ok,
-                %ContentTree{documents: %{}, cheatsheets: %{}, page_assets: %{}, ignored: []}}
+                %ContentTree{
+                  documents: %{},
+                  cheatsheets: %{},
+                  page_assets: %{},
+                  tutor_notes: %{},
+                  ignored: []
+                }}
     end
 
     test "refuses a Markdown file the content layout does not recognise" do
@@ -256,6 +288,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                   },
                   cheatsheets: %{},
                   page_assets: %{},
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
@@ -348,6 +381,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                   },
                   cheatsheets: %{},
                   page_assets: %{},
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
@@ -458,6 +492,13 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
              ) ==
                ~s{Chapter "205-php-todolist" is an exercise and has slides, written by "chapters/205-php-todolist/exercise.md" and "chapters/205-php-todolist/slides.md"}
     end
+
+    test "describes tutor notes in a chapter directory holding no document" do
+      assert ContentTree.format_error(
+               {:tutor_notes_without_chapter, "chapters/105-gone/tutor.md"}
+             ) ==
+               ~s{Tutor notes "chapters/105-gone/tutor.md" are in a chapter directory holding no subject, exercise or slides}
+    end
   end
 
   describe "where a file is published" do
@@ -496,6 +537,7 @@ defmodule ArchiDep.CourseSite.Build.ContentTreeTest do
                   documents: %{},
                   cheatsheets: %{},
                   page_assets: page_assets,
+                  tutor_notes: %{},
                   ignored: []
                 }}
     end
