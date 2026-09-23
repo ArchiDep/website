@@ -68,35 +68,23 @@ machine by rewiring it. Everything that follows is a departure from that.
 
 ---
 
-### Punched cards (1950s)
+### Punched cards (1725)
 
 One of the first user interfaces <!-- .element: class="subtitle" -->
 
-<div class="grid grid-cols-12 gap-8">
-  <div class="col-span-5 col-start-2">
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
     <img src="images/punched-card.jpg" alt="Punched Card">
-
-Invented in 1725 <!-- .element: style="margin-top: 0;" -->
-
-  </div>
-  <div class="col-span-5 col-start-7">
-    <img src="images/keypunch-machine.jpg" alt="Keypunch Machine">
   </div>
 </div>
 
 **Notes:**
 
 Many early general-purpose digital computers used [punched cards][punched-card]
-for data input, output and storage. Someone had to use a [keypunch][keypunch]
-machine to write your cards, then feed them to the computer.
+for data input, output and storage.
 
 Punched cards are much older than computers. They were first invented around
 1725 to control mechanical [looms][loom].
-
-A standard IBM card has 80 columns, and each column holds one character. That
-makes one card about 80 bytes, usually one line of a program. A megabyte would
-take about 12,500 cards. It is also why terminals are still 80 columns wide by
-default.
 
 ---
 
@@ -120,6 +108,29 @@ electrical circuit, and advances the counter for that position by one.
 
 Hollerith's company later became part of IBM, whose cards the computers of the
 1950s would read in much the same way.
+
+---
+
+### Keypunch machine (1950s)
+
+Writing a program, one card at a time <!-- .element: class="subtitle" -->
+
+<div class="grid grid-cols-10">
+  <div class="col-span-6 col-start-3">
+    <img src="images/keypunch-machine.jpg" alt="Keypunch Machine">
+  </div>
+</div>
+
+**Notes:**
+
+Someone had to use a [keypunch][keypunch] machine to write your cards, then
+feed them to the computer. Each key press punched the holes for one character in
+the current column of the card.
+
+A standard IBM card has 80 columns, and each column holds one character. That
+makes one card about 80 bytes, usually one line of a program. A megabyte would
+take about 12,500 cards. It is also why terminals are still 80 columns wide by
+default.
 
 ---
 
