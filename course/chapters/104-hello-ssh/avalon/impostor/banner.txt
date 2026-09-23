@@ -1,37 +1,22 @@
 
-       _______
-      |   |   |     A sword glows in the mist. It looks exactly
-      |   |   |     like Excalibur. It is not Excalibur.
-      |   |   |
-    __|___|___|__
-       \  |  /
-        \ | /
-         \|/
-          V
+    ()==[::::::::::::::::::::::::::::::::>     This is not Excalibur.
 
-"Ha! Welcome, traveller. I am Morgan le Fay, and this is not Avalon.
+"Ha! I am Morgan le Fay, traveller, and this is not Avalon.
 
- You were asked if you trusted the key of this server, and you said
- yes. Did you compare its fingerprint with the fingerprints on the
- dashboard? They do not match. This is how an attacker in the middle
- steals a connection: a server that says it is the right one, and a
- traveller who does not check.
+ You trusted my key without comparing its fingerprint with the
+ dashboard. That is how an attacker in the middle takes over a
+ connection: a server that says it is the right one, and a traveller
+ who does not check.
 
- You are lucky. Your SSH client showed me your key, and a signature
- made for this connection only. I cannot use it anywhere else. If this
- server had asked for your password, and you had typed it, I would
- have it now."
+ You were lucky: your key only signed a challenge for this one
+ connection, and it is useless to me. A password, I would have kept."
 
-You cannot log in here. Your SSH client now trusts this impostor for
-this port: make it forget, on your own computer, with:
+You cannot log in here. Make your computer forget this server:
 
     ssh-keygen -R '[ssh.archidep.ch]:2222'
 
-Then come back here. You will be asked the same question again, and
-this time you can read my key's fingerprint before you answer it, on
-the line that begins with SHA256. Answer no, and take that fingerprint
-to the Lady of the Lake. She is waiting for it, and she has something
-for you:
+Then connect again, and answer no. Bring the fingerprint you are
+shown (on the line that begins with SHA256) to the Lady of the Lake:
 
     ssh <username>@ssh.archidep.ch ./avalon/lady THE-WORD SHA256:...
 

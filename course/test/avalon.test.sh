@@ -80,6 +80,25 @@ step() {
 output_contains() { printf '%s' "$OUTPUT" | grep -q -- "$1"; }
 output_lacks() { ! output_contains "$1"; }
 
+# Passes when the output fits on a terminal of 80 × 24, the size macOS Terminal
+# opens at, along with the command that printed it and the prompt after it.
+fits_on_screen() {
+  printf '%s\n' "$OUTPUT" | awk 'length > 80 { wide = 1 } END { exit wide || NR > 22 }'
+}
+
+# texts_fit_on_screen <file...>: the same, for texts a student reads with cat.
+texts_fit_on_screen() {
+  local file ok=0
+  for file in "$@"; do
+    OUTPUT=$(cat "$file")
+    if ! fits_on_screen; then
+      echo "        | $(basename "$file") does not fit on the screen"
+      ok=1
+    fi
+  done
+  return "$ok"
+}
+
 # The word the prophecy last gave.
 word_of_the_prophecy() {
   printf '%s' "$OUTPUT" | sed -n 's/.*The word is: \([A-Z]*\).*/\1/p'
@@ -152,18 +171,21 @@ step "the dock stays closed to a password" 1 "$PASSWORD_SSH $LOGIN dock"
 check "the dock says the student came with a password" output_contains "with your password"
 check "Avalon does not exist yet" on_server "test ! -e /home/jde/avalon"
 OUTPUT=$(docker exec -u jde -w /home/jde "$SERVER" dock 2>&1)
-check "the dock refuses someone who did not come with SSH" output_contains "crossed the sea"
+check "the dock refuses someone who did not come with SSH" output_contains "SSH. You did not"
 step "the student gives the server their public key" 0 "
   ssh-keygen -q -t ed25519 -N '' -f ~/.ssh/id_ed25519 &&
   sshpass -p secret ssh-copy-id -o BatchMode=no $LOGIN"
 step "the dock opens to the key" 0 "ssh $LOGIN dock"
 check "the student arrives on Avalon" output_contains "THE REMOTE LAND OF AVALON"
+check "the arrival fits on the screen" fits_on_screen
 check "Merlin waits on Avalon" on_server "test -x /home/jde/avalon/merlin"
 check "there is a hint on Avalon" on_server "test -f /home/jde/avalon/.hint"
 check "the hint on Avalon tells how to talk to Merlin" \
   on_server "grep -q './merlin' /home/jde/avalon/.hint"
 check "the home directory the student lands in has a hint too" \
   on_server "grep -q 'cd ~/avalon' /home/jde/.hint"
+docker cp "$SERVER:/home/jde/.hint" "$LOCAL/home-hint" > /dev/null
+docker cp "$SERVER:/home/jde/avalon/.hint" "$LOCAL/dock-hint" > /dev/null
 for thing in prophecy lady message.txt; do
   check "$thing does not exist yet" on_server "test ! -e /home/jde/avalon/$thing"
 done
@@ -176,6 +198,7 @@ MERLIN="ssh $LOGIN 'cd avalon && ./merlin'"
 echo "Merlin, from scratch"
 step "Merlin wants a gift" 1 "$MERLIN"
 check "Merlin asks for the treasure, or for uname -a" output_contains "uname -a"
+check "Merlin's welcome fits on the screen" fits_on_screen
 step "Merlin refuses the server's own uname -a" 1 "
   ssh $LOGIN 'uname -a > avalon/land.txt' && $MERLIN"
 check "Merlin says it comes from Avalon itself" output_contains "Avalon itself"
@@ -184,9 +207,11 @@ step "Merlin refuses something that is not uname -a" 1 "
 step "Merlin accepts uname -a from the student's computer" 0 "
   uname -a > land.txt && scp -q land.txt $LOGIN:avalon/ && $MERLIN"
 check "Merlin tells where the student comes from" output_contains "much like this one"
+check "Merlin's answer fits on the screen" fits_on_screen
 check "the prophecy appears, executable" \
   on_server "test -x /home/jde/avalon/prophecy"
 check "the Lady of the Lake appears" on_server "test -x /home/jde/avalon/lady"
+docker cp "$SERVER:/home/jde/avalon/.hint" "$LOCAL/merlin-hint" > /dev/null
 step "Merlin gave the prophecy already" 0 "$MERLIN"
 
 echo "The prophecy"
@@ -200,6 +225,7 @@ step "the prophecy reads on the student's computer" 0 "
   { ./prophecy || { chmod +x prophecy && ./prophecy; }; }"
 WORD=$(word_of_the_prophecy)
 check "the prophecy gives a word ($WORD)" [ -n "$WORD" ]
+check "the prophecy fits on the screen" fits_on_screen
 docker cp "$COMPUTER:/home/student/prophecy" "$LOCAL/prophecy" > /dev/null
 OUTPUT=$("$BASH" "$LOCAL/prophecy" 2>&1)
 check "the prophecy reads with Bash $BASH_VERSION too" output_contains "The word is: $WORD"
@@ -225,6 +251,7 @@ lower=$(printf '%s' "$WORD" | tr 'A-Z' 'a-z')
 step "she answers the word, from the student's computer, in any case" 0 \
   "ssh $LOGIN ./avalon/lady $lower"
 check "she tells where the parrot is" output_contains "SQUAWK"
+check "her answer fits on the screen" fits_on_screen
 check "she remembers the words of the student's land" output_contains "words of your own land"
 check "she says nothing about a treasure" output_lacks "Skull Island"
 check "a message appears on the shore" \
@@ -254,8 +281,9 @@ check "no placeholder is left on Avalon" \
   on_server "! grep -rl '@@[A-Z0-9_]*@@' /home/jde/avalon"
 docker cp "$SERVER:/home/jde/avalon/.hint" "$LOCAL/shore-hint" > /dev/null
 docker cp "$SERVER:/home/jde/avalon/message.txt" "$LOCAL/message.txt" > /dev/null
-check "the texts fit in 80 columns" \
-  eval "! awk 'length > 80' '$LOCAL/shore-hint' '$LOCAL/message.txt' '$LAND/impostor/banner.txt' | grep -q ."
+check "the texts read with cat fit on the screen" texts_fit_on_screen \
+  "$LOCAL/home-hint" "$LOCAL/dock-hint" "$LOCAL/merlin-hint" "$LOCAL/shore-hint" \
+  "$LOCAL/message.txt" "$LAND/impostor/banner.txt"
 # Passes when every address of the site Avalon names carries the edition, and
 # its anchor is a heading of the exercise.
 addresses_lead_to_the_exercise() {
@@ -316,6 +344,7 @@ step "Merlin accepts the treasure" 0 "
   scp -q ~/treasure-hunt/bag/treasure $LOGIN:avalon/ && $MERLIN"
 check "Merlin reads where the student's home is" output_contains "homes are in /home"
 check "Merlin sends the student to try treasure" output_contains "Command not found"
+check "Merlin's answer to the treasure fits on the screen" fits_on_screen
 step "the treasure runs on Avalon by its path" 0 "ssh $LOGIN 'cd avalon && ./treasure'"
 check "it is the treasure" output_contains "YOU FOUND THE TREASURE"
 check "the parrot is waiting on Avalon" output_contains "You followed me"
@@ -324,6 +353,7 @@ step "the prophecy reads on the student's computer" 0 "
 WORD=$(word_of_the_prophecy)
 step "the Lady of the Lake answers the word" 0 "ssh $LOGIN ./avalon/lady $WORD"
 check "she remembers the treasure" output_contains "treasure of Skull Island"
+check "her answer to the treasure fits on the screen" fits_on_screen
 
 echo "Merlin, meeting other lands"
 check "the dock rebuilds Avalon" restart

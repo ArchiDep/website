@@ -832,27 +832,25 @@ $> ssh-add /path/to/custom_id_ed25519
 {% cols %}
 
 **You found the treasure of Skull Island** in [Hello Shell][hello-shell]? Then
-you remember the parrot. It took you to Skull Island, and when you opened the
-chest, it flew away over the sea, far from your computer, to the remote land of
-Avalon. Follow it, and take your treasure with you: someone there has heard
-about it.
+you remember the parrot. When you opened the chest, it flew away over the sea,
+far from your computer, to the remote land of Avalon. Follow it, and bring your
+treasure: someone there has heard about it.
 
 <!-- col -->
 
-**You did not play the treasure hunt?** A parrot landed on your window this
-morning. It looked at you, said "SQUAWK!", and flew away over the sea, towards a
-land you have never seen: the remote land of Avalon. Follow it, and bring
-something with you: someone there will ask where you come from.
+**You did not play the treasure hunt?** This morning, a parrot landed on your
+window, said "SQUAWK!", and flew away over the sea to a land you have never
+seen: the remote land of Avalon. Follow it, and bring something with you:
+someone there will ask where you come from.
 
 {% endcols %}
 
 {% callout type: exercise %}
 
-**The rule of Avalon.** Avalon is on the SSH exercise server. Your own computer
-is your own land. Each step asks you to do something on the right machine, so
-before you type a command, know which machine your terminal is connected to. It
-helps to keep two terminals open: one logged in to the server, and one on your
-own computer.
+**The rule of Avalon.** Avalon is on the SSH exercise server, and your own
+computer is your own land. Each step must be done on the right machine, so
+always know which machine your terminal is connected to. Keep two terminals
+open: one logged in to the server, and one on your own computer.
 
 {% endcallout %}
 
@@ -863,11 +861,9 @@ $> ssh <username>@ssh.archidep.ch
 $> dock
 ```
 
-Then follow what it says. Your goal: find out where the parrot is.
-
-Avalon tells you what to do from there on, and there is a hint on Avalon itself
-if you are stuck (`cat .hint` in `~/avalon`, on the server). You will not need
-this page again until Avalon is behind you.
+Then do what it says. Your goal: find the parrot. Stuck? Read the hint in
+`~/avalon`, on the server (`cat .hint`). You will not need this page again until
+Avalon is behind you.
 
 On the way, you will:
 
@@ -937,9 +933,9 @@ Your word is different: it is chosen at random when you arrive on Avalon.
 
 ### :exclamation: A message on the shore
 
-When the Lady of the Lake has spoken, someone leaves a message for you on the
-shore of Avalon: `~/avalon/message.txt`, on the server. It is the last trial of
-your journey. Read it, and do what a careful traveller would do.
+When the Lady of the Lake has spoken, someone leaves you a message on the shore:
+`~/avalon/message.txt`, on the server. This is the last trial. Read it, and do
+what a careful traveller would do.
 
 {% solution %}
 
