@@ -59,7 +59,7 @@ the hunt will send you there too.
 Run this command:
 
 ```bash
-$> curl -fsSL https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/102-hello-shell/treasure-hunt.sh | bash
+$> curl -fsSL https://tinyurl.com/archidep-hunt | bash
 ```
 
 `curl` downloads a script. The pipe (`|`) sends that script to `bash`, which
