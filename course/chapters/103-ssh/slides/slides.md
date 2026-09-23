@@ -60,7 +60,42 @@ execute programs.
 
 ### Same terminal, remote shell
 
-<img class="w-3/4" src="../images/ssh-channel-and-processes.jpg" alt="An SSH client in a local terminal connected to a shell running on the server" />
+<!-- The frames are transparent so that they sit on the slide's background, and
+     the last one takes the local command away, so exactly one may be visible at
+     a time: each step hides the outgoing frame and shows the incoming one at
+     the same fragment index. The last frame is a plain fragment, which makes it
+     the one that prints.
+
+     The frames are cumulative, so a cross-fade would dip the opacity of every
+     box the two share, not just the ones that change; `transition-none!`
+     swaps them outright. The `!` is what beats reveal.js's own unlayered rule
+     (see the theme's slide styling notes). -->
+<div class="r-stack mx-auto w-3/4">
+  <img
+    src="../images/ssh-channel-and-processes-1.png"
+    alt="A terminal that has started a shell on your computer"
+    class="fragment fade-out w-full transition-none!"
+    data-fragment-index="0"
+  />
+  <img
+    src="../images/ssh-channel-and-processes-2.png"
+    alt=""
+    class="fragment current-visible w-full transition-none!"
+    data-fragment-index="0"
+  />
+  <img
+    src="../images/ssh-channel-and-processes-3.png"
+    alt=""
+    class="fragment current-visible w-full transition-none!"
+    data-fragment-index="1"
+  />
+  <img
+    src="../images/ssh-channel-and-processes-4.png"
+    alt="An SSH client in a local terminal connected to a shell running on the server"
+    class="fragment w-full transition-none!"
+    data-fragment-index="2"
+  />
+</div>
 
 **Notes:**
 

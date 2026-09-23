@@ -253,7 +253,7 @@ type is encrypted through SSH's secure channel and interpreted by that shell.
 Any data that Bash outputs is also encrypted, sent back through the channel and
 displayed in your terminal.
 
-<p class='center'><img class='w90' src='images/ssh-channel-and-processes.jpg' /></p>
+<p class='center'><img class='w90' src='images/ssh-channel-and-processes.png' /></p>
 
 ### Disconnecting
 
