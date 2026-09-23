@@ -612,7 +612,7 @@ you do not have to explicitly connect your keyboard input to this new process.
 As the SSH client is a child process of the shell, it inherits the same standard
 input.
 
-![SSH channel and processes](images/ssh-channel-and-processes.jpg)
+![SSH channel and processes](images/ssh-channel-and-processes.png)
 
 #### Optional input stream
 
