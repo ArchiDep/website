@@ -50,27 +50,14 @@ UNPACK="reveal() { LC_ALL=C tr '$CAESAR_SEALED' '$CAESAR_PLAIN'; }
 unpack() { reveal > \"\$1\" && chmod \"\$2\" \"\$1\"; }
 seal() { LC_ALL=C tr '$CAESAR_PLAIN' '$CAESAR_SEALED'; }"
 
-# The gold coin a gate drops, drawn with its number: @@COIN1@@, @@COIN2@@ and
-# @@COIN3@@ in a text are the three coins.
-text COIN <<'END_COIN'
-     .-"""-.
-    /  .-.  \
-   |  ( @@DIGIT@@ )  |
-    \  '-'  /
-     '-...-'
-END_COIN
-# The coin is written on a line of its own, which already ends it.
-COIN=${COIN%$'\n'}
-
-# Prints a text with its placeholders replaced.
+# Prints a text with its placeholders replaced. The gold coin a gate drops is
+# drawn with its number, @@D1@@, @@D2@@ or @@D3@@: that line of the drawing is
+# five columns wider in this file than on screen.
 fill() {
   local value="$1"
   value=${value//@@HUNT@@/$HUNT}
   value=${value//@@CHEATSHEET@@/$CHEATSHEET}
   value=${value//@@UNPACK@@/$UNPACK}
-  value=${value//@@COIN1@@/${COIN//@@DIGIT@@/$D1}}
-  value=${value//@@COIN2@@/${COIN//@@DIGIT@@/$D2}}
-  value=${value//@@COIN3@@/${COIN//@@DIGIT@@/$D3}}
   value=${value//@@D1@@/$D1}
   value=${value//@@D2@@/$D2}
   value=${value//@@D3@@/$D3}
@@ -123,14 +110,12 @@ text START <<'END_START'
 
                      |\
                      | \
-                     |  \
-                     |___\
+                     |  \         THE TREASURE
+                     |___\        OF SKULL ISLAND
                 _____|_____
                 \  o  o  o /
           ~~~~~~~\________/~~~~~~~
              ~~~~~~   ~~~~~~   ~~~~
-
-         THE TREASURE OF SKULL ISLAND
 
 Long ago, a pirate captain hid a treasure near this island.
 Many explorers looked for it. Nobody found it.
@@ -735,9 +720,11 @@ Click. The key turns, and the heavy door opens.
         |               |
         |_______________|
 
-A gold coin falls out of the lock. You put it in your bag.
-
-@@COIN1@@
+     .-"""-.
+    /  .-.  \     A gold coin falls out of the lock.
+   |  ( @@D1@@ )  |    You put it in your bag.
+    \  '-'  /
+     '-...-'
 
 Behind the door is the courtyard of the fort. Someone is waiting for
 you there:
@@ -1105,20 +1092,20 @@ The chains turn. Slowly, the drawbridge goes down.
 SEALED
 pause
 reveal <<'SEALED'
-A gold coin was hidden under the lever. You put it in your bag.
-
-@@COIN2@@
+     .-"""-.
+    /  .-.  \     A gold coin was hidden under the lever.
+   |  ( @@D2@@ )  |    You put it in your bag.
+    \  '-'  /
+     '-...-'
 
 SEALED
 pause
 reveal <<'SEALED'
-On the other side of the drawbridge, there is a tall tower.
-
            |>>>
            |
        _  _|_  _
-      | |_| |_| |
-      |         |
+      | |_| |_| |      On the other side of the drawbridge,
+      |         |      there is a tall tower.
       |   [ ]   |
       |   ___   |
      _|__|   |__|_
@@ -1352,23 +1339,18 @@ pause() {
 }
 
 reveal <<'SEALED'
-DING! DING! DING!
-
-The parrot lands on the boat.
-
              ,
-            (o>
+            (o>        DING! DING! DING!
             //\
-            V_/_
+            V_/_       The parrot lands on the boat.
        ______||_______
-       \  o   o   o  /
+       \  o   o   o  /   "SQUAWK! Row! Row!"
     ~~~~\___________/~~~~
        ~~~~~    ~~~~~
 
 SEALED
 pause
 reveal <<'SEALED'
-"SQUAWK! Row! Row!"
 You row for a long time. Then you see it: Skull Island.
 
                  __ _.--.  .--._ __
@@ -1384,9 +1366,11 @@ You row for a long time. Then you see it: Skull Island.
 SEALED
 pause
 reveal <<'SEALED'
-A gold coin was stuck in the bell. You put it in your bag.
-
-@@COIN3@@
+     .-"""-.
+    /  .-.  \     A gold coin was stuck in the bell.
+   |  ( @@D3@@ )  |    You put it in your bag.
+    \  '-'  /
+     '-...-'
 
 Skull Island is in ~/treasure-hunt/skull-island. There is a chest.
 SEALED
@@ -1526,13 +1510,11 @@ SEALED
 if [ -e "$HUNT/bag/golden-idol" ]; then
   reveal <<'SEALED'
                  .-"-.
-                / o o \
-                \  ^  /
+                / o o \      And the golden idol from the
+                \  ^  /      catacombs! You found everything.
                 /`---'\
                |  ***  |
                |_______|
-
-   And the golden idol from the catacombs! You found everything.
 
 SEALED
 fi
@@ -1549,9 +1531,7 @@ the rising sun.
          ,
         (o>    "SQUAWK! Follow me... if you can!"
         //\
-        V_/_
-
-It is going somewhere no boat of yours can reach.
+        V_/_   It is going somewhere no boat of yours can reach.
 
 SEALED
 else
@@ -1813,8 +1793,8 @@ confirm_restart() {
 }
 
 # The smallest terminal the hunt fits in, rounded up to the standard width: its
-# widest line is 72 characters, and start.txt, the tallest thing shown at once,
-# is 31 lines.
+# widest line is 72 characters, and nothing it shows at once is taller than 30
+# lines, leaving room for the command that showed it and the prompt after it.
 MIN_COLUMNS=80
 MIN_LINES=32
 

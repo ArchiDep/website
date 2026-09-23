@@ -48,16 +48,27 @@ run() {
   STATUS=$?
 }
 
-# gate <description> <expected status> <directory> <command...>
+# Passes when the output fits in the smallest terminal the hunt asks for, 80
+# columns by 32 lines, along with the command that printed it and the prompt
+# after it.
+fits_on_screen() {
+  printf '%s\n' "$OUTPUT" | awk 'length > 80 { wide = 1 } END { exit wide || NR > 30 }'
+}
+
+# gate <description> <expected status> <directory> <command...>: also fails
+# when what the gate says does not fit on the screen.
 gate() {
   local description="$1" expected="$2"
   shift 2
   run "$@"
-  if [ "$STATUS" -eq "$expected" ]; then
-    pass "$description"
-  else
+  if [ "$STATUS" -ne "$expected" ]; then
     failed "$description (exit status $STATUS, expected $expected)"
     printf '%s\n' "$OUTPUT" | sed 's/^/        | /'
+  elif ! fits_on_screen; then
+    failed "$description (it does not fit on the screen)"
+    printf '%s\n' "$OUTPUT" | sed 's/^/        | /'
+  else
+    pass "$description"
   fi
 }
 
@@ -96,6 +107,10 @@ OUTPUT=$(cat "$SETUP" | "$BASH" 2>&1)
 STATUS=$?
 check "the setup piped into bash succeeds" [ "$STATUS" -eq 0 ]
 check "the setup tells students to cd into the hunt" output_contains "cd ~/treasure-hunt"
+# Without the line naming where the hunt is, which is as long as the temporary
+# home directory of this test and much shorter in a student's.
+check "what the setup says fits on the screen" \
+  eval 'OUTPUT=$(printf "%s\n" "$OUTPUT" | grep -vF "$HUNT"); fits_on_screen'
 check "the hunt starts with start.txt" [ -f "$HUNT/start.txt" ]
 check "the bag holds only the handbook" \
   [ "$(ls "$HUNT/bag")" = explorers-handbook.txt ]
@@ -133,6 +148,21 @@ check "the cave's hint tells how to run the octopus" \
   tells_how_to_run "$HUNT/cave" ./octopus
 check "the fort's hint tells how to run the door" \
   tells_how_to_run "$HUNT/fort" ./door
+
+# texts_fit_on_screen: every text of the hunt a student reads with cat fits on
+# the screen. The diary is read with less, and the programs are run.
+texts_fit_on_screen() {
+  local file ok=0
+  while IFS= read -r file; do
+    OUTPUT=$(cat "$file")
+    if ! fits_on_screen; then
+      echo "        | ${file#$HUNT/} does not fit on the screen"
+      ok=1
+    fi
+  done < <(find "$HUNT" -type f ! -perm -u+x ! -name diary.txt)
+  return "$ok"
+}
+check "every text read with cat fits on the screen" texts_fit_on_screen
 
 echo "Placeholders"
 check "no placeholder is left in the hunt" \
@@ -175,6 +205,13 @@ wait "$octopus"
 STATUS=$?
 check "Ctrl-C makes the octopus flee (exit status $STATUS)" [ "$STATUS" -eq 0 ]
 check "the den appears" [ -f "$HUNT/cave/den/rusty-key" ]
+# The octopus speaks twice: before Ctrl-C, then after it, with bubbles in
+# between that push the first part up for as long as the student waits.
+OUTPUT=$(sed '/The octopus opens one eye/,$d' "$HOME/octopus.out" | grep -v '^ *[.oO ]*$')
+check "the sleeping octopus fits on the screen" fits_on_screen
+OUTPUT=$(sed -n '/The octopus opens one eye/,$p' "$HOME/octopus.out")
+check "the fleeing octopus fits on the screen" fits_on_screen
+check "every text of the den fits on the screen" texts_fit_on_screen
 check "the cave's hint now shows the way into the den" \
   grep -qF "cd den" "$HUNT/cave/.hint"
 check "the den's hint shows the way to the fort" \
@@ -282,6 +319,7 @@ check "the chest opens with the combination of the coins" [ "$STATUS" -eq 0 ]
 check "the opening is not flush with the combination typed above it" \
   answer_starts_on_its_own_line "CLICK! "
 check "the treasure is in the bag, executable" is_executable "$HUNT/bag/treasure"
+check "the opening of the chest fits on the screen" fits_on_screen
 
 echo "Taking the treasure home"
 OUTPUT=$(cd / && PATH="$PATH:$HUNT/bag" treasure 2>&1)
@@ -290,6 +328,7 @@ check "no bonus without the idol" eval '! output_contains "golden idol"'
 (cd "$HUNT/jungle/ruins/catacombs" && mv "$idols" ~/treasure-hunt/bag/)
 OUTPUT=$(cd / && PATH="$PATH:$HUNT/bag" treasure 2>&1)
 check "the idol gives a bonus" output_contains "golden idol"
+check "the treasure fits on the screen, bonus included" fits_on_screen
 check "the parrot flies away over the sea" output_contains "Follow me"
 # The treasure is a file: copied to another machine, it runs there and knows
 # the island is not around.
@@ -317,6 +356,7 @@ for program in "cave/octopus ./octopus" "fort/door ./door" \
   check "$1 says nothing in plain text" eval "! grep -q 'carved on it\|You put it in your bag\|DING!\|The chest\|YOU FOUND' '$HUNT/$1'"
 done
 check "the combination cannot be read in the chest" eval "! grep -q '$combination' '$HUNT/skull-island/chest'"
+check "every text found on the way fits on the screen" texts_fit_on_screen
 
 echo "Restarting"
 if ! { : < /dev/tty; } 2>/dev/null; then
