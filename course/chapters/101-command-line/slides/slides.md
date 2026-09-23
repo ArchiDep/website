@@ -100,6 +100,29 @@ default.
 
 ---
 
+### Reading punched cards (1890)
+
+A hole is data <!-- .element: class="subtitle" -->
+
+<div class="grid grid-cols-10">
+  <div class="col-span-8 col-start-2">
+    <video src="images/tabulator.mp4" data-autoplay loop muted playsinline aria-label="Animation of a tabulating machine reading punched cards"></video>
+  </div>
+</div>
+
+**Notes:**
+
+[Herman Hollerith][hollerith]'s [tabulating machine][tabulating-machine] was
+built to count the 1890 United States census. A row of spring-loaded pins
+presses down on each card. Where there is no hole, the card stops the pin. Where
+there is a hole, the pin goes through into a cup of mercury, closes an
+electrical circuit, and advances the counter for that position by one.
+
+Hollerith's company later became part of IBM, whose cards the computers of the
+1950s would read in much the same way.
+
+---
+
 ### A typical program (1950s)
 
 <p class="subtitle italic">Whatever you do, <strong>DON'T</strong> drop it!</p>
@@ -109,6 +132,22 @@ default.
     <img src="images/punched-cards-program.jpg" alt="Punched Card Program">
   </div>
 </div>
+
+**Notes:**
+
+One card holds one line of code, so the size of a program is the height of its
+stack. Cards were sold in boxes of 2,000, which make a stack about 35 cm high.
+
+- A small program of a few hundred lines is a few centimetres of cards, held
+  together with a rubber band.
+- A [FORTRAN][fortran] compiler for the IBM 1401 fit in a deck of 2,200 cards:
+  about one box.
+- The software of the [SAGE][sage] air defense system had more than 100,000
+  instructions. At one instruction per card, that is more than 50 boxes, or a
+  stack about 18 metres high.
+
+Programmers often punched a sequence number in the last columns of each card.
+If the deck was dropped, a machine could sort it back into order.
 
 ---
 
@@ -373,9 +412,11 @@ system, and so is the Linux running in the WSL and on the server.
 [cli]: https://en.wikipedia.org/wiki/Command-line_interface
 [digital]: https://en.wikipedia.org/wiki/Digital_data
 [eniac]: https://en.wikipedia.org/wiki/ENIAC
+[fortran]: https://en.wikipedia.org/wiki/Fortran
 [freebsd]: https://en.wikipedia.org/wiki/FreeBSD
 [general-purpose-computer]: https://en.wikipedia.org/wiki/Computer
 [gui]: https://en.wikipedia.org/wiki/Graphical_user_interface
+[hollerith]: https://en.wikipedia.org/wiki/Herman_Hollerith
 [keypunch]: https://en.wikipedia.org/wiki/Keypunch
 [linux]: https://en.wikipedia.org/wiki/Linux
 [loom]: https://en.wikipedia.org/wiki/Loom
@@ -385,6 +426,8 @@ system, and so is the Linux running in the WSL and on the server.
 [note-g]: https://en.wikipedia.org/wiki/Note_G
 [programmable]: https://en.wikipedia.org/wiki/Computer_program
 [punched-card]: https://en.wikipedia.org/wiki/Punched_card
+[sage]: https://en.wikipedia.org/wiki/Semi-Automatic_Ground_Environment
+[tabulating-machine]: https://en.wikipedia.org/wiki/Tabulating_machine
 [tty]: https://en.wikipedia.org/wiki/Teleprinter
 [tui]: https://en.wikipedia.org/wiki/Touch_user_interface
 [unix]: https://en.wikipedia.org/wiki/Unix
