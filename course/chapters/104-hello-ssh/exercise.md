@@ -262,10 +262,15 @@ can read it.
 
 If you enter no password, your key will be stored **in the clear**. This will be
 convenient as you will not have to enter a password when you use it. However,
-any malicious code you allow to run on your machine could easily steal it.
+any malicious code you allow to run on your machine could easily steal it. So
+could any AI agent (e.g. a coding assistant) that you let read files or run
+commands on your computer, even one you trust: the key is just a file it can
+read.
 
 If your key is protected by a password, you can run an [SSH agent][ssh-agent]
-to unlock it only once per session instead of every time you use it.
+to unlock it only once per session instead of every time you use it. While it is
+unlocked, other programs, AI agents included, still cannot copy it, but they can
+use it.
 
 {% endcallout %}
 
