@@ -570,6 +570,16 @@ to check the key fingerprint.
 
 {% endnote %}
 
+![Cyberduck showing the server's key fingerprint](images/cyberduck-host-key.png)
+
+{% note type: tip %}
+
+Cyberduck shows the MD5 fingerprint, not the SHA256 one, and without the `MD5:`
+prefix. Compare it with the fingerprint that starts with `MD5:` on your
+[dashboard][dashboard], for the same type of key (here `ed25519`).
+
+{% endnote %}
+
 Once you have successfully connected to the server, copy a file to the server
 using the SFTP application. These applications will usually allow you to
 drag-and-drop files to and from the server. Play with it a bit and see what you
