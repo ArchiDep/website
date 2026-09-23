@@ -441,11 +441,20 @@ an existing key][ssh-passphrase-add] later.
 - **Without a passphrase, anyone who gains access to your computer has the
   potential to copy your private key.** For example, family members,
   coworkers, system administrators and hostile actors could gain access.
+- **The same is true of any program you run.** A program runs as your user, so
+  it can read your files, and an unprotected private key is just a file. This
+  includes the AI agents you install (e.g. a coding assistant or a tutor) and
+  let read files or run commands on your computer. What an AI agent reads may
+  also be sent to the company that runs its model.
 - The **downside** to using a passphrase is that **you need to enter it every
   time you use SSH**. You can temporarily cache your passphrase using
   [ssh-agent][ssh-agent] so you don't have to enter it every time you connect.
 
   <p class='center'><img class='w70' src='images/ssh-agent.png' /></p>
+
+  While `ssh-agent` holds your unlocked key, programs running as you (an AI
+  agent included) cannot copy the key, but they can **use** it, for example to
+  connect to a server or push to GitHub with `ssh` or `git`.
 
 - **If a private key is compromised** (e.g. your computer is hacked or stolen),
   you should **remove the corresponding public key** from computers and web

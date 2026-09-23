@@ -77,6 +77,11 @@ analogy and `(g^a)^b = (g^b)^a`.
 - **Misconception:** the private key is sent to the server, or the public key
   must be kept secret.
   **Correction:** it is the other way around.
+- **Misconception:** only people with access to the computer can take an
+  unprotected private key.
+  **Correction:** any program running as the student can read it, AI agents
+  included. A passphrase stops it being read; while `ssh-agent` holds it
+  unlocked, such a program can still use it, but not copy it.
 - **Misconception:** `ssh-copy-id` disables the password.
   **Correction:** it adds a way to log in; only the server's configuration can
   refuse passwords.
