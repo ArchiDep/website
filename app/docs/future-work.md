@@ -32,13 +32,22 @@ This is a living document. Add a level-2 heading per planned task and re-run
 
 ## Serve course files at short, edition-scoped addresses
 
-**Problem:** The treasure hunt of [Hello Shell][hello-shell-exercise] starts
-with
-`curl -fsSL https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/102-hello-shell/treasure-hunt.sh | bash`.
+**Problem:** The treasure hunt of [Hello Shell][hello-shell-exercise] downloads
+its script from
+`https://raw.githubusercontent.com/ArchiDep/website/main/course/chapters/102-hello-shell/treasure-hunt.sh`.
 The address is long to type, depends on GitHub, and names the `main` branch
 rather than an edition. Once the course rolls over, an archived edition's
 exercise downloads the next edition's script, which may no longer match the
 instructions beside it.
+
+As a stopgap, the exercise gives the TinyURL alias
+`https://tinyurl.com/archidep-hunt` instead, which redirects to that address. It
+fixes only the typing: it still depends on GitHub and still names `main`, and it
+adds a third-party service to the chain. It does not help with the rollover
+either: an alias is one address shared by every edition, so repointing it for
+the next one would also repoint the archived one. Other chapters download files
+the same way, through short links (git.io, being replaced by TinyURL) to GitHub
+Gists, and have the same problems.
 
 **Why it is not being done now:** the address is correct for the edition being
 taught and only goes wrong at the rollover, so this has to land before the 2027
