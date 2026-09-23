@@ -148,6 +148,10 @@ identities found`. Hint: does the prompt name a key file?
   recipe ("Unix Permissions").
 - **`REMOTE HOST IDENTIFICATION HAS CHANGED` for `ssh.archidep.ch`.** Hint:
   what could have changed, and how would you know it is not an attack?
+- **Cyberduck's fingerprint is not on the dashboard** (rare: Cyberduck only
+  asks when it connects before `ssh` has, since it reads `known_hosts`). It is
+  the MD5 one, without the `MD5:` prefix. The tip under Cyberduck's screenshot
+  is the reference. Hint: how many kinds of fingerprint does the dashboard list?
 - **An SFTP application on Windows refuses the key, or fails with an error of
   its own** before it ever reaches the server. Not every Windows application can
   read a file from the WSL: Cyberduck cannot, WinSCP can. "Windows: give your
