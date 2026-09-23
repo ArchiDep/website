@@ -16,8 +16,7 @@ The slides explain how SSH works; the subject page is about using it.
   "Public key authentication" (the signature, `authorized_keys`, `-i` and `-f`,
   key management, passphrase, `ssh-agent`); SSH for `scp`, rsync, SFTP and Git.
 
-Optional: the appendices "Cryptography with OpenSSL" and "The birth (or death)
-of an SSH connection".
+Optional: the appendix "Cryptography with OpenSSL".
 
 ## Left out
 
