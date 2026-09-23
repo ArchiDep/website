@@ -93,6 +93,11 @@ machine to write your cards, then feed them to the computer.
 Punched cards are much older than computers. They were first invented around
 1725 to control mechanical [looms][loom].
 
+A standard IBM card has 80 columns, and each column holds one character. That
+makes one card about 80 bytes, usually one line of a program. A megabyte would
+take about 12,500 cards. It is also why terminals are still 80 columns wide by
+default.
+
 ---
 
 ### A typical program (1950s)
