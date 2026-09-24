@@ -199,7 +199,8 @@ SSH refuses to use a private key that other people can read. It stops with a
 
 {% callout type: exercise %}
 
-Perform this step on your local machine, not on the SSH exercise server.
+Skip this step if you already have a key pair. If you don't, perform this step
+on your local machine, not on the SSH exercise server.
 
 {% endcallout %}
 
