@@ -801,9 +801,10 @@ a raw `<simgit-story>` element naming a story and the chapters to play:
 ></simgit-story>
 ```
 
-The named stories are registered in
-[`src/assets/simgit/simgit-stories-registry.ts`](./src/assets/simgit/simgit-stories-registry.ts),
-which is imported by both [`src/assets/course.ts`](./src/assets/course.ts) and
+The named stories are written in [`src/assets/simgit/`](./src/assets/simgit),
+one file per chapter or group of chapters that uses them, and registered in
+[`src/assets/simgit/index.ts`](./src/assets/simgit/index.ts), which is imported
+by both [`src/assets/course.ts`](./src/assets/course.ts) and
 [`src/assets/slides.ts`](./src/assets/slides.ts) before the element is defined.
 Each embed waits until it is visible and replays when it comes back into view,
 so it needs no wiring into the reveal.js slide lifecycle.

@@ -23,7 +23,7 @@ import './course/tell-me-more';
 import './course/toc';
 import { HttpAuthenticationError } from './errors';
 import log from './logging';
-import './simgit/simgit-stories-registry';
+import './simgit';
 import {
   defineSimgitStoryElement,
   verticalStackArrangement,

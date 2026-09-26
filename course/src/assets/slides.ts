@@ -14,7 +14,7 @@ import 'tippy.js/dist/tippy.css';
 // against a populated registry. They need no reveal.js lifecycle wiring: each
 // embed defers on its own IntersectionObserver and replays when its slide comes
 // back.
-import './simgit/simgit-stories-registry';
+import './simgit';
 import { defineSimgitStoryElement } from '@alphahydrae/simgit';
 
 defineSimgitStoryElement();

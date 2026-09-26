@@ -1,16 +1,8 @@
-import {
-  Story,
-  storyRegistry,
-  type Operation,
-  type Simulation
-} from '@alphahydrae/simgit';
+import { Story, type Operation, type Simulation } from '@alphahydrae/simgit';
 
-import { buildGithubStory } from './github-story';
-
-// The course's simgit stories. Each story is registered under the name the
-// `<simgit-story name='…'>` embeds in the course material use; a slide then
-// picks the chapter it wants to stop on with `end-chapter`, so one story serves
-// many slides.
+// The branching stories of the "Version Control with Git" deck. A slide picks
+// the chapter it wants to stop on with `end-chapter`, so one story serves many
+// slides.
 //
 // The display digests are the ones the slides quote in their command output
 // (`[feature-sub 712ff2] Implement subtraction`), so the diagram and the shell
@@ -119,7 +111,7 @@ function buildBranchingBaseStory(title: string): Story {
  * The single-line story: the base chapters only, for the slides that introduce
  * branches while the history is still one line.
  */
-function buildBranchingOneLineStory(): Story {
+export function buildBranchingOneLineStory(): Story {
   return buildBranchingBaseStory('Branching (one line)');
 }
 
@@ -128,7 +120,7 @@ function buildBranchingOneLineStory(): Story {
  * `fix-add` is merged back as a fast-forward and `feature-sub` with a
  * three-way merge.
  */
-function buildBranchingStory(): Story {
+export function buildBranchingStory(): Story {
   return buildBranchingBaseStory('Branching')
     .chapter('divergent-history', {
       target: CALCULATOR,
@@ -170,7 +162,3 @@ function buildBranchingStory(): Story {
       operations: [{ kind: 'deleteBranch', name: 'feature-sub' }]
     });
 }
-
-storyRegistry.register('branchingOneLine', buildBranchingOneLineStory);
-storyRegistry.register('branching', buildBranchingStory);
-storyRegistry.register('github', buildGithubStory);
