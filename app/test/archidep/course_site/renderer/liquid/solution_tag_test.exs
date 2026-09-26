@@ -48,6 +48,41 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTagTest do
                 ]}
     end
 
+    test "labels the answer with its title" do
+      assert render(
+               ~s({% solution title: "Check your prediction" %}\nRun `ls -la`.\n{% endsolution %})
+             ) ==
+               {:ok, solution(~s(<p>Run <code>ls -la</code>.</p>), "Check your prediction"), []}
+    end
+
+    test "shows an answer to reveal always in a page the course has not covered yet" do
+      assert render("{% solution reveal: always %}\nRun `ls -la`.\n{% endsolution %}",
+               solutions: :hidden
+             ) ==
+               {:ok, solution(~s(<p>Run <code>ls -la</code>.</p>)), []}
+    end
+
+    test "withholds and reports an answer with an unknown reveal" do
+      assert render("{% solution reveal: soon %}\nRun `ls -la`.\n{% endsolution %}",
+               solutions: :hidden
+             ) ==
+               {:ok, "",
+                [
+                  RenderError.new(
+                    {:invalid_tag, "solution",
+                     ~s(Unknown reveal "soon", the only one is "always")},
+                    @source_path,
+                    %{line: 1, column: 1}
+                  )
+                ]}
+    end
+
+    test "refuses an answer to always reveal written on the home page" do
+      assert render("{% solution reveal: always %}\nRun `ls -la`.\n{% endsolution %}",
+               page: :home
+             ) == {:ok, "", [outside_a_chapter()]}
+    end
+
     test "refuses an answer written on the home page" do
       assert render("{% solution %}\nRun `ls -la`.\n{% endsolution %}", page: :home) ==
                {:ok, "", [outside_a_chapter()]}
@@ -68,13 +103,13 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTagTest do
         %{line: 1, column: 1}
       )
 
-  defp solution(content),
+  defp solution(content, title \\ "Solution"),
     do:
       ~s(<div class="solution collapse screen:collapse-arrow print:collapse-open ) <>
         ~s(border border-neutral hover:bg-primary/25">) <>
         ~s(<input type="checkbox" />) <>
         ~s(<div class="collapse-title font-semibold">) <>
-        ~s(<div class="flex items-center gap-2">:key:<span>Solution</span></div>) <>
+        ~s(<div class="flex items-center gap-2">:key:<span>#{title}</span></div>) <>
         ~s(</div>) <>
         ~s(<div class="collapse-content overflow-x-auto">#{content}</div>) <>
         ~s(</div>)

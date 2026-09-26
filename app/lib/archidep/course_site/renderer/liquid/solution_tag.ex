@@ -2,7 +2,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
   @moduledoc """
   `{% solution %}` — the answer to the exercise above it, collapsed on screen so
   that a reader scrolling past does not read it by accident, and open on paper
-  where there is nothing to click.
+  where there is nothing to click. `title` overrides the "Solution" it is
+  labelled with.
 
   An answer is only shown once the course has covered the chapter it is in. A
   withheld one is **left out of the page entirely** rather than folded away or
@@ -11,6 +12,11 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
   The decision arrives already made, as
   `ArchiDep.CourseSite.Renderer.RenderContext`'s `solutions`, so this tag knows
   neither how far the course has got nor where the threshold is.
+
+  `reveal: always` is the exception an author makes for an answer that is meant
+  to be read straight away, such as the check of a prediction the exercise has
+  just asked for: it is shown whatever the chapter's progress, and is in the
+  page's source from the start.
 
   A solution is an answer to an exercise, and only a chapter has one. On the
   home page or in a cheatsheet there is nothing for it to answer and no status
@@ -24,18 +30,63 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
   alias ArchiDep.CourseSite.Renderer.Liquid.NestedBody
   alias ArchiDep.CourseSite.Renderer.Liquid.Registers
   alias ArchiDep.CourseSite.Renderer.RenderContext
+  alias ArchiDep.CourseSite.Renderer.RenderError
 
-  @enforce_keys [:loc, :body]
-  defstruct [:loc, :body]
+  @default_title "Solution"
 
-  @type t :: %__MODULE__{loc: Solid.Lexer.loc(), body: Solid.Parser.parse_tree()}
+  @enforce_keys [:loc, :title, :always?, :body, :problems]
+  defstruct [:loc, :title, :always?, :body, :problems]
+
+  @type t :: %__MODULE__{
+          loc: Solid.Lexer.loc(),
+          title: String.t(),
+          always?: boolean(),
+          body: Solid.Parser.parse_tree(),
+          problems: [RenderError.reason()]
+        }
 
   @impl Solid.Tag
   def parse("solution", loc, context) do
     with {:ok, tokens, context} <- Solid.Lexer.tokenize_tag_end(context),
-         {:ok, _attributes} <- Attributes.parse(tokens),
+         {:ok, attributes} <- Attributes.parse(tokens),
          {:ok, body, context} <- NestedBody.parse(context, "endsolution") do
-      {:ok, %__MODULE__{loc: loc, body: body}, context}
+      {always?, problems} = reveal(attributes)
+
+      {:ok,
+       %__MODULE__{
+         loc: loc,
+         title: title(attributes),
+         always?: always?,
+         body: body,
+         problems: problems
+       }, context}
+    end
+  end
+
+  # A `reveal` the tag does not know is treated as absent, so the answer stays
+  # withheld like any other, and the value the author wrote is reported: a typo
+  # must not publish an answer early.
+  defp reveal(attributes) do
+    case Map.get(attributes, "reveal") do
+      nil ->
+        {false, []}
+
+      "always" ->
+        {true, []}
+
+      unknown ->
+        {false,
+         [
+           {:invalid_tag, "solution",
+            ~s(Unknown reveal #{inspect(unknown)}, the only one is "always")}
+         ]}
+    end
+  end
+
+  defp title(attributes) do
+    case attributes |> Map.get("title", "") |> to_string() |> String.trim() do
+      "" -> @default_title
+      title -> title
     end
   end
 
@@ -51,33 +102,39 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
     @outside_a_chapter "only a chapter has an exercise for a solution to answer"
 
     @spec render(term(), Solid.Context.t(), keyword()) :: {iodata(), Solid.Context.t()}
-    def render(tag, context, options) do
+    def render(tag, context!, options) do
+      context! = Registers.report(context!, tag.problems, tag.loc)
+
       # The body is rendered whatever becomes of it, and thrown away when the
       # answer is withheld. What it refers to — a link to another chapter, an
       # image beside the page — is resolved here and nowhere else, so a build
       # that rendered only the answers it shows would stop checking the rest and
       # publish the first one it revealed with a broken reference in it.
-      {body, context} = NestedBody.to_html(tag.body, context, options)
+      {body, context!} = NestedBody.to_html(tag.body, context!, options)
 
-      case Registers.fetch!(context) do
+      case Registers.fetch!(context!) do
+        %RenderContext{page: {:document, %DocumentRef{}}} when tag.always? ->
+          {solution(tag.title, body), context!}
+
         %RenderContext{page: {:document, %DocumentRef{}}, solutions: :revealed} ->
-          {solution(body), context}
+          {solution(tag.title, body), context!}
 
         %RenderContext{page: {:document, %DocumentRef{}}} ->
-          {"", context}
+          {"", context!}
 
         %RenderContext{} ->
-          {"", Registers.report(context, {:invalid_tag, "solution", @outside_a_chapter}, tag.loc)}
+          {"",
+           Registers.report(context!, {:invalid_tag, "solution", @outside_a_chapter}, tag.loc)}
       end
     end
 
-    defp solution(body),
+    defp solution(title, body),
       do:
         ~s(<div class="solution collapse screen:collapse-arrow print:collapse-open ) <>
           ~s(border border-neutral hover:bg-primary/25">) <>
           ~s(<input type="checkbox" />) <>
           ~s(<div class="collapse-title font-semibold">) <>
-          ~s(<div class="flex items-center gap-2">#{@key}<span>Solution</span></div>) <>
+          ~s(<div class="flex items-center gap-2">#{@key}<span>#{title}</span></div>) <>
           ~s(</div>) <>
           ~s(<div class="collapse-content overflow-x-auto">#{body}</div>) <>
           ~s(</div>)

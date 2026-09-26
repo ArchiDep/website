@@ -894,9 +894,9 @@ Six block tags wrap prose in the HTML the theme styles:
 - [`cols`](./renderer/liquid/cols_tag.ex) (a row of columns)
 - [`solution`](./renderer/liquid/solution_tag.ex) (a collapsed answer, and the
   one tag whose output depends on which page it is on: an answer is left out of
-  the page entirely until the course has covered the chapter, and refused
-  outright anywhere but a chapter, since only a chapter has an exercise for it
-  to answer)
+  the page entirely until the course has covered the chapter, unless it is
+  written with `reveal: always`, and refused outright anywhere but a chapter,
+  since only a chapter has an exercise for it to answer)
 - [`markdown`](./renderer/liquid/markdown_tag.ex) (a piece converted where the
   page would not convert it)
 - [`mermaid`](./renderer/liquid/mermaid_tag.ex) (a diagram).

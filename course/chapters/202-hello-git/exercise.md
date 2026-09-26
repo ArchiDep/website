@@ -159,7 +159,7 @@ $> git init
 $> git status
 ```
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 Before `git init`, the directory is not a repository, and neither is any of its
 parents:
@@ -241,7 +241,7 @@ $> git add hi.txt
 $> git commit -m "Add hi.txt"
 ```
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 New files are **untracked**: Git sees them, but will not include them in a
 commit unless you tell it to:
@@ -346,7 +346,7 @@ $> git commit -m "Tell the world it is beautiful"
 $> git commit -am "Add trees of green"
 ```
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 `hello.txt` appears **twice** in the status: once as staged, and once as
 modified but not staged.
@@ -442,7 +442,7 @@ $> git commit -m "Ignore secrets and logs"
 **Question:** why commit the `.gitignore` file, rather than keep it on your
 machine?
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 The ignored files disappear from the status. Only the new `.gitignore` file is
 left, untracked:
@@ -507,7 +507,7 @@ Check the history of the file:
 $> git log -p -- api-key.txt
 ```
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 Adding the file to `.gitignore` changes nothing: Git still tracks it, and sees
 the new key as a modification:
@@ -615,7 +615,7 @@ This is what happened in your repository:
 
 <simgit-story name='helloGitBranch' start-chapter='history' end-chapter='back-to-main' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 Creating a branch does not switch to it: the star is still on `main`.
 
@@ -697,7 +697,7 @@ This is what happened:
 
 <simgit-story name='helloGitMerges' start-chapter='prepared' end-chapter='three-way' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 `fix-typo` is **directly ahead** of `main`: its commit comes right after the one
 `main` points to. Git only has to move `main` forward, a **fast-forward**, and
@@ -768,7 +768,7 @@ This is what happens:
 
 <simgit-story name='helloGitMergesReversed' start-chapter='prepared' end-chapter='fix-typo-second' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 No: this time, `fix-typo` needs a merge commit too.
 
@@ -907,7 +907,7 @@ contains both files.
 **Predict:** is it still the same commit? Compare its hash with the one you
 noted. Why has it changed, although the message is the same?
 
-{% solution %}
+{% solution title: "Check your predictions", reveal: always %}
 
 The hash has changed: amending does not modify the commit, it **replaces** it
 with a new one. A commit is named by the hash of its content, and its content

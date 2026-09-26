@@ -527,8 +527,9 @@ defmodule ArchiDep.CourseSite.BuilderTest do
     the earlier exercises whose results it builds on, and its "Troubleshooting"
     section, when it has one, the problems students are known to run into and how to
     fix them. An exercise's solutions are left out of its page until the class has
-    finished its chapter (`done`). Some values, such as the details of a student's
-    server, are only shown in the browser of a logged-in student.
+    finished its chapter (`done`), except those the exercise means students to check
+    straight away. Some values, such as the details of a student's server, are only
+    shown in the browser of a logged-in student.
 
     Some chapters have tutor notes, written for an AI tutor helping a student
     through the chapter: what it teaches, where students usually get stuck, hints,

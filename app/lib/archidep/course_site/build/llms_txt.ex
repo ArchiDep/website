@@ -135,7 +135,8 @@ defmodule ArchiDep.CourseSite.Build.LlmsTxt do
           "whose results it builds on, and its \"Troubleshooting\" section, when it " <>
           "has one, the problems students are known to run into and how to fix " <>
           "them. An exercise's solutions are left out of its page until the class " <>
-          "has finished its chapter (`done`). Some values, such as the details of " <>
+          "has finished its chapter (`done`), except those the exercise means " <>
+          "students to check straight away. Some values, such as the details of " <>
           "a student's server, are only shown in the browser of a logged-in student."
       ),
       wrap(

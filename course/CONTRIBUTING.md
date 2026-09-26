@@ -666,12 +666,25 @@ the course has covered its chapter — see [Progress Tracking](#progress-trackin
 — because a page's source is there to be read, so a solution a student can find
 by looking at the markup is not hidden at all.
 
+`reveal: always` makes the exception, for an answer meant to be read as soon as
+the exercise is done rather than after the class has covered it — the check of
+a prediction the exercise has just asked for, say. Such an answer is shown
+whatever the chapter's progress, and is therefore in the page's source from the
+start: use it only for answers that give nothing away by being read early. Any
+other value of `reveal` fails the build, and the answer stays withheld.
+
 **Example usage:**
 
 ```liquid
 {% solution %}
 
 Here is the solution to the exercise.
+
+{% endsolution %}
+
+{% solution title: "Check your predictions", reveal: always %}
+
+Here is what you should have seen.
 
 {% endsolution %}
 ```
