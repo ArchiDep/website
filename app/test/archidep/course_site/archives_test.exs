@@ -32,6 +32,9 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     "/course/104-hello-ssh/" => "/course/105-hello-ssh/",
     "/course/603-graded-deployment/" => "/course/603-floodit-deployment/"
   }
+  @hello_git "/course/202-hello-git/"
+  @branching_in_2025 "/course/202-git-branching/slides/"
+  @git_slides "/course/201-git/slides/"
 
   describe "mapping/0" do
     test "answers for every page every edition published, with the page that succeeded it" do
@@ -109,7 +112,7 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   defp published_pages do
     [
       {@current_edition, Enum.map(current_pages(), &{PageRef.output_path(&1), &1})},
-      {"2025", Enum.map(pages_of_2025(), &{path_in_2025(&1), &1})}
+      {"2025", Enum.map(pages_of_2025(), &path_in_2025/1)}
     ]
   end
 
@@ -130,10 +133,18 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   defp command_line_page?({:document, %DocumentRef{slug: "command-line"}}), do: true
   defp command_line_page?(_page), do: false
 
+  # "Hello Git" did not exist in 2025. Where it is now, 2025 published the "Git
+  # Branching" deck, which became part of the deck of "Version Control with
+  # Git", so that is the page its path answers with.
   defp path_in_2025(page) do
-    path = PageRef.output_path(page)
-    Map.get(@path_in_2025, path, path)
+    case PageRef.output_path(page) do
+      @hello_git -> {@branching_in_2025, git_slides()}
+      path -> {Map.get(@path_in_2025, path, path), page}
+    end
   end
+
+  defp git_slides,
+    do: Enum.find(current_pages(), &(PageRef.output_path(&1) == @git_slides))
 
   defp current_pages do
     structure = Material.structure()
