@@ -401,6 +401,9 @@ really two separate steps:
   <img src='images/areas.png' class='w-2/3' />
 </div>
 
+_Adapted from [Pro Git][pro-git], by Scott Chacon and Ben Straub, licensed under
+[CC BY-NC-SA 3.0][cc-by-nc-sa-3]._
+
 #### Committing partially staged changes
 
 Commit now:
@@ -760,8 +763,10 @@ this if you have already shared this commit with others.
 
 {% endcallout %}
 
+[cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
 [git]: https://git-scm.com/
 [git-log]: https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History
 [git-log-pretty-formats]: https://git-scm.com/docs/git-log#_pretty_formats
 [install-git]: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 [mv]: https://en.wikipedia.org/wiki/Mv_(Unix)
+[pro-git]: https://git-scm.com/book/en/v2

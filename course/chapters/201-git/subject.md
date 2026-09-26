@@ -4,8 +4,8 @@ title: Version Control with Git
 
 Learn the basics of [Git][git], one of the most popular distributed version
 control systems. This is a condensed version of the first chapters of the [Git
-Book](https://git-scm.com/book/en/v2), which you should read if you want more
-detailed information on the subject.
+Book][pro-git], which you should read if you want more detailed information on
+the subject.
 
 **You will need**
 
@@ -25,6 +25,77 @@ If you know how to run the command line version, you can easily figure out how
 to use the GUI version, while the opposite is not necessarily true. So the
 **command line** is what we will use.
 
+## How Git stores your project
+
+Git stores your project as a series of **snapshots**. Each time you commit, it
+records what **all** your files look like at that moment, not just the changes
+you made.
+
+![Git stores changes as snapshots](images/snapshots.png)
+
+A snapshot is made of two kinds of objects:
+
+- A **blob** is the content of one file.
+- A **tree** is the listing of one directory: the name of each file in it, with
+  the blob holding its content, and the name of each subdirectory, with the tree
+  listing it in turn.
+
+For example, here are the trees and blobs of a project with two files, `README`
+and `Rakefile`, and a `lib` directory containing one more file,
+`simplegit.rb`:
+
+![Trees and blobs](images/data-model.png)
+
+A **commit** points to the tree of your project's root directory, which is how
+it holds the whole project. It also records its author, its date, a message, and
+its **parent**: the commit that came before it. That chain of parents is your
+project's history.
+
+Every object, whether commit, tree or blob, is named by a **hash** of its
+content: a long string of letters and digits, computed by a [cryptographic hash
+function][cryptographic-hash-function] (SHA-1). The same content always gives
+the same hash, and any change to it gives a different one. This has three
+consequences:
+
+- **A file that has not changed is not stored again.** Its content still has the
+  same hash, so the new tree simply points to the blob that already exists. A
+  snapshot of the whole project only costs the files that changed.
+- **A commit cannot be changed.** Changing anything in it, even a single letter
+  of its message, gives a different hash, and therefore a different commit.
+- **Git notices when data is corrupted.** If stored content no longer matches
+  its hash, Git knows it has been damaged.
+
+{% callout type: more, id: git-objects %}
+
+It is sometimes said that Git is just a content-addressable file system: it
+mostly just stores objects, named by the hash of their content. If you are
+curious, `git cat-file -p` shows the content of any object. Here is a commit:
+
+```bash
+$> git cat-file -p 5233289
+tree 9d8b9c81fd3a780a1ada92e68b8ffaffd4dbd5cf
+parent af8051aa78016f10f1e0775ab9282d61a0862ffd
+author John Doe <john.doe@example.com> 1486906554 +0100
+committer John Doe <john.doe@example.com> 1486906554 +0100
+
+Comment add function
+```
+
+Here's the tree it points to:
+
+```bash
+$> git cat-file -p 9d8b9c81
+100644 blob 020333cd4ff6b5d4156215dc7df36210df3ae824    addition.js
+100644 blob c7add86fef91e20012654afc2a32ea315f59cd8b    calculations.js
+100644 blob cd558f6317227223c201057db00709eabb9bf9e7    index.html
+100644 blob 1ef27915edde8b6afa1936b3db1d9c11d8ac85ba    subtraction.js
+```
+
+To learn more, read [Git Internals - Git Objects][git-objects] in the Pro Git
+book.
+
+{% endcallout %}
+
 ## The basic Git commands
 
 This section is a written version of the demonstration in the slides: the
@@ -36,8 +107,9 @@ A few words come back throughout:
 - A **repository** is your project together with its whole history. Git keeps
   that history in a hidden `.git` directory at the root of the project, the
   **Git directory**.
-- A **commit** is a snapshot of your whole project at a particular moment in
-  time, also often called a **version**. Think of it as a save point.
+- A **commit** is a [snapshot](#how-git-stores-your-project) of your whole
+  project at a particular moment in time, also often called a **version**.
+  Think of it as a save point.
 - The **working directory** (or **working tree**) is the files you see and
   edit: one version of the project, taken out of the repository for you to work
   on.
@@ -231,9 +303,8 @@ $> git commit -m "Implement subtraction"
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-Each commit is named by its **hash**, a long string of letters and digits such
-as `712ff2c…` computed from its content. Git often shows only its first few
-characters.
+The new commit is named by its [hash](#how-git-stores-your-project), such as
+`712ff2c…`. Git often shows only its first few characters.
 
 The options you will use most:
 
@@ -550,11 +621,21 @@ store it again**, just a link to the identical file it has already stored.
 
 ![Git stores changes as snapshots](images/snapshots.png)
 
+---
+
+_The figures of snapshots, deltas, trees and blobs, and version control systems
+on this page come from [Pro Git][pro-git], by Scott Chacon and Ben Straub,
+licensed under [CC BY-NC-SA 3.0][cc-by-nc-sa-3]._
+
+[cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
+[cryptographic-hash-function]: https://en.wikipedia.org/wiki/Cryptographic_hash_function
 [cvs]: https://en.wikipedia.org/wiki/Concurrent_Versions_System
 [distributed-workflows]: https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows
 [git]: https://git-scm.com/
+[git-objects]: https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
 
 [hello-git]: {% link chapters/202-hello-git/exercise.md %}
 [mercurial]: https://www.mercurial-scm.org/
+[pro-git]: https://git-scm.com/book/en/v2
 [rcs]: https://en.wikipedia.org/wiki/Revision_Control_System
 [svn]: https://subversion.apache.org/

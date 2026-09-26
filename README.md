@@ -206,11 +206,16 @@ interval (only supported when running on your machine for now).
 
 ## Credits
 
-The site's emoji are [Twemoji][twemoji] by the Twemoji contributors, licensed
-under [CC-BY 4.0][cc-by-4].
+- The site's emoji are [Twemoji][twemoji] by the Twemoji contributors, licensed
+  under [CC-BY 4.0][cc-by-4].
+- Several of the course's Git figures come from [Pro Git][pro-git], by Scott
+  Chacon and Ben Straub, licensed under [CC BY-NC-SA 3.0][cc-by-nc-sa-3]. The
+  pages that show them credit them. A few are adaptations, licensed under the
+  same CC BY-NC-SA 3.0 licence, not under this repository's licence.
 
 [asdf]: https://asdf-vm.com
 [cc-by-4]: https://creativecommons.org/licenses/by/4.0/
+[cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
 [direnv]: https://direnv.net
 [docker]: https://www.docker.com
 [elixir]: https://elixir-lang.org
@@ -219,6 +224,7 @@ under [CC-BY 4.0][cc-by-4].
 [node]: https://nodejs.org
 [phoenix]: https://www.phoenixframework.org
 [postgresql]: https://www.postgresql.org
+[pro-git]: https://git-scm.com/book/en/v2
 [tailwind]: https://tailwindcss.com
 [twemoji]: https://github.com/jdecked/twemoji
 [typescript]: https://www.typescriptlang.org

@@ -38,6 +38,9 @@ Git was designed for:
 - Being fully **distributed**
 - Handling **large projects** efficiently
 
+_Figures of this deck from [Pro Git][pro-git], by Scott Chacon and Ben Straub
+([CC BY-NC-SA 3.0][cc-by-nc-sa-3]); the workflow figure is adapted_
+
 ---
 
 ### Remember commits?
@@ -49,9 +52,7 @@ Git was designed for:
 Each **commit** (the circles above) records:
 
 - A **snapshot** of the whole project as it was when you committed: not the
-  changes you made, but the full content of every file. Git stores it as a
-  **tree**, a listing of a directory, which points to **blobs**, the contents of
-  the files, and to more trees for the subdirectories.
+  changes you made, but the full content of every file.
 - The **author**'s name and e-mail address, and the **date** of the commit.
 - A **message** describing the change.
 - A pointer to its **parent**: the previous commit, or commits. The history of
@@ -73,6 +74,29 @@ different hash, and therefore a different commit. This also gives Git
 **integrity**: since all content is [hashed][hash] with a [cryptographic hash
 function][cryptographic-hash-function], it's virtually impossible for files to
 be lost or corrupted without Git knowing about it.
+
+---
+
+### Trees and blobs
+
+<img src='../images/data-model.png' alt='A tree pointing to blobs and to another tree' class='w-1/2' />
+
+**Notes:**
+
+The snapshot of a commit is made of two kinds of objects:
+
+- A **blob** is the content of one file.
+- A **tree** is the listing of one directory: the name of each file in it, with
+  the blob holding its content, and the name of each subdirectory, with the tree
+  listing it in turn.
+
+A commit points to the tree of the project's root directory, which is how it
+holds the whole project. Blobs and trees are also named by the hash of their
+content, so a file that has not changed since the previous commit is not stored
+again: the new tree simply points to the blob that already exists.
+
+See [how Git stores your project]({% link chapters/201-git/subject.md
+%}#how-git-stores-your-project) for more.
 
 ---
 
@@ -749,10 +773,12 @@ cycle you will repeat for every feature and every fix.
 
 [advanced-merging]: https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging
 [branching]: https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell
+[cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
 [cryptographic-hash-function]: https://en.wikipedia.org/wiki/Cryptographic_hash_function
 [git]: https://git-scm.com
 [git-log]: https://git-scm.com/docs/git-log
 [hash]: https://en.wikipedia.org/wiki/Hash_function
+[pro-git]: https://git-scm.com/book/en/v2
 [sha1]: https://en.wikipedia.org/wiki/SHA-1
 [understanding-branches]: https://blog.thoughtram.io/git/rebase-book/2015/02/10/understanding-branches-in-git.html
 [vcs]: https://en.wikipedia.org/wiki/Version_control

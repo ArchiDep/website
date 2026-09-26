@@ -50,6 +50,11 @@ teams will simply use a simple **centralized workflow**:
 
 <img src='../images/centralized-workflow.png' width='60%' />
 
+_The workflow figures of this deck come from [Pro Git][pro-git], by Scott Chacon
+and Ben Straub ([CC BY-NC-SA 3.0][cc-by-nc-sa-3])_
+
+<!-- .element: class="text-sm" -->
+
 **Notes:**
 
 In this workflow:
@@ -119,6 +124,8 @@ management (SCM)** functionality of **Git** as well as other features like
 access control, bug tracking, feature requests, task management, and wikis for
 every project.
 
+[cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
 [distributed-workflows]: https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows
 [git]: https://git-scm.com
 [github]: https://github.com
+[pro-git]: https://git-scm.com/book/en/v2
