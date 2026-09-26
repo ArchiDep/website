@@ -13,6 +13,7 @@ and the options for resolving it.
 - [Deleting a student who has logged in fails](#deleting-a-student-who-has-logged-in-fails)
 - [A reference link nothing defines is rendered as its own source text](#a-reference-link-nothing-defines-is-rendered-as-its-own-source-text)
 - [Re-recording the current edition's manifest fails to compile](#re-recording-the-current-editions-manifest-fails-to-compile)
+- [A code block with a blank line breaks a slide's speaker notes](#a-code-block-with-a-blank-line-breaks-a-slides-speaker-notes)
 
 <!-- END doctoc -->
 
@@ -137,3 +138,32 @@ and can only ever be stale in this way, or keep the check and **document the
 workaround** in the rollover guide. The first matches what the guide already
 says; the second keeps a stale current manifest a hard error rather than
 something only the task notices.
+
+## A code block with a blank line breaks a slide's speaker notes
+
+In a deck, a fenced code block in the speaker notes (after `**Notes:**`) that
+contains a blank line — or a line of only whitespace, such as the empty context
+line of a `git diff` — renders wrongly from that line on. Everything after it is
+parsed as Markdown again: a `# comment` line becomes a heading, and the text
+that follows can come out in bold or as a paragraph. A code block without a
+blank line renders fine, and so does a code block with blank lines on the slide
+itself.
+
+The cause is how reveal.js's Markdown plugin builds a slide
+(`createMarkdownSlide` in `reveal.js/plugin/markdown/plugin.js`): it renders the
+notes to HTML with `marked`, wraps that HTML in an `<aside class="notes">`, puts
+it back into the slide's Markdown, and then renders the whole slide as Markdown.
+In that second pass the `<aside>` is an HTML block, and an HTML block ends at
+the first blank line. The blank line inside the rendered `<pre><code>` ends it,
+and the rest of the notes is parsed as Markdown.
+
+Nothing reports it: the build succeeds, and the notes are only wrong in the
+browser. The workaround is to keep blank lines out of code blocks in speaker
+notes — show a shorter excerpt of the output, or put the block on the slide.
+
+Decision to make: either **check it in the build**, failing on a blank line
+inside a fenced code block in a slide's notes as it fails on a missing asset, or
+**fix the rendering**, with a reveal.js plugin that renders the notes itself and
+keeps their HTML out of the second Markdown pass. The check is simpler and also
+catches the whitespace-only lines that are hard to see in an editor; the fix
+removes the restriction altogether.
