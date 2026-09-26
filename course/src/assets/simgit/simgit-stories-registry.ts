@@ -31,23 +31,6 @@ function commitOf(
   ];
 }
 
-// The subtraction implementation as it stands once the `feature-sub` work is
-// merged. The `better-sub` branch commits this same content, so the merge that
-// the slides narrate as a content conflict runs as an ordinary 3-way merge:
-// simgit merges per path and only conflicts when a path is changed
-// *differently* on both sides. The commit graph — the only thing rendered — is
-// the same either way, and the slides carry the conflict markers themselves.
-const SUBTRACTION_COMMENTED = `/**
- * Takes two numbers a and b, and returns
- * the result of subtracting b from a.
- */
-function subtract(a, b) {
-  return -b + a;
-}
-
-calculate('subtraction', subtract);
-`;
-
 async function createCalculatorRepo(simulation: Simulation): Promise<void> {
   simulation.createComputer(CALCULATOR.computer, {
     env: {
@@ -145,134 +128,51 @@ function buildBranchingOneLineStory(): Story {
 }
 
 /**
- * The full story: the history diverges, both branches merge back, and two more
- * branches are cut from the common ancestor to stage the merge-conflict
- * chapters.
- *
- * `better-sub` and `cleanup` both start from `4f94fa` — a display digest, which
- * `startPoint` resolves, so the slides' hash and the story agree.
+ * The full story: the history diverges and is switched back and forth, then
+ * `fix-add` is merged back as a fast-forward and `feature-sub` with a
+ * three-way merge.
  */
 function buildBranchingStory(): Story {
-  return (
-    buildBranchingBaseStory('Branching')
-      .chapter('divergent-history', {
-        target: CALCULATOR,
-        operations: commitOf(
-          'Fix addition',
-          'addition.js',
-          'export const add = (a, b) => a + b;\n// Handles floating point rounding.\n',
-          '2817bc'
-        )
-      })
-      .chapter('switch-to-feature-sub', {
-        target: CALCULATOR,
-        operations: [{ kind: 'checkout', ref: 'feature-sub' }]
-      })
-      .chapter('switch-to-fix-add', {
-        target: CALCULATOR,
-        operations: [{ kind: 'checkout', ref: 'fix-add' }]
-      })
-      .chapter('fast-forward-merge-checkout', {
-        target: CALCULATOR,
-        operations: [{ kind: 'checkout', ref: 'main' }]
-      })
-      .chapter('fast-forward-merge', {
-        target: CALCULATOR,
-        operations: [{ kind: 'merge', ref: 'fix-add' }]
-      })
-      .chapter('delete-branch', {
-        target: CALCULATOR,
-        operations: [{ kind: 'deleteBranch', name: 'fix-add' }]
-      })
-      .chapter('work-on-feature-branch', {
-        target: CALCULATOR,
-        operations: [{ kind: 'checkout', ref: 'feature-sub' }]
-      })
-      .chapter('commit-on-feature-branch', {
-        target: CALCULATOR,
-        operations: commitOf(
-          'Comment subtract function',
-          'subtraction.js',
-          SUBTRACTION_COMMENTED,
-          'f92ab0'
-        )
-      })
-      .chapter('merge-checkout', {
-        target: CALCULATOR,
-        operations: [{ kind: 'checkout', ref: 'main' }]
-      })
-      .chapter('merge', {
-        target: CALCULATOR,
-        operations: [
-          { kind: 'merge', ref: 'feature-sub', displayDigest: '04fb82' }
-        ]
-      })
-      .chapter('delete-feature-sub', {
-        target: CALCULATOR,
-        operations: [{ kind: 'deleteBranch', name: 'feature-sub' }]
-      })
-      .chapter('checkout-past', {
-        target: CALCULATOR,
-        operations: [
-          { kind: 'branch', name: 'better-sub', startPoint: '4f94fa' },
-          { kind: 'checkout', ref: 'better-sub' }
-        ]
-      })
-      .chapter('conflicting-change', {
-        target: CALCULATOR,
-        operations: commitOf(
-          'Implement a better subtract',
-          'subtraction.js',
-          SUBTRACTION_COMMENTED,
-          '98ff62'
-        )
-      })
-      .chapter('merge-conflicting-change-checkout', {
-        target: CALCULATOR,
-        operations: [{ kind: 'checkout', ref: 'main' }]
-      })
-      .chapter('merge-conflicting-change', {
-        target: CALCULATOR,
-        operations: [
-          { kind: 'merge', ref: 'better-sub', displayDigest: 'a1d4e7' }
-        ]
-      })
-      .chapter('delete-better-sub', {
-        target: CALCULATOR,
-        operations: [{ kind: 'deleteBranch', name: 'better-sub' }]
-      })
-      .chapter('conflicting-file-change-checkout', {
-        target: CALCULATOR,
-        operations: [
-          { kind: 'branch', name: 'cleanup', startPoint: '4f94fa' },
-          { kind: 'checkout', ref: 'cleanup' }
-        ]
-      })
-      // The slides delete `subtraction.js` here; simgit has no file-removal
-      // operation, so the commit touches `index.html` instead. `main` has not
-      // changed that path since `4f94fa`, which also keeps the merge below clean.
-      .chapter('conflicting-file-change', {
-        target: CALCULATOR,
-        operations: commitOf(
-          'Remove incomplete implementation',
-          'index.html',
-          '<h1>Calculator</h1>\n<div id="keypad"></div>\n<div id="result"></div>\n',
-          '12ac65'
-        )
-      })
-      .chapter('merge-conflicting-file-change-checkout', {
-        target: CALCULATOR,
-        operations: [{ kind: 'checkout', ref: 'main' }]
-      })
-      .chapter('merge-conflicting-file-change', {
-        target: CALCULATOR,
-        operations: [{ kind: 'merge', ref: 'cleanup', displayDigest: 'c3b9f0' }]
-      })
-      .chapter('delete-cleanup', {
-        target: CALCULATOR,
-        operations: [{ kind: 'deleteBranch', name: 'cleanup' }]
-      })
-  );
+  return buildBranchingBaseStory('Branching')
+    .chapter('divergent-history', {
+      target: CALCULATOR,
+      operations: commitOf(
+        'Fix addition',
+        'addition.js',
+        'export const add = (a, b) => a + b;\n// Handles floating point rounding.\n',
+        '2817bc'
+      )
+    })
+    .chapter('switch-to-feature-sub', {
+      target: CALCULATOR,
+      operations: [{ kind: 'checkout', ref: 'feature-sub' }]
+    })
+    .chapter('switch-to-fix-add', {
+      target: CALCULATOR,
+      operations: [{ kind: 'checkout', ref: 'fix-add' }]
+    })
+    .chapter('fast-forward-merge-checkout', {
+      target: CALCULATOR,
+      operations: [{ kind: 'checkout', ref: 'main' }]
+    })
+    .chapter('fast-forward-merge', {
+      target: CALCULATOR,
+      operations: [{ kind: 'merge', ref: 'fix-add' }]
+    })
+    .chapter('delete-branch', {
+      target: CALCULATOR,
+      operations: [{ kind: 'deleteBranch', name: 'fix-add' }]
+    })
+    .chapter('merge', {
+      target: CALCULATOR,
+      operations: [
+        { kind: 'merge', ref: 'feature-sub', displayDigest: '04fb82' }
+      ]
+    })
+    .chapter('delete-feature-sub', {
+      target: CALCULATOR,
+      operations: [{ kind: 'deleteBranch', name: 'feature-sub' }]
+    });
 }
 
 storyRegistry.register('branchingOneLine', buildBranchingOneLineStory);

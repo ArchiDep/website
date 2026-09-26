@@ -123,7 +123,8 @@ A branch is a lightweight, movable **pointer to a commit**.
 The default branch is `main` (or `master` with the default Git configuration).
 The special `HEAD` pointer indicates the current branch.
 
-As you start making commits, the current branch pointer **automatically moves** forward to your latest commit.
+As you start making commits, the current branch pointer **automatically moves**
+forward to your latest commit.
 
 ---
 
@@ -144,53 +145,42 @@ $> git remote rm origin
 
 **Notes:**
 
-As you can see if you type `git log`, there are some commits already.
-Open the project with your favorite editor and open the `index.html` page in a browser.
+> 🛠️ Clone the example repository and move into it.
+
+`git clone` downloads a copy of a repository, its whole history included. The
+last command removes the link to the repository on GitHub, which is explained
+with remotes later.
+
+Open the project with your favorite editor and open the `index.html` page in a
+browser. As you can see if you type `git log`, there are some commits already.
 
 ---
 
-## Working with branches
-
----
-
-### Showing branches on the command line
-
-```bash
-$> git log --oneline --decorate --graph --all
- * 4f94fa (HEAD -> main) Improve layout
- * 9ab3fd Fix addition
- * 387f12 First version
-```
-
-**Notes:**
-
-The [`git log` command][git-log] can show you a representation of the commit
-graph and its branches.
-
----
-
-### Creating Git aliases
+### Showing the commit graph
 
 ```bash
 $> git config --global alias.graph \
    "log --oneline --decorate --graph --all"
 
 $> git graph
- * 4f94fa (HEAD -> main) Improve layout
- * 9ab3fd Fix addition
- * 387f12 First version
+* 4f94fa (HEAD -> main) Improve layout
+* 9ab3fd Fix addition
+* 387f12 First version
 ```
 
 **Notes:**
 
-In fact, this command is so useful you should make an **alias**, as we will use it a lot in this tutorial.
+The [`git log` command][git-log] can show you a representation of the commit
+graph and its branches, with
+`git log --oneline --decorate --graph --all`. This command is so useful that
+you should make an **alias** for it, `git graph`, as it is used throughout
+these slides.
+
+> 🛠️ Create the alias, and show the commit graph of the example repository.
 
 ---
 
 ### Create a new branch
-
-> 🛠️ Our JavaScript calculator is missing some code. Let's create a branch to
-> implement subtraction.
 
 ```bash
 $> git branch feature-sub
@@ -200,49 +190,69 @@ $> git branch feature-sub
 
 **Notes:**
 
-It's very fast and simple to create a new branch. Use the `git branch` command
-to create a branch called "feature-sub":
+> 🛠️ Our JavaScript calculator is missing some code. Let's create a branch to
+> implement subtraction.
 
-There is now a new pointer to the current commit. Note that `HEAD` didn't move –
+It's very fast and simple to create a new branch with the `git branch` command.
+There is now a new pointer to the current commit. Note that `HEAD` didn't move:
 we are still on the `main` branch.
 
----
-
-### Showing the current branch
+Without arguments, `git branch` lists the branches, with a star next to the
+current one:
 
 ```bash
 $> git branch
- * main
-   feature-sub
+  feature-sub
+* main
 ```
-
-**Notes:**
-
-You can use `git branch` without arguments to simply see the list of branches
-and which one you are currently on:
-
-The star is displayed next to the current branch.
 
 ---
 
 ### Switch branches
 
 ```bash
-$> git switch feature-sub  # or git checkout feature-sub
+$> git switch feature-sub
 Switched to branch 'feature-sub'
 ```
 
 <simgit-story name='branchingOneLine' start-chapter='branch' end-chapter='checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
-> 🛠️ You can now implement the subtraction in `subtraction.js`. Move on to the
-> next slide once you're done.
+**Notes:**
+
+> 🛠️ Switch to the new branch.
+
+This moves `HEAD` to point to the `feature-sub` branch. No file has changed,
+because `feature-sub` points to the same commit as `main`.
+
+You will also find `git checkout feature-sub` in older documentation. It does
+the same thing: `git switch` is a newer command dedicated to switching
+branches.
+
+> 🛠️ You can now implement the subtraction in `subtraction.js`: replace
+> `return '?';` with `return a - b;`.
+
+---
+
+### Check the status
+
+```bash
+$> git status
+On branch feature-sub
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   subtraction.js
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
 
 **Notes:**
 
-Now let's switch to the `feature-sub` branch:
+> 🛠️ Check the status of your repository.
 
-This moves `HEAD` to point to the `feature-sub` branch. Nothing else happened
-because `HEAD` is still pointing to the same commit as `main`.
+Git has noticed that `subtraction.js` was modified, but the change is **not
+staged for commit**: if you committed now, it would not be included. To
+understand why, you need to know the three parts of a Git project.
 
 ---
 
@@ -274,7 +284,8 @@ A Git project has three main parts:
 
   You should never modify any of the files in this directory yourself; you could
   easily corrupt the Git repository. It is hidden by default, but you can see it
-  on the command line.
+  on the command line. (The exception to this rule are **hooks**, scripts that
+  you can write for Git to run automatically, which we will cover later.)
 
 - The **working directory**: it contains the **files you are currently working
   on**; that is, **one specific version** of your project. These files are
@@ -301,7 +312,7 @@ This is one of the **most important things to remember about Git**:
 - You **modify** files (or add new files) in your _working directory_.
 - You **stage** the files, adding snapshots of them to your _staging area_.
 - You make a **commit**, which takes the files as they are in the _staging area_
-  and stores these snapshots permanently to your _Git directory_.
+  and stores this snapshot of your project permanently to your _Git directory_.
 
 ---
 
@@ -316,11 +327,30 @@ into the Git directory.
 
 ---
 
-### Commit on a branch
+### Stage the change
 
 ```bash
 $> git add subtraction.js
 
+$> git status
+On branch feature-sub
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   subtraction.js
+```
+
+**Notes:**
+
+> 🛠️ Stage your change, and check the status again.
+
+`git add` puts a snapshot of the file, as it is now, into the **staging area**.
+The change is now ready **to be committed**.
+
+---
+
+### Commit on a branch
+
+```bash
 $> git commit -m "Implement subtraction"
 [feature-sub 712ff2] Implement subtraction
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -330,23 +360,28 @@ $> git commit -m "Implement subtraction"
 
 **Notes:**
 
-Once you're done, it's time to add and commit your changes. As you commit, the
-current branch (the one pointed to by `HEAD`) moves forward to the new commit.
+> 🛠️ Commit your change.
 
----
+As you commit, the current branch (the one pointed to by `HEAD`) moves forward
+to the new commit.
 
-### Switch back to `main`
+The working directory, the staging area and the last commit now all agree, so
+`git status` has nothing to report:
 
-> 🛠️ Oops, you just noticed that addition is not working correctly.
-> You need to make a bug fix, but you don't want to mix that code with the new
-> subtraction feature. Let's **go back to `main`**.
+```bash
+$> git status
+On branch feature-sub
+nothing to commit, working tree clean
+```
+
+Make a habit of reading `git status` after every step.
 
 ---
 
 ### Switch/checkout behavior
 
 ```bash
-$> git switch main  # or git checkout main
+$> git switch main
 Switched to branch 'main'
 ```
 
@@ -356,21 +391,26 @@ Now check your files.
 
 **Notes:**
 
-Two things happened when you ran `git switch main` (or `git checkout main`):
+> 🛠️ Oops, you just noticed that addition is not working correctly. You need to
+> make a bug fix, but you don't want to mix that code with the new subtraction
+> feature. Let's **go back to `main`**.
+
+Two things happened when you ran `git switch main`:
 
 - The `HEAD` pointer was **moved** back to the `main` branch.
-- The files in your working directory were **reverted** back to the snapshot that `main` points to.
+- The files in your working directory were **restored** to the snapshot that
+  `main` points to.
 
-You have essentially **rewinded** the work you've done in `feature-sub`, and are working on an **older version** of the project.
+`subtraction.js` contains `return '?';` again: you are working on an **older
+version** of the project. Your work is not lost: it is in the commit that
+`feature-sub` points to.
 
 ---
 
 ### Create another branch
 
-> 🛠️ Let's create a new branch to fix the bug.
-
 ```bash
-$> git switch -c fix-add  # or git checkout -b fix-add
+$> git switch -c fix-add
 Switched to a new branch 'fix-add'
 ```
 
@@ -378,17 +418,17 @@ Switched to a new branch 'fix-add'
 
 **Notes:**
 
+> 🛠️ Let's create a new branch to fix the bug.
+
 You can create a new branch _and_ switch to it in one command with the `-c`
-(**c**reate) option of the `switch` command or the `-b` (new **b**ranch) option
-of the `checkout` command.
+(**c**reate) option of the `switch` command (or the `-b` option of the older
+`checkout` command).
 
 Nothing changed yet because `fix-add` still points to the same commit as `main`.
 
 ---
 
 ### Work on a separate branch
-
-> 🛠️ Fix `addition.js` and commit your changes.
 
 ```bash
 $> git add addition.js
@@ -398,6 +438,14 @@ $> git commit -m "Fix addition"
 ```
 
 <simgit-story name='branching' start-chapter='another-branch' end-chapter='divergent-history' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+
+**Notes:**
+
+> 🛠️ Fix `addition.js` (replace `a * b` with `a + b`), then stage and commit
+> your changes.
+
+As on `feature-sub`, the commit moves the current branch, `fix-add`, forward.
+`feature-sub` and its commit are left where they were.
 
 ---
 
@@ -412,23 +460,44 @@ $> git switch fix-add
 
 **Notes:**
 
-Your project history has now **diverged**.
+> 🛠️ Switch back and forth between `feature-sub` and `fix-add` a few times, and
+> watch `subtraction.js` and `addition.js` change in your editor.
 
-The changes in `feature-sub` and `fix-add` are **isolated**. You can **switch
-back and forth** between the branches with `git switch` or `git checkout`:
+Your project history has now **diverged**: `feature-sub` and `fix-add` both
+start from the same commit, and each adds a different change to it. The two
+changes are **isolated** from each other: `feature-sub` has the subtraction but
+not the fix, and `fix-add` has the fix but not the subtraction.
 
-Every time you switch to one of these branches, the files in your **working
-directory** are updated to reflect the state of the corresponding commit, or
-snapshot.
+Every time you switch branches, Git **rewrites the files in your working
+directory** to match the snapshot of the commit that the branch points to. This
+works for any branch, and therefore any version of your project, at any time:
+nothing is lost by switching, since every version is safely stored in a commit.
+
+Switch from a **clean** working directory, when `git status` says there is
+nothing to commit. If you have uncommitted changes that switching would
+overwrite, Git refuses to switch rather than lose them:
+
+```bash
+$> git switch feature-sub
+error: Your local changes to the following files would be overwritten by checkout:
+        subtraction.js
+Please commit your changes or stash them before you switch branches.
+Aborting
+```
+
+Commit your changes first, or discard them with `git restore`. And if your
+uncommitted changes are to a file that is the same in both branches, Git
+switches without complaint, and the changes simply follow you to the other
+branch (which is rarely what you meant).
 
 ---
 
-### Merging
+### Go back to the main line
 
-Let's bring back those changes to the main line.
+We want to bring back those changes to the main line.
 
 ```bash
-$> git switch main  # or git checkout main
+$> git switch main
 ```
 
 <simgit-story name='branching' start-chapter='switch-to-fix-add' end-chapter='fast-forward-merge-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
@@ -453,10 +522,14 @@ $> git merge fix-add
 Updating 4f94fa..2817bc
 Fast-forward
  addition.js | 2 +-
-  1 file changed, 1 insertion(+), 1 deletion(-)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
 Notice the term **fast-forward**.
+
+**Notes:**
+
+> 🛠️ Merge `fix-add` into `main`.
 
 ---
 
@@ -467,7 +540,7 @@ Notice the term **fast-forward**.
 **Notes:**
 
 The `fix-add` branch pointed to a commit **directly ahead** of the commit `main`
-pointed to. There is no divergent history, so Git simply has to **moves the
+pointed to. There is no divergent history, so Git simply has to **move the
 pointer forward**. This is what is called a **fast-forward**.
 
 ---
@@ -483,71 +556,53 @@ Deleted branch fix-add (was 2817bc).
 
 **Notes:**
 
-Now that we've brought our fix back into `main`, we don't need the `fix-add`
-branch anymore. Let's delete it with the `-d` (**d**elete) option of the
-`branch` command:
+> 🛠️ Now that the fix is in `main`, the `fix-add` branch is no longer needed.
+> Delete it.
 
----
-
-### Continue working on a feature branch
-
-> 🛠️ Let's switch back to our `feature-sub` branch and finish our work. As good
-> programmers, we need to write a comment for the subtract function.
-
-```bash
-$> git switch feature-sub  # or git checkout feature-sub
-```
-
-<simgit-story name='branching' start-chapter='delete-branch' end-chapter='work-on-feature-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
----
-
-### Commit your changes
-
-> 🛠️ Once you are done, commit your changes.
-
-```bash
-$> git add subtraction.js
-$> git commit -m "Comment subtract function"
-```
-
-<simgit-story name='branching' start-chapter='work-on-feature-branch' end-chapter='commit-on-feature-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+Use the `-d` (**d**elete) option of the `branch` command. This only deletes the
+pointer: the commit stays in the history of `main`.
 
 ---
 
 ### Merging a divergent history
 
-<simgit-story name='branching' start-chapter='commit-on-feature-branch' end-chapter='commit-on-feature-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='branching' start-chapter='delete-branch' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
-Oops, no fast-forward here.
+Can we do a fast forward here?
 
 **Notes:**
 
-Now that we're happy with our new subtraction feature, we want to **merge** it
-into `main` as well. But the `feature-sub` branch has **diverged from some older
-point compared to `main`**, so Git cannot do a fast-forward:
+Now we want to **merge** the subtraction feature into `main` as well. But
+`main` has moved on since `feature-sub` was created, so Git cannot do a
+fast-forward:
 
-- `feature-sub` points to commit `f92ab0` which contains our feature.
-- `main` points to commit `2817bc` which contains the addition fix.
-- Commit `4f94fa` is the common ancestor.
+- `feature-sub` points to commit `712ff2`, which contains our feature.
+- `main` points to commit `2817bc`, which contains the addition fix.
+- Commit `4f94fa` is their common ancestor.
 
-Git will do a **three-way merge** instead, combining together the changes of
-`main` and `feature-sub` (compared to the common ancestor). A **new commit**
-will be created representing that state.
+If you moved `main` to `feature-sub`'s current commit, you would **lose the
+addition fix**, and commit `2817bc` would become **unreachable**: no branch
+would lead to it any more. Git will not let you do that (at least not without
+insistence).
+
+Instead, it will do a **three-way merge**, combining the changes of `main` and
+`feature-sub` (compared to their common ancestor). A **new commit** will be
+created representing that state.
 
 ---
 
 ### Merge the divergent branch
 
-> 🛠️ Switch back to the `main` branch and merge `feature-sub` into it.
-
 ```bash
-$> git switch main  # or git checkout main
 $> git merge feature-sub
-Merge made by the 'recursive' strategy.
- subtraction.js | 5 ++++-
-  1 file changed, 4 insertions(+), 1 deletion(-)
+Merge made by the 'ort' strategy.
+ subtraction.js | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 ```
+
+**Notes:**
+
+> 🛠️ Merge `feature-sub` into `main`.
 
 ---
 
@@ -556,33 +611,81 @@ Merge made by the 'recursive' strategy.
 Git will ask you to confirm the commit message:
 
 ```txt
- Merge branch 'feature-sub'
+Merge branch 'feature-sub'
 
- # Please enter a commit message to explain why this merge is
- # necessary, especially if it merges an updated upstream into
- # a topic branch.
- #
- # Lines starting with '#' will be ignored, and an empty
- # message aborts the commit.
+# Please enter a commit message to explain why this merge is
+# necessary, especially if it merges an updated upstream into
+# a topic branch.
+#
+# Lines starting with '#' will be ignored, and an empty
+# message aborts the commit.
 ```
 
-If you are in Vim, type `:wq` (**w**rite and **q**uit) to save and exit. If you
-are in nano, use `Ctrl-X`.
+If you are in Vim, press `Esc`, then type `:q!` and press `Enter`. If you are in
+nano, use `Ctrl-X`, then `Y` and `Enter` to confirm.
 
 **Notes:**
 
-Git will need to create a new commit when you run the `merge` command, so it
-will **open the configured editor** (Vim by default if you have not changed it)
-with a generated commit message.
+Git needs to create a new commit for this merge, so it **opens your configured
+editor** with a generated commit message, and waits for you to exit the editor
+before it makes the commit. The output of the `git merge` command only appears
+once you have exited the editor.
+
+The editor Git opens is the one named by the `EDITOR` environment variable, or
+Vim if it is not set. If you find yourself in Vim, press `Esc` first: if you
+typed anything, it takes you back to Vim's normal mode, where it expects
+commands. Then `:q!` quits without saving what you may have typed, and Git
+uses the generated message as it is. To have Git open nano instead, see [setting
+nano as the default editor]({% link chapters/101-command-line/subject.md
+%}#setting-nano-as-the-default-editor).
 
 ---
 
 ### Merge commit
 
-<simgit-story name='branching' start-chapter='merge-checkout' end-chapter='merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='delete-branch' end-chapter='merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
-You can see the new **merge commit** that Git has created. It is a special
-commit in that it has more than one parent.
+This commit has more than one parent.
+
+**Notes:**
+
+The **merge commit** that Git has just created is a commit like any other: a
+snapshot of the whole project, with an author, a date and a message. To build
+its snapshot, Git performed a **three-way merge**, comparing three commits:
+
+- `4f94fa`, the **common ancestor** of the two branches;
+- `2817bc`, the commit `main` pointed to, which changed `addition.js`;
+- `712ff2`, the commit `feature-sub` pointed to, which changed
+  `subtraction.js`.
+
+Each branch changed something the other did not touch, so Git could apply both
+sets of changes to the common ancestor without having to choose between them.
+The result has both the addition fix and the subtraction.
+
+What makes this commit special is that it has **two parents**: `2817bc`, the
+commit you were on, and `712ff2`, the commit of the branch you merged in. That
+is how the history records that two lines of development were joined. As with
+any commit, the current branch, `main`, moved forward to it, while
+`feature-sub` stayed where it was.
+
+The history of `main` now includes the commits of both branches, which
+`git graph` shows:
+
+```bash
+$> git graph
+*   04fb82 (HEAD -> main) Merge branch 'feature-sub'
+|\
+| * 712ff2 (feature-sub) Implement subtraction
+* | 2817bc Fix addition
+|/
+* 4f94fa Improve layout
+* 9ab3fd Fix addition
+* 387f12 First version
+```
+
+Had both branches changed the same lines of the same file, Git could not have
+chosen between the two versions on its own. That is a **merge conflict**, which
+you will see later.
 
 ---
 
@@ -594,436 +697,25 @@ $> git branch -d feature-sub
 
 <simgit-story name='branching' start-chapter='merge' end-chapter='delete-feature-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
----
-
-## Merge conflicts
-
-Occasionally, the merge process doesn't go smoothly: if the **same line(s) in
-the same file(s)** was modified in two diverging branches and you merge them
-together, Git can't know which is the correct version.
-
----
-
-### Create some conflict
-
-Let's pretend that a colleague of yours also implemented the subtraction
-function but in a different way than you did.
-
-> 🍺 It must have been a colleague... you weren't that drunk last night.
-
----
-
-### Find the common ancestor
-
-Let's find our original starting point (the common ancestor where `feature-sub`
-and `fix-add` diverged) and start a new branch from there.
-
-```bash [8]
-$> git graph
- *   04fb82 (HEAD -> main) Merge branch 'feature-sub'
- |\
- | * f92ab0 Comment subtract function
- * | 2817bc Fix addition
- | * 712ff2 Implement subtraction
- |/
- * 4f94fa (origin/main, origin/HEAD) Comment add function
- * 9ab3fd Simplify addition and subtraction implementation
- * 387f12 First version
-```
-
-Make a copy of that commit hash.
-
 **Notes:**
 
-We want to make it look as if your colleague did his work **at the same time**
-as you.
+> 🛠️ Now that the subtraction is in `main`, delete the `feature-sub` branch.
 
-> Note that the actual hash of the commit on your machine may be different than
-> the one in this slide.
-
----
-
-### Create a branch "in the past"
+Git lets you delete it with `-d` because it is **fully merged**: its commit is
+part of the history of `main`, so deleting the pointer loses nothing. Git
+refuses to delete a branch whose commits are not in the history of the current
+branch, since they would become hard to find again:
 
 ```bash
-$> git switch -c better-sub 4f94fa
-# or git checkout -b better-sub 4f94fa
+$> git branch -d feature-sub
+error: the branch 'feature-sub' is not fully merged
+hint: If you are sure you want to delete it, run 'git branch -D feature-sub'
+hint: Disable this message with "git config set advice.forceDeleteBranch false"
 ```
 
-<simgit-story name='branching' start-chapter='delete-feature-sub' end-chapter='checkout-past' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
-**Notes:**
-
-You can create a branch at any point in the project's history by passing an
-additional commit reference to `git switch` or `git checkout`.
-
-The `HEAD` has now moved to that point in the project's past history.
-
----
-
-### Make a conflicting change
-
-> 🛠️ Now edit `subtraction.js` and implement subtraction again, but in a
-> different way.
-
-```js
-function subtract(a, b) {
-  return -b + a;
-}
-```
-
----
-
-### Cannot check out conflicting changes
-
-Git will not let you switch to `main` at this point:
-
-```bash
-$> git switch main  # or git checkout main
-error: Your local changes to the following files would be
-overwritten by checkout:
-  subtraction.js
-Please commit your changes or stash them before you
-switch branches.
-Aborting
-```
-
-**Notes:**
-
-Git won't let you do it because the state of `subtraction.js` is different in
-that branch.
-
----
-
-### Commit the conflicting changes
-
-```bash
-$> git add subtraction.js
-$> git commit -m "Implement a better subtract"
-```
-
-<simgit-story name='branching' start-chapter='checkout-past' end-chapter='conflicting-change' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
-**Notes:**
-
-Viewing the graph of commits, it's clear that the change has been made **in
-parallel** with our earlier changes.
-
----
-
-### Merge the conflicting branch
-
-Go back to `main` and try to merge the `better-sub` branch:
-
-```bash
-$> git switch main  # or git checkout main
-$> git merge better-sub
-Auto-merging subtraction.js
-CONFLICT (content): Merge conflict in subtraction.js
-Recorded preimage for 'subtraction.js'
-Automatic merge failed; fix conflicts
-and then commit the result.
-```
-
-**It will fail!**
-
-**Notes:**
-
-Git tells you that a **content conflict** has occurred in `subtraction.js`.
-
-The merge has failed and no new commit has been created.
-
----
-
-### Check the status of the conflict
-
-Let's see what `git status` tells us:
-
-```bash
-$> git status
-On branch main
-You have unmerged paths.
-  (fix conflicts and run "git commit")
-  (use "git merge --abort" to abort the merge)
-
-Unmerged paths:
-  (use "git add <file>..." to mark resolution)
-
-        both modified:   subtraction.js
-
-no changes added to commit
-  (use "git add" and/or "git commit -a")
-```
-
-**Notes:**
-
-- Git tells you that the merge is **not complete**:
-  - You can either fix the conflicts and run `git commit` to end the merge, or
-    cancel the whole thing with `git merge --abort`.
-- `subtraction.js` was modified in **both** the **current branch** and the
-  **branch we are trying to merge in**.
-- You can use `git add` to **mark the conflicts in a file as resolved**.
-
----
-
-### Inspect the conflicted file
-
-Let's see what's in `subtraction.js`:
-
-```js
-/**
- * Takes two numbers a and b, and returns
- * the result of subtracting b from a.
- */
-function subtract(a, b) {
-<<<<<<< HEAD
-  return a - b;
-=======
-  return -b + a;
->>>>>>> better-sub
-}
-
-calculate('subtraction', subtract);
-```
-
-**Notes:**
-
-Notice two things here:
-
-- Git has **successfully merged the comment** on the subtract function, since
-  only one person changed these lines.
-- Git could not merge the line with the computation, because the changes in the
-  two branches conflict. It has added **conflict markers** to help you solve the
-  issue.
-
----
-
-### Conflict markers
-
-Git has no idea what's right:
-
-```txt
-<<<<<<< HEAD
-  return a - b;
-=======
-  return -b + a;
->>>>>>> better-sub
-```
-
-It is **your responsibility** to **choose the correct version** (and remove the
-conflict markers).
-
-**Notes:**
-
-Take a closer look at the conflict markers:
-
-- The section between `<<<<<<< HEAD` and `=======` is the content that was
-  present in the current branch (`HEAD`) before you merged.
-- The section between `=======` and `>>>>>>> better-sub` is the content that is
-  being merged in from the `better-sub` branch.
-
-Since Git cannot know which is better, it's **your responsibility** to:
-
-- Remove the version you don't want, and...
-- Remove the marker conflicts.
-
-```js
-return -b + a;
-```
-
-Note that you could also write a new version combining changes from the two
-versions.
-
----
-
-### Mark the conflict as resolved
-
-Now that you have fixed the conflict, do as instructed by Git and add the file to the staging area:
-
-```bash
-$> git add subtraction.js
-
-$> git status
-On branch main
-All conflicts fixed but you are still merging.
-  (use "git commit" to conclude merge)
-
-Changes to be committed:
-
-        modified:   subtraction.js
-```
-
----
-
-### Commit the resolved conflicts
-
-You still need to **commit** to end the merge:
-
-```bash
-$> git commit -m "Merge better-sub into main"
-```
-
-**Notes:**
-
-If you do not specify a commit message with `-m`, Git will generate one for you
-and open the configured editor (Vim by default) for you to check and/or change
-the message. Type `:wq` to exit from Vim or `Ctrl-X` to exit from nano, and to
-make the commit.
-
----
-
-### The state after merging
-
-```bash
-$> git branch -d better-sub
-```
-
-<simgit-story name='branching' start-chapter='conflicting-change' end-chapter='delete-better-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
-**Notes:**
-
-The latest commit on `main` now includes the changes from all lines of
-development.
-
----
-
-## Merge file conflicts
-
-Sometimes it's not just the contents of a file:
-
-- You could have **modified a file** in your branch.
-- _Someone else_ could have **deleted it** in another branch.
-
-> 🍻 It must have been someone else... right?
-
----
-
-### Back to the ~future~ past
-
-```bash
-# or git checkout -b cleanup 4f94fa
-$> git switch -c cleanup 4f94fa
-```
-
-<simgit-story name='branching' start-chapter='delete-better-sub' end-chapter='conflicting-file-change-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
----
-
-### Make a conflicting file change
-
-> 🛠️ This time, delete `subtraction.js`. We don't tolerate incomplete code in
-> our project.
-
-```bash
-$> rm subtraction.js
-$> git add .
-$> git commit -m "Remove incomplete implementation"
-```
-
-<simgit-story name='branching' start-chapter='conflicting-file-change-checkout' end-chapter='conflicting-file-change' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
----
-
-### Merge the conflicting branch
-
-Let's try to merge that branch into `main`:
-
-```bash
-$> git switch main  # or git checkout main
-$> git merge cleanup
-CONFLICT (modify/delete): subtraction.js deleted in cleanup
-  and modified in HEAD. Version HEAD of subtraction.js left
-  in tree.
-Automatic merge failed; fix conflicts
-  and then commit the result.
-```
-
-**Conflict!**
-
-**Notes:**
-
-Git tells you immediately that there is a conflict and that:
-
-- `subtraction.js` was **deleted** in the `cleanup` branch.
-- `subtraction.js` was **modified** in the current branch (`HEAD`).
-- Git **doesn't know** whether it should apply the deletion or the modification,
-  so it left the modified file for you to check.
-
----
-
-### Check the status of the file conflict
-
-```bash
-$> git status
-On branch main
-You have unmerged paths.
-  (fix conflicts and run "git commit")
-  (use "git merge --abort" to abort the merge)
-
-Unmerged paths:
-  (use "git add/rm <file>..." as appropriate to mark resolution)
-
-        deleted by them: subtraction.js
-
-no changes added to commit
-  (use "git add" and/or "git commit -a")
-```
-
-**Notes:**
-
-Again, Git gives us some information:
-
-- `subtraction.js` was **deleted by "them"**, meaning that it was deleted in the
-  branch you're trying to merge in (if it had been deleted in the current branch
-  and modified in the other branch, it would be _deleted by "us"_).
-- Use either `git add` or `git rm` to mark the conflict as resolved.
-
----
-
-### To delete, or not to delete...
-
-You have to choose whether you want to either:
-
-- **Keep** the modified file (use `git add`), or...
-- **Remove** it (use `git rm`)
-
----
-
-### Resolve the file conflict
-
-Let's keep it:
-
-```bash
-$> git add subtraction.js
-$> git status
-On branch main
-All conflicts fixed but you are still merging.
-  (use "git commit" to conclude merge)
-```
-
----
-
-### Commit the resolved file conflict
-
-As instructed, use `git commit` to complete the merge:
-
-```bash
-$> git commit -m "Merge cleanup (kept subtraction.js)"
-```
-
-Finally, delete the `cleanup` branch:
-
-```bash
-$> git branch -d cleanup
-```
-
----
-
-### Final state
-
-And you're done!
-
-<simgit-story name='branching' start-chapter='merge-conflicting-file-change-checkout' end-chapter='delete-cleanup' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+The history is now back to a single branch, `main`, which contains all the work
+done on `feature-sub` and `fix-add`. Branch, commit, merge, delete: this is the
+cycle you will repeat for every feature and every fix.
 
 [advanced-merging]: https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging
 [branching]: https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell

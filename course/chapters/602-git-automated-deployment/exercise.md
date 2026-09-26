@@ -74,7 +74,7 @@ Initialized empty Git repository in /home/jde/todolist-automated-repo/
 Remember that a Git repository has several parts: [the Git directory where the
 project's history is stored, and the working tree which contains the current
 version of the files you are working on]({% link
-chapters/201-git/slides/slides.md %}#/12).
+chapters/201-git/slides/slides.md %}#/10).
 
 A bare repository is a repository with only a Git directory and no working tree.
 The project's files are not checked out. It's used mostly on servers for sharing
