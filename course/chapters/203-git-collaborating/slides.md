@@ -19,7 +19,7 @@ Learn how to collaborate on [GitHub][github] with [Git][git].
 **Recommended reading**
 
 - [Version control with Git]({% link chapters/201-git/subject.md %})
-- [Git branching]({% link chapters/202-git-branching/slides.md %})
+- [Git branching]({% link chapters/201-git/slides/slides.md %})
 
 ---
 

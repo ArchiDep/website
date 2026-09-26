@@ -55,10 +55,10 @@
       "slug": "git"
     },
     {
-      "path": "/course/202-git-branching/slides/",
-      "kind": "chapter_slides",
+      "path": "/course/202-hello-git/",
+      "kind": "chapter",
       "num": 202,
-      "slug": "git-branching"
+      "slug": "hello-git"
     },
     {
       "path": "/course/203-git-collaborating/slides/",

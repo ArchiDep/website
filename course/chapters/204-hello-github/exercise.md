@@ -24,7 +24,7 @@ otherwise we will provide a repository with the correct starting state.
 **Recommended reading**
 
 - [Version control with Git]({% link chapters/201-git/subject.md %})
-- [Git branching]({% link chapters/202-git-branching/slides.md %})
+- [Git branching]({% link chapters/201-git/slides/slides.md %})
 - [Collaborating with Git]({% link chapters/203-git-collaborating/slides.md %})
 
 **Going further**
@@ -135,7 +135,7 @@ Let's start sharing stuff by pushing, cloning and pulling.
 ### :question: Bob: clone the starting state
 
 If **Bob** has performed the [calculator exercise]({% link
-chapters/202-git-branching/slides.md %}), he should continue from that
+chapters/201-git/slides/slides.md %}), he should continue from that
 repository. Otherwise, he should clone the [Hello GitHub exercise
 repository](https://github.com/ArchiDep/hello-github-ex) as a clean starting
 state:
@@ -697,6 +697,6 @@ You can then re-run your pull command, which should work this time.
 
 [git]: https://git-scm.com
 
-[git-tutorial]: {% link chapters/202-git-branching/slides.md %}
+[git-tutorial]: {% link chapters/201-git/slides/slides.md %}
 [github]: https://github.com
 [github-fingerprints]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints

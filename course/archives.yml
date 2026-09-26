@@ -28,3 +28,6 @@
   # is named for what it is rather than for the application of any one year.
   # 2025 named it after the application it used, "Flood It".
   /course/603-floodit-deployment/: /course/603-graded-deployment/
+  # "Git Branching" was a deck of its own. It became part of the deck of
+  # "Version Control with Git".
+  /course/202-git-branching/slides/: /course/201-git/slides/

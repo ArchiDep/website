@@ -96,7 +96,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   - Other Git subcommands and their syntax.
   - The global ignore file.
 
-- [Git branching](https://archidep.ch/course/202-git-branching/slides/)
+- [Git branching](https://archidep.ch/course/201-git/slides/)
 
   You must know:
   - What Git branching is and why it is useful.
