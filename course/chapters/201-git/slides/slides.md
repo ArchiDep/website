@@ -254,6 +254,24 @@ Git has noticed that `subtraction.js` was modified, but the change is **not
 staged for commit**: if you committed now, it would not be included. To
 understand why, you need to know the three parts of a Git project.
 
+> 🛠️ See exactly what you changed with `git diff`.
+
+`git status` says **which** files changed; `git diff` shows **what** changed in
+them, line by line:
+
+```bash
+$> git diff
+diff --git a/subtraction.js b/subtraction.js
+index 1ef2791..612b196 100644
+--- a/subtraction.js
++++ b/subtraction.js
+@@ -1,5 +1,5 @@
+ function subtract(a, b) {
+-  return '?';
++  return a - b;
+ }
+```
+
 ---
 
 ### What's in a Git project?
@@ -345,6 +363,14 @@ Changes to be committed:
 
 `git add` puts a snapshot of the file, as it is now, into the **staging area**.
 The change is now ready **to be committed**.
+
+> 🛠️ Run `git diff` again, then `git diff --cached`.
+
+`git diff` now shows nothing: it only shows the changes you have **not staged**,
+the differences between the working directory and the staging area. The change
+has moved to the staging area, where `git diff --cached` shows it: the
+differences between the staging area and the last commit, which is exactly what
+the next commit will contain. Check it before you commit.
 
 ---
 
@@ -489,6 +515,10 @@ Commit your changes first, or discard them with `git restore`. And if your
 uncommitted changes are to a file that is the same in both branches, Git
 switches without complaint, and the changes simply follow you to the other
 branch (which is rarely what you meant).
+
+`git diff` can also compare two versions without switching:
+`git diff feature-sub fix-add` shows everything that differs between the two
+branches, here the subtraction on one side and the addition fix on the other.
 
 ---
 
