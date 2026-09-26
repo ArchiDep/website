@@ -30,6 +30,7 @@
 
 @source "../../app/deps/flashy/**/*.*ex";
 @source "../../app/lib/archidep/course_site/layout";
+@source "../../app/lib/archidep/course_site/renderer/liquid";
 @source "../../app/lib/archidep_web";
 @source "../../course/chapters";
 @source "../../course/cheatsheets";

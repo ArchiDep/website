@@ -106,9 +106,9 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTagTest do
   defp solution(content, title \\ "Solution"),
     do:
       ~s(<div class="solution collapse screen:collapse-arrow print:collapse-open ) <>
-        ~s(border border-neutral hover:bg-primary/25">) <>
-        ~s(<input type="checkbox" />) <>
-        ~s(<div class="collapse-title font-semibold">) <>
+        ~s(border border-neutral">) <>
+        ~s(<input type="checkbox" class="peer" />) <>
+        ~s(<div class="collapse-title font-semibold peer-hover:bg-primary/25">) <>
         ~s(<div class="flex items-center gap-2">:key:<span>#{title}</span></div>) <>
         ~s(</div>) <>
         ~s(<div class="collapse-content overflow-x-auto">#{content}</div>) <>
