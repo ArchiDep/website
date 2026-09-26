@@ -805,6 +805,208 @@ of the history **at the moment you merge it**.
 
 {% endsolution %}
 
+## :question: History hunt
+
+This exercise is **optional**. Every project on GitHub comes with its whole history, and you can search it
+without leaving your terminal. Clone the repository of [2048][2048], the puzzle
+game that went viral in 2014, next to your `hello-git` directory (not inside
+it):
+
+```bash
+$> cd /path/to/projects
+$> git clone https://github.com/gabrielecirulli/2048.git
+$> cd 2048
+```
+
+Then answer the questions below. Each one names the command that finds the
+answer. Remember that you leave `git log` by pressing `q`.
+
+**The first commit**
+
+When was the first commit of the game made, and by whom? What was its message?
+
+`git log` shows the most recent commits first. `git log --reverse` shows the
+oldest first.
+
+{% solution title: "Answer", reveal: always %}
+
+```bash
+$> git log --reverse
+commit f4d95b6...
+Author: Gabriele Cirulli <...>
+Date:   Wed Mar 5 15:20:56 2014 +0100
+
+    initial commit
+```
+
+Gabriele Cirulli made it on 5 March 2014. The rest of that day's commits style
+the page and write the README: the code that moves the tiles only arrives three
+days later.
+
+{% endsolution %}
+
+**Ads for a day**
+
+In 2018, the author added ads to the game. How long did they stay?
+
+`git log --grep <text>` only shows the commits whose message contains the text,
+and `-i` makes the search ignore uppercase and lowercase.
+
+{% solution title: "Answer", reveal: always %}
+
+```bash
+$> git log -i --grep ads
+commit fc1ef4f...
+Author: Gabriele Cirulli <...>
+Date:   Sat Oct 27 18:25:12 2018 +0200
+
+    Remove Adsense code
+
+commit ffa8559...
+Author: Gabriele Cirulli <...>
+Date:   Sat Oct 27 13:21:45 2018 +0200
+
+    Add AdSense code
+```
+
+About five hours, on 27 October 2018. The messages say "AdSense" and "Adsense",
+Google's advertising service, which both contain "Ads" with a capital A: without
+`-i`, `git log --grep ads` finds nothing.
+
+{% endsolution %}
+
+**How do you win?**
+
+Find the commit that added the win condition, and look at the code it added.
+What exactly makes you win?
+
+Search the messages with `--grep`, then show the commit with
+`git show <hash>`, which prints its message and its changes.
+
+{% solution title: "Answer", reveal: always %}
+
+```bash
+$> git log --oneline --grep win
+...
+e65111f add win condition
+$> git show e65111f
+...
++          // The mighty 2048 tile
++          if (merged.value === 2048) self.won = true;
+```
+
+You win as soon as two tiles merge into a 2048 tile.
+
+{% endsolution %}
+
+**The best score**
+
+The game remembers your best score in the browser's storage, `localStorage`.
+Who wrote the commit that first used it?
+
+A commit message does not always name what the code does. `git log -S <text>`
+searches the changes instead: it shows the commits that added or removed the
+text.
+
+{% solution title: "Answer", reveal: always %}
+
+```bash
+$> git log --oneline --reverse -S localStorage
+664546e Store best score in localStorage
+...
+$> git show 664546e
+commit 664546e...
+Author: Tim Petricola <...>
+```
+
+Tim Petricola, on 10 March 2014, five days after the first commit. This one
+could also be found with `--grep "best score"`, but `-S` finds code whatever the
+message says.
+
+{% endsolution %}
+
+**Who helped?**
+
+How many people have made commits in this project, and who made the most after
+its author?
+
+`git shortlog -sn` counts the commits of each author.
+
+{% solution title: "Answer", reveal: always %}
+
+```bash
+$> git shortlog -sn
+   131  Gabriele Cirulli
+     6  Laurent Margirier
+     6  sigod
+     5  Tim Petricola
+...
+```
+
+28 names, and Laurent Margirier and sigod tie after the author. But a name is
+only what each author configured with `git config user.name`: the README says
+that Anna Harren's GitHub account is `iirelu`, and both names are in the list.
+
+{% endsolution %}
+
+**Three commits with the same message**
+
+The user `rayhaanj` made three commits with the same message. Find them with
+`git log --author`, and look at each one with `git show`. What are they, and why
+are there three?
+
+{% solution title: "Answer", reveal: always %}
+
+```bash
+$> git log --oneline --author rayhaanj
+96e9290 Added vim keybindings
+fb8eabe Added vim keybindings
+29c4bea Added vim keybindings
+```
+
+`29c4bea` and `fb8eabe` add the same keyboard shortcuts, H, J, K and L, which
+move around in Vim. Both start from the same parent, and they only differ by a
+space. `96e9290` is a merge commit: `git show` prints a `Merge:` line with its
+two parents, the two other commits. Their author made the change twice on
+diverging histories, and merged them. You can see it by drawing the graph from
+the merge commit rather than from the latest one: `git graph -4 96e9290` (or
+`git log --graph --oneline -4 96e9290` if you did not create the alias).
+
+The shortcuts are still in the game today: try them. And the message, three
+times the same, cannot tell the three commits apart.
+
+{% endsolution %}
+
+**A renamed file**
+
+The game's stylesheet is `style/main.scss`. Has it always had that name?
+
+`git log -- <file>` shows only the commits that changed a file, and `--follow`
+keeps following it when it was renamed. Compare the two, and add
+`--name-status` to see what each commit did to the file.
+
+{% solution title: "Answer", reveal: always %}
+
+```bash
+$> git log --oneline --follow --name-status -- style/main.scss
+...
+a26e1c6 rename style.scss to main.scss
+R100    style/style.scss        style/main.scss
+22ef3be move css to style dir
+R100    style.scss      style/style.scss
+b0bf6c5 basic tile styling
+M       style.scss
+3403e78 basic styling
+A       style.scss
+```
+
+It was created as `style.scss` at the root of the project in the second commit,
+then moved into `style`, then renamed to `main.scss`. Without `--follow`, the
+history stops at the last rename. `A`, `M` and `R` mean added, modified and
+renamed.
+
+{% endsolution %}
+
 ## :checkered_flag: What have I done?
 
 You created a repository and made commits, and each prediction checked one piece
@@ -1059,6 +1261,7 @@ The branch does not exist on your machine: you removed the link to GitHub before
 switching to it. Delete the `hello-git-merges` directory, clone it again, and
 follow the steps in [two merges](#two-merges) in order.
 
+[2048]: https://gabrielecirulli.github.io/2048/
 [git]: https://git-scm.com/
 [git-filter-repo]: https://github.com/newren/git-filter-repo
 [git-graph]: https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph
