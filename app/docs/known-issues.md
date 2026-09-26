@@ -12,6 +12,7 @@ and the options for resolving it.
 - [A handful of process tests fail intermittently under full-suite load](#a-handful-of-process-tests-fail-intermittently-under-full-suite-load)
 - [Deleting a student who has logged in fails](#deleting-a-student-who-has-logged-in-fails)
 - [A reference link nothing defines is rendered as its own source text](#a-reference-link-nothing-defines-is-rendered-as-its-own-source-text)
+- [Re-recording the current edition's manifest fails to compile](#re-recording-the-current-editions-manifest-fails-to-compile)
 
 <!-- END doctoc -->
 
@@ -109,3 +110,30 @@ whether it belongs in the build as a hard failure beside the asset and `{% link
 unresolved reference from prose that merely looks like one (a regular expression
 or a `chmod [reference...][operator]` synopsis in running text rather than in a
 code block).
+
+## Re-recording the current edition's manifest fails to compile
+
+[What the new edition owes](../../docs/rollover.md#what-the-new-edition-owes)
+says that when a page of the edition being taught is renamed or dropped, its
+manifest in `course/archives` is recorded again with
+`mix archidep.course_site.archives`, in the same change. That command cannot
+run at that moment. The task has `@requirements ["compile"]`, and compiling
+`ArchiDep.CourseSite.Archives` builds the mapping of **every** manifest in the
+directory against the course, the current edition's included. The manifest
+still names the page that just went away, so the compilation raises:
+
+```text
+Edition 2026 published "/course/202-git-branching/slides/", which the course no longer holds; say where it went in course/archives.yml, or declare it gone
+```
+
+`archives.yml` is no way out: the same document says the current edition must
+not be declared there. The workaround is to move the current edition's manifest
+out of `course/archives`, run the task, which then compiles and writes it anew,
+and check the diff against the old one.
+
+Decision to make: either have the compile-time mapping **skip the manifest of
+the edition this checkout holds**, which by the documented rule owes nothing
+and can only ever be stale in this way, or keep the check and **document the
+workaround** in the rollover guide. The first matches what the guide already
+says; the second keeps a stale current manifest a hard error rather than
+something only the task notices.
