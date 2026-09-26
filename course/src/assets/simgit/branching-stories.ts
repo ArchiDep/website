@@ -5,7 +5,7 @@ import { Story, type Operation, type Simulation } from '@alphahydrae/simgit';
 // slides.
 //
 // The display digests are the ones the slides quote in their command output
-// (`[feature-sub 712ff2] Implement subtraction`), so the diagram and the shell
+// (`[sub 712ff2] Implement subtraction`), so the diagram and the shell
 // transcript beside it agree.
 
 const CALCULATOR = { computer: 'demo', repo: '/git-branching-ex' };
@@ -43,7 +43,7 @@ async function createCalculatorRepo(simulation: Simulation): Promise<void> {
 
 /**
  * The chapters both branching stories share: the JavaScript calculator gaining
- * a few commits, then a `feature-sub` branch, then a second `fix-add` branch.
+ * a few commits, then a `sub` branch, then a second `fix-add` branch.
  * Chapter names are the ones the branching slides reference.
  *
  * A chapter is one animated step, so each one holds exactly one Git command's
@@ -82,11 +82,11 @@ function buildBranchingBaseStory(title: string): Story {
     })
     .chapter('branch', {
       target: CALCULATOR,
-      operations: [{ kind: 'branch', name: 'feature-sub' }]
+      operations: [{ kind: 'branch', name: 'sub' }]
     })
     .chapter('checkout', {
       target: CALCULATOR,
-      operations: [{ kind: 'checkout', ref: 'feature-sub' }]
+      operations: [{ kind: 'checkout', ref: 'sub' }]
     })
     .chapter('commit-on-a-branch', {
       target: CALCULATOR,
@@ -117,8 +117,7 @@ export function buildBranchingOneLineStory(): Story {
 
 /**
  * The full story: the history diverges and is switched back and forth, then
- * `fix-add` is merged back as a fast-forward and `feature-sub` with a
- * three-way merge.
+ * `fix-add` is merged back as a fast-forward and `sub` with a three-way merge.
  */
 export function buildBranchingStory(): Story {
   return buildBranchingBaseStory('Branching')
@@ -131,9 +130,9 @@ export function buildBranchingStory(): Story {
         '2817bc'
       )
     })
-    .chapter('switch-to-feature-sub', {
+    .chapter('switch-to-sub', {
       target: CALCULATOR,
-      operations: [{ kind: 'checkout', ref: 'feature-sub' }]
+      operations: [{ kind: 'checkout', ref: 'sub' }]
     })
     .chapter('switch-to-fix-add', {
       target: CALCULATOR,
@@ -153,12 +152,10 @@ export function buildBranchingStory(): Story {
     })
     .chapter('merge', {
       target: CALCULATOR,
-      operations: [
-        { kind: 'merge', ref: 'feature-sub', displayDigest: '04fb82' }
-      ]
+      operations: [{ kind: 'merge', ref: 'sub', displayDigest: '04fb82' }]
     })
-    .chapter('delete-feature-sub', {
+    .chapter('delete-sub', {
       target: CALCULATOR,
-      operations: [{ kind: 'deleteBranch', name: 'feature-sub' }]
+      operations: [{ kind: 'deleteBranch', name: 'sub' }]
     });
 }

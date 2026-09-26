@@ -207,7 +207,7 @@ the last commit. It sorts your changes into three groups:
 
 ```bash
 $> git status
-On branch feature-sub
+On branch sub
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
@@ -286,8 +286,8 @@ Together, the two show you each of the three areas at work. Run
 you meant, and nothing else.
 
 `git diff` can also compare any two versions of your project, for example two
-branches: `git diff main feature-sub`. When the output is longer than your
-terminal, use the arrow keys to scroll and press `q` to quit.
+branches: `git diff main sub`. When the output is longer than your terminal, use
+the arrow keys to scroll and press `q` to quit.
 
 ### `git commit`: save a snapshot
 
@@ -299,7 +299,7 @@ moves forward to point to the new commit.
 
 ```bash
 $> git commit -m "Implement subtraction"
-[feature-sub 712ff2] Implement subtraction
+[sub 712ff2] Implement subtraction
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
@@ -355,7 +355,7 @@ repository. The slides define it as an alias, `git graph`:
 ```bash
 $> git config --global alias.graph "log --oneline --decorate --graph --all"
 $> git graph
-* 712ff2 (HEAD -> feature-sub) Implement subtraction
+* 712ff2 (HEAD -> sub) Implement subtraction
 * 4f94fa (main) Improve layout
 ...
 ```
@@ -367,10 +367,10 @@ affecting the others. Technically, it is only a **pointer to a commit**, which
 is why creating one is instant and costs nothing.
 
 ```bash
-$> git branch                  # list the branches; * marks the current one
-$> git branch feature-sub      # create a branch pointing to the current commit
-$> git branch -d feature-sub   # delete a branch
-$> git branch -m old new       # rename a branch
+$> git branch             # list the branches; * marks the current one
+$> git branch sub         # create a branch pointing to the current commit
+$> git branch -d sub      # delete a branch
+$> git branch -m old new  # rename a branch
 ```
 
 Creating a branch does **not** switch to it: you are still on the same branch
@@ -436,7 +436,7 @@ message on the command line with the `-m` option, and Git will not open the
 editor:
 
 ```bash
-$> git merge -m "Merge the subtraction feature" feature-sub
+$> git merge -m "Merge the subtraction feature" sub
 ```
 
 If both branches changed the same lines of the same file, Git cannot choose

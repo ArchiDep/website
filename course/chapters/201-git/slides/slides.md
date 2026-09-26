@@ -195,10 +195,9 @@ $> git graph
 **Notes:**
 
 The [`git log` command][git-log] can show you a representation of the commit
-graph and its branches, with
-`git log --oneline --decorate --graph --all`. This command is so useful that
-you should make an **alias** for it, `git graph`, as it is used throughout
-these slides.
+graph and its branches, with `git log --oneline --decorate --graph --all`. This
+command is so useful that you should make an **alias** for it, `git graph`, as
+it is used throughout these slides.
 
 > 🛠️ Create the alias, and show the commit graph of the example repository.
 
@@ -207,7 +206,7 @@ these slides.
 ### Create a new branch
 
 ```bash
-$> git branch feature-sub
+$> git branch sub
 ```
 
 <simgit-story name='branchingOneLine' start-chapter='third-commit' end-chapter='branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
@@ -226,7 +225,7 @@ current one:
 
 ```bash
 $> git branch
-  feature-sub
+  sub
 * main
 ```
 
@@ -235,8 +234,8 @@ $> git branch
 ### Switch branches
 
 ```bash
-$> git switch feature-sub
-Switched to branch 'feature-sub'
+$> git switch sub
+Switched to branch 'sub'
 ```
 
 <simgit-story name='branchingOneLine' start-chapter='branch' end-chapter='checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
@@ -245,12 +244,11 @@ Switched to branch 'feature-sub'
 
 > 🛠️ Switch to the new branch.
 
-This moves `HEAD` to point to the `feature-sub` branch. No file has changed,
-because `feature-sub` points to the same commit as `main`.
+This moves `HEAD` to point to the `sub` branch. No file has changed, because
+`sub` points to the same commit as `main`.
 
-You will also find `git checkout feature-sub` in older documentation. It does
-the same thing: `git switch` is a newer command dedicated to switching
-branches.
+You will also find `git checkout sub` in older documentation. It does the same
+thing: `git switch` is a newer command dedicated to switching branches.
 
 > 🛠️ You can now implement the subtraction in `subtraction.js`: replace
 > `return '?';` with `return a - b;`.
@@ -261,7 +259,7 @@ branches.
 
 ```bash
 $> git status
-On branch feature-sub
+On branch sub
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
@@ -375,7 +373,7 @@ into the Git directory.
 $> git add subtraction.js
 
 $> git status
-On branch feature-sub
+On branch sub
 Changes to be committed:
   (use "git restore --staged <file>..." to unstage)
         modified:   subtraction.js
@@ -402,7 +400,7 @@ the next commit will contain. Check it before you commit.
 
 ```bash
 $> git commit -m "Implement subtraction"
-[feature-sub 712ff2] Implement subtraction
+[sub 712ff2] Implement subtraction
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
@@ -420,7 +418,7 @@ The working directory, the staging area and the last commit now all agree, so
 
 ```bash
 $> git status
-On branch feature-sub
+On branch sub
 nothing to commit, working tree clean
 ```
 
@@ -452,8 +450,8 @@ Two things happened when you ran `git switch main`:
   `main` points to.
 
 `subtraction.js` contains `return '?';` again: you are working on an **older
-version** of the project. Your work is not lost: it is in the commit that
-`feature-sub` points to.
+version** of the project. Your work is not lost: it is in the commit that `sub`
+points to.
 
 ---
 
@@ -494,15 +492,15 @@ $> git commit -m "Fix addition"
 > 🛠️ Fix `addition.js` (replace `a * b` with `a + b`), then stage and commit
 > your changes.
 
-As on `feature-sub`, the commit moves the current branch, `fix-add`, forward.
-`feature-sub` and its commit are left where they were.
+As on `sub`, the commit moves the current branch, `fix-add`, forward. `sub` and
+its commit are left where they were.
 
 ---
 
 ### Divergent history
 
 ```bash
-$> git switch feature-sub
+$> git switch sub
 $> git switch fix-add
 ```
 
@@ -510,13 +508,13 @@ $> git switch fix-add
 
 **Notes:**
 
-> 🛠️ Switch back and forth between `feature-sub` and `fix-add` a few times, and
+> 🛠️ Switch back and forth between `sub` and `fix-add` a few times, and
 > watch `subtraction.js` and `addition.js` change in your editor.
 
-Your project history has now **diverged**: `feature-sub` and `fix-add` both
-start from the same commit, and each adds a different change to it. The two
-changes are **isolated** from each other: `feature-sub` has the subtraction but
-not the fix, and `fix-add` has the fix but not the subtraction.
+Your project history has now **diverged**: `sub` and `fix-add` both start from
+the same commit, and each adds a different change to it. The two changes are
+**isolated** from each other: `sub` has the subtraction but not the fix, and
+`fix-add` has the fix but not the subtraction.
 
 Every time you switch branches, Git **rewrites the files in your working
 directory** to match the snapshot of the commit that the branch points to. This
@@ -528,7 +526,7 @@ nothing to commit. If you have uncommitted changes that switching would
 overwrite, Git refuses to switch rather than lose them:
 
 ```bash
-$> git switch feature-sub
+$> git switch sub
 error: Your local changes to the following files would be overwritten by checkout:
         subtraction.js
 Please commit your changes or stash them before you switch branches.
@@ -540,9 +538,9 @@ uncommitted changes are to a file that is the same in both branches, Git
 switches without complaint, and the changes simply follow you to the other
 branch (which is rarely what you meant).
 
-`git diff` can also compare two versions without switching:
-`git diff feature-sub fix-add` shows everything that differs between the two
-branches, here the subtraction on one side and the addition fix on the other.
+`git diff` can also compare two versions without switching: `git diff sub
+fix-add` shows everything that differs between the two branches, here the
+subtraction on one side and the addition fix on the other.
 
 ---
 
@@ -626,29 +624,27 @@ Can we do a fast forward here?
 
 **Notes:**
 
-Now we want to **merge** the subtraction feature into `main` as well. But
-`main` has moved on since `feature-sub` was created, so Git cannot do a
-fast-forward:
+Now we want to **merge** the subtraction feature into `main` as well. But `main`
+has moved on since `sub` was created, so Git cannot do a fast-forward:
 
-- `feature-sub` points to commit `712ff2`, which contains our feature.
+- `sub` points to commit `712ff2`, which contains our feature.
 - `main` points to commit `2817bc`, which contains the addition fix.
 - Commit `4f94fa` is their common ancestor.
 
-If you moved `main` to `feature-sub`'s current commit, you would **lose the
-addition fix**, and commit `2817bc` would become **unreachable**: no branch
-would lead to it any more. Git will not let you do that (at least not without
-insistence).
+If you moved `main` to `sub`'s current commit, you would **lose the addition
+fix**, and commit `2817bc` would become **unreachable**: no branch would lead to
+it any more. Git will not let you do that (at least not without insistence).
 
 Instead, it will do a **three-way merge**, combining the changes of `main` and
-`feature-sub` (compared to their common ancestor). A **new commit** will be
-created representing that state.
+`sub` (compared to their common ancestor). A **new commit** will be created
+representing that state.
 
 ---
 
 ### Merge the divergent branch
 
 ```bash
-$> git merge feature-sub
+$> git merge sub
 Merge made by the 'ort' strategy.
  subtraction.js | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -656,7 +652,7 @@ Merge made by the 'ort' strategy.
 
 **Notes:**
 
-> 🛠️ Merge `feature-sub` into `main`.
+> 🛠️ Merge `sub` into `main`.
 
 ---
 
@@ -665,7 +661,7 @@ Merge made by the 'ort' strategy.
 Git will ask you to confirm the commit message:
 
 ```txt
-Merge branch 'feature-sub'
+Merge branch 'sub'
 
 # Please enter a commit message to explain why this merge is
 # necessary, especially if it merges an updated upstream into
@@ -709,8 +705,7 @@ its snapshot, Git performed a **three-way merge**, comparing three commits:
 
 - `4f94fa`, the **common ancestor** of the two branches;
 - `2817bc`, the commit `main` pointed to, which changed `addition.js`;
-- `712ff2`, the commit `feature-sub` pointed to, which changed
-  `subtraction.js`.
+- `712ff2`, the commit `sub` pointed to, which changed `subtraction.js`.
 
 Each branch changed something the other did not touch, so Git could apply both
 sets of changes to the common ancestor without having to choose between them.
@@ -719,17 +714,17 @@ The result has both the addition fix and the subtraction.
 What makes this commit special is that it has **two parents**: `2817bc`, the
 commit you were on, and `712ff2`, the commit of the branch you merged in. That
 is how the history records that two lines of development were joined. As with
-any commit, the current branch, `main`, moved forward to it, while
-`feature-sub` stayed where it was.
+any commit, the current branch, `main`, moved forward to it, while `sub` stayed
+where it was.
 
 The history of `main` now includes the commits of both branches, which
 `git graph` shows:
 
 ```bash
 $> git graph
-*   04fb82 (HEAD -> main) Merge branch 'feature-sub'
+*   04fb82 (HEAD -> main) Merge branch 'sub'
 |\
-| * 712ff2 (feature-sub) Implement subtraction
+| * 712ff2 (sub) Implement subtraction
 * | 2817bc Fix addition
 |/
 * 4f94fa Improve layout
@@ -743,17 +738,17 @@ you will see later.
 
 ---
 
-### Delete `feature-sub`
+### Delete `sub`
 
 ```bash
-$> git branch -d feature-sub
+$> git branch -d sub
 ```
 
-<simgit-story name='branching' start-chapter='merge' end-chapter='delete-feature-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='merge' end-chapter='delete-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
-> 🛠️ Now that the subtraction is in `main`, delete the `feature-sub` branch.
+> 🛠️ Now that the subtraction is in `main`, delete the `sub` branch.
 
 Git lets you delete it with `-d` because it is **fully merged**: its commit is
 part of the history of `main`, so deleting the pointer loses nothing. Git
@@ -761,15 +756,15 @@ refuses to delete a branch whose commits are not in the history of the current
 branch, since they would become hard to find again:
 
 ```bash
-$> git branch -d feature-sub
-error: the branch 'feature-sub' is not fully merged
-hint: If you are sure you want to delete it, run 'git branch -D feature-sub'
+$> git branch -d sub
+error: the branch 'sub' is not fully merged
+hint: If you are sure you want to delete it, run 'git branch -D sub'
 hint: Disable this message with "git config set advice.forceDeleteBranch false"
 ```
 
 The history is now back to a single branch, `main`, which contains all the work
-done on `feature-sub` and `fix-add`. Branch, commit, merge, delete: this is the
-cycle you will repeat for every feature and every fix.
+done on `sub` and `fix-add`. Branch, commit, merge, delete: this is the cycle
+you will repeat for every feature and every fix.
 
 [advanced-merging]: https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging
 [branching]: https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell
