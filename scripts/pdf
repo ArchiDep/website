@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Print the PDFs of the course material locally, the way the `pdf` workflow
+# does: build and digest the assets, render the site, then print it.
+set -euo pipefail
+
+root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+default_build="$root_dir/tmp/pdf-build"
+default_output="$root_dir/tmp/pdf"
+default_progress=https://archidep.ch/api/progress
+
+usage() {
+  cat <<EOF
+Usage: scripts/pdf [options]
+
+Print the PDFs of the course material from a local build, running the same steps
+as the pdf workflow: build the theme and the course assets, digest them, render
+the site, then print every page and slide deck of it.
+
+Options:
+  -b, --build DIR      Where to render the site (default: tmp/pdf-build).
+                       Emptied first.
+  -o, --output DIR     Where to write the PDFs (default: tmp/pdf). Emptied first.
+  -p, --progress SRC   How far the course has got, which decides which chapters
+                       show their answers: a URL or a JSON file (default:
+                       $default_progress).
+      --pdf-base URL   Where the PDFs are published, for the download links the
+                       pages offer (default: the application's configuration).
+  -h, --help           Print this message.
+
+Relative paths are relative to the current directory. The default directories
+are under the repository's tmp directory, wherever this is run from.
+
+Node.js dependencies must have been installed with 'npm install' at the root of
+the repository.
+EOF
+}
+
+# Resolve a path against the directory the script was run from, since every step
+# below runs from a different one.
+absolute() {
+  case "$1" in
+    /*) echo "$1" ;;
+    *) echo "$PWD/$1" ;;
+  esac
+}
+
+build_dir="$default_build"
+output_dir="$default_output"
+progress="$default_progress"
+pdf_base=
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -b | --build)
+      build_dir="$(absolute "$2")"
+      shift 2
+      ;;
+    -o | --output)
+      output_dir="$(absolute "$2")"
+      shift 2
+      ;;
+    -p | --progress)
+      # A URL is passed as is, anything else is a file.
+      case "$2" in
+        http://* | https://*) progress="$2" ;;
+        *) progress="$(absolute "$2")" ;;
+      esac
+      shift 2
+      ;;
+    --pdf-base)
+      pdf_base="$2"
+      shift 2
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      >&2 echo "Unknown option: $1"
+      >&2 usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ ! -d "$root_dir/node_modules" ]]; then
+  >&2 echo "Node.js dependencies are missing: run 'npm install' in $root_dir first."
+  exit 1
+fi
+
+step() {
+  echo
+  echo "==> $1"
+}
+
+step "Building the theme"
+(cd "$root_dir/theme" && npm run build)
+
+step "Building the course assets"
+(cd "$root_dir/course" && NODE_ENV=production npm run build)
+
+# A bundle that addresses what it fetches absolutely prints a deck with its
+# diagrams missing and its titles in a fallback font. The asset build section of
+# course/CONTRIBUTING.md explains why.
+if ! grep -qF 'Automatic publicPath is not supported in this browser' \
+  "$root_dir/app/priv/static/assets/course/slides-mermaid.js"; then
+  >&2 echo "The course assets do not address themselves relatively."
+  exit 1
+fi
+
+# The site build links the digested copy of each asset that cache_manifest.json
+# names, so without this it prints whatever was last digested.
+step "Digesting the assets"
+(cd "$root_dir/app" && mix deps.get && mix assets.deploy)
+
+step "Rendering the site into $build_dir"
+build_args=(--output "$build_dir" --clean --absolute-base-url https://archidep.ch --progress "$progress")
+if [[ -n "$pdf_base" ]]; then
+  build_args+=(--pdf-base "$pdf_base")
+fi
+(cd "$root_dir/app" && mix archidep.course_site.build "${build_args[@]}")
+
+step "Printing the PDFs into $output_dir"
+(cd "$root_dir" && npm run pdf -- --build "$build_dir" --output "$output_dir")

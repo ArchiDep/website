@@ -231,7 +231,8 @@ format`.
 - `npm run lint:md`: Lint the project's Markdown documentation with remark
   (validating internal links, heading structure and fenced-code languages).
 - `npm run pdf -- --build <dir> --output <dir>`: Generate the PDF version of the
-  course materials from a local build (see [PDF
+  course materials from a local build, which needs freshly built and digested
+  assets; `scripts/pdf` does all of it (see [PDF
   Generation](./course/CONTRIBUTING.md#pdf-generation)).
 
 ---

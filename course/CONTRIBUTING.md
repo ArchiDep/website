@@ -1025,10 +1025,17 @@ served tree does not have. See the [renderer's own
 documentation](../app/lib/archidep/course_site/CONTRIBUTING.md#generated-pdfs)
 for what decides the PDF names and where they are published.
 
-Those two commands are also what the [`pdf`
-workflow](../.github/workflows/pdf.yml) runs, on every change to `main` that
-could reach a PDF, so the published PDFs of the current edition are always the
-current material. It can be run by hand from the Actions tab as well.
+**Neither command builds the assets.** The build links the digested copy of each
+asset that `cache_manifest.json` names, so the theme and the course assets have
+to be built and digested (`mix assets.deploy`) first, or the PDFs are printed
+with whatever was last digested — typically in fallback fonts and without the
+newest diagrams. [`scripts/pdf`](../scripts/pdf) runs every step in order, from
+any directory; `scripts/pdf --help` lists its options.
+
+Those steps are also what the [`pdf` workflow](../.github/workflows/pdf.yml)
+runs, on every change to `main` that could reach a PDF, so the published PDFs of
+the current edition are always the current material. It can be run by hand from
+the Actions tab as well.
 
 As noted in the [`AGENTS.md`](./AGENTS.md), this is an expensive operation; run
 it locally only when you need the files themselves.
