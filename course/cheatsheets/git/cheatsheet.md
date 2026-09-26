@@ -139,7 +139,7 @@ $> git pull
 
 If you've worked on the same files, there might be a **merge**. **If there is a
 merge conflict**, [resolve it]({% link
-chapters/201-git/slides/slides.md %}#/52) and complete the merge with `git
+chapters/201-git/slides/slides.md %}#/40) and complete the merge with `git
 commit`.
 
 ### Add an SSH key to my GitHub account
