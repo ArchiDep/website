@@ -102,8 +102,9 @@ theme built for it to compile and serve pages correctly, as documented in the
   - `src/cheatsheet.css`: Heading sizes specific to cheatsheets.
   - `src/search.css`: Styles for the full-text search dialog and results.
   - `src/toc.css`: Styles for the table of contents shown in the sidebar.
-  - `src/git-memoir.css`: Styles for the interactive [Git memoir][git-memoir]
-    diagrams. Imported by both `theme.css` (via `course.css`) and `slides.css`.
+  - `src/simgit.css`: Styles for the interactive [Git
+    diagrams][course-git-diagrams]. Imported by both `theme.css` (via
+    `course.css`) and `slides.css`.
   - `src/fonts.css`: The `@font-face` rules for the three families the site is
     set in, imported by both entry points. See [Typography &
     Fonts](#typography--fonts).
@@ -171,10 +172,10 @@ stylesheet:
   plugins, the theme configuration and all the other stylesheets (`shared.css`,
   `search.css`, `app.css`, `course.css`, `cheatsheet.css`, the highlight schemes
   and `toc.css`).
-- **`slides.css`** is a separate, smaller stylesheet for the
-  [reveal.js][reveal] slide decks. Slides have their own base styling and layout,
-  so they are kept isolated from the main stylesheet to avoid conflicts. It
-  imports `git-memoir.css` for the Git diagrams that can appear in slides.
+- **`slides.css`** is a separate, smaller stylesheet for the [reveal.js][reveal]
+  slide decks. Slides have their own base styling and layout, so they are kept
+  isolated from the main stylesheet to avoid conflicts. It imports `simgit.css`
+  for the Git diagrams that can appear in slides.
 
 ### Tailwind Configuration
 
@@ -329,8 +330,8 @@ document for the meaning and intended behavior of each feature:
   More][course-tell-me-more].
 - **Columns** (`.cols`) — responsive side-by-side columns. See
   [Side-by-Side Columns][course-cols].
-- **Git memoirs** (`git-memoir`) — the interactive [Git diagrams][git-memoir]
-  rendered from `course/src/assets/git-memoir`.
+- **Git diagrams** (`simgit-story`, in `simgit.css`) — the interactive [Git
+  diagrams][course-git-diagrams].
 - **Progress indicators** (`#course-material-menu .course-item-*` /
   `.course-section-*`) — the done/due/next/future markers in the sidebar.
 - **Search** (`#search-dialog`) — the full-text search dialog shared with the
@@ -417,11 +418,11 @@ agents.
 [course-tell-me-more]: ../course/CONTRIBUTING.md#tell-me-more
 [course-cols]: ../course/CONTRIBUTING.md#side-by-side-columns
 [course-code-blocks]: ../course/CONTRIBUTING.md#code-blocks
+[course-git-diagrams]: ../course/CONTRIBUTING.md#interactive-git-diagrams
 [daisyui]: https://daisyui.com/docs/
 [emoji]: ../app/lib/archidep/emoji.ex
 [flashy]: https://hexdocs.pm/flashy/readme.html
 [fontsource]: https://fontsource.org
-[git-memoir]: https://github.com/AlphaHydrae/git-memoir
 [lumis]: https://hexdocs.pm/lumis
 [prettier]: https://prettier.io
 [reveal]: https://revealjs.com

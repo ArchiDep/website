@@ -9,13 +9,11 @@ import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/solarized.css';
 import 'reveal.js/plugin/highlight/monokai.css';
 import 'tippy.js/dist/tippy.css';
-import './git-memoir/git-memoirs-registry';
-import { startGitMemoirsForRevealDeck } from './slides/git-memoirs';
 // Stories are registered by importing the registry, and only then is the custom
 // element defined, so the `<simgit-story>` tags already in the deck upgrade
-// against a populated registry. Unlike git-memoir, simgit needs no Reveal
-// lifecycle wiring: each embed defers on its own IntersectionObserver and
-// replays when its slide comes back.
+// against a populated registry. They need no reveal.js lifecycle wiring: each
+// embed defers on its own IntersectionObserver and replays when its slide comes
+// back.
 import './simgit/simgit-stories-registry';
 import { defineSimgitStoryElement } from '@alphahydrae/simgit';
 
@@ -74,8 +72,6 @@ deck.initialize().then(async () => {
   document.querySelectorAll('a:not([target="_blank"])').forEach(link => {
     link.setAttribute('target', '_blank');
   });
-
-  startGitMemoirsForRevealDeck(deck);
 });
 
 if (!printPdfMode && !scrollMode) {

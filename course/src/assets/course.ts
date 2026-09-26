@@ -22,8 +22,6 @@ import {
 import './course/tell-me-more';
 import './course/toc';
 import { HttpAuthenticationError } from './errors';
-import { GitMemoirController } from './git-memoir/git-memoir-controller';
-import './git-memoir/git-memoirs-registry';
 import log from './logging';
 import './simgit/simgit-stories-registry';
 import {
@@ -52,32 +50,6 @@ if (!standalone) {
   });
 }
 
-// Display Git memoirs on page as they come into view
-const gitMemoirsOnPage = document.querySelectorAll('git-memoir');
-const urlParams = new URLSearchParams(window.location.search);
-const forceGitMemoirs = urlParams.get('git-memoir-force') === 'true';
-if (forceGitMemoirs) {
-  gitMemoirsOnPage.forEach(el => GitMemoirController.startNewGitMemoir(el));
-} else if (gitMemoirsOnPage.length !== 0) {
-  const options = {
-    root: null,
-    rootMargin: '0px',
-    scrollMargin: '0px',
-    threshold: 0.25,
-    delay: 100
-  };
-
-  const observer = new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) {
-        GitMemoirController.startNewGitMemoir(entry.target);
-      }
-    }
-  }, options);
-
-  gitMemoirsOnPage.forEach(el => observer.observe(el));
-}
-
 // A multi-computer story needs both of these, and they are rich values the
 // element takes by property rather than by attribute: the renderer otherwise
 // draws every computer at the same origin, piling the story into one illegible
@@ -104,7 +76,7 @@ for (const el of document.querySelectorAll<SimgitStoryElement>(
 // Stories are registered by importing the registry above, and only then is the
 // custom element defined, so the `<simgit-story>` tags already in the page
 // upgrade against a populated registry. Each embed defers on its own
-// IntersectionObserver, so unlike git-memoir there is nothing to observe here.
+// IntersectionObserver, so there is nothing to observe here.
 defineSimgitStoryElement();
 
 window['logOut'] = logOut;

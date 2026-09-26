@@ -7,10 +7,10 @@ import {
 
 import { buildGithubStory } from './github-story';
 
-// The course's simgit stories, the successor to the git-memoir registry. Each
-// story is registered under the name the `<simgit-story name='…'>` embeds in
-// the course material use; a slide then picks the chapter it wants to stop on
-// with `end-chapter`, so one story serves many slides.
+// The course's simgit stories. Each story is registered under the name the
+// `<simgit-story name='…'>` embeds in the course material use; a slide then
+// picks the chapter it wants to stop on with `end-chapter`, so one story serves
+// many slides.
 //
 // The display digests are the ones the slides quote in their command output
 // (`[feature-sub 712ff2] Implement subtraction`), so the diagram and the shell
@@ -57,10 +57,6 @@ async function createCalculatorRepo(simulation: Simulation): Promise<void> {
  * A chapter is one animated step, so each one holds exactly one Git command's
  * worth of work and a slide spans as many chapters as its shell transcript has
  * commands. Writing, staging and committing a file is one step, not three.
- *
- * git-memoir interleaved no-op `*-settings` chapters to change layout mid-story;
- * simgit has per-chapter render config instead, so they are gone and the
- * chapters here are only the ones that do something.
  */
 function buildBranchingBaseStory(title: string): Story {
   return new Story(title)

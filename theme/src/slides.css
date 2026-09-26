@@ -14,7 +14,6 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 @custom-variant screen (@media screen);
 
-@import './git-memoir.css';
 @import './simgit.css';
 
 @theme {

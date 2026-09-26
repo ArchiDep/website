@@ -1,11 +1,8 @@
 /*
- * Styling for the embedded `<simgit-story>` element, the successor to
- * `git-memoir.css`. The diagram itself lives in a shadow root, so everything
- * below reaches it through the two seams simgit exposes: the `--simgit-*`
- * custom properties, which cascade in, and `::part()`.
- *
- * The two libraries are styled side by side while the course material is being
- * converted embed by embed.
+ * Styling for the embedded `<simgit-story>` element. The diagram itself lives
+ * in a shadow root, so everything below reaches it through the two seams simgit
+ * exposes: the `--simgit-*` custom properties, which cascade in, and
+ * `::part()`.
  */
 
 simgit-story {
@@ -13,7 +10,7 @@ simgit-story {
   border: 1px solid #c0c0c0;
   border-radius: 10px;
 
-  /* The control bar, matching git-memoir's black strip. */
+  /* The control bar, a black strip. */
   --simgit-control-bg: #000000;
   --simgit-control-fg: #ffffff;
   --simgit-control-border: #777777;

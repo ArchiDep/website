@@ -127,10 +127,6 @@ try {
     const params = new URLSearchParams();
     if (doc.course_type === 'slides') {
       params.set('print-pdf', '');
-      params.set('git-memoir-mode', 'visualization');
-    } else {
-      params.set('git-memoir-force', 'true');
-      params.set('git-memoir-mode', 'visualization');
     }
 
     const exportUrl = new URL(docUrl);
@@ -145,7 +141,6 @@ try {
 
     if (doc.slides_pdf !== null) {
       params.set('print-pdf', '');
-      params.set('git-memoir-mode', 'visualization');
 
       const slidesUrl = new URL('slides/', docUrl);
       slidesUrl.search = params.toString();

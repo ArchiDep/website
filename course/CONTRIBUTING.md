@@ -124,10 +124,9 @@ the dashboard functionality is only available during the current semester).
     ship no types of their own. TypeScript is compiled with `noImplicitAny`, so
     an untyped global is stated in one of these rather than inferred silently at
     each use.
-  - `src/assets/git-memoir/**/*.ts`: TypeScript definitions of interactive Git
-    diagrams shown in some slides and exercises, and a renderer to display them.
-  - `src/assets/slides.ts` & `src/assets/slides/**/*.ts`: TypeScript files to
-    enhance slide presentations with features like Git diagrams.
+  - `src/assets/simgit/**/*.ts`: The stories behind the [interactive Git
+    diagrams](#interactive-git-diagrams) shown in some slides and exercises.
+  - `src/assets/slides.ts`: TypeScript file to set up slide presentations.
   - `src/assets/slides-mermaid.ts`: TypeScript file to render Mermaid diagrams
     in slides.
 - **Other Things**
@@ -787,20 +786,27 @@ This feature is implemented in
 
 #### Interactive Git Diagrams
 
-Some slides and exercises embed interactive [Git memoir][git-memoir] diagrams
-that animate Git operations (commits, branches, merges, push/pull) step by step.
-Add a raw `<git-memoir>` element referencing a named diagram and a height:
+Some slides and exercises embed interactive [simgit][simgit] diagrams that
+animate Git operations (commits, branches, merges, push/pull) step by step. Add
+a raw `<simgit-story>` element naming a story and the chapters to play:
 
 ```html
-<git-memoir name="branching" svg-height="400px"></git-memoir>
+<simgit-story
+  name="branching"
+  start-chapter="setup"
+  end-chapter="branch"
+  sizing="auto-height"
+  defer-until-visible="true"
+  replay-on-revisit="true"
+></simgit-story>
 ```
 
-The named diagrams are defined as factory functions in
-[`src/assets/git-memoir/git-memoirs-registry.ts`](./src/assets/git-memoir/git-memoirs-registry.ts)
-(registered on `window.gitMemoirs`), and rendered by the controller in
-[`src/assets/git-memoir/git-memoir-controller.ts`](./src/assets/git-memoir/git-memoir-controller.ts).
-Diagrams support several playback modes (autoplay, manual, visualization); see
-[Slides](#slides) for their integration with reveal.js.
+The named stories are registered in
+[`src/assets/simgit/simgit-stories-registry.ts`](./src/assets/simgit/simgit-stories-registry.ts),
+which is imported by both [`src/assets/course.ts`](./src/assets/course.ts) and
+[`src/assets/slides.ts`](./src/assets/slides.ts) before the element is defined.
+Each embed waits until it is visible and replays when it comes back into view,
+so it needs no wiring into the reveal.js slide lifecycle.
 
 ---
 
@@ -905,17 +911,17 @@ prefix:
 
 ### Client-Side Architecture
 
-The main client entry point is
-[`src/assets/course.ts`](./src/assets/course.ts), bundled by Webpack and loaded
-on every page. It initializes the interactive features ([search](#search),
-copy buttons, [randomized values](#randomized-values), the [cloud server
-widget](#cloud-server-widget), the table of contents, "back to top", [tell me
-more](#tell-me-more), [Git memoirs](#interactive-git-diagrams)) and the
-real-time integration described below. Components are built with
-[Preact][preact] and [Preact signals][preact-signals]; external JSON is
-validated at runtime with [`io-ts`][io-ts] codecs (see
-[`src/shared/codecs`](./src/shared)). Logging goes through
-[`src/assets/logging.ts`](./src/assets/logging.ts) ([loglevel][loglevel]).
+The main client entry point is [`src/assets/course.ts`](./src/assets/course.ts),
+bundled by Webpack and loaded on every page. It initializes the interactive
+features ([search](#search), copy buttons, [randomized
+values](#randomized-values), the [cloud server widget](#cloud-server-widget),
+the table of contents, "back to top", [tell me more](#tell-me-more), [Git
+diagrams](#interactive-git-diagrams)) and the real-time integration described
+below. Components are built with [Preact][preact] and [Preact
+signals][preact-signals]; external JSON is validated at runtime with
+[`io-ts`][io-ts] codecs (see [`src/shared/codecs`](./src/shared)). Logging goes
+through [`src/assets/logging.ts`](./src/assets/logging.ts)
+([loglevel][loglevel]).
 
 **Real-time dashboard integration.** When not in standalone mode, the client
 opens a [Phoenix][phoenix] WebSocket channel to the dashboard application
@@ -958,10 +964,8 @@ Slides are presented with [reveal.js][reveal], configured in
 [`src/assets/slides.ts`](./src/assets/slides.ts) (Markdown, highlight, notes and
 search plugins). The slide layout feeds the deck's Markdown into reveal.js,
 which splits it into slides itself. Mermaid diagrams are rendered lazily per
-slide by [`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts), and
-[interactive Git diagrams](#interactive-git-diagrams) are wired into the slide
-lifecycle by [`src/assets/slides/git-memoirs.ts`](./src/assets/slides). Useful
-query parameters include `?print-pdf` (PDF export layout), `?view=scroll`
+slide by [`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts).
+Useful query parameters include `?print-pdf` (PDF export layout), `?view=scroll`
 (continuous scroll) and `?show-notes`.
 
 ### PDF Generation
@@ -1038,7 +1042,7 @@ other document.
 ## References
 
 - [Liquid Documentation][liquid] for HTML templating
-- [Git memoir][git-memoir] for interactive Git diagrams
+- [simgit][simgit] for interactive Git diagrams
 - [io-ts][io-ts] for runtime type checking and validation
   - [io-ts Documentation][io-ts-docs]
 - [Loglevel][loglevel] for client-side logging
@@ -1068,7 +1072,7 @@ agents.
 [io-ts]: https://github.com/gcanti/io-ts
 [io-ts-concepts]: https://gcanti.github.io/io-ts/
 [io-ts-docs]: https://github.com/gcanti/io-ts/blob/master/index.md
-[git-memoir]: https://github.com/AlphaHydrae/git-memoir
+[simgit]: https://github.com/AlphaHydrae/simgit
 [course-site-structure]: ../app/lib/archidep/course_site/structure.ex
 [emoji]: ../app/lib/archidep/emoji.ex
 [liquid]: https://shopify.github.io/liquid/
