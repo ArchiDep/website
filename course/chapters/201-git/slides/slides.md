@@ -45,7 +45,7 @@ _Figures of this deck from [Pro Git][pro-git], by Scott Chacon and Ben Straub
 
 ### Remember commits?
 
-<simgit-story name='branchingOneLine' start-chapter='third-commit' end-chapter='third-commit' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='branchingOneLine' start-chapter='third-commit' end-chapter='third-commit' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 **Notes:**
 
@@ -140,7 +140,7 @@ which you should read if you want more detailed information on the subject.
 
 A branch is a lightweight, movable **pointer to a commit**.
 
-<simgit-story name='branchingOneLine' start-chapter='setup' end-chapter='third-commit' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branchingOneLine' start-chapter='setup' end-chapter='third-commit' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -209,7 +209,7 @@ it is used throughout these slides.
 $> git branch sub
 ```
 
-<simgit-story name='branchingOneLine' start-chapter='third-commit' end-chapter='branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branchingOneLine' start-chapter='third-commit' end-chapter='branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -238,7 +238,7 @@ $> git switch sub
 Switched to branch 'sub'
 ```
 
-<simgit-story name='branchingOneLine' start-chapter='branch' end-chapter='checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branchingOneLine' start-chapter='branch' end-chapter='checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -406,7 +406,7 @@ $> git commit -m "Implement subtraction"
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-<simgit-story name='branchingOneLine' start-chapter='checkout' end-chapter='commit-on-a-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branchingOneLine' start-chapter='checkout' end-chapter='commit-on-a-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -435,7 +435,7 @@ $> git switch main
 Switched to branch 'main'
 ```
 
-<simgit-story name='branchingOneLine' start-chapter='commit-on-a-branch' end-chapter='back-to-main' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branchingOneLine' start-chapter='commit-on-a-branch' end-chapter='back-to-main' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 Now check your files.
 
@@ -464,7 +464,7 @@ $> git switch -c fix-add
 Switched to a new branch 'fix-add'
 ```
 
-<simgit-story name='branchingOneLine' start-chapter='back-to-main' end-chapter='another-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branchingOneLine' start-chapter='back-to-main' end-chapter='another-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -487,7 +487,7 @@ $> git commit -m "Fix addition"
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-<simgit-story name='branching' start-chapter='another-branch' end-chapter='divergent-history' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='another-branch' end-chapter='divergent-history' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -506,7 +506,7 @@ $> git switch sub
 $> git switch fix-add
 ```
 
-<simgit-story name='branching' start-chapter='divergent-history' end-chapter='switch-to-fix-add' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='divergent-history' end-chapter='switch-to-fix-add' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -554,7 +554,7 @@ We want to bring back those changes to the main line.
 $> git switch main
 ```
 
-<simgit-story name='branching' start-chapter='switch-to-fix-add' end-chapter='fast-forward-merge-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='switch-to-fix-add' end-chapter='fast-forward-merge-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -589,7 +589,7 @@ Notice the term **fast-forward**.
 
 ### Fast-forward
 
-<simgit-story name='branching' start-chapter='fast-forward-merge-checkout' end-chapter='fast-forward-merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='fast-forward-merge-checkout' end-chapter='fast-forward-merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -606,7 +606,7 @@ $> git branch -d fix-add
 Deleted branch fix-add (was a4160d7).
 ```
 
-<simgit-story name='branching' start-chapter='fast-forward-merge' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='fast-forward-merge' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -620,7 +620,7 @@ pointer: the commit stays in the history of `main`.
 
 ### Merging a divergent history
 
-<simgit-story name='branching' start-chapter='delete-branch' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='branching' start-chapter='delete-branch' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 Can we do a fast forward here?
 
@@ -695,7 +695,7 @@ nano as the default editor]({% link chapters/101-command-line/subject.md
 
 ### Merge commit
 
-<simgit-story name='branching' start-chapter='delete-branch' end-chapter='merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='delete-branch' end-chapter='merge' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 This commit has more than one parent.
 
@@ -746,7 +746,7 @@ you will see later.
 $> git branch -d sub
 ```
 
-<simgit-story name='branching' start-chapter='merge' end-chapter='delete-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='merge' end-chapter='delete-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 

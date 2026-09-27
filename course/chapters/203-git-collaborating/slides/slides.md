@@ -65,7 +65,7 @@ reason you will see later in these slides.
 
 ### Where we left off
 
-<simgit-story name='branching' start-chapter='delete-sub' end-chapter='delete-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='branching' start-chapter='delete-sub' end-chapter='delete-sub' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 **Notes:**
 
@@ -131,7 +131,7 @@ without arguments use. You only need it for the first push of a branch.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaborating' start-chapter='origin-add' end-chapter='origin-push' through-chapter='origin-push' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='collaborating' start-chapter='origin-add' end-chapter='origin-push' through-chapter='origin-push' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -197,7 +197,7 @@ one is called `team`, and could be a company repository, for example.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaboratingTeamBeforeFetch' start-chapter='team-add' end-chapter='team-add' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='collaboratingTeamBeforeFetch' start-chapter='team-add' end-chapter='team-add' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 **Notes:**
 
@@ -254,7 +254,7 @@ cannot even tell how it relates to your own commits. It has to get it first.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaboratingTeamBeforeFetch' start-chapter='team-rejected' end-chapter='team-rejected' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='collaboratingTeamBeforeFetch' start-chapter='team-rejected' end-chapter='team-rejected' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 **Notes:**
 
@@ -290,7 +290,7 @@ you what the others have done.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaboratingTeamFetched' start-chapter='team-rejected' end-chapter='team-fetch' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='collaboratingTeamFetched' start-chapter='team-rejected' end-chapter='team-fetch' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -392,7 +392,7 @@ did with `sub`.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaboratingTeamFetched' start-chapter='team-fetch' end-chapter='team-fetch' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='collaboratingTeamFetched' start-chapter='team-fetch' end-chapter='team-fetch' through-chapter='padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 **Notes:**
 
@@ -551,7 +551,7 @@ your work and theirs.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaboratingTeam' start-chapter='team-fetch' end-chapter='team-merge' through-chapter='team-push' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='collaboratingTeam' start-chapter='team-fetch' end-chapter='team-merge' through-chapter='team-push' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -600,7 +600,7 @@ now. The push also moved `team/main` in your repository.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaboratingTeam' start-chapter='team-merge' end-chapter='team-push' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='collaboratingTeam' start-chapter='team-merge' end-chapter='team-push' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
 
 **Notes:**
 
@@ -636,7 +636,7 @@ would bring `origin` up to date.
 
 <!-- .slide: class="full-diagram" -->
 
-<simgit-story name='collaborating' start-chapter='origin-behind' end-chapter='origin-behind' through-chapter='origin-padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
+<simgit-story name='collaborating' start-chapter='origin-behind' end-chapter='origin-behind' through-chapter='origin-padding' sizing='explicit' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
 **Notes:**
 

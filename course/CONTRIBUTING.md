@@ -835,7 +835,10 @@ anything else. Give it a slide of its own, with its heading hidden, marked `<!--
 then takes the whole window, except a strip at the bottom for the logos and
 controls (see [`theme/src/slides.css`](../theme/src/slides.css)). Each embed
 waits until it is visible and replays when it comes back into view, so it needs
-no wiring into the reveal.js slide lifecycle.
+no wiring into the reveal.js slide lifecycle. It does become visible while
+reveal.js is still sliding it in, though, so give every embed on a slide
+`start-delay='1500'`: simgit's shorter default would start the animation before
+the slide has settled.
 
 ---
 
