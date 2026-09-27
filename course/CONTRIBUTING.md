@@ -197,6 +197,13 @@ materials.
   `###` heading naming what the student sees, the error message itself where
   there is one, and the fix under it. The [tutor notes](#tutor-notes) list the
   section by those headings.
+- **Every heading of an exercise starts with an emoji**, at every level. The
+  "On this page" navigation shows each heading as it is written, emoji included,
+  and is designed for a column of them: a heading without one breaks it. The
+  exercises use `:exclamation:` for a step to do, `:question:` for an optional
+  one, `:space_invader:` for a harder optional one, `:checkered_flag:` for "What
+  have I done?", `:classical_building:` for an architecture diagram and `:boom:`
+  for "Troubleshooting" and its entries.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.

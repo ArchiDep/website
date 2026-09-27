@@ -139,7 +139,7 @@ $> git pull
 
 If you've worked on the same files, there might be a **merge**. **If there is a
 merge conflict**, [resolve it]({% link
-chapters/204-hello-github/exercise.md %}#alice-check-the-conflict-markers) and complete the merge with `git
+chapters/204-guessit/exercise.md %}#bob-pull-and-resolve-the-conflict) and complete the merge with `git
 commit`.
 
 ### Add an SSH key to my GitHub account

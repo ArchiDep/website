@@ -68,7 +68,7 @@ const collaborationLayout: RenderLayout = {
 for (const el of document.querySelectorAll<SimgitStoryElement>(
   'simgit-story'
 )) {
-  if (el.getAttribute('name') === 'github') {
+  if (el.getAttribute('name')?.startsWith('guessit')) {
     el.renderLayout = collaborationLayout;
   }
 }

@@ -4,7 +4,13 @@ import {
   buildBranchingOneLineStory,
   buildBranchingStory
 } from './branching-stories';
-import { buildGithubStory } from './github-story';
+import {
+  buildGuessitBobFetchStory,
+  buildGuessitBobPushMergeStory,
+  buildGuessitChuckStory,
+  buildGuessitPairStory,
+  buildGuessitStory
+} from './guessit-story';
 import {
   buildHelloGitBranchStory,
   buildHelloGitMergesReversedStory,
@@ -16,7 +22,11 @@ import {
 
 storyRegistry.register('branchingOneLine', buildBranchingOneLineStory);
 storyRegistry.register('branching', buildBranchingStory);
-storyRegistry.register('github', buildGithubStory);
+storyRegistry.register('guessit', buildGuessitStory);
+storyRegistry.register('guessitBobFetch', buildGuessitBobFetchStory);
+storyRegistry.register('guessitBobPushMerge', buildGuessitBobPushMergeStory);
+storyRegistry.register('guessitChuck', buildGuessitChuckStory);
+storyRegistry.register('guessitPair', buildGuessitPairStory);
 storyRegistry.register('helloGitBranch', buildHelloGitBranchStory);
 storyRegistry.register('helloGitMerges', buildHelloGitMergesStory);
 storyRegistry.register(

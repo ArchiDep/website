@@ -35,6 +35,8 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   @hello_git "/course/202-hello-git/"
   @branching_in_2025 "/course/202-git-branching/slides/"
   @git_slides "/course/201-git/slides/"
+  @guessit "/course/204-guessit/"
+  @guessit_in_2025 ["/course/204-hello-github/", "/course/205-php-todolist/"]
 
   describe "mapping/0" do
     test "answers for every page every edition published, with the page that succeeded it" do
@@ -112,7 +114,7 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   defp published_pages do
     [
       {@current_edition, Enum.map(current_pages(), &{PageRef.output_path(&1), &1})},
-      {"2025", Enum.map(pages_of_2025(), &path_in_2025/1)}
+      {"2025", Enum.flat_map(pages_of_2025(), &paths_in_2025/1)}
     ]
   end
 
@@ -135,11 +137,14 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
 
   # "Hello Git" did not exist in 2025. Where it is now, 2025 published the "Git
   # Branching" deck, which became part of the deck of "Version Control with
-  # Git", so that is the page its path answers with.
-  defp path_in_2025(page) do
+  # Git", so that is the page its path answers with. "Guess It" did not exist
+  # either: it answers for the two exercises 2025 published in its place, "Hello
+  # GitHub" and "PHP Todolist".
+  defp paths_in_2025(page) do
     case PageRef.output_path(page) do
-      @hello_git -> {@branching_in_2025, git_slides()}
-      path -> {Map.get(@path_in_2025, path, path), page}
+      @hello_git -> [{@branching_in_2025, git_slides()}]
+      @guessit -> Enum.map(@guessit_in_2025, &{&1, page})
+      path -> [{Map.get(@path_in_2025, path, path), page}]
     end
   end
 

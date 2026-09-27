@@ -67,16 +67,10 @@
       "slug": "git-collaborating"
     },
     {
-      "path": "/course/204-hello-github/",
+      "path": "/course/204-guessit/",
       "kind": "chapter",
       "num": 204,
-      "slug": "hello-github"
-    },
-    {
-      "path": "/course/205-php-todolist/",
-      "kind": "chapter",
-      "num": 205,
-      "slug": "php-todolist"
+      "slug": "guessit"
     },
     {
       "path": "/course/301-security/",

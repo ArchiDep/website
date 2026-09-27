@@ -31,3 +31,8 @@
   # "Git Branching" was a deck of its own. It became part of the deck of
   # "Version Control with Git".
   /course/202-git-branching/slides/: /course/201-git/slides/
+  # "Hello GitHub" and "PHP Todolist" repeated the same collaboration steps.
+  # They became one exercise, "Guess It", on the application that replaced the
+  # PHP Todolist.
+  /course/204-hello-github/: /course/204-guessit/
+  /course/205-php-todolist/: /course/204-guessit/

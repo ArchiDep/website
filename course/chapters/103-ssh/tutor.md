@@ -23,7 +23,7 @@ Optional: the appendix "Cryptography with OpenSSL".
 Taught later:
 
 - `~/.ssh/config`: "Run your own virtual server on Microsoft Azure".
-- Git over SSH and GitHub's fingerprints: "Hello GitHub".
+- Git over SSH and GitHub's fingerprints: "Guess It".
 - How HTTPS proves a server's identity with certificates instead:
   "TLS/SSL Certificates".
 
@@ -95,7 +95,7 @@ with `ssh` and the key pair made there, and Git talks to GitHub over SSH. Parts
 that exercises lean on in particular:
 
 - Hello SSH plays all of the subject page, on the SSH exercise server.
-- Hello GitHub checks a fingerprint against the ones GitHub publishes.
+- Guess It checks a fingerprint against the ones GitHub publishes.
 - "Run your own virtual server on Microsoft Azure" gives the public key to a
   server at its creation, which then accepts no password.
 - "Deploy a PHP application with SFTP" uses an SFTP application with the
