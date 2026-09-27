@@ -346,7 +346,7 @@ diagram to check your prediction:
 
 **Predict:** will GitHub accept Alice's push?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Yes. On GitHub, `main` points to the commit Alice's commit was made on top of.
 Alice's commit is directly ahead of it, so GitHub only has to move its `main`
@@ -372,7 +372,7 @@ Then play the diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='alice-readme' end-chapter='alice-push' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 The push also moved `origin/main` in Alice's repository: her Git has just seen
 where `main` is on GitHub.
@@ -389,7 +389,7 @@ Wait until Alice has pushed. Alice's commit is on GitHub now.
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Bob's repository has not changed:
 
@@ -415,7 +415,7 @@ that Alice has pushed.
 **Predict:** after the fetch, will Bob's `README.md` have Alice's "Team"
 section?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No. A fetch downloads the commits Bob does not have, and updates his record of
 where `main` is on GitHub, `origin/main`. It changes neither his `main` nor the
@@ -444,7 +444,7 @@ diagram to check your prediction:
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Now that Bob's Git knows about Alice's commit, it says that Bob's branch is
 behind:
@@ -468,7 +468,7 @@ nothing to commit, working tree clean
 **Predict:** will the merge be a fast-forward, or will Git create a merge
 commit?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 A fast-forward. `main` has not moved since Bob cloned, so Alice's commit is
 directly ahead of it: Git only has to move `main` forward.
@@ -499,7 +499,7 @@ If **Chuck** is present in the group, he does the same as Bob in one command:
 
 **Predict:** will Chuck's pull end with a fast-forward, or with a merge commit?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 A fast-forward, for the same reason as Bob's merge: Chuck's `main` has not moved
 since he cloned.
@@ -587,7 +587,7 @@ Chuck's commit appears later, in the diagrams of the steps that are his.
 
 **Predict:** will GitHub accept Alice's push?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Yes, for the same reason as before. On GitHub, `main` still points to the parent
 commit of Alice's latest commit, so moving `main` to Alice's commit is a
@@ -609,7 +609,7 @@ in Bob's repository. Then play the diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='pair-commits' end-chapter='alice-push-red' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Nothing changes in Bob's repository: his Git has not talked to GitHub.
 
@@ -621,7 +621,7 @@ Wait until Alice has pushed.
 
 **Predict:** will GitHub accept Bob's push? Look at the last diagram.
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No. GitHub's `main` points to Alice's newest commit, which Bob does not have.
 Moving it to Bob's commit would throw Alice's work away, so GitHub refuses.
@@ -661,7 +661,7 @@ diagram to check your prediction:
 
 <simgit-story name='guessitBobFetch' start-chapter='bob-rejected' end-chapter='bob-fetch-red' through-chapter='github-layout' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Bob's history has **diverged** from GitHub's: his `main` and his `origin/main`
 each have a commit the other does not have, on top of the same commit. This is
@@ -684,7 +684,7 @@ nothing to commit, working tree clean
 
 **Predict:** now that Bob has Alice's commit, will GitHub accept his push? Why?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No. Fetching did not change Bob's `main`: it still does not contain Alice's
 commit, so moving GitHub's `main` to it would still throw Alice's work away. **A
@@ -715,7 +715,7 @@ about Alice's commit now, and the push would not move GitHub's `main` forward.
 
 **Predict:** will Git manage to merge on its own?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No. Alice and Bob both changed the same line of `server.js`, differently. Git
 cannot know which change to keep, so it stops in the middle of the merge, and
@@ -809,7 +809,7 @@ Then play the diagram to check your prediction:
 
 **Predict:** will GitHub accept Bob's push now?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Yes. Bob's merge commit has Alice's commit as one of its parents. From GitHub's
 point of view, moving `main` from Alice's commit to Bob's merge commit is moving
@@ -831,7 +831,7 @@ Then play the diagram to check your prediction:
 
 <simgit-story name='guessitBobPushMerge' start-chapter='pair-merged' end-chapter='bob-push-merge' through-chapter='alice-layout' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Alice's `origin/main` has not moved: her Git has not talked to GitHub since her
 own push.
@@ -844,7 +844,7 @@ If **Chuck** is present in the group, he waits until Bob has pushed his merge.
 
 **Predict:** will GitHub accept Chuck's push?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No, for the same reason as Bob's first push: GitHub has commits that Chuck does
 not have.
@@ -867,7 +867,7 @@ step.
 
 **Predict:** will Chuck's pull end with a conflict?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No. Chuck changed the same file as Alice and Bob, but not the same line. A
 conflict is about lines, not files: Git merges changes to different lines of a
@@ -905,7 +905,7 @@ Otherwise skip this step.
 
 **Predict:** will GitHub accept Chuck's push now?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Yes: Chuck's merge commit has GitHub's `main` in its history, so moving `main`
 to it is a fast-forward.
@@ -934,7 +934,7 @@ and **Chuck** are each going to pull.
 **Predict:** will these pulls be fast-forwards, or will they create merge
 commits?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Fast-forwards. Nobody has committed since their last pull or push, so what is on
 GitHub is directly ahead of everyone's `main`, or is `main` itself for whoever

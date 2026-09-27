@@ -152,7 +152,7 @@ $> cd hello-git
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 The directory is not a repository, and neither is any of its parents:
 
@@ -181,7 +181,7 @@ Initialized empty Git repository in /path/to/projects/hello-git/.git/
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 The repository exists, but it has no commits yet:
 
@@ -216,7 +216,7 @@ $> echo "Hi Bob" > hi.txt
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 New files are **untracked**: Git sees them, but will not include them in a
 commit unless you tell it to:
@@ -249,7 +249,7 @@ $> git add hello.txt
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Only `hello.txt` is staged, and `hi.txt` is still untracked:
 
@@ -288,7 +288,7 @@ You are about to commit with `git commit -m "Add hello.txt"`.
 
 **Predict:** which files will be in this commit?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Only `hello.txt`. A commit contains **only what is staged**: `hi.txt` is not, so
 it stays untracked, outside the commit.
@@ -346,7 +346,7 @@ $> echo "I see trees of green" >> hello.txt
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 `hello.txt` appears **twice** in the status: once as staged, and once as
 modified but not staged.
@@ -377,7 +377,7 @@ two different versions of the same file.
 $> git diff
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 `git diff` compares the working directory with the staging area. It shows what
 you have changed but not staged: the second line.
@@ -402,7 +402,7 @@ index 2136a8e..730ea5a 100644
 $> git diff --cached
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 `git diff --cached` compares the staging area with the last commit. It shows
 what you have staged: the first line.
@@ -424,7 +424,7 @@ You are about to commit with `git commit -m "Tell the world it is beautiful"`.
 
 **Predict:** which lines will this commit add?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Only "You are beautiful". A commit saves the staging area, not the working
 directory, so it saves the version of `hello.txt` that `git diff --cached`
@@ -444,7 +444,7 @@ $> git commit -m "Tell the world it is beautiful"
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 The second line is still there, modified but not staged:
 
@@ -511,7 +511,7 @@ $> cat .gitignore  # check the contents
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 The ignored files disappear from the status. Only the new `.gitignore` file is
 left, untracked:
@@ -539,7 +539,7 @@ $> git commit -m "Ignore secrets and logs"
 **Question:** why commit the `.gitignore` file, rather than keep it on your
 machine?
 
-{% solution title: "Check your answer", reveal: always %}
+{% solution title: "Check your answer", emoji: thinking, reveal: always %}
 
 The `.gitignore` file is committed so that it is **part of the project**:
 everyone who works on it gets the same list, and nobody commits `.env` by
@@ -573,7 +573,7 @@ $> echo "API_KEY=sk-0a1b2c3d4e5f" > api-key.txt
 $> git status
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Adding the file to `.gitignore` changes nothing: Git still tracks it, and sees
 the new key as a modification:
@@ -612,7 +612,7 @@ check the history of the file:
 $> git log -p -- api-key.txt
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 The first key is **not gone**. The commit "Configure the API" still contains it,
 and always will: every commit is a permanent snapshot.
@@ -675,7 +675,7 @@ the branches, with a star next to the current one:
 $> git branch
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Creating a branch does not switch to it: the star is still on `main`.
 
@@ -703,7 +703,7 @@ to check your prediction:
 
 <simgit-story name='helloGitBranch' start-chapter='branch' end-chapter='commit' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 `bye` has moved forward to the new commit, with `HEAD`, and `main` has stayed
 where it was. Check yours with `git graph`, and/or with VSCode's Git Graph
@@ -732,7 +732,7 @@ to check your prediction:
 
 **Predict:** does `goodbye.txt` still exist? Then check with `ls`.
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No: switching rewrote the working directory to match the snapshot `main` points
 to, which does not have the file.
@@ -748,7 +748,7 @@ does not touch them when you switch.
 $> git log --oneline
 ```
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No: `git log` only shows the history of the commit `HEAD` points to, and "Say
 goodbye" is not in the history of `main`. `git graph` shows it because of its
@@ -797,7 +797,7 @@ You are going to merge `fix-typo` into `main`, with `git merge fix-typo`.
 **Predict:** will the merge be a fast-forward, or will Git create a merge
 commit?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 A fast-forward. `fix-typo` is **directly ahead** of `main`: its commit comes
 right after the one `main` points to. Git only has to move `main` forward, and
@@ -828,7 +828,7 @@ You are now going to merge `contact-page` into `main`, with
 **Predict:** will the merge be a fast-forward, or will Git create a merge
 commit?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 A merge commit. `contact-page` has **diverged** from `main`: it was created from
 "Add an about page", and `main` has two more commits since. Git performs a
@@ -855,7 +855,7 @@ to check your prediction:
 
 <simgit-story name='helloGitMerges' start-chapter='fast-forward' end-chapter='three-way' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Check yours with `git graph`:
 
@@ -884,7 +884,7 @@ This question is harder, and optional.
 **Predict:** what if you had merged `contact-page` first, then `fix-typo`? Would
 `fix-typo` still be merged as a fast-forward?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No: this time, `fix-typo` needs a merge commit too.
 
@@ -919,7 +919,7 @@ your prediction:
 
 <simgit-story name='helloGitMergesReversed' start-chapter='prepared' end-chapter='fix-typo-second' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 Check yours with `git graph`:
 
@@ -1223,7 +1223,7 @@ $> git commit --amend -m "Greet Steve"
 **Predict:** will the commit still have the same hash? Why? Then check with
 `git log --oneline`.
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No. Amending does not modify the commit, it **replaces** it with a new one. A
 commit is named by the hash of its content, and its message is part of that
@@ -1262,7 +1262,7 @@ contains both files.
 **Predict:** is it still the same commit? Compare its hash with the one you
 noted. Why has it changed, although the message is the same?
 
-{% solution title: "Check your prediction", reveal: always %}
+{% solution title: "Check your prediction", emoji: thinking, reveal: always %}
 
 No. The files a commit contains are part of its content too, and they now
 include `b.txt`: amending replaced the commit with a new one, as it did for the
