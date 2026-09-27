@@ -45,10 +45,11 @@ function commitOf(
 const HELLO_GIT = { computer: 'laptop', repo: '/hello-git' };
 
 /**
- * "Branch and switch": the student's own `hello-git` repository, with the
- * commits of the earlier exercises, gains a `bye` branch with one commit, then
- * switches back to `main`. The digests are the student's own, so none is
- * aliased.
+ * "Branch and switch": the student's own `hello-git` repository gains a `bye`
+ * branch with one commit, then switches back to `main`. Of the commits of the
+ * earlier exercises, only the last three are replayed, which is all the
+ * diagrams need to show where the branch starts. The digests are the student's
+ * own, so none is aliased.
  */
 export function buildHelloGitBranchStory(): Story {
   const commit = (message: string, file: string, contents: string) =>
@@ -59,18 +60,6 @@ export function buildHelloGitBranchStory(): Story {
     .chapter('history', {
       target: HELLO_GIT,
       operations: [
-        ...commit('Add hello.txt', 'hello.txt', 'Hello World\n'),
-        ...commit('Add hi.txt', 'hi.txt', 'Hi Bob\n'),
-        ...commit(
-          'Tell the world it is beautiful',
-          'hello.txt',
-          'Hello World\nYou are beautiful\n'
-        ),
-        ...commit(
-          'Add trees of green',
-          'hello.txt',
-          'Hello World\nYou are beautiful\nI see trees of green\n'
-        ),
         ...commit('Ignore secrets and logs', '.gitignore', '.env\n*.log\n'),
         ...commit('Configure the API', 'api-key.txt', 'API_KEY=sk-9f8e7d\n'),
         // The student's commit stops tracking `api-key.txt`; simgit has no

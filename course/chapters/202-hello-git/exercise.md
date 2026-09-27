@@ -152,17 +152,9 @@ $> cd hello-git
 $> git status
 ```
 
-Now turn the directory into a repository, and check the status again:
+{% solution title: "Check your prediction", reveal: always %}
 
-```bash
-$> git init
-$> git status
-```
-
-{% solution title: "Check your predictions", reveal: always %}
-
-Before `git init`, the directory is not a repository, and neither is any of its
-parents:
+The directory is not a repository, and neither is any of its parents:
 
 ```bash
 $> git status
@@ -174,11 +166,26 @@ running `git init`. If `git status` had printed a status instead, you would have
 been inside an existing repository, and `git init` would have created a second
 one nested inside it.
 
-After `git init`, the repository exists, but it has no commits yet:
+{% endsolution %}
+
+Now turn the directory into a repository:
 
 ```bash
 $> git init
 Initialized empty Git repository in /path/to/projects/hello-git/.git/
+```
+
+**Predict:** what will `git status` print now? Then check:
+
+```bash
+$> git status
+```
+
+{% solution title: "Check your prediction", reveal: always %}
+
+The repository exists, but it has no commits yet:
+
+```bash
 $> git status
 On branch main
 
@@ -203,45 +210,13 @@ $> echo "Hello World" > hello.txt  # or use your favorite
 $> echo "Hi Bob" > hi.txt
 ```
 
-**Predict:** how will `git status` describe these two files? Check.
-
-Now stage only one of them:
+**Predict:** how will `git status` describe these two files? Then check:
 
 ```bash
-$> git add hello.txt
+$> git status
 ```
 
-**Predict:** what will `git status` say now? Check, then look at what is staged:
-
-```bash
-$> git diff --cached
-```
-
-Commit:
-
-```bash
-$> git commit -m "Add hello.txt"
-```
-
-**Predict:** which files are in this commit? What will `git status` say after
-it? Check, and look at the history with `git log`.
-
-{% note type: tip %}
-
-When the output of `git log` or `git diff` is longer than your terminal, Git
-shows it one screen at a time, and does not give you your prompt back. Scroll
-with the arrow keys, and press `q` to quit.
-
-{% endnote %}
-
-Finally, commit the other file too:
-
-```bash
-$> git add hi.txt
-$> git commit -m "Add hi.txt"
-```
-
-{% solution title: "Check your predictions", reveal: always %}
+{% solution title: "Check your prediction", reveal: always %}
 
 New files are **untracked**: Git sees them, but will not include them in a
 commit unless you tell it to:
@@ -260,8 +235,23 @@ Untracked files:
 nothing added to commit but untracked files present (use "git add" to track)
 ```
 
-After `git add hello.txt`, only that file is staged, and `hi.txt` is still
-untracked:
+{% endsolution %}
+
+Now stage only one of them:
+
+```bash
+$> git add hello.txt
+```
+
+**Predict:** what will `git status` say now? Then check:
+
+```bash
+$> git status
+```
+
+{% solution title: "Check your prediction", reveal: always %}
+
+Only `hello.txt` is staged, and `hi.txt` is still untracked:
 
 ```bash
 $> git status
@@ -278,7 +268,10 @@ Untracked files:
         hi.txt
 ```
 
-`git diff --cached` shows the one line of the new file, staged:
+{% endsolution %}
+
+Look at what is staged with `git diff --cached`. It shows the one line of the
+new file:
 
 ```bash
 $> git diff --cached
@@ -291,27 +284,46 @@ index 0000000..557db03
 +Hello World
 ```
 
-The commit contains **only what was staged**: `hello.txt`. `hi.txt` is still
-untracked afterwards:
+You are about to commit with `git commit -m "Add hello.txt"`.
+
+**Predict:** which files will be in this commit?
+
+{% solution title: "Check your prediction", reveal: always %}
+
+Only `hello.txt`. A commit contains **only what is staged**: `hi.txt` is not, so
+it stays untracked, outside the commit.
+
+{% endsolution %}
+
+Commit:
 
 ```bash
 $> git commit -m "Add hello.txt"
 [main (root-commit) a82bb9b] Add hello.txt
  1 file changed, 1 insertion(+)
  create mode 100644 hello.txt
-$> git status
-On branch main
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-        hi.txt
-
-nothing added to commit but untracked files present (use "git add" to track)
 ```
 
 Your commit's hash will be different from `a82bb9b`: it is computed from the
 commit's content, which includes your name and the date.
 
-{% endsolution %}
+Check with `git status` that `hi.txt` is still untracked, and look at the
+history with `git log`.
+
+{% note type: tip %}
+
+When the output of `git log` or `git diff` is longer than your terminal, Git
+shows it one screen at a time, and does not give you your prompt back. Scroll
+with the arrow keys, and press `q` to quit.
+
+{% endnote %}
+
+Finally, commit the other file too:
+
+```bash
+$> git add hi.txt
+$> git commit -m "Add hi.txt"
+```
 
 ## :exclamation: Staged and modified
 
@@ -328,25 +340,13 @@ Before committing, add another line to the same file:
 $> echo "I see trees of green" >> hello.txt
 ```
 
-**Predict:**
-
-- What will `git status` say about `hello.txt`?
-- What will `git diff` show? And `git diff --cached`?
-- If you commit now, which lines will the commit add?
-
-Check with `git status`, `git diff` and `git diff --cached`, then commit:
+**Predict:** what will `git status` say about `hello.txt`? Then check:
 
 ```bash
-$> git commit -m "Tell the world it is beautiful"
+$> git status
 ```
 
-**Predict:** what will `git status` say now? Check, then commit what is left:
-
-```bash
-$> git commit -am "Add trees of green"
-```
-
-{% solution title: "Check your predictions", reveal: always %}
+{% solution title: "Check your prediction", reveal: always %}
 
 `hello.txt` appears **twice** in the status: once as staged, and once as
 modified but not staged.
@@ -369,8 +369,18 @@ staging area: with "You are beautiful", but without "I see trees of green",
 which you wrote afterwards. The working directory and the staging area now hold
 two different versions of the same file.
 
-`git diff` shows what is in the working directory but not staged: the second
-line. `git diff --cached` shows what is staged: the first line.
+{% endsolution %}
+
+**Predict:** which line will `git diff` show? Then check:
+
+```bash
+$> git diff
+```
+
+{% solution title: "Check your prediction", reveal: always %}
+
+`git diff` compares the working directory with the staging area. It shows what
+you have changed but not staged: the second line.
 
 ```bash
 $> git diff
@@ -382,6 +392,22 @@ index 2136a8e..730ea5a 100644
  Hello World
  You are beautiful
 +I see trees of green
+```
+
+{% endsolution %}
+
+**Predict:** which line will `git diff --cached` show? Then check:
+
+```bash
+$> git diff --cached
+```
+
+{% solution title: "Check your prediction", reveal: always %}
+
+`git diff --cached` compares the staging area with the last commit. It shows
+what you have staged: the first line.
+
+```bash
 $> git diff --cached
 diff --git a/hello.txt b/hello.txt
 index 557db03..2136a8e 100644
@@ -392,8 +418,35 @@ index 557db03..2136a8e 100644
 +You are beautiful
 ```
 
-The commit saves the staging area, so it only adds "You are beautiful". After
-it, the second line is still there, modified but not staged:
+{% endsolution %}
+
+You are about to commit with `git commit -m "Tell the world it is beautiful"`.
+
+**Predict:** which lines will this commit add?
+
+{% solution title: "Check your prediction", reveal: always %}
+
+Only "You are beautiful". A commit saves the staging area, not the working
+directory, so it saves the version of `hello.txt` that `git diff --cached`
+showed you.
+
+{% endsolution %}
+
+Commit:
+
+```bash
+$> git commit -m "Tell the world it is beautiful"
+```
+
+**Predict:** what will `git status` say now? Then check:
+
+```bash
+$> git status
+```
+
+{% solution title: "Check your prediction", reveal: always %}
+
+The second line is still there, modified but not staged:
 
 ```bash
 $> git status
@@ -406,10 +459,16 @@ Changes not staged for commit:
 no changes added to commit (use "git add" and/or "git commit -a")
 ```
 
-The last command commits it: the `-a` option stages every modified file that
-Git already tracks before committing.
-
 {% endsolution %}
+
+Commit what is left:
+
+```bash
+$> git commit -am "Add trees of green"
+```
+
+The `-a` option stages every modified file that Git already tracks before
+committing.
 
 ## :exclamation: Ignore a secret
 
@@ -423,8 +482,22 @@ $> echo "DB_PASSWORD=ch4ngeme" > .env
 $> echo "Starting..." > debug.log
 ```
 
-Check `git status`: `git add .` would now put your password in the history.
-Tell Git to ignore both files, by creating a `.gitignore` file that lists them:
+Check the status:
+
+```bash
+$> git status
+On branch main
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        .env
+        debug.log
+
+nothing added to commit but untracked files present (use "git add" to track)
+```
+
+Both files are untracked, so `git add .` would now put your password in the
+history. Tell Git to ignore both files, by creating a `.gitignore` file that
+lists them:
 
 ```bash
 $> echo ".env" > .gitignore
@@ -432,17 +505,13 @@ $> echo "*.log" >> .gitignore
 $> cat .gitignore  # check the contents
 ```
 
-**Predict:** what will `git status` say now? Check, then commit the ignore file:
+**Predict:** what will `git status` say now? Then check:
 
 ```bash
-$> git add .
-$> git commit -m "Ignore secrets and logs"
+$> git status
 ```
 
-**Question:** why commit the `.gitignore` file, rather than keep it on your
-machine?
-
-{% solution title: "Check your predictions", reveal: always %}
+{% solution title: "Check your prediction", reveal: always %}
 
 The ignored files disappear from the status. Only the new `.gitignore` file is
 left, untracked:
@@ -457,8 +526,20 @@ Untracked files:
 nothing added to commit but untracked files present (use "git add" to track)
 ```
 
+{% endsolution %}
+
 `git add .` is now safe: it stages the `.gitignore` file, and skips `.env` and
-`debug.log`.
+`debug.log`. Commit the ignore file:
+
+```bash
+$> git add .
+$> git commit -m "Ignore secrets and logs"
+```
+
+**Question:** why commit the `.gitignore` file, rather than keep it on your
+machine?
+
+{% solution title: "Check your answer", reveal: always %}
 
 The `.gitignore` file is committed so that it is **part of the project**:
 everyone who works on it gets the same list, and nobody commits `.env` by
@@ -486,28 +567,13 @@ $> echo "api-key.txt" >> .gitignore
 $> echo "API_KEY=sk-0a1b2c3d4e5f" > api-key.txt
 ```
 
-**Predict:** what will `git status` say about `api-key.txt`? Check.
-
-To make Git stop tracking the file, while keeping it on your disk, remove it
-from the staging area only, then commit that along with the ignore file:
+**Predict:** what will `git status` say about `api-key.txt`? Then check:
 
 ```bash
-$> git rm --cached api-key.txt
-$> git add .gitignore
-$> git commit -m "Stop tracking the API key"
+$> git status
 ```
 
-Check that `api-key.txt` is still in your directory with `ls`, and that
-`git status` no longer mentions it.
-
-**Predict:** is the first key, `sk-9f8e7d6c5b4a`, gone from the repository?
-Check the history of the file:
-
-```bash
-$> git log -p -- api-key.txt
-```
-
-{% solution title: "Check your predictions", reveal: always %}
+{% solution title: "Check your prediction", reveal: always %}
 
 Adding the file to `.gitignore` changes nothing: Git still tracks it, and sees
 the new key as a modification:
@@ -523,9 +589,30 @@ Changes not staged for commit:
 ```
 
 **`.gitignore` only applies to files Git does not track yet.** Once a file has
-been committed, ignoring it has no effect until you stop tracking it with
-`git rm --cached`, which removes it from the staging area without touching your
-copy.
+been committed, ignoring it has no effect until you stop tracking it.
+
+{% endsolution %}
+
+To make Git stop tracking the file, while keeping it on your disk, remove it
+from the staging area only, then commit that along with the ignore file:
+
+```bash
+$> git rm --cached api-key.txt
+$> git add .gitignore
+$> git commit -m "Stop tracking the API key"
+```
+
+Check that `api-key.txt` is still in your directory with `ls`, and that
+`git status` no longer mentions it.
+
+**Predict:** is the first key, `sk-9f8e7d6c5b4a`, gone from the repository? Then
+check the history of the file:
+
+```bash
+$> git log -p -- api-key.txt
+```
+
+{% solution title: "Check your prediction", reveal: always %}
 
 The first key is **not gone**. The commit "Configure the API" still contains it,
 and always will: every commit is a permanent snapshot.
@@ -588,6 +675,18 @@ the branches, with a star next to the current one:
 $> git branch
 ```
 
+{% solution title: "Check your prediction", reveal: always %}
+
+Creating a branch does not switch to it: the star is still on `main`.
+
+```bash
+$> git branch
+  bye
+* main
+```
+
+{% endsolution %}
+
 Then switch to the new branch, and commit a new file on it:
 
 ```bash
@@ -598,35 +697,16 @@ $> git commit -m "Say goodbye"
 ```
 
 **Predict:** draw the last few commits of the graph, with the `main`, `bye` and
-`HEAD` pointers. Check with `git graph`, and/or with VSCode's Git Graph
-extension.
+`HEAD` pointers. Then play the diagram, which only shows the last three commits
+of your history before the branch:
 
-Now switch back:
+<simgit-story name='helloGitBranch' start-chapter='branch' end-chapter='commit' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-```bash
-$> git switch main
-```
+{% solution title: "Check your prediction", reveal: always %}
 
-**Predict:** does `goodbye.txt` still exist? Will `git log --oneline` show the
-"Say goodbye" commit? Check with `ls` and `git log --oneline`. Then switch to
-`bye` again, check again, and come back to `main`.
-
-This is what happened in your repository:
-
-<simgit-story name='helloGitBranch' start-chapter='history' end-chapter='back-to-main' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
-{% solution title: "Check your predictions", reveal: always %}
-
-Creating a branch does not switch to it: the star is still on `main`.
-
-```bash
-$> git branch
-  bye
-* main
-```
-
-After the commit, `bye` has moved forward to the new commit, with `HEAD`,
-and `main` has stayed where it was:
+`bye` has moved forward to the new commit, with `HEAD`, and `main` has stayed
+where it was. Check yours with `git graph`, and/or with VSCode's Git Graph
+extension:
 
 ```bash
 $> git graph
@@ -636,16 +716,47 @@ $> git graph
 ...
 ```
 
-On `main`, `goodbye.txt` is gone: switching rewrote the working directory to
-match the snapshot `main` points to, which does not have the file. `git log`
-only shows the history of the current branch, so "Say goodbye" is not in it.
-Switch back to `bye`, and the file is there again: it was never lost, only
-stored in the commit.
+{% endsolution %}
 
-`api-key.txt`, `debug.log` and `.env` are on both branches: they are ignored, so
-Git does not touch them when you switch.
+Now switch back:
+
+```bash
+$> git switch main
+```
+
+**Predict:** draw what the switch changes in the graph. Then play the diagram:
+
+<simgit-story name='helloGitBranch' start-chapter='commit' end-chapter='back-to-main' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
+
+**Predict:** does `goodbye.txt` still exist? Then check with `ls`.
+
+{% solution title: "Check your prediction", reveal: always %}
+
+No: switching rewrote the working directory to match the snapshot `main` points
+to, which does not have the file.
+
+`api-key.txt`, `debug.log` and `.env` are still there: they are ignored, so Git
+does not touch them when you switch.
 
 {% endsolution %}
+
+**Predict:** will `git log --oneline` show the "Say goodbye" commit? Then check:
+
+```bash
+$> git log --oneline
+```
+
+{% solution title: "Check your prediction", reveal: always %}
+
+No: `git log` only shows the history of the commit `HEAD` points to, and "Say
+goodbye" is not in the history of `main`. `git graph` shows it because of its
+`--all` option, which shows the history of every branch.
+
+{% endsolution %}
+
+Switch to `bye` again: `goodbye.txt` is there again, and "Say goodbye" is in the
+history. The file was never lost, only stored in the commit. Then come back to
+`main`.
 
 ## :exclamation: Two merges
 
@@ -674,34 +785,25 @@ Look at the graph, with `git graph` and/or with VSCode's Git Graph extension:
 
 <simgit-story name='helloGitMerges' start-chapter='prepared' end-chapter='prepared' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true' controls='false'></simgit-story>
 
-You are on `main`. You want to bring both `fix-typo` and `contact-page` into it.
+You are on `main`. You want to bring both `fix-typo` and `contact-page` into it,
+one after the other.
 
-**Predict**, for each branch, before merging it:
+### :exclamation: Merge `fix-typo`
 
-- Will the merge be a fast-forward, or will Git create a merge commit?
-- What will the graph look like afterwards? Draw it.
+You are going to merge `fix-typo` into `main`, with `git merge fix-typo`.
 
-Then merge them, one after the other, and check each prediction with
-`git graph`:
+**Predict:** will the merge be a fast-forward, or will Git create a merge
+commit?
 
-```bash
-$> git merge fix-typo
-$> git merge contact-page
-```
+{% solution title: "Check your prediction", reveal: always %}
 
-The second merge opens your editor with a commit message that Git has written
-for you. Keep it as it is, and exit: in nano, press `Ctrl-X`. If you find
-yourself in Vim instead, see [I am stuck in Vim](#i-am-stuck-in-vim).
+A fast-forward. `fix-typo` is **directly ahead** of `main`: its commit comes
+right after the one `main` points to. Git only has to move `main` forward, and
+creates no commit.
 
-This is what happened:
+{% endsolution %}
 
-<simgit-story name='helloGitMerges' start-chapter='prepared' end-chapter='three-way' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
-
-{% solution title: "Check your predictions", reveal: always %}
-
-`fix-typo` is **directly ahead** of `main`: its commit comes right after the one
-`main` points to. Git only has to move `main` forward, a **fast-forward**, and
-creates no commit:
+Merge:
 
 ```bash
 $> git merge fix-typo
@@ -711,10 +813,30 @@ Fast-forward
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-`contact-page` has **diverged** from `main`: it was created from "Add an about
-page", and `main` has two more commits since. Git performs a **three-way merge**
-from the common ancestor, `3947df4`, and creates a merge commit with two
-parents:
+**Predict:** draw what the merge changes in the graph. Then play the diagram:
+
+<simgit-story name='helloGitMerges' start-chapter='prepared' end-chapter='fast-forward' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
+
+### :exclamation: Merge `contact-page`
+
+You are now going to merge `contact-page` into `main`, with
+`git merge contact-page`.
+
+**Predict:** will the merge be a fast-forward, or will Git create a merge
+commit?
+
+{% solution title: "Check your prediction", reveal: always %}
+
+A merge commit. `contact-page` has **diverged** from `main`: it was created from
+"Add an about page", and `main` has two more commits since. Git performs a
+**three-way merge** from the common ancestor, `3947df4`, and creates a merge
+commit with two parents.
+
+{% endsolution %}
+
+Merge. This time, Git opens your editor with a commit message that it has
+written for you. Keep it as it is, and exit: in nano, press `Ctrl-X`. If you
+find yourself in Vim instead, see [I am stuck in Vim](#i-am-stuck-in-vim).
 
 ```bash
 $> git merge contact-page
@@ -723,6 +845,17 @@ Merge made by the 'ort' strategy.
  index.html   |  1 +
  2 files changed, 12 insertions(+)
  create mode 100644 contact.html
+```
+
+**Predict:** draw what the merge changes in the graph. Then play the diagram:
+
+<simgit-story name='helloGitMerges' start-chapter='fast-forward' end-chapter='three-way' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
+
+{% solution title: "Check your prediction", reveal: always %}
+
+Check yours with `git graph`:
+
+```bash
 $> git graph
 *   b91b87f (HEAD -> main) Merge branch 'contact-page'
 |\
@@ -745,10 +878,23 @@ will be the same as these, since you cloned these commits.
 This question is harder, and optional.
 
 **Predict:** what if you had merged `contact-page` first, then `fix-typo`? Would
-`fix-typo` still be merged as a fast-forward? Draw the graph you would end up
-with.
+`fix-typo` still be merged as a fast-forward?
 
-Then check, in a second copy of the repository, cloned into another directory:
+{% solution title: "Check your prediction", reveal: always %}
+
+No: this time, `fix-typo` needs a merge commit too.
+
+Merging `contact-page` first is a three-way merge, as before, and creates a merge
+commit on `main`. But `fix-typo` does not have that merge commit in its history:
+`main` has moved on since `fix-typo` was created, so the two have diverged, and
+merging `fix-typo` is a second three-way merge, with a second merge commit.
+
+Whether a merge can be a fast-forward does not depend on the branch you merge:
+it depends on the shape of the history **at the moment you merge it**.
+
+{% endsolution %}
+
+Check it, in a second copy of the repository, cloned into another directory:
 
 ```bash
 $> cd /path/to/projects
@@ -764,24 +910,15 @@ $> git merge fix-typo
 
 Both merges open your editor: keep each message as it is, and exit.
 
-This is what happens:
+**Predict:** draw the graph you end up with. Then play the diagram:
 
-<simgit-story name='helloGitMergesReversed' start-chapter='prepared' end-chapter='fix-typo-second' sizing='auto-height' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='helloGitMergesReversed' start-chapter='prepared' end-chapter='fix-typo-second' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
-{% solution title: "Check your predictions", reveal: always %}
+{% solution title: "Check your prediction", reveal: always %}
 
-No: this time, `fix-typo` needs a merge commit too.
-
-Merging `contact-page` first is a three-way merge, as before, and creates a merge
-commit on `main`. But `fix-typo` does not have that merge commit in its history:
-`main` has moved on since `fix-typo` was created, so the two have diverged, and
-merging `fix-typo` is a second three-way merge, with a second merge commit:
+Check yours with `git graph`:
 
 ```bash
-$> git merge fix-typo
-Merge made by the 'ort' strategy.
- about.html | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 $> git graph
 *   a2e7d63 (HEAD -> main) Merge branch 'fix-typo'
 |\
@@ -799,9 +936,8 @@ $> git graph
 ```
 
 The two branches, and the changes they bring, are the same as before, and so are
-the files you end up with. But the history is different. Whether a merge can be
-a fast-forward does not depend on the branch you merge: it depends on the shape
-of the history **at the moment you merge it**.
+the files you end up with. But the history is different: two merge commits
+instead of one.
 
 {% endsolution %}
 
@@ -1079,8 +1215,20 @@ Look at it with `git log --oneline`, and note its hash. Then fix the message:
 $> git commit --amend -m "Greet Steve"
 ```
 
-**Predict:** will the commit still have the same hash? Check with
-`git log --oneline`. Why?
+**Predict:** will the commit still have the same hash? Why? Then check with
+`git log --oneline`.
+
+{% solution title: "Check your prediction", reveal: always %}
+
+No. Amending does not modify the commit, it **replaces** it with a new one. A
+commit is named by the hash of its content, and its message is part of that
+content, so a new message makes a different commit. The old commit is no longer
+on any branch.
+
+{% endsolution %}
+
+This is why you should not amend a commit you have already shared: the others
+still have the old commit, and their history no longer matches yours.
 
 ### :question: Add a forgotten file to the last commit
 
@@ -1109,16 +1257,11 @@ contains both files.
 **Predict:** is it still the same commit? Compare its hash with the one you
 noted. Why has it changed, although the message is the same?
 
-{% solution title: "Check your predictions", reveal: always %}
+{% solution title: "Check your prediction", reveal: always %}
 
-The hash has changed: amending does not modify the commit, it **replaces** it
-with a new one. A commit is named by the hash of its content, and its content
-now includes `b.txt`, so it is a different commit. The same happens when you
-only fix the message, since the message is part of the content too. The old
-commit is no longer on any branch.
-
-This is why you should not amend a commit you have already shared: the others
-still have the old commit, and their history no longer matches yours.
+No. The files a commit contains are part of its content too, and they now
+include `b.txt`: amending replaced the commit with a new one, as it did for the
+message.
 
 {% endsolution %}
 
@@ -1134,11 +1277,50 @@ $> git commit -am "Greet Alice"
 
 Which of the two changes did the commit include? Why?
 
+{% solution title: "Check your answer", reveal: always %}
+
+Only the change to `hi.txt`. The `-a` option stages the modified files that Git
+**already tracks**. `new.txt` is untracked, so it is not in the commit, and
+`git status` still lists it as untracked. A new file always needs a `git add`.
+
+{% endsolution %}
+
 ### :question: Rename a file
 
-Rename a file with the `mv` command, and look at `git status`. Then stage
-everything with `git add .`, and look again. What changed in how Git describes
-it?
+Rename a file with the `mv` command (or in your editor), and look at `git
+status`. Then stage everything with `git add .`, and look again. What changed in
+how Git describes it?
+
+{% solution title: "Check your answer", reveal: always %}
+
+Before `git add`, Git sees two separate changes: a tracked file that has been
+deleted, and a new file that is untracked. For example, after
+`mv hello.txt hola.txt`:
+
+```bash
+$> git status
+...
+        deleted:    hello.txt
+...
+Untracked files:
+        hola.txt
+```
+
+Once both are staged, Git notices that the new file has the same content as the
+deleted one, and describes them as one rename:
+
+```bash
+$> git add .
+$> git status
+...
+        renamed:    hello.txt -> hola.txt
+```
+
+Git does not record renames: a commit is a snapshot, which only says which files
+exist and what they contain. Git works the rename out when it compares two
+snapshots, from the content of the files.
+
+{% endsolution %}
 
 ### :question: The global ignore file
 
@@ -1167,6 +1349,26 @@ points directly to a commit instead of a branch. Come back with
 
 Your `bye` branch was never merged. Try to delete it with `-d`, then with `-D`.
 Where did the "Say goodbye" commit go?
+
+{% solution title: "Check your answer", reveal: always %}
+
+`-d` refuses, because "Say goodbye" is not in the history of any other branch:
+deleting `bye` would leave no branch leading to it. `-D` deletes it anyway:
+
+```bash
+$> git branch -d bye
+error: the branch 'bye' is not fully merged
+...
+$> git branch -D bye
+Deleted branch bye (was 4d2684e).
+```
+
+The commit is still in the repository. Only the pointer is gone: a branch is a
+pointer to a commit, and deleting it does not delete the commit. But no branch
+leads to it any more, so `git log` and `git graph` no longer show it, and Git
+will eventually clean it up.
+
+{% endsolution %}
 
 Look for it with `git reflog`, which lists every commit `HEAD` has pointed to
 recently, and create a branch pointing to it again with `git branch welcome-back
