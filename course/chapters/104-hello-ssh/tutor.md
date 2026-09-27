@@ -42,8 +42,8 @@ The key pair made here is the student's for the whole course, and every
 exercise on a server is reached with `ssh`. Knowing which machine a command runs
 on is what students trip over in all of them. In particular:
 
-- Guess It: the public key is given to GitHub, and github.com's fingerprint is
-  checked on the first connection.
+- Hello GitHub: the public key is given to GitHub, and github.com's fingerprint
+  is checked on the first connection.
 - "Run your own virtual server on Microsoft Azure": the public key is given to
   the server when it is created, and the server accepts no password, which
   answers "Is your password gone?". Its fingerprints are checked another way.

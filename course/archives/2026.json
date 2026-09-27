@@ -61,15 +61,27 @@
       "slug": "hello-git"
     },
     {
+      "path": "/course/203-git-collaborating/",
+      "kind": "chapter",
+      "num": 203,
+      "slug": "git-collaborating"
+    },
+    {
       "path": "/course/203-git-collaborating/slides/",
       "kind": "chapter_slides",
       "num": 203,
       "slug": "git-collaborating"
     },
     {
-      "path": "/course/204-guessit/",
+      "path": "/course/204-hello-github/",
       "kind": "chapter",
       "num": 204,
+      "slug": "hello-github"
+    },
+    {
+      "path": "/course/205-guessit/",
+      "kind": "chapter",
+      "num": 205,
       "slug": "guessit"
     },
     {

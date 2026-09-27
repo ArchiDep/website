@@ -6,7 +6,7 @@ import {
   type Simulation
 } from '@alphahydrae/simgit';
 
-// The `guessit` story: the scripted collaboration of the Guess It exercise.
+// The `guessit` story: the scripted collaboration of the Hello GitHub exercise.
 // Alice forks the exercise repository on GitHub, and she, Bob and Chuck clone
 // it. Alice pushes a first change that the others fetch and pull. Then Alice
 // and Bob change the same line: Alice pushes first, Bob's push is refused, and

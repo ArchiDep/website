@@ -18,11 +18,12 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   # in the order that manifest lists them.
   @current_edition "2026"
 
-  # Two of the pages 2025 published are published at another path now: "Shell
+  # Three of the pages 2025 published are published at another path now: "Shell
   # Scripting" was chapter 102 and is a cheatsheet, which moved the three
-  # chapters that followed it up one number; and the graded exercise, which 2025
-  # named after the application it had students deploy, is named for what it is.
-  # Every other page is still published at the path 2025 knew it by.
+  # chapters that followed it up one number; the graded exercise, which 2025
+  # named after the application it had students deploy, is named for what it is;
+  # and "Guess It" answers for "PHP Todolist", on the application that replaced
+  # it. Every other page is still published at the path 2025 knew it by.
   @shell_scripting {:cheatsheet, "shell-scripting"}
   @path_in_2025 %{
     "/cheatsheets/shell-scripting/" => "/course/102-shell-scripting/",
@@ -30,13 +31,13 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     "/course/103-ssh/" => "/course/104-ssh/",
     "/course/103-ssh/slides/" => "/course/104-ssh/slides/",
     "/course/104-hello-ssh/" => "/course/105-hello-ssh/",
+    "/course/205-guessit/" => "/course/205-php-todolist/",
     "/course/603-graded-deployment/" => "/course/603-floodit-deployment/"
   }
   @hello_git "/course/202-hello-git/"
   @branching_in_2025 "/course/202-git-branching/slides/"
   @git_slides "/course/201-git/slides/"
-  @guessit "/course/204-guessit/"
-  @guessit_in_2025 ["/course/204-hello-github/", "/course/205-php-todolist/"]
+  @collaborating_subject "/course/203-git-collaborating/"
 
   describe "mapping/0" do
     test "answers for every page every edition published, with the page that succeeded it" do
@@ -114,18 +115,21 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   defp published_pages do
     [
       {@current_edition, Enum.map(current_pages(), &{PageRef.output_path(&1), &1})},
-      {"2025", Enum.flat_map(pages_of_2025(), &paths_in_2025/1)}
+      {"2025", Enum.map(pages_of_2025(), &path_in_2025/1)}
     ]
   end
 
   # A manifest lists the home page, then the chapters, then the cheatsheets.
   # 2025 published "Shell Scripting" as a chapter, so its manifest lists it
   # among them, right after the command line pages, rather than among the
-  # cheatsheets where the course holds it now.
+  # cheatsheets where the course holds it now. "Collaborating with Git" was only
+  # a deck in 2025, so its subject is not among them.
   defp pages_of_2025 do
     {command_line, rest} =
       current_pages()
-      |> Enum.reject(&(&1 == @shell_scripting))
+      |> Enum.reject(
+        &(&1 == @shell_scripting or PageRef.output_path(&1) == @collaborating_subject)
+      )
       |> Enum.split_while(&command_line_page?/1)
 
     command_line ++ [@shell_scripting] ++ rest
@@ -137,14 +141,11 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
 
   # "Hello Git" did not exist in 2025. Where it is now, 2025 published the "Git
   # Branching" deck, which became part of the deck of "Version Control with
-  # Git", so that is the page its path answers with. "Guess It" did not exist
-  # either: it answers for the two exercises 2025 published in its place, "Hello
-  # GitHub" and "PHP Todolist".
-  defp paths_in_2025(page) do
+  # Git", so that is the page its path answers with.
+  defp path_in_2025(page) do
     case PageRef.output_path(page) do
-      @hello_git -> [{@branching_in_2025, git_slides()}]
-      @guessit -> Enum.map(@guessit_in_2025, &{&1, page})
-      path -> [{Map.get(@path_in_2025, path, path), page}]
+      @hello_git -> {@branching_in_2025, git_slides()}
+      path -> {Map.get(@path_in_2025, path, path), page}
     end
   end
 

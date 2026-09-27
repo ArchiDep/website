@@ -15,7 +15,7 @@ These slides go on from where [the Git slides]({% link
 chapters/201-git/slides/slides.md %}) end: in the calculator repository, on
 `main`, with the merge commit. The team repository they push to belongs to the
 course, so you cannot push to it yourself. You will do all of this with your
-own group in [Guess It]({% link chapters/204-guessit/exercise.md %}).
+own group in [Hello GitHub]({% link chapters/204-hello-github/exercise.md %}).
 
 **Recommended reading**
 

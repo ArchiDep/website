@@ -245,11 +245,11 @@ These pages of the [Pro Git][pro-git] book go further:
 - [**Distributed Workflows**][distributed-workflows]
 
   The ways to organize a team's work with Git, which differ in who pushes to
-  which repository and who merges what. The [Guess It][guessit] exercise uses
-  the simplest one, a **centralized workflow** where everyone pushes to one
-  shared repository. Most open source projects use an **integration manager
-  workflow** instead, where contributors push to their own copy and a maintainer
-  merges their work.
+  which repository and who merges what. The [Hello GitHub][hello-github]
+  exercise uses the simplest one, a **centralized workflow** where everyone
+  pushes to one shared repository. Most open source projects use an
+  **integration manager workflow** instead, where contributors push to their own
+  copy and a maintainer merges their work.
 
 - [**Remote Branches**][pro-git-remote-branches]
 
@@ -300,7 +300,7 @@ These pages of the [Pro Git][pro-git] book go further:
 [github-issues]: https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues
 [github-pr]: https://docs.github.com/en/pull-requests/reference/pull-requests
 
-[guessit]: {% link chapters/204-guessit/exercise.md %}
+[hello-github]: {% link chapters/204-hello-github/exercise.md %}
 [pro-git]: https://git-scm.com/book/en/v2
 [pro-git-advanced-merging]: https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging
 [pro-git-contributing]: https://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project
