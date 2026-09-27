@@ -696,9 +696,10 @@ $> git add goodbye.txt
 $> git commit -m "Say goodbye"
 ```
 
-**Predict:** draw the last few commits of the graph, with the `main`, `bye` and
-`HEAD` pointers. Then play the diagram, which only shows the last three commits
-of your history before the branch:
+**Predict:** here are the last few commits of the graph, with the `main`, `bye`
+and `HEAD` pointers, before you switched to `bye` and committed. Predict what
+the graph looks like now, after the switch and the commit. Then play the diagram
+to check your prediction:
 
 <simgit-story name='helloGitBranch' start-chapter='branch' end-chapter='commit' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -724,7 +725,8 @@ Now switch back:
 $> git switch main
 ```
 
-**Predict:** draw what the switch changes in the graph. Then play the diagram:
+**Predict:** predict what the switch changes in the graph. Then play the diagram
+to check your prediction:
 
 <simgit-story name='helloGitBranch' start-chapter='commit' end-chapter='back-to-main' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -813,7 +815,8 @@ Fast-forward
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-**Predict:** draw what the merge changes in the graph. Then play the diagram:
+**Predict:** predict what the merge changes in the graph. Then play the diagram
+to check your prediction:
 
 <simgit-story name='helloGitMerges' start-chapter='prepared' end-chapter='fast-forward' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -847,7 +850,8 @@ Merge made by the 'ort' strategy.
  create mode 100644 contact.html
 ```
 
-**Predict:** draw what the merge changes in the graph. Then play the diagram:
+**Predict:** predict what the merge changes in the graph. Then play the diagram
+to check your prediction:
 
 <simgit-story name='helloGitMerges' start-chapter='fast-forward' end-chapter='three-way' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -910,7 +914,8 @@ $> git merge fix-typo
 
 Both merges open your editor: keep each message as it is, and exit.
 
-**Predict:** draw the graph you end up with. Then play the diagram:
+**Predict:** predict the graph you end up with. Then play the diagram to check
+your prediction:
 
 <simgit-story name='helloGitMergesReversed' start-chapter='prepared' end-chapter='fix-typo-second' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 

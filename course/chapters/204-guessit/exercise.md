@@ -60,10 +60,10 @@ time. Write your prediction down before you check it:
 
 - Some questions have an answer you can reveal right below them. Reveal it
   before you run the command the question is about.
-- Others ask you to draw what a command changed. They come with a diagram that
-  does not play by itself: it shows the repositories before the command. Draw
-  your prediction (in your mind or on paper), then play the diagram with its
-  controls to compare.
+- Others ask you to predict what a command changes in the repositories. They
+  come with a diagram that does not play by itself: it shows the repositories
+  before the command. Make your prediction (in your mind or on paper), then play
+  the diagram with its controls to check it.
 
 Each diagram shows GitHub and one or two members of the group, whoever the step
 is about.
@@ -255,9 +255,9 @@ client make the comparison and refuse to connect if they differ.
 
 {% endnote %}
 
-**Predict:** draw what your repository contains after the clone: its commits,
-and the pointers on them. Then play the diagram, which shows Alice's clone.
-Everyone's is the same:
+**Predict:** predict what your repository contains after the clone: its commits,
+and the pointers on them. Then play the diagram to check your prediction. It
+shows Alice's clone, and everyone's is the same:
 
 <simgit-story name='guessit' start-chapter='exercise' end-chapter='clone' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -354,8 +354,8 @@ $> git commit -m "Add the team to the README"
 Your commits will have hashes other than the ones quoted in this exercise, since
 they have your name and date in them.
 
-**Predict:** draw how the commit changes Alice's repository. Then play the
-diagram:
+**Predict:** predict how the commit changes Alice's repository. Then play the
+diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='alice-ready' end-chapter='alice-readme' through-chapter='alice-push' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -384,8 +384,8 @@ To github.com:alice/guessit-ex.git
 behind it that the remote does not have yet, to the remote named `origin`, and
 asks it to move its own `main` there.
 
-**Predict:** draw what the push changes, on GitHub and in Alice's repository.
-Then play the diagram:
+**Predict:** predict what the push changes, on GitHub and in Alice's repository.
+Then play the diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='alice-readme' end-chapter='alice-push' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -450,8 +450,8 @@ From github.com:alice/guessit-ex
 
 Check `README.md`: it has no "Team" section yet.
 
-**Predict:** draw what the fetch changes in Bob's repository. Then play the
-diagram:
+**Predict:** predict what the fetch changes in Bob's repository. Then play the
+diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='bob-look' end-chapter='bob-fetch' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -504,8 +504,8 @@ Fast-forward
 
 `README.md` now has the "Team" section.
 
-**Predict:** draw what the merge changes in Bob's repository. Then play the
-diagram:
+**Predict:** predict what the merge changes in Bob's repository. Then play the
+diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='bob-fetch' end-chapter='bob-merge' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -535,8 +535,8 @@ Fast-forward
  1 file changed, 6 insertions(+)
 ```
 
-**Predict:** draw what the pull changes in Chuck's repository. Then play the
-diagram:
+**Predict:** predict what the pull changes in Chuck's repository. Then play the
+diagram to check your prediction:
 
 <simgit-story name='guessitChuck' start-chapter='chuck-look' end-chapter='chuck-pull' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -593,8 +593,8 @@ $> git commit -m "Sign the navbar"
 If you started the application in [the optional
 step](#everyone-run-the-application), reload the page to see your change.
 
-**Predict:** draw Alice's repository, GitHub's and Bob's after Alice's and Bob's
-commits. Then play the diagram:
+**Predict:** predict what Alice's repository, GitHub's and Bob's look like after
+Alice's and Bob's commits. Then play the diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='pair-look' end-chapter='pair-commits' through-chapter='alice-push-red' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -621,12 +621,16 @@ To github.com:alice/guessit-ex.git
    6f658d5..f739362  main -> main
 ```
 
-**Predict:** draw what the push changes, in Alice's repository, on GitHub and in
-Bob's repository. Then play the diagram:
+**Predict:** predict what the push changes, in Alice's repository, on GitHub and
+in Bob's repository. Then play the diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='pair-commits' end-chapter='alice-push-red' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
+{% solution title: "Check your prediction", reveal: always %}
+
 Nothing changes in Bob's repository: his Git has not talked to GitHub.
+
+{% endsolution %}
 
 ### :exclamation: Bob: push
 
@@ -669,8 +673,8 @@ From github.com:alice/guessit-ex
    6f658d5..f739362  main       -> origin/main
 ```
 
-**Predict:** draw what the fetch changes in Bob's repository. Then play the
-diagram:
+**Predict:** predict what the fetch changes in Bob's repository. Then play the
+diagram to check your prediction:
 
 <simgit-story name='guessitBobFetch' start-chapter='bob-rejected' end-chapter='bob-fetch-red' through-chapter='github-layout' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -813,8 +817,8 @@ opens your editor to write the message.
 
 {% endnote %}
 
-**Predict:** draw Bob's repository after the merge commit. Then play the
-diagram:
+**Predict:** predict what Bob's repository looks like after the merge commit.
+Then play the diagram to check your prediction:
 
 <simgit-story name='guessit' start-chapter='bob-fetch-red' end-chapter='bob-pull' through-chapter='bob-push-merge' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -839,13 +843,17 @@ To github.com:alice/guessit-ex.git
    f739362..028ac6a  main -> main
 ```
 
-**Predict:** draw what the push changes, on GitHub and in Alice's repository.
-Then play the diagram:
+**Predict:** predict what the push changes, on GitHub and in Alice's repository.
+Then play the diagram to check your prediction:
 
 <simgit-story name='guessitBobPushMerge' start-chapter='pair-merged' end-chapter='bob-push-merge' through-chapter='alice-layout' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
+{% solution title: "Check your prediction", reveal: always %}
+
 Alice's `origin/main` has not moved: her Git has not talked to GitHub since her
 own push.
+
+{% endsolution %}
 
 ### :exclamation: Chuck: push
 
@@ -870,6 +878,9 @@ To github.com:alice/guessit-ex.git
 ```
 
 ### :exclamation: Chuck: pull
+
+If **Chuck** is present in the group, it's his turn to pull. Otherwise skip this
+step.
 
 **Predict:** will Chuck's pull end with a conflict?
 
@@ -899,11 +910,15 @@ Merge made by the 'ort' strategy.
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-**Predict:** draw Chuck's repository after the pull. Then play the diagram:
+**Predict:** predict what Chuck's repository looks like after the pull. Then
+play the diagram to check your prediction:
 
 <simgit-story name='guessitChuck' start-chapter='chuck-title' end-chapter='chuck-pull-merge' through-chapter='chuck-push-merge' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
 ### :exclamation: Chuck: push the merge
+
+If **Chuck** is present in the group, he can now push his merge commit.
+Otherwise skip this step.
 
 **Predict:** will GitHub accept Chuck's push now?
 
@@ -923,7 +938,8 @@ To github.com:alice/guessit-ex.git
    028ac6a..04e6514  main -> main
 ```
 
-**Predict:** draw what the push changes on GitHub. Then play the diagram:
+**Predict:** predict what the push changes on GitHub. Then play the diagram to
+check your prediction:
 
 <simgit-story name='guessitChuck' start-chapter='chuck-pull-merge' end-chapter='chuck-push-merge' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
@@ -966,15 +982,16 @@ $> git pull
 Already up to date.
 ```
 
-**Predict:** draw Alice's and Bob's repositories after their pulls. Then play
-the diagram:
+**Predict:** predict what Alice's and Bob's repositories look like after their
+pulls. Then play the diagram to check your prediction:
 
 <simgit-story name='guessitPair' start-chapter='pair-behind' end-chapter='final-pulls' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
 #### :exclamation: In a group of three
 
-Chuck pushed last, so Alice and Bob both pull his merge. Alice's pull brings
-Bob's merge too:
+Chuck pushed last, so Alice and Bob both pull his merge.
+
+**Alice**'s pull brings Bob's merge too:
 
 ```bash
 $> git pull
@@ -986,7 +1003,7 @@ Fast-forward
  1 file changed, 2 insertions(+), 2 deletions(-)
 ```
 
-Bob's brings Chuck's:
+**Bob**'s brings Chuck's:
 
 ```bash
 $> git pull
@@ -1000,10 +1017,10 @@ Fast-forward
 
 Chuck's repository is already up to date.
 
-**Predict:** draw Alice's and Bob's repositories after their pulls. Then play
-the diagram:
+**Predict:** predict what Alice's and Bob's repositories look like after their
+pulls. Then play the diagram to check your prediction:
 
-<simgit-story name='guessit' start-chapter='pair-behind' end-chapter='final-pulls' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
+<simgit-story name='guessit' start-chapter='pair-behind' end-chapter='bob-final-pull' sizing='auto-height' commit-representation='below' duration='1200' mode='manual' defer-until-visible='true'></simgit-story>
 
 #### :exclamation: Everyone: check your status
 

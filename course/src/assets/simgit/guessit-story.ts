@@ -322,16 +322,16 @@ function guessitStory(title: string, order: readonly ComputerName[]): Story {
         CHUCK_VIEW
       )
       .chapter('pair-behind', () => {}, PAIR_VIEW)
-      // Alice and Bob pull at the same time: one step.
+      // Alice and Bob pull at the same time, but in a step each, so that a
+      // student can replay one pull at a time.
       .chapter(
-        'final-pulls',
-        {
-          target: ALICE,
-          operations: [
-            { kind: 'pull', remote: 'origin', target: ALICE },
-            { kind: 'pull', remote: 'origin', target: BOB }
-          ]
-        },
+        'alice-final-pull',
+        { target: ALICE, operations: [{ kind: 'pull', remote: 'origin' }] },
+        PAIR_VIEW
+      )
+      .chapter(
+        'bob-final-pull',
+        { target: BOB, operations: [{ kind: 'pull', remote: 'origin' }] },
         PAIR_VIEW
       )
   );
