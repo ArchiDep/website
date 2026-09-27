@@ -249,8 +249,8 @@ A clone copies the **whole history** of the repository, and checks out its
 
 ```bash
 $> git graph
-* d20155c (HEAD -> main, origin/main, origin/HEAD) Show total games played in leaderboard
-* dcf6418 Initial commit
+* 02b3426 (HEAD -> main, origin/main, origin/HEAD) Show total games played in leaderboard
+* 2262855 Initial commit
 ```
 
 These are the commits of the `ArchiDep` repository, which the fork copied, so
@@ -360,7 +360,7 @@ forward: a **fast-forward**.
 $> git push origin main
 ...
 To github.com:alice/guessit-ex.git
-   d20155c..6f658d5  main -> main
+   02b3426..6f658d5  main -> main
 ```
 
 `git push origin main` sends the commit your `main` points to, with the history
@@ -428,7 +428,7 @@ files in his working directory.
 ```bash
 $> git fetch origin
 From github.com:alice/guessit-ex
-   d20155c..6f658d5  main       -> origin/main
+   02b3426..6f658d5  main       -> origin/main
 ```
 
 Check `README.md`: it has no "Team" section yet.
@@ -479,7 +479,7 @@ directly ahead of it: Git only has to move `main` forward.
 
 ```bash
 $> git merge origin/main
-Updating d20155c..6f658d5
+Updating 02b3426..6f658d5
 Fast-forward
  README.md | 6 ++++++
  1 file changed, 6 insertions(+)
@@ -511,8 +511,8 @@ since he cloned.
 ```bash
 $> git pull
 From github.com:alice/guessit-ex
-   d20155c..6f658d5  main       -> origin/main
-Updating d20155c..6f658d5
+   02b3426..6f658d5  main       -> origin/main
+Updating 02b3426..6f658d5
 Fast-forward
  README.md | 6 ++++++
  1 file changed, 6 insertions(+)
