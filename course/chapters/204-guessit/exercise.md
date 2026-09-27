@@ -1195,12 +1195,19 @@ Finally, you have made the application work, each with commits of your own.
 
 ## :classical_building: Architecture
 
-{% note type: warning %}
+This is a simplified architecture of the main running processes and
+communication flow at the end of this exercise.
 
-**Draft:** the architecture diagram of the application running on your
-computer, Node.js and PostgreSQL, is still to be drawn.
+![Diagram](./images/architecture.png)
 
-{% endnote %}
+<div class="flex items-center gap-2">
+  <a href="./images/architecture.pdf" download="Guess It Local Architecture" class="tooltip" data-tip="Download PDF">
+    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+  <a href="./images/architecture.png" download="Guess It Local Architecture" class="tooltip" data-tip="Download PNG">
+    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
+  </a>
+</div>
 
 ## :boom: Troubleshooting
 
