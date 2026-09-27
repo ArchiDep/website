@@ -3,9 +3,9 @@ title: Guess It
 excerpt_separator: <!-- more -->
 ---
 
-Collaborate on [GitHub][github] as a team of two or three: fork an application,
-push and pull each other's changes, resolve a conflict, then finish the
-application together.
+Collaborate on [GitHub][github] as a team of two or three: fork an incomplete
+application, push and pull each other's changes, resolve a conflict, then finish
+the application together.
 
 <!-- more -->
 
@@ -14,7 +14,8 @@ application together.
 - [Git][git]
 - A free [GitHub][github] account each, with your SSH key
 - A Unix CLI
-- [Node.js][node] 26 and a [PostgreSQL][postgres] server, for the second part
+- [Node.js][node] 26 and a [PostgreSQL][postgres] server, version 14 or newer,
+  for the second part
 
 **Recommended reading**
 
@@ -1055,10 +1056,184 @@ system. On Windows, install it **in the WSL**, with the Linux instructions.
 
 ### :exclamation: Install PostgreSQL
 
-{% note type: warning %}
+The application needs a PostgreSQL server, version 14 or newer. It connects to
+it at `localhost`, on port 5432: that is the address in its connection URL. On
+Windows, the application runs in the WSL, so the server must answer in the WSL.
 
-**Draft:** how to install and run PostgreSQL on your computer is still to be
-written.
+You may already have a PostgreSQL server, installed for another course. Check
+before you install anything: two PostgreSQL servers on the same computer both
+want port 5432, and only one of them can have it.
+
+#### :exclamation: Check what you already have
+
+First, check whether a server already answers on port 5432. Run this in your
+terminal on macOS, or in the WSL on Windows:
+
+```bash
+$> nc -zv localhost 5432
+Connection to localhost (127.0.0.1) 5432 port [tcp/postgresql] succeeded!
+```
+
+The message ends with `succeeded!` if a server answers, and with
+`Connection refused` if none does. It is slightly different on macOS, but it
+ends the same way.
+
+Then check which PostgreSQL servers are installed, and follow the table for your
+system.
+
+**In the WSL, or on Linux:**
+
+```bash
+$> pg_lsclusters
+Ver Cluster Port Status Owner    Data directory              Log file
+16  main    5432 online postgres /var/lib/postgresql/16/main /var/log/postgresql/postgresql-16-main.log
+```
+
+This lists the servers installed with `apt`, Ubuntu's package manager. If the
+command is not found, there is none.
+
+| `nc`         | `pg_lsclusters`                  | Next step                               |
+| :----------- | :------------------------------- | :-------------------------------------- |
+| `succeeded!` | a server on port 5432, `online`  | [Connect as a superuser][pg-connect]    |
+| `succeeded!` | not found, or no server `online` | [Connect as a superuser][pg-connect]    |
+| `refused`    | a server on port 5432, `down`    | [Start your server][pg-start]           |
+| `refused`    | not found                        | [Install PostgreSQL in the WSL][pg-wsl] |
+
+In the second row, the server that answers was not installed with `apt`: it is
+another server, for example one installed on Windows, which some WSL network
+settings make visible in the WSL.
+
+{% note type: tip %}
+
+A PostgreSQL server installed on Windows itself usually does **not** answer in
+the WSL: you are in the last row. This is expected. The WSL has its own
+`localhost`, separate from Windows'. You can install another server in the WSL:
+the two do not interfere with each other.
+
+{% endnote %}
+
+**On macOS:**
+
+```bash
+$> ls -d /Applications/Postgres.app   # Postgres.app
+$> brew list | grep postgresql        # PostgreSQL installed with Homebrew
+$> ls /Library/PostgreSQL             # the installer of postgresql.org
+```
+
+`No such file or directory`, or no output, means that it is not installed.
+`brew: command not found` means that you do not have Homebrew.
+
+| `nc`         | Installed                                        | Next step                               |
+| :----------- | :----------------------------------------------- | :-------------------------------------- |
+| `succeeded!` | anything                                         | [Connect as a superuser][pg-connect]    |
+| `refused`    | Postgres.app, or PostgreSQL in Homebrew          | [Start your server][pg-start]           |
+| `refused`    | nothing, or only the installer of postgresql.org | [Install PostgreSQL on macOS][pg-macos] |
+
+#### :question: Start your server
+
+Start the server you already have:
+
+- **Installed with `apt`, in the WSL or on Linux:**
+
+  ```bash
+  $> sudo service postgresql start
+  ```
+
+  Some WSL installations do not start services by themselves. If the server is
+  stopped again after you restart your computer, start it again the same way.
+
+- **Postgres.app:** open it, and click `Start`.
+- **Homebrew:** start the version that `brew list` printed, for example
+  `postgresql@17`:
+
+  ```bash
+  $> brew services start postgresql@17
+  ```
+
+Run `nc -zv localhost 5432` again: it must now succeed. Then [connect as a
+superuser][pg-connect].
+
+#### :question: Install PostgreSQL in the WSL
+
+Follow the [Install PostgreSQL][wsl-postgres] section of Microsoft's guide to
+databases in the WSL, up to and including `sudo service postgresql start`. You
+do not need to give the `postgres` user a password, as the guide then suggests.
+
+On Linux without the WSL, follow [PostgreSQL's instructions for
+Ubuntu][postgres-ubuntu]: `apt install postgresql` is enough.
+
+Run `nc -zv localhost 5432` again: it must now succeed. Then [connect as a
+superuser][pg-connect].
+
+#### :question: Install PostgreSQL on macOS
+
+Check whether you have [Homebrew][homebrew]:
+
+```bash
+$> brew --version
+Homebrew 5.0.0
+```
+
+- **If you have Homebrew**, install [PostgreSQL 18][brew-postgres] with it, and
+  start it:
+
+  ```bash
+  $> brew install postgresql@18
+  $> brew services start postgresql@18
+  ```
+
+  At the end of its output, `brew install` says that `postgresql@18 is
+keg-only`, and gives an `echo 'export PATH=...' >> ~/.zshrc` command below.
+  Run that command, then open a new terminal: it makes the `psql` command
+  available.
+
+- **Otherwise**, install [Postgres.app][postgres-app] by following the steps on
+  its home page. Do the step that configures your `$PATH`, even though the page
+  says that it is optional: you will need the `psql` command. Then open a new
+  terminal.
+
+Run `nc -zv localhost 5432` again: it must now succeed. Then [connect as a
+superuser][pg-connect].
+
+#### :exclamation: Connect as a superuser
+
+To create the application's database in the next step, you will connect to your
+server as a PostgreSQL superuser. The command depends on where your server
+comes from:
+
+| Your server                               | Superuser command                        |
+| :---------------------------------------- | :--------------------------------------- |
+| Installed with `apt`, in the WSL or Linux | `sudo -u postgres psql`                  |
+| Postgres.app, or Homebrew                 | `psql postgres`                          |
+| Any other server                          | `psql -h localhost -U postgres postgres` |
+
+With any other server, `psql` asks for the password of the `postgres` user,
+which was chosen when that server was installed. If `psql` is not found in the
+WSL, install it with `sudo apt install postgresql-client`.
+
+Use your command to check the version of your server:
+
+```bash
+$> sudo -u postgres psql -c 'SHOW server_version;'
+            server_version
+---------------------------------------
+ 16.10 (Ubuntu 16.10-0ubuntu0.24.04.1)
+(1 row)
+```
+
+It must be 14 or newer. With `apt`, you get the version of your Ubuntu: 14 on
+Ubuntu 22.04, 16 on 24.04, 18 on 26.04. If yours is older, use the [PostgreSQL
+Apt Repository][postgres-ubuntu] to install a newer one.
+
+{% note type: tip %}
+
+`sudo -u postgres psql` may also print
+`could not change directory to "/home/jde/guessit-ex": Permission denied`. It
+runs `psql` as the `postgres` user of your system, which is not allowed in your
+directory. You can ignore this warning.
+
+Postgres.app may ask whether your terminal is allowed to connect to it the
+first time. Allow it.
 
 {% endnote %}
 
@@ -1070,11 +1245,21 @@ database and its table. Open it, and **change the password** it gives the user,
 goes into a URL in the next step, where other characters would have to be
 encoded. It is simpler if everyone in the group uses the same one.
 
-Then run it as a PostgreSQL superuser:
+Then run it with your [superuser command][pg-connect], giving it the file with
+`<`. For example:
 
 ```bash
-$> psql -f schema.sql
+$> sudo -u postgres psql < schema.sql   # installed with apt
+$> psql postgres < schema.sql           # Postgres.app, or Homebrew
 ```
+
+{% note type: more %}
+
+With `<`, your shell reads the file and passes its content to `psql`. With
+`sudo -u postgres`, `psql` runs as another user, which is not allowed to read
+your files, so it could not open the file itself.
+
+{% endnote %}
 
 ### :exclamation: Configure and start the application
 
@@ -1291,12 +1476,51 @@ The home page says that the leaderboard could not be loaded, and the terminal
 where the application runs shows `ECONNREFUSED` in the error below
 `Could not load the leaderboard`. The application cannot reach PostgreSQL on
 port 5432: your PostgreSQL server is either not running or is not reachable on
-that port.
+that port. [Check what you have][pg-check] again, and start your server if it is
+stopped.
+
+### :boom: `psql: command not found`
+
+On macOS, the `psql` command of Postgres.app and of Homebrew's PostgreSQL is not
+available until you configure your `$PATH`, as described in [Install PostgreSQL
+on macOS][pg-macos]. Open a new terminal after doing it.
+
+### :boom: `Peer authentication failed for user "postgres"`
+
+Your server was installed with `apt`. Its `postgres` user can only connect from
+the `postgres` user of your system: use `sudo -u postgres psql`, not
+`psql -U postgres`.
+
+### :boom: `role "jde" does not exist`
+
+Your server was installed with `apt`, and you ran `psql` as yourself. Use
+`sudo -u postgres psql`, as in [Connect as a superuser][pg-connect].
+
+### :boom: Your server no longer starts after you restart your Mac
+
+After you restart your Mac, Postgres.app says that port 5432 is already in use,
+or `brew services list` shows an `error` for your PostgreSQL. Or `nc` succeeds,
+but you can no longer connect as a superuser.
+
+You have an older PostgreSQL server, from the installer of postgresql.org, which
+started first and took port 5432. Uninstall it with the uninstaller in its
+`/Library/PostgreSQL/<version>/` directory, then [start your server][pg-start]
+again.
 
 [ex-repo]: https://github.com/ArchiDep/guessit-ex
+[brew-postgres]: https://formulae.brew.sh/formula/postgresql@18
 [git]: https://git-scm.com
 [github]: https://github.com
 [github-fingerprints]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+[homebrew]: https://brew.sh
 [node]: https://nodejs.org
 [node-download]: https://nodejs.org/en/download
+[pg-check]: #check-what-you-already-have
+[pg-connect]: #connect-as-a-superuser
+[pg-macos]: #install-postgresql-on-macos
+[pg-start]: #start-your-server
+[pg-wsl]: #install-postgresql-in-the-wsl
 [postgres]: https://www.postgresql.org
+[postgres-app]: https://postgresapp.com
+[postgres-ubuntu]: https://www.postgresql.org/download/linux/ubuntu/
+[wsl-postgres]: https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
