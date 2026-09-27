@@ -55,6 +55,23 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTagTest do
                {:ok, solution(~s(<p>Run <code>ls -la</code>.</p>), "Check your prediction"), []}
     end
 
+    test "shows the answer with the emoji it names" do
+      assert render("{% solution emoji: thinking %}\nRun `ls -la`.\n{% endsolution %}") ==
+               {:ok, solution(~s(<p>Run <code>ls -la</code>.</p>), "Solution", ":thinking:"), []}
+    end
+
+    test "shows and reports an answer with an unknown emoji with the default one" do
+      assert render("{% solution emoji: unicorn %}\nRun `ls -la`.\n{% endsolution %}") ==
+               {:ok, solution(~s(<p>Run <code>ls -la</code>.</p>)),
+                [
+                  RenderError.new(
+                    {:invalid_tag, "solution", ~s(Unknown emoji "unicorn")},
+                    @source_path,
+                    %{line: 1, column: 1}
+                  )
+                ]}
+    end
+
     test "shows an answer to reveal always in a page the course has not covered yet" do
       assert render("{% solution reveal: always %}\nRun `ls -la`.\n{% endsolution %}",
                solutions: :hidden
@@ -103,13 +120,13 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTagTest do
         %{line: 1, column: 1}
       )
 
-  defp solution(content, title \\ "Solution"),
+  defp solution(content, title \\ "Solution", emoji \\ ":key:"),
     do:
       ~s(<div class="solution collapse screen:collapse-arrow print:collapse-open ) <>
         ~s(border border-neutral">) <>
         ~s(<input type="checkbox" class="peer" />) <>
         ~s(<div class="collapse-title font-semibold peer-hover:bg-primary/25">) <>
-        ~s(<div class="flex items-center gap-2">:key:<span>#{title}</span></div>) <>
+        ~s(<div class="flex items-center gap-2">#{emoji}<span>#{title}</span></div>) <>
         ~s(</div>) <>
         ~s(<div class="collapse-content overflow-x-auto">#{content}</div>) <>
         ~s(</div>)

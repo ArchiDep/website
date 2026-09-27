@@ -664,7 +664,10 @@ ignored and not included in the first column.
 The `solution` tag creates a collapsible box, hidden by default, that reveals
 its content when clicked. Use it to hide exercise solutions so students can
 attempt the exercise first. It accepts an optional `title` attribute (default
-"Solution").
+"Solution"), and an optional `emoji` attribute naming the emoji its title is
+shown with instead of the default :key: — one of the site's own [emoji][emoji],
+by its name without colons (`emoji: thinking`). An emoji the site does not have
+fails the build.
 
 A solution belongs to a chapter's exercise: writing one on the home page or in a
 cheatsheet fails the build, since there is nothing there for it to answer. The
@@ -689,7 +692,7 @@ Here is the solution to the exercise.
 
 {% endsolution %}
 
-{% solution title: "Check your predictions", reveal: always %}
+{% solution title: "Check your predictions", emoji: thinking, reveal: always %}
 
 Here is what you should have seen.
 

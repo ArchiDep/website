@@ -3,7 +3,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
   `{% solution %}` — the answer to the exercise above it, collapsed on screen so
   that a reader scrolling past does not read it by accident, and open on paper
   where there is nothing to click. `title` overrides the "Solution" it is
-  labelled with.
+  labelled with, and `emoji` the key it is shown with, by the name of one of the
+  site's emoji (`emoji: thinking`).
 
   An answer is only shown once the course has covered the chapter it is in. A
   withheld one is **left out of the page entirely** rather than folded away or
@@ -31,15 +32,23 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
   alias ArchiDep.CourseSite.Renderer.Liquid.Registers
   alias ArchiDep.CourseSite.Renderer.RenderContext
   alias ArchiDep.CourseSite.Renderer.RenderError
+  alias ArchiDep.Emoji
 
   @default_title "Solution"
 
-  @enforce_keys [:loc, :title, :always?, :body, :problems]
-  defstruct [:loc, :title, :always?, :body, :problems]
+  # Naming the emoji rather than spelling its shortcode out is what makes one
+  # the site does not have a broken build rather than a page showing `:key:` in
+  # words, which is what the rest of the site's tags do through
+  # `ArchiDep.CourseSite.Renderer.Liquid.TagIcon`.
+  @default_emoji Emoji.fetch!("key")
+
+  @enforce_keys [:loc, :title, :emoji, :always?, :body, :problems]
+  defstruct [:loc, :title, :emoji, :always?, :body, :problems]
 
   @type t :: %__MODULE__{
           loc: Solid.Lexer.loc(),
           title: String.t(),
+          emoji: Emoji.t(),
           always?: boolean(),
           body: Solid.Parser.parse_tree(),
           problems: [RenderError.reason()]
@@ -50,15 +59,17 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
     with {:ok, tokens, context} <- Solid.Lexer.tokenize_tag_end(context),
          {:ok, attributes} <- Attributes.parse(tokens),
          {:ok, body, context} <- NestedBody.parse(context, "endsolution") do
-      {always?, problems} = reveal(attributes)
+      {always?, reveal_problems} = reveal(attributes)
+      {emoji, emoji_problems} = emoji(attributes)
 
       {:ok,
        %__MODULE__{
          loc: loc,
          title: title(attributes),
+         emoji: emoji,
          always?: always?,
          body: body,
-         problems: problems
+         problems: reveal_problems ++ emoji_problems
        }, context}
     end
   end
@@ -83,6 +94,25 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
     end
   end
 
+  # An emoji the site does not have is reported, and the answer is shown with
+  # the key it would have had without one: the page still reads, and the build
+  # still fails on the typo.
+  defp emoji(attributes) do
+    case Map.fetch(attributes, "emoji") do
+      :error ->
+        {@default_emoji, []}
+
+      {:ok, name} ->
+        case name |> to_string() |> Emoji.fetch() do
+          {:ok, emoji} ->
+            {emoji, []}
+
+          :error ->
+            {@default_emoji, [{:invalid_tag, "solution", "Unknown emoji #{inspect(name)}"}]}
+        end
+    end
+  end
+
   defp title(attributes) do
     case attributes |> Map.get("title", "") |> to_string() |> String.trim() do
       "" -> @default_title
@@ -92,12 +122,6 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
 
   defimpl Solid.Renderable do
     alias ArchiDep.Emoji
-
-    # Naming the emoji rather than spelling its shortcode out is what makes one
-    # the site does not have a broken build rather than a page showing `:key:`
-    # in words, which is what the rest of the site's tags do through
-    # `ArchiDep.CourseSite.Renderer.Liquid.TagIcon`.
-    @key Emoji.shortcode(Emoji.fetch!("key"))
 
     @outside_a_chapter "only a chapter has an exercise for a solution to answer"
 
@@ -114,10 +138,10 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
 
       case Registers.fetch!(context!) do
         %RenderContext{page: {:document, %DocumentRef{}}} when tag.always? ->
-          {solution(tag.title, body), context!}
+          {solution(tag, body), context!}
 
         %RenderContext{page: {:document, %DocumentRef{}}, solutions: :revealed} ->
-          {solution(tag.title, body), context!}
+          {solution(tag, body), context!}
 
         %RenderContext{page: {:document, %DocumentRef{}}} ->
           {"", context!}
@@ -128,13 +152,13 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.SolutionTag do
       end
     end
 
-    defp solution(title, body),
+    defp solution(tag, body),
       do:
         ~s(<div class="solution collapse screen:collapse-arrow print:collapse-open ) <>
           ~s(border border-neutral">) <>
           ~s(<input type="checkbox" class="peer" />) <>
           ~s(<div class="collapse-title font-semibold peer-hover:bg-primary/25">) <>
-          ~s(<div class="flex items-center gap-2">#{@key}<span>#{title}</span></div>) <>
+          ~s(<div class="flex items-center gap-2">#{Emoji.shortcode(tag.emoji)}<span>#{tag.title}</span></div>) <>
           ~s(</div>) <>
           ~s(<div class="collapse-content overflow-x-auto">#{body}</div>) <>
           ~s(</div>)
