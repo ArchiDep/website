@@ -5,8 +5,8 @@ title: Collaborating with Git
 Share your work with [Git][git] through remote repositories, such as those on
 [GitHub][github], and resolve the conflicts that come up when two people change
 the same thing. This is a condensed version of the [Git Basics - Working with
-Remotes][pro-git-remotes] and [Distributed Git][distributed-workflows] chapters of
-the [Git Book][pro-git].
+Remotes][pro-git-remotes] chapter of the [Git Book][pro-git], and the
+[appendix](#appendix-going-further) lists where to read more.
 
 **You will need**
 
@@ -25,30 +25,32 @@ the whole commit graph, not only the latest version of your files. Every copy
 holds everything: this is what makes Git a **distributed** version control
 system. No copy is more important than another, except by agreement.
 
-Collaborating means **pushing** your commits to a remote, and **fetching** the
-commits others have pushed there. Git never does either by itself: nothing is
-shared until you ask for it, and two remotes of the same repository know nothing
-about each other.
+Collaborating means **pushing** your commits to a remote, and **pulling** (or
+**fetching**) the commits others have pushed there. Git never does either by
+itself: nothing is shared until you ask for it, and two remotes of the same
+repository know nothing about each other.
 
 [GitHub][github] is a service that hosts Git repositories, so that you and
 others can push to them and fetch from them. It adds features Git does not have,
-such as access control, issues and pull requests, but the repositories
-themselves are ordinary Git repositories.
+such as access control, [issues][github-issues] and [pull requests][github-pr],
+but the repositories themselves are ordinary Git repositories.
 
 ### `git remote`: name your remotes
 
 A remote is known to your repository by a **name** and a **URL**:
 
 ```bash
-$> git remote add origin git@github.com:jdoe/git-calculator.git  # add a remote
+# add a remote
+$> git remote add origin git@github.com:jdoe/git-calculator.git
+
 $> git remote -v                    # list the remotes and their URLs
 $> git remote rename origin github  # rename a remote
 $> git remote rm github             # remove a remote
 ```
 
-`git clone` adds a remote named `origin`, pointing to the repository it cloned.
-`origin` is only a **conventional name**: a repository can have as many remotes
-as you want, each under a name of your choice.
+`git clone` automatically adds a remote named `origin`, pointing to the
+repository it cloned. "origin" is only a **conventional name**: a repository can
+have as many remotes as you want, each under a name of your choice.
 
 Use the SSH URL GitHub shows for a repository, `git@github.com:<owner>/<repo>`.
 Git connects to GitHub with SSH, and authenticates you with your SSH key.
@@ -83,7 +85,7 @@ branch.
 
 #### A rejected push
 
-A remote only accepts a push that moves its branch **forward**, a
+A remote only accepts a push that moves its branch **forward** with a
 **fast-forward**. If someone else has pushed commits you do not have, moving the
 remote's branch to your commit would throw their work away, so the remote
 refuses:
@@ -100,13 +102,14 @@ hint: have locally. ...
 The reason Git gives says why:
 
 - **`(fetch first)`**: the remote's branch points to a commit your repository
-  does not know at all. Fetch it.
+  does not know at all. [Fetch](#git-fetch-get-the-others-commits) it to see the
+  latest changes or [pull](#git-pull-fetch-and-merge) it to integrate them.
 - **`(non-fast-forward)`**: your repository knows that commit, but your branch
-  does not include it, because the histories have diverged. Merge it.
+  does not include it, because the histories have diverged. Merge it or pull it.
 
 A rejected push changes nothing, on either side. Fetch the others' commits and
-merge them into your branch: your branch then contains their work, and pushing
-it is a fast-forward again.
+merge them into your branch (or do both with a pull): your branch then contains
+their work, and pushing it is a fast-forward again.
 
 ### Remote-tracking branches
 
@@ -156,12 +159,6 @@ histories have diverged.
 `git pull team main` is the same as `git fetch team` followed by
 `git merge team/main`. On a branch with an upstream, `git pull` without
 arguments fetches from the upstream's remote and merges the upstream.
-
-When the histories have diverged, Git needs to know how you want `git pull` to
-reconcile them, and refuses to pull until you tell it. Merging, as `git merge`
-does, is what this course uses: see [configure `git pull`]({% link
-chapters/204-guessit/exercise.md %}#everyone-configure-git-pull) in the Guess It
-exercise.
 
 Fetching and merging in two steps lets you look at what the others did before
 you merge it. `git pull` is the shortcut once you know what to expect.
@@ -230,7 +227,8 @@ To resolve the conflict:
 2. **Stage it** with `git add`, which marks the conflict as resolved.
 3. When `git status` says that all conflicts are fixed, **commit**. The commit
    concludes the merge, with the two commits as parents. `git commit --no-edit`
-   keeps the message Git generated.
+   keeps the message Git generated, and `git commit -m "Your message"` allows
+   you to provide a custom message.
 
 At any point before that commit, `git merge --abort` gives up on the merge and
 puts everything back as it was before it.
@@ -239,70 +237,78 @@ Conflicts are normal when several people work on the same code, and small ones
 are easy to resolve. Pulling often, and committing small changes, keeps them
 small.
 
-## Distributed workflows
+## Appendix: going further
 
-There are [many ways][distributed-workflows] to organize a team's work with Git.
-They differ in who pushes to which repository, and who merges what.
+This subject stops at what a small team sharing one repository needs day to day.
+These pages of the [Pro Git][pro-git] book go further:
 
-_The figures of this section come from [Pro Git][pro-git], by Scott Chacon and
-Ben Straub ([CC BY-NC-SA 3.0][cc-by-nc-sa-3])._
+- [**Distributed Workflows**][distributed-workflows]
 
-### Centralized workflow
+  The ways to organize a team's work with Git, which differ in who pushes to
+  which repository and who merges what. The [Guess It][guessit] exercise uses
+  the simplest one, a **centralized workflow** where everyone pushes to one
+  shared repository. Most open source projects use an **integration manager
+  workflow** instead, where contributors push to their own copy and a maintainer
+  merges their work.
 
-Many teams use a simple **centralized workflow**:
+- [**Remote Branches**][pro-git-remote-branches]
 
-<img src='images/centralized-workflow.png' width='60%' />
+  Remote-tracking branches and upstreams in more detail: pushing a branch under
+  another name, tracking other branches than `main`, and deleting a branch on a
+  remote.
 
-- A **shared central repository** is hosted on a server such as GitHub.
-- Each developer has a **repository on their own computer**, with the shared
-  repository as a remote.
-- Everyone pushes to the shared repository, and fetches or pulls the others'
-  work from it.
+- [**Contributing to a Project**][pro-git-contributing] and [**Maintaining a
+  Project**][pro-git-maintaining]
 
-This is the workflow of the [Guess It]({% link
-chapters/204-guessit/exercise.md %}) exercise.
+  Both sides of each workflow: how to prepare and share your work in a small
+  team, in a larger one, or in a public project you cannot push to; and how to
+  review and integrate the work of others.
 
-### Integration manager workflow
+- [**GitHub - Contributing to a Project**][pro-git-github-contributing]
 
-The classic workflow of many open source projects:
+  [**Forks**][github-fork] and [**pull requests**][github-pr], the way most
+  projects on GitHub take in contributions.
 
-<img src='images/integration-manager-workflow.png' width='80%' />
+- [**Basic Merge Conflicts**][pro-git-merge-conflicts] and [**Advanced
+  Merging**][pro-git-advanced-merging]
 
-- The **project maintainer pushes to their public repository**.
-- **Contributors clone that repository**, make changes, **push to their own
-  public copy** (a **fork** on GitHub), and ask the maintainer to merge their
-  changes with a **pull request** on GitHub (or by email).
-- The **maintainer merges the changes**, on GitHub or locally before pushing
-  them to the main repository.
+  More ways to understand and resolve a conflict: graphical merge tools with
+  `git mergetool`, showing the common ancestor's version of the conflicting
+  lines, taking one side for a whole file, and undoing a merge.
 
-One of the main advantages of this approach is that you can continue to work,
-and **the maintainer of the main repository can pull in your changes at any
-time**. Contributors do not have to wait for the project to incorporate their
-changes: each party can work at their own pace.
+- [**Rerere**][pro-git-rerere]
 
-### Benevolent dictator workflow
+  "Reuse recorded resolution": Git remembers how you resolved a conflict, and
+  resolves the same conflict the same way the next time it comes up.
 
-A workflow for very large projects:
+- [**Rebasing**][pro-git-rebasing]
 
-<img src='images/benevolent-dictator-workflow.png' width='80%' />
+  The other way to integrate the others' work: `git pull --rebase` replays your
+  commits on top of theirs instead of merging, which keeps the history linear.
+  Read "The Perils of Rebasing" before you rebase commits you have already
+  pushed.
 
-- Regular **developers work on their topic branch** and rebase their work on
-  top of `main` in the reference repository.
-- **Lieutenants merge the developers' topic branches** into their `main` branch.
-- The **dictator merges the lieutenants' `main` branches** into the dictator's
-  `main` branch.
-- Finally, the **dictator pushes that `main` branch to the reference
-  repository**, so that the other developers can rebase on it.
+- [**The Refspec**][pro-git-refspec]
 
-This kind of workflow is not common, but it can be useful in **very big
-projects**, or in highly hierarchical environments. It allows the project
-leader (the dictator) to delegate much of the work and collect large subsets of
-code at multiple points before integrating them. The Linux kernel is developed
-this way.
+  How `git fetch` and `git push` decide which remote branch goes to which local
+  branch, and how to change it.
 
-[cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
 [distributed-workflows]: https://git-scm.com/book/en/v2/Distributed-Git-Distributed-Workflows
 [git]: https://git-scm.com
 [github]: https://github.com
+[github-fork]: https://docs.github.com/en/pull-requests/get-started/about-forks
+[github-issues]: https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues
+[github-pr]: https://docs.github.com/en/pull-requests/reference/pull-requests
+
+[guessit]: {% link chapters/204-guessit/exercise.md %}
 [pro-git]: https://git-scm.com/book/en/v2
+[pro-git-advanced-merging]: https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging
+[pro-git-contributing]: https://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project
+[pro-git-github-contributing]: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
+[pro-git-maintaining]: https://git-scm.com/book/en/v2/Distributed-Git-Maintaining-a-Project
+[pro-git-merge-conflicts]: https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging#_basic_merge_conflicts
+[pro-git-rebasing]: https://git-scm.com/book/en/v2/Git-Branching-Rebasing
+[pro-git-refspec]: https://git-scm.com/book/en/v2/Git-Internals-The-Refspec
+[pro-git-rerere]: https://git-scm.com/book/en/v2/Git-Tools-Rerere
+[pro-git-remote-branches]: https://git-scm.com/book/en/v2/Git-Branching-Remote-Branches
 [pro-git-remotes]: https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes

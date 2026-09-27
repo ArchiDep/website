@@ -20,11 +20,11 @@ sections:
     description: >-
       Git from the ground up, as a model rather than a list of commands:
       snapshots, the staging area, commits, branches as pointers to commits,
-      fast-forward and three-way merges, and conflicts. It then covers remotes
-      and collaboration workflows, pushing, fetching and pulling with GitHub
-      over SSH, resolving a rejected push, and working as a team on a shared
-      repository. It condenses the Pro Git book and stops at what a small team
-      needs day to day. Later sections deploy code with Git.
+      fast-forward and three-way merges, and conflicts. It then covers remotes,
+      pushing, fetching and pulling with GitHub over SSH, resolving a rejected
+      push, and working as a team on a shared repository. It condenses the Pro
+      Git book and stops at what a small team needs day to day. Later sections
+      deploy code with Git.
   - title: Security
     description: >-
       A short introduction to web application security: the OWASP Top 10 as the

@@ -98,9 +98,9 @@ book.
 
 ## The basic Git commands
 
-This section is a written version of the demonstration in the slides: the
-commands you will use every day, what they do, and the options you will need
-most often. You can practise all of them in [Hello Git][hello-git].
+This section explains the commands you will use every day, what they do, and the
+options you will need most often. You can practise all of them in [Hello
+Git][hello-git].
 
 A few words come back throughout:
 
@@ -347,10 +347,26 @@ Useful options:
 - `--graph` draws the branches and merges on the left.
 - `--all` shows the commits of all branches, not only the current one.
 - `--patch` (or `-p`) shows the changes made by each commit.
+- `--stat` lists the files changed by each commit, and `--name-status` also
+  says whether each file was added, modified, deleted or renamed.
 - `-n 5` (or `-5`) shows only the last 5 commits.
+- `--reverse` shows the oldest commits first.
 
-Together, `git log --oneline --graph --all` draws the whole commit graph of the
-repository. The slides define it as an alias, `git graph`:
+To search the history:
+
+- `--grep <text>` only shows the commits whose message contains the text. Add
+  `-i` to ignore uppercase and lowercase.
+- `--author <name>` only shows the commits of an author.
+- `-S <text>` only shows the commits whose changes added or removed the text,
+  even when their message does not mention it.
+- `-- <file>` only shows the commits that changed that file. Add `--follow` to
+  keep following the file through its renames.
+
+The options combine: `git log --oneline -i --grep fix -- index.html` lists the
+commits that changed `index.html` and mention a fix in their message.
+
+`git log --oneline --graph --all` draws the whole commit graph of the
+repository. You can define it as an alias, `git graph`:
 
 ```bash
 $> git config --global alias.graph "log --oneline --decorate --graph --all"
@@ -552,6 +568,69 @@ which it does automatically after a few weeks.
   If you want to go further, look at _Conventional Commits_, a specification for
   adding human and machine readable meaning to commit messages.
 
+## Appendix: going further
+
+This subject covers the commands you need every day. These pages of the [Pro
+Git][pro-git] book go further:
+
+- [**Ignoring Files**][pro-git-ignoring]
+
+  A `.gitignore` file tells Git which files never to track, such as build
+  output, dependencies, or files holding secrets, so that `git status` and
+  `git add .` leave them alone.
+
+- [**Interactive Staging**][pro-git-interactive-staging]
+
+  Stage only some of the changes in a file with `git add -p`, to split your work
+  into several focused commits.
+
+- [**Stashing and Cleaning**][pro-git-stashing]
+
+  Put uncommitted changes aside with `git stash`, to switch branches with a
+  clean working directory, and get them back later.
+
+- [**Tagging**][pro-git-tagging]
+
+  Name a commit that matters, such as a release, with a tag that never moves,
+  unlike a branch.
+
+- [**Undoing Things**][pro-git-undoing] and [**Reset
+  Demystified**][pro-git-reset]
+
+  More ways to undo, and how `git reset` moves a branch and changes the staging
+  area and working directory, which is the key to many of Git's other commands.
+
+- [**Revision Selection**][pro-git-revision-selection]
+
+  The many ways to name a commit besides its hash, such as `HEAD~2`, `main^`,
+  ranges like `main..feature`, and the **reflog**, which records where your
+  branches and `HEAD` have been and lets you find commits no branch points to.
+
+- [**Rebasing**][pro-git-rebasing]
+
+  The other way to integrate the work of a branch: `git rebase` replays its
+  commits on top of another branch instead of merging, which keeps the history
+  linear. Read "The Perils of Rebasing" before you rebase commits you have
+  already shared.
+
+- [**Rewriting History**][pro-git-rewriting-history]
+
+  Clean up your commits before you share them: reword, reorder, squash or split
+  them with an interactive rebase (`git rebase -i`). Like
+  [`git commit --amend`](#changing-the-last-commit-git-commit---amend), it
+  replaces commits with new ones, so do not rewrite commits you have already
+  shared.
+
+- [**Debugging with Git**][pro-git-debugging]
+
+  Find who last changed each line of a file with `git blame`, and which commit
+  introduced a bug with `git bisect`, a binary search through the history.
+
+- [**Git Internals**][pro-git-internals]
+
+  How Git stores snapshots, commits and branches in the `.git` directory, for
+  those who want to know how it works under the hood.
+
 ## Appendix: a short history of version control
 
 Git was not the first version control system. It belongs to the third of three
@@ -637,5 +716,16 @@ licensed under [CC BY-NC-SA 3.0][cc-by-nc-sa-3]._
 [hello-git]: {% link chapters/202-hello-git/exercise.md %}
 [mercurial]: https://www.mercurial-scm.org/
 [pro-git]: https://git-scm.com/book/en/v2
+[pro-git-debugging]: https://git-scm.com/book/en/v2/Git-Tools-Debugging-with-Git
+[pro-git-ignoring]: https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository#_ignoring
+[pro-git-interactive-staging]: https://git-scm.com/book/en/v2/Git-Tools-Interactive-Staging
+[pro-git-internals]: https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain
+[pro-git-rebasing]: https://git-scm.com/book/en/v2/Git-Branching-Rebasing
+[pro-git-reset]: https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified
+[pro-git-revision-selection]: https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection
+[pro-git-rewriting-history]: https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History
+[pro-git-stashing]: https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning
+[pro-git-tagging]: https://git-scm.com/book/en/v2/Git-Basics-Tagging
+[pro-git-undoing]: https://git-scm.com/book/en/v2/Git-Basics-Undoing-Things
 [rcs]: https://en.wikipedia.org/wiki/Revision_Control_System
 [svn]: https://subversion.apache.org/
