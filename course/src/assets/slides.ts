@@ -9,15 +9,11 @@ import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/solarized.css';
 import 'reveal.js/plugin/highlight/monokai.css';
 import 'tippy.js/dist/tippy.css';
-// Stories are registered by importing the registry, and only then is the custom
-// element defined, so the `<simgit-story>` tags already in the deck upgrade
-// against a populated registry. They need no reveal.js lifecycle wiring: each
-// embed defers on its own IntersectionObserver and replays when its slide comes
-// back.
-import './simgit';
-import { defineSimgitStoryElement } from '@alphahydrae/simgit';
+// The embeds need no reveal.js lifecycle wiring: each one defers on its own
+// IntersectionObserver and replays when its slide comes back.
+import { defineStoryElement } from './simgit';
 
-defineSimgitStoryElement();
+defineStoryElement();
 
 const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');

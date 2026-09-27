@@ -823,11 +823,19 @@ a raw `<simgit-story>` element naming a story and the chapters to play:
 
 The named stories are written in [`src/assets/simgit/`](./src/assets/simgit),
 one file per chapter or group of chapters that uses them, and registered in
-[`src/assets/simgit/index.ts`](./src/assets/simgit/index.ts), which is imported
-by both [`src/assets/course.ts`](./src/assets/course.ts) and
-[`src/assets/slides.ts`](./src/assets/slides.ts) before the element is defined.
-Each embed waits until it is visible and replays when it comes back into view,
-so it needs no wiring into the reveal.js slide lifecycle.
+[`src/assets/simgit/index.ts`](./src/assets/simgit/index.ts), which both
+[`src/assets/course.ts`](./src/assets/course.ts) and
+[`src/assets/slides.ts`](./src/assets/slides.ts) use to define the element. A
+story that draws more than one computer is registered as such there, so that its
+embeds stack the computers and name them.
+
+Such a multi-computer diagram is sometimes too tall to share a slide with
+anything else. Give it a slide of its own, with its heading hidden, marked `<!--
+.slide: class="full-diagram" -->`, and embed it with `sizing='explicit'`: it
+then takes the whole window, except a strip at the bottom for the logos and
+controls (see [`theme/src/slides.css`](../theme/src/slides.css)). Each embed
+waits until it is visible and replays when it comes back into view, so it needs
+no wiring into the reveal.js slide lifecycle.
 
 ---
 

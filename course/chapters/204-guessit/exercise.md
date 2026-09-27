@@ -19,7 +19,7 @@ application together.
 **Recommended reading**
 
 - [Version Control with Git]({% link chapters/201-git/subject.md %})
-- [Collaborating with Git]({% link chapters/203-git-collaborating/slides.md %})
+- [Collaborating with Git]({% link chapters/203-git-collaborating/subject.md %})
 
 **Going further**
 

@@ -78,7 +78,7 @@ parent af8051aa78016f10f1e0775ab9282d61a0862ffd
 author John Doe <john.doe@example.com> 1486906554 +0100
 committer John Doe <john.doe@example.com> 1486906554 +0100
 
-Comment add function
+Add readme
 ```
 
 Here's the tree it points to:
@@ -181,11 +181,11 @@ repository that already exists, usually on a server such as GitHub:
 
 ```bash
 $> cd /path/to/projects
-$> git clone https://github.com/ArchiDep/git-branching-ex.git
-Cloning into 'git-branching-ex'...
+$> git clone https://github.com/ArchiDep/git-calculator.git
+Cloning into 'git-calculator'...
 ```
 
-This creates a `git-branching-ex` directory containing the **whole** repository
+This creates a `git-calculator` directory containing the **whole** repository
 — every commit of its history, not only the latest version — and fills its
 working directory with the files of the default branch, ready to work on.
 `git clone <url> <directory>` puts it in a directory with a name of your choice.
@@ -299,12 +299,12 @@ moves forward to point to the new commit.
 
 ```bash
 $> git commit -m "Implement subtraction"
-[sub 712ff2] Implement subtraction
+[sub 7f2a5d0] Implement subtraction
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
 The new commit is named by its [hash](#how-git-stores-your-project), such as
-`712ff2c…`. Git often shows only its first few characters.
+`7f2a5d0…`. Git often shows only its first few characters.
 
 The options you will use most:
 
@@ -330,7 +330,7 @@ hash, author, date and message.
 
 ```bash
 $> git log
-commit 712ff2c...
+commit 7f2a5d0...
 Author: John Doe <john.doe@example.com>
 Date:   Thu Oct 1 10:12:34 2026 +0200
 
@@ -355,8 +355,8 @@ repository. The slides define it as an alias, `git graph`:
 ```bash
 $> git config --global alias.graph "log --oneline --decorate --graph --all"
 $> git graph
-* 712ff2 (HEAD -> sub) Implement subtraction
-* 4f94fa (main) Improve layout
+* 7f2a5d0 (HEAD -> sub) Implement subtraction
+* 907e519 (main) Add readme
 ...
 ```
 

@@ -159,9 +159,9 @@ This prepared repository serves to illustrate branching.
 ```bash
 $> cd /path/to/projects
 
-$> git clone https://github.com/ArchiDep/git-branching-ex.git
+$> git clone https://github.com/ArchiDep/git-calculator.git
 
-$> cd git-branching-ex
+$> cd git-calculator
 
 # We will talk more about this
 $> git remote rm origin
@@ -187,9 +187,9 @@ $> git config --global alias.graph \
    "log --oneline --decorate --graph --all"
 
 $> git graph
-* 4f94fa (HEAD -> main) Improve layout
-* 9ab3fd Fix addition
-* 387f12 First version
+* 907e519 (HEAD -> main) Add readme
+* 24bb77c Add license
+* 073570e Initial commit
 ```
 
 **Notes:**
@@ -225,8 +225,8 @@ current one:
 
 ```bash
 $> git branch
-  sub
 * main
+  sub
 ```
 
 ---
@@ -284,10 +284,12 @@ them, line by line:
 ```bash
 $> git diff
 diff --git a/subtraction.js b/subtraction.js
-index 1ef2791..612b196 100644
+index 88fc891..c5770d6 100644
 --- a/subtraction.js
 +++ b/subtraction.js
-@@ -1,5 +1,5 @@
+@@ -2,7 +2,7 @@
+  * Takes two numbers, a and b, and returns their subtraction.
+  */
  function subtract(a, b) {
 -  return '?';
 +  return a - b;
@@ -400,7 +402,7 @@ the next commit will contain. Check it before you commit.
 
 ```bash
 $> git commit -m "Implement subtraction"
-[sub 712ff2] Implement subtraction
+[sub 7f2a5d0] Implement subtraction
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
@@ -481,7 +483,7 @@ Nothing changed yet because `fix-add` still points to the same commit as `main`.
 ```bash
 $> git add addition.js
 $> git commit -m "Fix addition"
-[fix-add 2817bc] Fix addition
+[fix-add a4160d7] Fix addition
  1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
@@ -571,7 +573,7 @@ you must first switch to the `main` branch.
 
 ```bash
 $> git merge fix-add
-Updating 4f94fa..2817bc
+Updating 907e519..a4160d7
 Fast-forward
  addition.js | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -601,7 +603,7 @@ pointer forward**. This is what is called a **fast-forward**.
 
 ```bash
 $> git branch -d fix-add
-Deleted branch fix-add (was 2817bc).
+Deleted branch fix-add (was a4160d7).
 ```
 
 <simgit-story name='branching' start-chapter='fast-forward-merge' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
@@ -627,13 +629,13 @@ Can we do a fast forward here?
 Now we want to **merge** the subtraction feature into `main` as well. But `main`
 has moved on since `sub` was created, so Git cannot do a fast-forward:
 
-- `sub` points to commit `712ff2`, which contains our feature.
-- `main` points to commit `2817bc`, which contains the addition fix.
-- Commit `4f94fa` is their common ancestor.
+- `sub` points to commit `7f2a5d0`, which contains our feature.
+- `main` points to commit `a4160d7`, which contains the addition fix.
+- Commit `907e519` is their common ancestor.
 
 If you moved `main` to `sub`'s current commit, you would **lose the addition
-fix**, and commit `2817bc` would become **unreachable**: no branch would lead to
-it any more. Git will not let you do that (at least not without insistence).
+fix**, and commit `a4160d7` would become **unreachable**: no branch would lead
+to it any more. Git will not let you do that (at least not without insistence).
 
 Instead, it will do a **three-way merge**, combining the changes of `main` and
 `sub` (compared to their common ancestor). A **new commit** will be created
@@ -703,16 +705,16 @@ The **merge commit** that Git has just created is a commit like any other: a
 snapshot of the whole project, with an author, a date and a message. To build
 its snapshot, Git performed a **three-way merge**, comparing three commits:
 
-- `4f94fa`, the **common ancestor** of the two branches;
-- `2817bc`, the commit `main` pointed to, which changed `addition.js`;
-- `712ff2`, the commit `sub` pointed to, which changed `subtraction.js`.
+- `907e519`, the **common ancestor** of the two branches;
+- `a4160d7`, the commit `main` pointed to, which changed `addition.js`;
+- `7f2a5d0`, the commit `sub` pointed to, which changed `subtraction.js`.
 
 Each branch changed something the other did not touch, so Git could apply both
 sets of changes to the common ancestor without having to choose between them.
 The result has both the addition fix and the subtraction.
 
-What makes this commit special is that it has **two parents**: `2817bc`, the
-commit you were on, and `712ff2`, the commit of the branch you merged in. That
+What makes this commit special is that it has **two parents**: `a4160d7`, the
+commit you were on, and `7f2a5d0`, the commit of the branch you merged in. That
 is how the history records that two lines of development were joined. As with
 any commit, the current branch, `main`, moved forward to it, while `sub` stayed
 where it was.
@@ -722,14 +724,14 @@ The history of `main` now includes the commits of both branches, which
 
 ```bash
 $> git graph
-*   04fb82 (HEAD -> main) Merge branch 'sub'
+*   e0711c3 (HEAD -> main) Merge branch 'sub'
 |\
-| * 712ff2 (sub) Implement subtraction
-* | 2817bc Fix addition
+| * 7f2a5d0 (sub) Implement subtraction
+* | a4160d7 Fix addition
 |/
-* 4f94fa Improve layout
-* 9ab3fd Fix addition
-* 387f12 First version
+* 907e519 Add readme
+* 24bb77c Add license
+* 073570e Initial commit
 ```
 
 Had both branches changed the same lines of the same file, Git could not have

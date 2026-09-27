@@ -19,7 +19,7 @@ and [Render][render].
 - [Command line]({% link chapters/101-command-line/subject.md %})
 - [Git]({% link chapters/201-git/subject.md %}), [Git branching]({% link
   chapters/201-git/slides/slides.md %}), [Collaborating with Git]({% link
-  chapters/203-git-collaborating/slides.md %}), [Git hooks]({% link
+  chapters/203-git-collaborating/subject.md %}), [Git hooks]({% link
   chapters/601-git-hooks/subject.md %})
 
 ## What is PaaS?
