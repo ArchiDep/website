@@ -948,10 +948,10 @@ instead of one.
 
 ## :question: History hunt
 
-This exercise is **optional**. Every project on GitHub comes with its whole history, and you can search it
-without leaving your terminal. Clone the repository of [2048][2048], the puzzle
-game that went viral in 2014, next to your `hello-git` directory (not inside
-it):
+This exercise is **optional**. Every project on GitHub comes with its whole
+history, and you can search it without leaving your terminal. Clone the
+repository of [2048][2048], the puzzle game that went viral in 2014, next to
+your `hello-git` directory (not inside it):
 
 ```bash
 $> cd /path/to/projects
@@ -1150,22 +1150,60 @@ renamed.
 
 ## :checkered_flag: What have I done?
 
-You created a repository and made commits, and each prediction checked one piece
-of how Git works:
+You kept the history of a project: every version you committed is still there,
+to go back to, compare, or build on in parallel. All of it lives in the hidden
+`.git` directory at the root of your project, the **Git directory**. Without it,
+your files stay but their history is gone. Copied elsewhere, it carries the
+whole history with it, which is what `git clone` does.
 
-- A new file is **untracked** until you add it, and a commit contains **only
-  what is staged**.
-- The working directory, the staging area and the repository are **three
-  separate places**. `git add` puts a snapshot of a file in the staging area as
-  it is at that moment, which is why a file can be both staged and modified.
-  `git diff` and `git diff --cached` show you the difference between them.
-- `.gitignore` keeps files out of the repository, but only files Git does not
-  track yet. A secret that has been committed stays in the history: the only
-  real fix is to change the secret.
-- A branch is a pointer to a commit. Switching moves `HEAD` and rewrites the
-  files of your working directory to match another snapshot.
-- Whether a merge is a fast-forward or creates a merge commit depends on the
-  shape of the history when you merge.
+Along the way, you:
+
+- Created a repository and made commits.
+- Committed a file that was both staged and modified.
+- Ignored files, and stopped tracking one that was committed too late.
+- Created branches, switched between them, and merged them.
+- (Optionally) searched the history of a real project.
+
+A commit saves the **staging area**, not your files. Git keeps your project in
+three places: the working directory, where you edit; the staging area, where you
+prepare the next commit; and the Git directory, where commits are stored. `git
+add` copies a file from the first to the second as it is at that moment, which
+is how `hello.txt` could be both staged and modified. `git status` tells you
+where each change is.
+
+A commit is a snapshot of the whole project, named by the **hash** of its
+content. Change anything in it, even its author or its date, and it becomes a
+different commit, which is why the commits you made do not have the hashes shown
+on this page. A commit, once made, never changes.
+
+That is why your first API key is still in the history, even after you stopped
+tracking it, and anyone with a copy has it. The only real fix for a committed
+secret is to change it. `.gitignore` only protects files Git does not track yet,
+so it has to come **before** the secret, and it is committed so that everyone on
+the project shares it. Keeping secrets out of the code comes back later in the
+course.
+
+A **branch** is only a pointer to a commit, and `HEAD` says which one you are
+on. Committing moves the current branch forward. Switching moves `HEAD` and
+rewrites your working directory to match another snapshot. Nothing is lost when
+you switch: `goodbye.txt` disappeared from `main`, but it was still in the
+commit of `bye`.
+
+How Git **merges** depends only on the shape of the history. When the other
+branch is directly ahead, as `fix-typo` was, Git just moves the pointer forward:
+a fast-forward. When the two have diverged, as `contact-page` had, Git combines
+what each side changed since their common ancestor into a merge commit, which
+has two parents. Merged in another order, the same branches give the same files
+but a different history.
+
+If you went on the history hunt, you also saw that a history is something you
+can search, and that an author's name is only what they configured.
+
+So far, your history has lived in a single copy, on your computer. In
+[Collaborating with Git][collaborating], you share it with others through a
+remote, where diverged histories come back as refused pushes and conflicts.
+Later in the course, a repository is also how you put your application on your
+server.
 
 ## :question: Going further
 
@@ -1469,6 +1507,8 @@ switching to it. Delete the `hello-git-merges` directory, clone it again, and
 follow the steps in [two merges](#two-merges) in order.
 
 [2048]: https://gabrielecirulli.github.io/2048/
+
+[collaborating]: {% link chapters/203-git-collaborating/subject.md %}
 [git]: https://git-scm.com/
 [git-filter-repo]: https://github.com/newren/git-filter-repo
 [git-graph]: https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph

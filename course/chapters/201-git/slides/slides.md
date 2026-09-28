@@ -332,7 +332,8 @@ A Git project has three main parts:
 - The **working directory**: it contains the **files you are currently working
   on**; that is, **one specific version** of your project. These files are
   pulled out of the compressed database in the Git directory and placed in your
-  project's directory for you to use or modify:
+  project's directory for you to use or modify.
+
 - The **staging area** (also called the **index**), that stores information
   about **what will go into the next commit (or version)**.
 
@@ -674,7 +675,7 @@ Merge branch 'sub'
 ```
 
 If you are in Vim, press `Esc`, then type `:q!` and press `Enter`. If you are in
-nano, use `Ctrl-X`, then `Y` and `Enter` to confirm.
+nano, press `Ctrl-X`.
 
 **Notes:**
 
