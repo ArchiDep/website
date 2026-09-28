@@ -41,7 +41,12 @@ body {
    says by how much in `--slide-scale`, so the window's size in the slide's own
    units is the viewport's divided by that scale. The slide is kept at the top,
    rather than centred vertically, so that the diagram's offsets are measured
-   from a known place. */
+   from a known place.
+
+   When printing, reveal.js lays nothing out and sets none of the window's
+   properties: each slide is printed on a page of its own size, unscaled, so
+   the diagram takes the whole slide. Neither the logos nor the controls are
+   printed, so no strip is kept for them. */
 .reveal .slides section.full-diagram {
   top: 0 !important;
   padding: 0;
@@ -49,18 +54,36 @@ body {
 
 .reveal .slides section.full-diagram simgit-story {
   --full-diagram-bottom: 96px;
+  --full-diagram-scale: var(--slide-scale, 1);
+  --full-diagram-width: var(--viewport-width, var(--slide-width));
+  --full-diagram-height: var(--viewport-height, var(--slide-height));
 
-  width: calc(var(--viewport-width) / var(--slide-scale));
+  width: calc(var(--full-diagram-width) / var(--full-diagram-scale));
   height: calc(
-    (var(--viewport-height) - var(--full-diagram-bottom)) / var(--slide-scale)
+    (var(--full-diagram-height) - var(--full-diagram-bottom)) /
+      var(--full-diagram-scale)
   );
   margin: calc(
-      (var(--slide-height) - var(--viewport-height) / var(--slide-scale)) / 2
+      (
+          var(--slide-height) - var(--full-diagram-height) /
+            var(--full-diagram-scale)
+        ) /
+        2
     )
     0 0
-    calc((var(--slide-width) - var(--viewport-width) / var(--slide-scale)) / 2);
+    calc(
+      (
+          var(--slide-width) - var(--full-diagram-width) /
+            var(--full-diagram-scale)
+        ) /
+        2
+    );
   border: none;
   border-radius: 0;
+
+  @media print {
+    --full-diagram-bottom: 0px;
+  }
 }
 
 .reveal .slides section.full-diagram simgit-story::part(controls) {
