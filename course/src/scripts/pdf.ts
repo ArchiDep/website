@@ -104,12 +104,24 @@ const progress = new ProgressBar(
 );
 
 const progressInterval = setInterval(() => progress.render(), 1000);
+
+// The progress bar draws nothing unless it has a terminal to draw on, which
+// would leave a CI log saying nothing about which document a failure was in or
+// how long each one took.
+const logProgress = process.stdout.isTTY !== true;
+function startPrinting(what: string): void {
+  progress.render({ what });
+  if (logProgress) {
+    console.log(`${new Date().toISOString()} Printing ${what}`);
+  }
+}
+
 const browser = await puppeteer.launch();
 
 try {
   const page = await browser.newPage();
 
-  progress.render({ what: 'Home' });
+  startPrinting('Home');
   await exportPageToPdf(
     page,
     new URL(courseData.home.url, baseUrl),
@@ -119,7 +131,7 @@ try {
 
   for (const doc of docsToExport) {
     const docUrl = new URL(doc.url, baseUrl);
-    progress.render({ what: doc.title });
+    startPrinting(doc.title);
 
     const params = new URLSearchParams();
     if (doc.course_type === 'slides') {
@@ -138,6 +150,7 @@ try {
 
     if (doc.slides_pdf !== null) {
       params.set('print-pdf', '');
+      startPrinting(`${doc.title} (slides)`);
 
       const slidesUrl = new URL('slides/', docUrl);
       slidesUrl.search = params.toString();
@@ -153,7 +166,7 @@ try {
   }
 
   for (const cheatsheet of courseData.cheatsheets) {
-    progress.render({ what: cheatsheet.title });
+    startPrinting(cheatsheet.title);
 
     await exportPageToPdf(
       page,
@@ -211,5 +224,8 @@ async function exportToPdf(
 
   await page.bringToFront();
 
-  await page.pdf(options);
+  // Puppeteer's default of 30 seconds is less than a large slide deck can take
+  // to print on a shared CI runner. A document that is merely slow is not a
+  // failure; the CI job has its own timeout for one that never finishes.
+  await page.pdf({ timeout: 120_000, ...options });
 }
