@@ -1,5 +1,4 @@
 import { G, O, pipe } from '@mobily/ts-belt';
-import { init } from '@plausible-analytics/tracker';
 import { effect } from '@preact/signals';
 import ClipboardJS from 'clipboard';
 import { isRight } from 'fp-ts/lib/Either';
@@ -34,15 +33,6 @@ new ClipboardJS('[data-clipboard-target], [data-clipboard-text]');
 
 const standalone =
   document.querySelector('head')?.dataset['archidepStandalone'] === 'true';
-
-if (!standalone) {
-  init({
-    domain: 'archidep.ch',
-    endpoint: 'https://plausible.alphahydrae.ch/api/event',
-    autoCapturePageviews: true,
-    outboundLinks: true
-  });
-}
 
 defineStoryElement();
 

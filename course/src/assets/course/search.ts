@@ -8,7 +8,6 @@ import { match } from 'ts-pattern';
 import { getValidationErrorDetails } from '../../shared/codecs/utils';
 import log from '../logging';
 import { isMacOs, required, toggleClass } from '../utils';
-import { trackEvent } from './plausible';
 import searchDialogTemplate from './search-dialog.template.html';
 import searchResultTemplate from './search-result.template.html';
 
@@ -383,8 +382,6 @@ function performSearch(idx: lunr.Index, data: readonly SearchElement[]): void {
     return;
   }
 
-  trackSearch(query);
-
   const actualQuery = quickSearch[query.toLowerCase()] ?? query;
 
   // A hit names an entry by its identifier, and what the dialog shows is the
@@ -716,8 +713,4 @@ function elementIsVisibleInViewport(
         (bottom > 0 && bottom < innerHeight)) &&
         ((left > 0 && left < innerWidth) || (right > 0 && right < innerWidth))
     : top >= 0 && left >= 0 && bottom <= innerHeight && right <= innerWidth;
-}
-
-function trackSearch(query: string): void {
-  trackEvent('search', { query });
 }

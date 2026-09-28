@@ -21,7 +21,7 @@ defmodule ArchiDepWeb.Router do
 
     plug(:put_secure_browser_headers, %{
       "content-security-policy" =>
-        "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; connect-src 'self' plausible.alphahydrae.ch; font-src 'self' fonts.gstatic.com; img-src 'self' status.archidep.ch data:; script-src 'self' plausible.alphahydrae.ch; style-src-elem 'self' fonts.googleapis.com;"
+        "default-src 'self'; base-uri 'self'; frame-ancestors 'self'; connect-src 'self'; font-src 'self' fonts.gstatic.com; img-src 'self' status.archidep.ch data:; script-src 'self'; style-src-elem 'self' fonts.googleapis.com;"
     })
 
     plug Plug.SSL,

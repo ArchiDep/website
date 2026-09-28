@@ -108,9 +108,6 @@ const browser = await puppeteer.launch();
 
 try {
   const page = await browser.newPage();
-  await page.evaluateOnNewDocument(() => {
-    localStorage.setItem('plausible_ignore', 'true');
-  });
 
   progress.render({ what: 'Home' });
   await exportPageToPdf(

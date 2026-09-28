@@ -15,7 +15,6 @@
 //     import "some-package"
 //
 
-import { init } from '@plausible-analytics/tracker';
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import 'phoenix_html';
 import FlashyHooks from 'flashy';
@@ -207,50 +206,6 @@ if (!standalone) {
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
-
-if (!standalone) {
-  init({
-    domain: 'archidep.ch',
-    endpoint: 'https://plausible.alphahydrae.ch/api/event',
-    autoCapturePageviews: false,
-    outboundLinks: true
-  });
-
-  trackEvent('pageview');
-}
-
-let lastPage;
-
-window.addEventListener('phx:page-loading-stop', event => {
-  if (
-    event.detail?.kind === 'initial' ||
-    window.location.pathname === lastPage
-  ) {
-    return;
-  }
-
-  lastPage = window.location.pathname;
-  trackEvent('pageview');
-});
-
-function trackEvent(name, props = {}) {
-  const plausible = window['plausible'];
-  if (plausible === undefined) {
-    return;
-  }
-
-  plausible(name, { props, callback: trackCallback });
-}
-
-function trackCallback(result) {
-  if (result !== undefined && 'status' in result) {
-    console.debug(`Plausible request done with status ${result.status}`);
-  } else if (result?.error) {
-    console.warn('Plausible request error', result.error);
-  } else {
-    console.warn('Plausible request ignored');
-  }
-}
 
 function ifStillExists(id, callback) {
   const el = document.getElementById(id);

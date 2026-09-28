@@ -1,4 +1,3 @@
-import { CustomProperties } from '@plausible-analytics/tracker';
 import Reveal from 'reveal.js';
 
 declare global {
@@ -21,11 +20,5 @@ declare global {
      * bundle.
      */
     logOut?: () => void;
-
-    /**
-     * The analytics tracker, present only once its own script has loaded —
-     * which it never does in a standalone build.
-     */
-    plausible?: (name: string, options?: { props?: CustomProperties }) => void;
   }
 }

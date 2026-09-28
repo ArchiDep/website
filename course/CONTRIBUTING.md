@@ -1091,7 +1091,6 @@ other document.
 - [Lunr][lunr] for full-text search
 - [Mermaid][mermaid] for diagrams and visualizations
 - [Phoenix][phoenix] for real-time integration with the dashboard application
-- [Plausible Analytics][plausible] for privacy-friendly web analytics
 - [Preact][preact] for client-side interactivity
   - [Preact Signals][preact-signals] for state management
 - [Prettier Documentation][prettier] for code formatting
@@ -1122,7 +1121,6 @@ agents.
 [loglevel]: https://github.com/pimterry/loglevel
 [lunr]: https://lunrjs.com
 [mermaid]: https://mermaid.js.org
-[plausible]: https://plausible.io
 [preact]: https://preactjs.com
 [preact-signals]: https://preactjs.com/guide/v10/signals/
 [prettier]: https://prettier.io
