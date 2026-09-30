@@ -13,7 +13,7 @@ and each implement one of its missing database queries.
 - [Git][git]
 - Your group's fork of Guess It on [GitHub][github], [cloned on your
   computer](#get-your-groups-repository)
-- [Node.js][node] 26
+- [Node.js][node] 22, 24 or 26
 - A [PostgreSQL][postgres] server, version 14 or newer
 - A Unix CLI
 
@@ -55,7 +55,7 @@ The rest of Hello GitHub is not needed for this exercise.
 
 ## :exclamation: Install Node.js
 
-Check whether you have Node.js 26:
+Check whether you have Node.js 22 or newer:
 
 ```bash
 $> node --version
@@ -273,6 +273,14 @@ your files, so it could not open the file itself.
 
 {% endnote %}
 
+The superuser you connected as can do anything on your PostgreSQL server: create
+and delete users, and read, change or delete every database on it, including
+those of your other projects. The application needs none of that. So
+`schema.sql` creates a user of its own, `guessit`, which owns the `guessit`
+database and nothing else, and the application connects as that user. If the
+application misbehaves, because of a bug or because someone has taken control of
+it, it can only reach its own database.
+
 ## :exclamation: Configure and start the application
 
 Open your `guessit-ex` directory in your editor. At the top of `server.js`, put
@@ -393,12 +401,43 @@ application:
 
 ## :checkered_flag: What have I done?
 
-You have installed what a Node.js application needs to run on your computer: the
-Node.js runtime, the application's dependencies, and a PostgreSQL server with a
-database of its own.
+You made an application work on your computer. Its code was only one of the
+pieces it needed: a program to run it, the libraries it depends on, and a
+database server, all installed and configured before the first page could load.
 
-You have configured the application to connect to that database, and made it
-work, each member of the group with commits of your own, shared through GitHub.
+Along the way, you:
+
+- Installed Node.js, and found, started or installed a PostgreSQL server.
+- Created a database, and a user for the application.
+- Configured the application to connect to it, and ran it.
+- Implemented a query, and shared it with your group through GitHub.
+
+An application needs more than its code. Node.js is the **runtime** that runs
+`server.js`. The **dependencies** are listed in the repository, but not stored
+in it: they are downloaded into a directory that Git ignores. PostgreSQL is
+another program altogether, with a life of its own.
+
+PostgreSQL is a **server**: a process that listens on a **port**, 5432, and
+waits for connections. The application is its **client**, and connects to it
+over the network, even when both are on the same computer.
+
+The application is a server too, listening on port 3000 for your browser. The
+[architecture diagram](#architecture) below shows the chain: the browser is a
+client of the application, which is a client of the database.
+
+The **connection URL** gathers everything a client needs to reach a database in
+one address: which user connects, with which password, on which host and port,
+and to which database.
+
+You used the PostgreSQL **superuser** once, to create the application's own
+user, and never again. That user owns its database and nothing else, so if the
+application misbehaves, the damage stops there. Give each application the access
+it needs, and no more.
+
+Each member of the group changed `server.js` at their own pace, and the queries
+merged on their own: each one is on lines of its own. Whenever a push was
+refused, you pulled first. Each commit carries the name its author configured,
+which is how your group's history shows who implemented what.
 
 ## :classical_building: Architecture
 

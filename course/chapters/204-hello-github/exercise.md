@@ -54,8 +54,8 @@ is about.
 ## :exclamation: Everyone: check your SSH key on GitHub
 
 Everyone does this step. You will talk to GitHub over SSH, with a key pair of
-your own. You may or may not have already added your public key to GitHub
-already. Let's check.
+your own. You may or may not have already added your public key to GitHub. Let's
+check.
 
 Display the fingerprint of your public key:
 
@@ -378,6 +378,13 @@ The push also moved `origin/main` in Alice's repository: her Git has just seen
 where `main` is on GitHub.
 
 {% endsolution %}
+
+GitHub knows that the push comes from Alice because it recognizes her SSH key,
+the one in her account, and it lets her push because the fork is hers. That is
+all it checks. The name and e-mail address in the commit are the ones Alice
+configured in [Hello Git]({% link chapters/202-hello-git/exercise.md
+%}#who-are-you), and GitHub does not compare them with who pushes: it would
+accept the same push with any name in the commit.
 
 ### :exclamation: Bob: look before you fetch
 
@@ -790,7 +797,7 @@ All conflicts fixed but you are still merging.
   (use "git commit" to conclude merge)
 
 $> git commit -m "Choose the right accent color"
-[main 028ac6a] Merge branch 'main' of github.com:alice/guessit-ex
+[main 028ac6a] Choose the right accent color
 ```
 
 {% note type: tip %}
@@ -1019,25 +1026,59 @@ nothing to commit, working tree clean
 
 ## :checkered_flag: What have I done?
 
-You have worked as a team on one repository on GitHub, each from your own clone
-of it.
+You worked as a team on one project, each on your own computer, with your own
+copy of its whole history. GitHub was not where the project lived: it was one
+more copy, which everyone pushed to and fetched from.
 
-You have seen that Git never synchronises anything by itself. A remote-tracking
-branch such as `origin/main` is your record of where a branch was on the remote
-the last time your Git talked to it. `git fetch` updates that record and
-downloads the commits, without changing your branches or your files. `git merge`
-then brings them into your branch, and `git pull` does both.
+Along the way, you:
 
-You have had pushes refused, for two reasons: the remote had commits you did not
-have yet (`fetch first`), and then your history had diverged from the remote's
-(`non-fast-forward`). A remote only accepts a push that moves its branch
-forward. To push, you merged the remote's work into yours first.
+- Checked, or added, your SSH key on GitHub.
+- Forked a repository, and gave your group access to it.
+- Cloned the fork.
+- Shared a commit, and brought the others' commits into your repository.
+- Had pushes refused, and resolved a conflict.
+- (Optionally) ran the application.
 
-You have resolved a conflict, where two people changed the same line, and seen
-that changes to different lines of the same file merge on their own.
+A **fork** is a copy of a repository on GitHub, under another account. A
+**clone** is a copy on your computer, which remembers the repository it came
+from as `origin`, a name like any other. The original repository, the fork and
+every clone held the same commits, with the same hashes: they are copies of one
+history, and none of them is more real than the others.
 
-Your group's fork is ready for [Guess It][guessit], where you make the
-application work.
+GitHub knows **who pushes** by their SSH key, and decides whether they may from
+the collaborators of the repository. **Who wrote a commit** is another matter:
+the author is the name that person's Git was configured with, and GitHub does
+not check it.
+
+Git never synchronises anything by itself. A **remote-tracking branch** such as
+`origin/main` is your record of where `main` was on GitHub the last time your
+Git talked to it, not a live view. That is why Bob's `git status` said "up to
+date" when Alice had just pushed: it was, as far as his record knew.
+
+A **fetch** downloads the commits you do not have and updates that record, but
+it changes neither your branch nor your files: the README had no "Team" section
+after Bob's fetch. A merge brings the fetched commits into your branch, and a
+pull does both at once.
+
+A remote only accepts a push that moves its branch **forward**: the fast-forward
+of [Hello Git]({% link chapters/202-hello-git/exercise.md %}#two-merges), seen
+from the remote's side. Anything else would throw away commits someone else
+pushed. A refused push changes nothing, on either side. Bob's was refused twice:
+first because GitHub had a commit his Git did not know about, then because his
+branch still did not include it after the fetch.
+
+So you **merge before you push**. The merge commit has the other person's commit
+as one of its parents, so moving the remote's branch to it only moves it
+forward, and the push is accepted.
+
+A **conflict** is about lines, not files. Alice and Bob changed the same line of
+`server.js`, and Git stopped in the middle of the merge. Chuck changed another
+line of the same file, and Git merged it on its own.
+
+Resolving a conflict is **your** job: keep one version, the other, or write a
+third, remove the markers, then stage the file to mark it resolved and commit to
+finish the merge. Git does not check that the result makes sense, and markers
+left in a file are committed like any other text, so test before you commit.
 
 ## :boom: Troubleshooting
 
