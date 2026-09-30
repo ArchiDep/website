@@ -1365,6 +1365,12 @@ snapshots, from the content of the files.
 
 {% endsolution %}
 
+Commit the rename, along with `new.txt`, which `git add .` staged too:
+
+```bash
+$> git commit -m "Rename a file"
+```
+
 ### :question: The global ignore file
 
 Some files are created by your operating system or your editor in every
