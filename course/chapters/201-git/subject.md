@@ -256,10 +256,12 @@ staging area.
 ```bash
 $> git diff
 diff --git a/subtraction.js b/subtraction.js
-index 1ef2791..612b196 100644
+index 88fc891..c5770d6 100644
 --- a/subtraction.js
 +++ b/subtraction.js
-@@ -1,5 +1,5 @@
+@@ -2,7 +2,7 @@
+  * Takes two numbers, a and b, and returns their subtraction.
+  */
  function subtract(a, b) {
 -  return '?';
 +  return a - b;
