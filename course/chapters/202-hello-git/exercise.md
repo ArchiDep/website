@@ -120,19 +120,23 @@ install the [Git Graph][git-graph] extension in Visual Studio Code. Open a
 repository's directory in Visual Studio Code, then click **Git Graph** in the
 status bar at the bottom of the window.
 
-{% note type: warning %}
+{% note type: tip %}
 
-**On Windows**, your repositories are in the WSL, and Git Graph only sees them
-if Visual Studio Code is opened in the WSL too. Open it from your WSL terminal,
-in the repository's directory:
+**On Windows**, your repositories are in the WSL. The simplest way to open one
+is from your WSL terminal, in the repository's directory:
 
 ```bash
 $> code .
 ```
 
 The first time, this installs what Visual Studio Code needs to work in the WSL.
-Then install the Git Graph extension again **in the WSL**, where Visual Studio
-Code offers to.
+
+You can also open the repository from Windows, with **File > Open Folder**. The
+WSL (Linux) may not appear in the sidebar of the folder selection window: type
+`\\wsl.localhost\` in its address bar, then open your Linux distribution's
+directory (e.g. `Ubuntu`), then `home`, your Linux username, and the repository.
+Visual Studio Code warns you that the repository is on a different host. Accept
+the warning, and Git Graph works.
 
 {% endnote %}
 
