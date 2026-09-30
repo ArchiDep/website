@@ -62,6 +62,11 @@ it **without** a README, a license or a `.gitignore` file. Any of them makes a
 first commit on GitHub, which your project does not have, and your first push is
 then refused, as [described below](#a-rejected-push).
 
+Fetching and merging, as that section suggests, does not help in this case. The
+two histories have no commit in common, so Git refuses to merge them: `fatal:
+refusing to merge unrelated histories`. Create a new, empty repository on GitHub
+instead, remove the old remote with `git remote rm origin`, and add the new one.
+
 {% endnote %}
 
 ### `git push`: send your commits
