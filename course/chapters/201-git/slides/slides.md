@@ -484,11 +484,9 @@ Nothing changed yet because `fix-add` still points to the same commit as `main`.
 ```bash
 $> git add addition.js
 $> git commit -m "Fix addition"
-[fix-add a4160d7] Fix addition
- 1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
-<simgit-story name='branching' start-chapter='another-branch' end-chapter='divergent-history' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='another-branch' end-chapter='divergent-history' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' style='max-height: 440px'></simgit-story>
 
 **Notes:**
 
@@ -555,7 +553,7 @@ We want to bring back those changes to the main line.
 $> git switch main
 ```
 
-<simgit-story name='branching' start-chapter='switch-to-fix-add' end-chapter='fast-forward-merge-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='switch-to-fix-add' end-chapter='fast-forward-merge-checkout' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' style='max-height: 440px'></simgit-story>
 
 **Notes:**
 
@@ -607,7 +605,7 @@ $> git branch -d fix-add
 Deleted branch fix-add (was a4160d7).
 ```
 
-<simgit-story name='branching' start-chapter='fast-forward-merge' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true'></simgit-story>
+<simgit-story name='branching' start-chapter='fast-forward-merge' end-chapter='delete-branch' sizing='auto-height' theme='light' commit-representation='below' duration='1200' start-delay='1500' defer-until-visible='true' replay-on-revisit='true' style='max-height: 440px'></simgit-story>
 
 **Notes:**
 
