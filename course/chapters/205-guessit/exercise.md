@@ -467,6 +467,30 @@ The password in the `DATABASE_URL` at the top of `server.js` is not the one you
 set in `schema.sql` when you created the database. Put the same password in
 both.
 
+If they are already the same, you may have run `schema.sql` more than once: see
+[`role "guessit" already exists`](#role-guessit-already-exists).
+
+### :boom: `role "guessit" already exists`
+
+`psql` prints this error, with `database "guessit" already exists` and `relation
+"game" already exists`, when you run `schema.sql` a second time. The first run
+created the user, the database and the table. The second run changed nothing:
+the user still has the password of the first run, even if you have changed it in
+`schema.sql` since.
+
+Give the user the password of your `DATABASE_URL` with your [superuser
+command][pg-connect], for example:
+
+```bash
+# installed with apt
+$> sudo -u postgres psql -c "ALTER USER guessit WITH PASSWORD 'my-new-password';"
+ALTER ROLE
+
+# Postgres.app, or Homebrew
+$> psql postgres -c "ALTER USER guessit WITH PASSWORD 'my-new-password';"
+ALTER ROLE
+```
+
 ### :boom: `connect ECONNREFUSED`
 
 The home page says that the leaderboard could not be loaded, and the terminal

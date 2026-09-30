@@ -566,8 +566,9 @@ $> git commit -m "Make the accent green"
 ```
 
 If **Chuck** is present in the group, he changes another line of the same file:
-the title in the navigation bar, near the end of `server.js`. He signs it with
-the names of the group, and commits, without pushing:
+the title in the navigation bar, in the part of `server.js` under the `HTML`
+heading comment. He signs it with the names of the group, and commits, without
+pushing:
 
 ```js
 <a class="navbar-brand" href="/">
