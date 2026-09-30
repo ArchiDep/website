@@ -164,14 +164,14 @@ function guessitStory(title: string, order: readonly ComputerName[]): Story {
               'Initial commit',
               'server.js',
               "const ACCENT_COLOR = '#6c3ce9';\n",
-              '2262855'
+              '6d114ee'
             ),
             ...commitOf(
               GITHUB,
               'Show total games played in leaderboard',
               'server.js',
               "const ACCENT_COLOR = '#6c3ce9';\nlet loaded = true;\n",
-              '02b3426'
+              '5c0a0ed'
             )
           ]
         },

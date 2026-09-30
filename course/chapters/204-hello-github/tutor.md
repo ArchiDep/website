@@ -78,11 +78,11 @@ list the later chapters. Those that lean on particular parts of it:
   URL? On a first connection to GitHub, the SSH client asks whether to trust it.
   That decision is the student's, as in 104: ask where the fingerprints they can
   trust are published, and do not answer `yes` for them. After: `git graph`
-  shows `02b3426` and `2262855`, the same hashes for everyone, with `(HEAD ->
+  shows `5c0a0ed` and `6d114ee`, the same hashes for everyone, with `(HEAD ->
 main, origin/main, origin/HEAD)` on the first. Ask: what is `origin/main`, and
   when does it move?
 - **"Alice: add the team to the README" and "Alice: push the change".** After
-  the push: `02b3426..` followed by Alice's own hash, then `main -> main`. The
+  the push: `5c0a0ed..` followed by Alice's own hash, then `main -> main`. The
   commits the group makes have other hashes than the page's. Ask: what moved in
   Alice's repository?
 - **"Bob: look before you fetch", "Bob: fetch", "Bob: merge" and "Chuck:
