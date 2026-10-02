@@ -461,6 +461,23 @@ Here are a few tips about problems you may encounter during this exercise. For
 problems with Git and GitHub, see the [troubleshooting of Hello
 GitHub][hg-troubleshooting].
 
+### :boom: `libatomic.so.1: cannot open shared object file`
+
+In the WSL, `node` fails right after you [install it][node-install], for
+example with nvm as its download page suggests:
+
+```bash
+$> node --version
+node: error while loading shared libraries: libatomic.so.1: cannot open shared object file: No such file or directory
+```
+
+Node.js needs the `libatomic1` library, which some WSL installations of Ubuntu
+do not have. Install it, then run `node --version` again:
+
+```bash
+$> sudo apt install -y libatomic1
+```
+
 ### :boom: `password authentication failed for user "guessit"`
 
 The password in the `DATABASE_URL` at the top of `server.js` is not the one you
@@ -546,6 +563,7 @@ again.
 [homebrew]: https://brew.sh
 [node]: https://nodejs.org
 [node-download]: https://nodejs.org/en/download
+[node-install]: #install-nodejs
 [pg-check]: #check-what-you-already-have
 [pg-connect]: #connect-as-a-superuser
 [pg-macos]: #install-postgresql-on-macos

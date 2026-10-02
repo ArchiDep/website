@@ -1151,11 +1151,19 @@ file, and applies to every repository on your computer.
 
 {% endnote %}
 
+### :boom: `libatomic.so.1: cannot open shared object file`
+
+In the WSL, `node` fails with `error while loading shared libraries:
+libatomic.so.1` when you [run the application](#everyone-run-the-application).
+Your Node.js needs a library that your WSL does not have: install it as
+described in [the troubleshooting of Guess It][guessit-libatomic].
+
 [ex-repo]: https://github.com/ArchiDep/guessit-ex
 [git]: https://git-scm.com
 [github]: https://github.com
 [github-fingerprints]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 
 [guessit]: {% link chapters/205-guessit/exercise.md %}
+[guessit-libatomic]: {% link chapters/205-guessit/exercise.md %}#libatomicso1-cannot-open-shared-object-file
 [guessit-node]: {% link chapters/205-guessit/exercise.md %}#install-nodejs
 [node]: https://nodejs.org
