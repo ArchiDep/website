@@ -43,7 +43,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.LegendTest do
       <li>
         <E:question> Optional step that you may perform to make sure that
         everything is working correctly, or to set up additional tools that are not required but can
-        help you
+        help you, or optional extra exercises to explore the topic further
       </li>
       <li>
         <E:space_invader> Advanced tips on how to go further (or
