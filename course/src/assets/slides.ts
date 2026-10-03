@@ -1,3 +1,4 @@
+import { defineLogicDiagramElement } from 'companion-gate';
 import 'iconify-icon';
 import Reveal from 'reveal.js';
 import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
@@ -15,6 +16,7 @@ import { diagramsPlugin } from '../diagrams/runtime';
 import { defineStoryElement } from './simgit';
 
 defineStoryElement();
+defineLogicDiagramElement();
 
 const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');

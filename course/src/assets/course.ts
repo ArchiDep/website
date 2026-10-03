@@ -1,3 +1,4 @@
+import { defineLogicDiagramElement } from 'companion-gate';
 import { G, O, pipe } from '@mobily/ts-belt';
 import { effect } from '@preact/signals';
 import ClipboardJS from 'clipboard';
@@ -35,6 +36,7 @@ new ClipboardJS('[data-clipboard-target], [data-clipboard-text]');
 const standalone =
   document.querySelector('head')?.dataset['archidepStandalone'] === 'true';
 
+defineLogicDiagramElement();
 defineStoryElement();
 setUpPageDiagrams();
 
