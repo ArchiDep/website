@@ -1021,8 +1021,11 @@ Both `--build` and `--output` are required — the script assumes nothing about
 where either sits. It also accepts `--manifest <file>` (when the build holds
 more than one `archidep.json`, or none where they are looked for), `--base-url
 <url>` (print a site that is already being served rather than serving the
-build), and `--port <n>` (pin the throwaway server's port instead of taking any
-free one).
+build), `--port <n>` (pin the throwaway server's port instead of taking any free
+one), and `--chapter <num-or-slug>`, repeatable, to print only those chapters
+(`--chapter 101 --chapter git`). A selection is for refreshing a few PDFs in a
+full set already printed: the output directory is not emptied, and the home page
+and cheatsheets are not printed.
 
 **Nothing has to be running, and no page ever reaches the deployed site.** The
 links printed inside the PDFs are whatever the build baked into them, so the

@@ -180,11 +180,16 @@ instructions targeted towards AI agents.
     change.
 
 - **Commands**
-  - Do not execute the `npm run pdf` command documented in
-    [`./CONTRIBUTING.md`][contributing]. It is an expensive operation that
-    generates PDF files for all course slides. Nothing you change to the course
-    material needs it run, by you or by a human: see [PDF
+  - Never generate all the PDFs (`npm run pdf` or `scripts/pdf`, documented in
+    [`./CONTRIBUTING.md`][contributing], without `--chapter`) unless explicitly
+    asked to. Printing every page and slide deck is very slow, and nothing you
+    change to the course material needs it done to publish them: see [PDF
     generation](./course/CONTRIBUTING.md#pdf-generation) for what publishes
     them.
+  - You may print a **single** chapter with `--chapter` when you need to check
+    that something renders correctly in a PDF (for example git or architecture
+    diagrams) or that a change did not break PDF rendering. Pick the smallest
+    chapter that exercises what you are checking, and look at the resulting PDF
+    rather than just checking that the command succeeded.
 
 [contributing]: ./CONTRIBUTING.md

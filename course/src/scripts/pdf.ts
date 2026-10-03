@@ -18,7 +18,8 @@ const { values } = parseArgs({
     output: { type: 'string' },
     manifest: { type: 'string' },
     'base-url': { type: 'string' },
-    port: { type: 'string' }
+    port: { type: 'string' },
+    chapter: { type: 'string', multiple: true }
   },
   strict: true
 });
@@ -67,8 +68,39 @@ if (
 }
 
 const courseData = await readCourseManifest(manifestFile);
+const allDocs = courseData.sections.flatMap(section => section.docs);
 
-await rm(outputDir, { recursive: true, force: true });
+// A chapter is named by its number or its slug, as it is in its URL. Printing
+// only some of them is for refreshing those few in a full set already printed,
+// so the rest of the output directory is left as it is, and the home page and
+// cheatsheets, which are not chapters, are left out.
+const chapterSelectors = values.chapter ?? [];
+const printingAll = chapterSelectors.length === 0;
+
+const unknownChapters = chapterSelectors.filter(
+  selector =>
+    !allDocs.some(
+      doc => String(doc.num) === selector || doc.course_slug === selector
+    )
+);
+if (unknownChapters.length !== 0) {
+  throw new Error(
+    `No chapter numbered or named ${unknownChapters.join(', ')} in ${manifestFile}`
+  );
+}
+
+const docsToExport = printingAll
+  ? allDocs
+  : allDocs.filter(
+      doc =>
+        chapterSelectors.includes(String(doc.num)) ||
+        chapterSelectors.includes(doc.course_slug)
+    );
+const cheatsheetsToExport = printingAll ? courseData.cheatsheets : [];
+
+if (printingAll) {
+  await rm(outputDir, { recursive: true, force: true });
+}
 await mkdir(outputDir, { recursive: true });
 
 // Nothing outside this process has to be running: the pages are static files
@@ -88,18 +120,16 @@ if (baseUrlArg !== undefined) {
   );
 }
 
-const docsToExport = courseData.sections.flatMap(section => section.docs);
-
 const progress = new ProgressBar(
   '[:bar] :current/:total :percent :elapseds :what',
   {
     width: Math.min(30, process.stdout.columns),
     total:
-      1 +
+      (printingAll ? 1 : 0) +
       docsToExport
         .map(doc => (doc.slides_pdf === null ? 1 : 2))
         .reduce(N.add, 0) +
-      courseData.cheatsheets.length
+      cheatsheetsToExport.length
   }
 );
 
@@ -121,13 +151,15 @@ const browser = await puppeteer.launch();
 try {
   const page = await browser.newPage();
 
-  startPrinting('Home');
-  await exportPageToPdf(
-    page,
-    new URL(courseData.home.url, baseUrl),
-    path.join(outputDir, courseData.home.pdf)
-  );
-  progress.tick();
+  if (printingAll) {
+    startPrinting('Home');
+    await exportPageToPdf(
+      page,
+      new URL(courseData.home.url, baseUrl),
+      path.join(outputDir, courseData.home.pdf)
+    );
+    progress.tick();
+  }
 
   for (const doc of docsToExport) {
     const docUrl = new URL(doc.url, baseUrl);
@@ -165,7 +197,7 @@ try {
     }
   }
 
-  for (const cheatsheet of courseData.cheatsheets) {
+  for (const cheatsheet of cheatsheetsToExport) {
     startPrinting(cheatsheet.title);
 
     await exportPageToPdf(

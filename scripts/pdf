@@ -26,6 +26,10 @@ Options:
                        $default_progress).
       --pdf-base URL   Where the PDFs are published, for the download links the
                        pages offer (default: the application's configuration).
+  -c, --chapter CH     Print only this chapter, named by number (101) or slug
+                       (command-line); repeat it for several. The output
+                       directory is then not emptied, and the home page and
+                       cheatsheets are not printed.
   -h, --help           Print this message.
 
 Relative paths are relative to the current directory. The default directories
@@ -49,6 +53,7 @@ build_dir="$default_build"
 output_dir="$default_output"
 progress="$default_progress"
 pdf_base=
+pdf_args=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -70,6 +75,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --pdf-base)
       pdf_base="$2"
+      shift 2
+      ;;
+    -c | --chapter)
+      pdf_args+=(--chapter "$2")
       shift 2
       ;;
     -h | --help)
@@ -122,4 +131,4 @@ fi
 (cd "$root_dir/app" && mix archidep.course_site.build "${build_args[@]}")
 
 step "Printing the PDFs into $output_dir"
-(cd "$root_dir" && npm run pdf -- --build "$build_dir" --output "$output_dir")
+(cd "$root_dir" && npm run pdf -- --build "$build_dir" --output "$output_dir" ${pdf_args[@]+"${pdf_args[@]}"})

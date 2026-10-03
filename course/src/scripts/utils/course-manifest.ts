@@ -36,6 +36,7 @@ const courseDocType = t.readonly(
       title: t.string,
       num: t.number,
       course_type: courseType,
+      course_slug: t.string,
       url: t.string,
       pdf: t.string,
       slides_pdf: t.union([t.string, t.null])
