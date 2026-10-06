@@ -11,6 +11,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDep.Helpers.ProcessHelpers
   alias ArchiDep.Authentication
+  alias ArchiDep.Servers.Events.ServerFactsGathered
+  alias ArchiDep.Servers.Events.ServerOpenPortsChecked
+  alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClientBehaviour
@@ -191,6 +194,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTracker do
   @impl GenServer
   def handle_info({:server_created, %{id: server_id} = event, _reference}, state),
     do: state |> reconcile_tracked(server_id, in_scope?(state, event)) |> noreply()
+
+  # Setting up a server, gathering its facts or checking its open ports cannot
+  # change whether it is in scope (these events carry no `active` flag), so they
+  # leave the tracked set untouched; the server's new real-time state arrives as
+  # a presence update instead.
+  @impl GenServer
+  def handle_info({:server_updated, %progress_event{}, _reference}, state)
+      when progress_event in [ServerSetUp, ServerFactsGathered, ServerOpenPortsChecked],
+      do: noreply(state)
 
   @impl GenServer
   def handle_info({:server_updated, %{id: server_id} = event, _reference}, state),

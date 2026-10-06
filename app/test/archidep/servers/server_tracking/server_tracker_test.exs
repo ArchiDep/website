@@ -3,10 +3,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ProcessTestHelpers, only: [stop_linked!: 1, wait_for!: 2]
+  alias ArchiDep.Servers.Events.ServerFactsGathered
+  alias ArchiDep.Servers.Events.ServerOpenPortsChecked
+  alias ArchiDep.Servers.Events.ServerSetUp
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
   alias ArchiDep.Support.Factory
+  alias ArchiDep.Support.ServersFactory
   alias Ecto.UUID
   alias Phoenix.Tracker
 
@@ -195,6 +199,42 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
       _flushed = :sys.get_state(tracker)
 
       refute_received {:server_state, ^server_id, _state}
+    end
+
+    test "keeps tracking a server through its progress events under the :active scope" do
+      {:ok, tracker} = ServerTracker.start_link(Factory.build(:authentication), [], :active)
+      on_exit(fn -> stop_linked!(tracker) end)
+
+      server =
+        ServersFactory.build(:server,
+          active: true,
+          group: ServersFactory.build(:server_group),
+          owner: ServersFactory.build(:server_owner),
+          last_known_properties: ServersFactory.build(:server_properties)
+        )
+
+      server_id = server.id
+
+      send(tracker, {:server_updated, %{id: server_id, active: true}, :reference})
+      assert_receive {:server_state, ^server_id, nil}
+
+      # These events carry no `active` flag, so they neither untrack the server
+      # nor crash the tracker.
+      for event <- [
+            ServerSetUp.new(server),
+            ServerFactsGathered.new(server),
+            ServerOpenPortsChecked.new(server, [80, 443])
+          ] do
+        send(tracker, {:server_updated, event, :reference})
+      end
+
+      _flushed = :sys.get_state(tracker)
+      refute_received {:server_state, ^server_id, _state}
+
+      # It is still tracked, so a presence change is forwarded.
+      state = server_state(1)
+      send(tracker, {:join, server_id, %{state: state}})
+      assert_receive {:server_state, ^server_id, ^state}
     end
 
     test "tracks every server of the group, active or not, under a {:group, _} scope" do
