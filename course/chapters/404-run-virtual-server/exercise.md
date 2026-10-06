@@ -51,7 +51,7 @@ You will now configure your virtual machine.
 
 {% callout animate: true %}
 
-**Make sure to select the `Ubuntu 26.04` image (x64) and the `B2ats_v2` or `B1s`
+**Make sure to select the `Ubuntu 26.04` image (x64) and the `B1s` or `B2ats_v2`
 size**. If you select a VM size that is too expensive, **YOU WILL RUN OUT OF
 FREE CREDITS BEFORE THE END OF THE COURSE** You will then have pay 💸 for a new
 VM and will have to reinstall your VM from scratch (including all deployment
@@ -140,15 +140,17 @@ Under inbound port rules, make sure the SSH (22) port is allowed:
 
 ![Azure: VM inbount port rules](images/azure-vm-inbound-port-rules.png)
 
-Next, go to the **Disks** settings (**DO NOT** create the machine just yet):
+Next, go to the **Disks** settings with the **Next** button (**DO NOT** create
+the machine just yet):
 
-![Azure: Go to disks](images/azure-vm-go-to-disks.png)
+![Azure: Next](images/azure-vm-next.png)
 
 ### :exclamation: Skip the disk settings
 
-Keep the default **Disks** settings and go to the **Networking** settings:
+Keep the default **Disks** settings and go to the **Networking** settings with
+the **Next** button:
 
-![Azure: Go to disks](images/azure-vm-go-to-networking.png)
+![Azure: Next](images/azure-vm-next.png)
 
 ### :exclamation: Configure open ports
 
@@ -220,8 +222,8 @@ your disposal for this course.
 
 ### :exclamation: Create your server
 
-Double-check that you are launching one virtual machine of size `B2ats_v2` or
-`B1s`.
+Double-check that you are launching one virtual machine of size `B1s` or
+`B2ats_v2`, and that you configured the correct **Username**.
 
 🎉 Create your virtual machine!
 
@@ -250,7 +252,7 @@ get the usual warning that its authenticity cannot be verified:
 
 ```
 The authenticity of host '20.71.227.143 (20.71.227.143)' can't be established.
-ECDSA key fingerprint is SHA256:0TORCgUgzrPGeDHzV5fGAarkpGpc5Nbkhb7q2dbG0OA.
+ED25519 key fingerprint is SHA256:IKNmtqj1OKCP4gyErlaQkBbn26gB0ofV3fLkw14yokg.
 Are you sure you want to continue connecting (yes/no/[fingerprint])?
 ```
 
@@ -259,44 +261,31 @@ you can obtain the SSH host key fingerprints from your virtual machine before
 attempting to connect. That way, you will be able to check whether the key
 fingerprint in the warning is one of your virtual machine's keys.
 
-To do this, you need to install the [Azure CLI][azure-cli]. Once you
-have it installed and have logged in, you can run the following command (adapt
-the resource group and name options to your configuration if necessary):
+To do this, you can open the **Connect** menu in the virtual machine's
+dashboard, and expand **More ways to connect** at the bottom:
 
-```bash
-$> az vm run-command invoke \
-     --resource-group ArchiDep_group \
-     --name ArchiDep \
-     --command-id RunShellScript \
-     --scripts "find /etc/ssh -name '*.pub' -exec ssh-keygen -l -f {} \;"
-```
+![Azure: Connect](images/azure-vm-connect.png)
 
-After a while, it should print the response:
+Select the **Go to serial console** button to connect:
 
-```
-{
-  "value": [
-    {
-      "code": "ProvisioningState/succeeded",
-      "displayStatus": "Provisioning succeeded",
-      "level": "Info",
-      "message": "Enable succeeded: \n[stdout]\n256 SHA256:IKNmtqj1OKCP4gyErlaQkBbn26gB0ofV3fLkw14yokg root@ArchiDep (ED25519)\n3072 SHA256:RGxd9jZfWrUUynsVNGmngD78AaZGcQNT4iHjwX6cK2c root@ArchiDep (RSA)\n256 SHA256:0TORCgUgzrPGeDHzV5fGAarkpGpc5Nbkhb7q2dbG0OA root@ArchiDep (ECDSA)\n\n[stderr]\n",
-      "time": null
-    }
-  ]
-}
-```
+![Azure: More ways to connect](images/azure-vm-connect-more-ways.png)
 
-Your machine's public key fingerprints are in the `message` property, separated
-by encoded new lines (`\n`).
+You don't actually need to connect to your server with the serial console,
+because it should already show you the output of the cloud-init process, which
+will include your SSH host key fingerprints. Just **copy the ED25519
+fingerprint** and paste it into your SSH connection prompt when it asks you to
+verify the authenticity of your server:
 
-Once you have them, there are two ways to check the key when the warning
-appears. You can compare the fingerprint in the warning with these ones by eye:
-in this example, the `SHA256:0TORCgUgzrPGeDHzV5fGAarkpGpc5Nbkhb7q2dbG0OA` the
-warning shows is the machine's ECDSA key. Or, instead of answering `yes`, you
-can paste the matching fingerprint (the full `SHA256:...` value) at the prompt.
-Your SSH client then compares it with the fingerprint the server sent, and only
-connects if they are the same.
+![Azure: Serial console](images/azure-vm-serial-console.png)
+
+{% note type: troubleshooting %}
+
+If you cannot see the SSH host key fingerprints in the serial console, see [I
+can't find my SSH host key fingerprint in the serial
+console](#i-cant-find-my-ssh-host-key-fingerprint-in-the-serial-console) to find
+them with the Azure CLI instead.
+
+{% endnote %}
 
 {% callout type: more, id: azure-fingerprint %}
 
@@ -720,6 +709,48 @@ want to overwrite it with the new one. If you do, the old key will be
 everywhere else you may have used it.)
 
 {% endcallout %}
+
+### :boom: I can't find my SSH host key fingerprint in the serial console
+
+Another way to find your SSH host key fingerprint is to use the [Azure
+CLI][azure-cli] (follow the instructions to install it). Once you have it
+installed and have logged in, you can run the following command (adapt the
+resource group and name options to your configuration if necessary):
+
+```bash
+$> az vm run-command invoke \
+     --resource-group ArchiDep_group \
+     --name ArchiDep \
+     --command-id RunShellScript \
+     --scripts "find /etc/ssh -name '*.pub' -exec ssh-keygen -l -f {} \;"
+```
+
+After a while, it should print the response:
+
+```
+{
+  "value": [
+    {
+      "code": "ProvisioningState/succeeded",
+      "displayStatus": "Provisioning succeeded",
+      "level": "Info",
+      "message": "Enable succeeded: \n[stdout]\n256 SHA256:IKNmtqj1OKCP4gyErlaQkBbn26gB0ofV3fLkw14yokg root@ArchiDep (ED25519)\n3072 SHA256:RGxd9jZfWrUUynsVNGmngD78AaZGcQNT4iHjwX6cK2c root@ArchiDep (RSA)\n256 SHA256:0TORCgUgzrPGeDHzV5fGAarkpGpc5Nbkhb7q2dbG0OA root@ArchiDep (ECDSA)\n\n[stderr]\n",
+      "time": null
+    }
+  ]
+}
+```
+
+Your machine's public key fingerprints are in the `message` property, separated
+by encoded new lines (`\n`).
+
+Once you have them, there are two ways to check the key when the warning
+appears. You can compare the fingerprint in the warning with these ones by eye:
+in this example, the `SHA256:IKNmtqj1OKCP4gyErlaQkBbn26gB0ofV3fLkw14yokg` the
+warning shows is the machine's ED25519 key. Or, instead of answering `yes`, you
+can paste the matching fingerprint (the full `SHA256:...` value) at the prompt.
+Your SSH client then compares it with the fingerprint the server sent, and only
+connects if they are the same.
 
 [Azure-cli]: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
 [azure-for-students]: https://azure.microsoft.com/en-us/free/students/

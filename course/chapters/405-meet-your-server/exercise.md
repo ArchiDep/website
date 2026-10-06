@@ -64,8 +64,8 @@ password for your account? You only gave Azure your public SSH key.
 
 Azure configured your server so that you can use `sudo` without a password for
 convenience. If you ever administer a real production server, it is more secure
-to harden this configuration by giving every account a password, and requiring
-it for `sudo`.
+to harden this configuration by giving every administrator account a password,
+and requiring it for `sudo`.
 
 ### :exclamation: Ask `sudo` what you may do
 
