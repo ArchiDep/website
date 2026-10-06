@@ -15,7 +15,7 @@ name for your server with [Gandi.net][gandi].
 
 **Recommended reading**
 
-- [Unix Networking]({% link chapters/408-unix-networking/subject.md %})
+- [Unix Networking]({% link chapters/406-unix-networking/subject.md %})
 
 ## DNS zone
 

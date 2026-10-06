@@ -97,64 +97,76 @@
       "slug": "image-gallery"
     },
     {
+      "path": "/course/401-cloud-computing/",
+      "kind": "chapter",
+      "num": 401,
+      "slug": "cloud-computing"
+    },
+    {
       "path": "/course/401-cloud-computing/slides/",
       "kind": "chapter_slides",
       "num": 401,
       "slug": "cloud-computing"
     },
     {
-      "path": "/course/402-run-virtual-server/",
+      "path": "/course/402-unix-basics/",
       "kind": "chapter",
       "num": 402,
-      "slug": "run-virtual-server"
-    },
-    {
-      "path": "/course/403-linux/slides/",
-      "kind": "chapter_slides",
-      "num": 403,
-      "slug": "linux"
-    },
-    {
-      "path": "/course/404-unix-basics/",
-      "kind": "chapter",
-      "num": 404,
       "slug": "unix-basics"
     },
     {
-      "path": "/course/405-permissions/",
+      "path": "/course/402-unix-basics/slides/",
+      "kind": "chapter_slides",
+      "num": 402,
+      "slug": "unix-basics"
+    },
+    {
+      "path": "/course/403-permissions/",
       "kind": "chapter",
-      "num": 405,
+      "num": 403,
       "slug": "permissions"
     },
     {
-      "path": "/course/406-unix-processes/",
+      "path": "/course/404-run-virtual-server/",
+      "kind": "chapter",
+      "num": 404,
+      "slug": "run-virtual-server"
+    },
+    {
+      "path": "/course/405-meet-your-server/",
+      "kind": "chapter",
+      "num": 405,
+      "slug": "meet-your-server"
+    },
+    {
+      "path": "/course/406-unix-networking/",
       "kind": "chapter",
       "num": 406,
-      "slug": "unix-processes"
+      "slug": "unix-networking"
     },
     {
-      "path": "/course/407-pipeline/",
+      "path": "/course/406-unix-networking/slides/",
+      "kind": "chapter_slides",
+      "num": 406,
+      "slug": "unix-networking"
+    },
+    {
+      "path": "/course/407-tcp/",
       "kind": "chapter",
       "num": 407,
-      "slug": "pipeline"
+      "slug": "tcp"
     },
     {
-      "path": "/course/408-unix-networking/",
+      "path": "/course/408-unix-streams-and-pipelines/",
       "kind": "chapter",
       "num": 408,
-      "slug": "unix-networking"
+      "slug": "unix-streams-and-pipelines"
     },
     {
-      "path": "/course/408-unix-networking/slides/",
-      "kind": "chapter_slides",
-      "num": 408,
-      "slug": "unix-networking"
-    },
-    {
-      "path": "/course/409-tcp/",
+      "path": "/course/409-pipe-redirect-kill/",
       "kind": "chapter",
       "num": 409,
-      "slug": "tcp"
+      "slug": "pipe-redirect-kill"
     },
     {
       "path": "/course/410-sftp-deployment/",
@@ -163,9 +175,21 @@
       "slug": "sftp-deployment"
     },
     {
-      "path": "/course/411-how-to-improve/",
+      "path": "/course/411-how-a-computer-works/",
       "kind": "chapter",
       "num": 411,
+      "slug": "how-a-computer-works"
+    },
+    {
+      "path": "/course/412-unix-processes/",
+      "kind": "chapter",
+      "num": 412,
+      "slug": "unix-processes"
+    },
+    {
+      "path": "/course/413-how-to-improve/",
+      "kind": "chapter",
+      "num": 413,
       "slug": "how-to-improve"
     },
     {

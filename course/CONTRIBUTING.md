@@ -733,7 +733,7 @@ travelling along it, a process working. Include one by the partial generated for
 it:
 
 ```liquid
-{% include diagrams/409-tcp.html %}
+{% include diagrams/407-tcp.html %}
 ```
 
 It shows the same steps wherever it is included:
@@ -747,12 +747,12 @@ It shows the same steps wherever it is included:
 
 A diagram is three files in [`diagrams/`](./diagrams), all named after it:
 
-- **`409-tcp.svg`**, the drawing, as the diagram ends up. It is edited in
+- **`407-tcp.svg`**, the drawing, as the diagram ends up. It is edited in
   Inkscape or by hand, and stays readable on its own.
-- **`409-tcp.ts`**, its steps: what each click does, and the sentence said over
+- **`407-tcp.ts`**, its steps: what each click does, and the sentence said over
   it, which is the caption a page shows. The actions a step is made of are in
   [`src/diagrams/build/index.ts`](./src/diagrams/build/index.ts).
-- **`409-tcp.html`**, generated from the other two: never edit it.
+- **`407-tcp.html`**, generated from the other two: never edit it.
 
 After changing a diagram, its steps, [`shared.svg`](./diagrams/shared.svg) or
 the motion, run:

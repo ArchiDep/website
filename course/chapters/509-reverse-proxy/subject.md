@@ -14,8 +14,8 @@ Learn what a reverse proxy is, and put it in practice using nginx.
 
 **Recommended reading**
 
-- [Unix Administration]({% link chapters/404-unix-basics/subject.md %})
-- [Unix Networking]({% link chapters/408-unix-networking/subject.md %})
+- [Unix Administration]({% link chapters/402-unix-basics/subject.md %})
+- [Unix Networking]({% link chapters/406-unix-networking/subject.md %})
 
 ## Installing nginx
 

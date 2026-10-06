@@ -18,7 +18,7 @@ defmodule ArchiDep.CourseSite.MaterialTest do
   describe "run_virtual_server_exercise/0" do
     test "is the exercise the dashboard sends a student to for their server" do
       assert Material.run_virtual_server_exercise() == %Chapter{
-               page: DocumentRef.new(402, "run-virtual-server", :exercise),
+               page: DocumentRef.new(404, "run-virtual-server", :exercise),
                title: "Run your own virtual server on Microsoft Azure",
                slides: nil,
                graded?: false
@@ -28,7 +28,7 @@ defmodule ArchiDep.CourseSite.MaterialTest do
 
   describe "the headings the dashboard links to" do
     test "are the ones the course material holds" do
-      exercise = {:document, DocumentRef.new(402, "run-virtual-server", :exercise)}
+      exercise = {:document, DocumentRef.new(404, "run-virtual-server", :exercise)}
       sysadmin = {:cheatsheet, "sysadmin"}
 
       assert %{

@@ -200,29 +200,39 @@ $> duf
 ╰───────────────────────────┴────────┴───────┴────────┴───────────────────────────────┴──────────┴────────────╯
 ```
 
-## Administration
+## SSH
 
-You must be an administrator (have `sudo` access) to perform the following operations.
+Useful commands for working with SSH on a server.
 
-### How do I change my username? (`usermod`)
+### List a server's SSH host public keys
 
-The following command renames the `oldname` user account into `newname` and also renames the user's home directory at the same time:
-
-```bash
-$> sudo usermod --login newname --home /home/newname --move-home oldname
-```
-
-You also have to rename the associated group:
+If you need a server's SSH host public keys (e.g. to register the server with a
+service that will connect to it), run the following command on the server:
 
 ```bash
-$> sudo groupmod --new-name newname oldname
+cat /etc/ssh/ssh_host_*_key.pub
 ```
 
-### How do I create another user? (`useradd`)
+### List a server's SSH host key fingerprints
+
+If you need to see the fingerprints of a server's SSH public keys (e.g. to check
+the key in an SSH client's initial connection warning), run the following
+command on the server:
 
 ```bash
-$> useradd --create-home --shell /bin/bash jane_doe
+find /etc/ssh -name "*.pub" -exec ssh-keygen -l -f {} \;
 ```
+
+Each line of the output has the fingerprint of one key as its `SHA256:...` part.
+When the warning appears, you can either compare the fingerprint it shows with
+these ones by eye, or paste the matching `SHA256:...` value instead of answering
+`yes`, which has your SSH client make the comparison and refuse to connect if
+they differ.
+
+## Process management
+
+Useful commands to find and manage processes on your server, including those
+managed by systemd.
 
 ### How do I find and kill a naughty process? (`ps`, `kill`)
 
@@ -288,34 +298,182 @@ Not all services log there, however. If `journalctl` displays no log entries, yo
 
 If your service cannot start, you should be able to find an error from one of these sources.
 
-### List a server's SSH host public keys
+## User management
 
-If you need a server's SSH host public keys (e.g. to register the server with a
-service that will connect to it), run the following command on the server:
+You must be an administrator (have `sudo` access) to perform the following operations.
 
-```bash
-cat /etc/ssh/ssh_host_*_key.pub
-```
+### How do I change my username? (`usermod`)
 
-### List a server's SSH host key fingerprints
-
-If you need to see the fingerprints of a server's SSH public keys (e.g. to check
-the key in an SSH client's initial connection warning), run the following
-command on the server:
+The following command renames the `oldname` user account into `newname` and also renames the user's home directory at the same time:
 
 ```bash
-find /etc/ssh -name "*.pub" -exec ssh-keygen -l -f {} \;
+$> sudo usermod --login newname --home /home/newname --move-home oldname
 ```
 
-Each line of the output has the fingerprint of one key as its `SHA256:...` part.
-When the warning appears, you can either compare the fingerprint it shows with
-these ones by eye, or paste the matching `SHA256:...` value instead of answering
-`yes`, which has your SSH client make the comparison and refuse to connect if
-they differ.
+You also have to rename the associated group:
+
+```bash
+$> sudo groupmod --new-name newname oldname
+```
+
+### How do I create another user? (`useradd`)
+
+To create a **login user** (e.g. a user that can be used by an actual person to
+log in to the machine), you will need to use the `useradd` and `passwd`
+commands:
+
+```bash
+$> sudo useradd -m -s /bin/bash jde
+
+$> sudo passwd jde
+Enter new UNIX password:
+Retype new UNIX password:
+passwd: password updated successfully
+```
+
+The `-m` option to the `useradd` command instructs it to also create a ho**m**e
+directory for the user, which by default will be `/home/jde` in this case.
+
+The `-s` option specifies the user's login **s**hell. Since it defaults to a
+simple [Bourne shell][sh] (`/bin/sh`) on most systems, in this example we use
+the more advanced [Bash shell][bash] (`/bin/bash`) for the user's convenience.
+
+{% note %}
+
+It is possible to give an encrypted **p**assword directly to the `useradd`
+command with the `-p` option instead of using `passwd`, but it's bad practice
+because running commands can be seen by other users with `ps`.
+
+{% endnote %}
+
+#### Checking the created login user
+
+You can see the newly created user (and corresponding group)
+by looking at the last line of the relevant user database files:
+
+```bash
+$> tail -n 1 /etc/passwd
+jde:x:1004:1004::/home/jde:/bin/bash
+
+$> tail -n 1 /etc/group
+jde:x:1004:
+```
+
+{% callout type: more, id: tail-and-uid-range %}
+
+The `tail` command displays the last 10 lines of a file. With the `-n` option
+(**n**umber) set to 1, it only displays the last line.
+
+Note that on a typical Linux system, regular users will have UIDs starting at
+1000 and incremented every time a new user is created. This is defined by the
+`UID_MIN` and `UID_MAX` options in the `/etc/login.defs` file.
+
+{% endcallout %}
+
+### How do I create a system user? (`useradd --system`)
+
+To create a **system user** (e.g. a technical user that will need to run an
+application or service, but does not need to log in), the `useradd` command is
+sufficient:
+
+```bash
+$> sudo useradd --system -s /usr/sbin/nologin myapp
+```
+
+The user is created a bit differently with the `--system` option. Notably, the
+UID is chosen in a different range, to help quickly differentiate system users
+from login users.
+
+In this example, we use `/usr/sbin/nologin` as the user's login shell, which is
+a special shell that prevents the user from logging in. This is a common
+practice for system users that do not need to log in interactively.
+
+{% note type: tip %}
+
+You can also add the `-m` (ho**m**e) option if necessary. Some applications or
+services might expect the user to have a home directory.
+
+{% endnote %}
+
+#### Checking the created system user
+
+Check the user database files again:
+
+```bash
+$> tail -n 1 /etc/passwd
+myapp:x:999:999::/home/myapp:/usr/sbin/nologin
+
+$> tail -n 1 /etc/group
+myapp:x:999:
+```
+
+{% callout type: more, id: system-user-home-and-uid-range %}
+
+Note that a home directory is configured even if it wasn't created. This is not
+an issue.
+
+System users use a different UID range by default, specified by the
+`SYS_UID_MIN` and `SYS_UID_MAX` options in the `/etc/login.defs` file. On
+Ubuntu, for example, it will start at 999 and be decremented by 1 for each new
+user.
+
+{% endcallout %}
+
+You can try to use `su` to try to switch to that user.
+It won't work:
+
+```bash
+$> sudo su -l myapp
+No directory, logging in with HOME=/
+This account is currently not available.
+```
+
+{% note type: tip %}
+
+If you really need to log in as that user for administative purposes, the `su`
+command allows you to change the shell. For this example, the command would be
+`sudo su -l -s /bin/bash myapp`.
+
+{% endnote %}
+
+### How do I manage users and groups? (`usermod`, `userdel`, `groupadd`)
+
+The following commands can be used to create, modify and delete users:
+
+| Command    | Purpose                                                                                           |
+| :--------- | :------------------------------------------------------------------------------------------------ |
+| `useradd`  | Create a user account (and by default, a corresponding group)                                     |
+| `usermod`  | Modify an existing user account                                                                   |
+| `passwd`   | Change (or set) a user's password                                                                 |
+| `userdel`  | Delete a user account                                                                             |
+| `deluser`  | Friendlier frontend to the `userdel` command. Delete a user account or remove a user from a group |
+| `groupadd` | Create a new group                                                                                |
+| `groupmod` | Modify an existing group                                                                          |
+| `groupdel` | Delete a group                                                                                    |
+
+Use `man <command>` to read their manual, e.g. `man useradd`.
+
+{% note %}
+
+Note that these commands are specific to [Ubuntu][ubuntu]. They might differ
+slightly in other Linux distributions or other Unix systems.
+
+{% endnote %}
+
+Here's a few command examples for common administrative tasks:
+
+| Example                                 | Effect                                                                                                                                                 |
+| :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `usermod -a -G vip jde`                 | Add (**a**ppend) user `jde` to **g**roup `vip`                                                                                                         |
+| `deluser jde vip`                       | Remove user `jde` from group `vip`                                                                                                                     |
+| `userdel -r jde`                        | Permanently **r**emove user `jde` and its home directory                                                                                               |
+| `passwd --lock jde`                     | Lock the password for user `jde` (note that it may still be possible for that user to log in using other authentication methods, such as a public key) |
+| `usermod --shell /usr/sbin/nologin jde` | Lock user `jde` out of the system (note that this will not disconnect the user if already connected, but it prevents future logins)                    |
 
 ## Installing & upgrading
 
-You must be an administrator (have `sudo` access) to perform some of the following operations.
+You must be an administrator (have `sudo` access) to perform some of the
+following operations.
 
 ### How do I know what is installed? (`apt list`)
 
@@ -572,9 +730,12 @@ git commit --allow-empty -m "Test hook"
 
 This will give you a new commit to push without actually making a change.
 
+[bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [bottom]: https://github.com/ClementTsang/bottom
 [duf]: https://github.com/muesli/duf
 [linux-unattended-upgrades]: https://wiki.debian.org/UnattendedUpgrades
 [procs]: https://github.com/dalance/procs
+[sh]: https://en.wikipedia.org/wiki/Bourne_shell
 
 [sftp-deploy-ex]: {% link chapters/410-sftp-deployment/exercise.md %}
+[ubuntu]: https://www.ubuntu.com/

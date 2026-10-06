@@ -11,7 +11,7 @@ defmodule ArchiDepWeb.Course.LatestControllerTest do
       conn = get(conn, ~p"/latest?to=/2025/course/402-run-virtual-server/")
 
       assert {conn.status, redirected_to(conn), cache_control(conn)} ==
-               {302, "/1955/course/402-run-virtual-server/", "no-store"}
+               {302, "/1955/course/404-run-virtual-server/", "no-store"}
     end
 
     test "reads a percent-encoded value exactly as a bare one", %{conn: conn} do

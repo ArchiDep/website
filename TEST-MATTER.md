@@ -164,7 +164,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   - Service-oriented architecture (SOA), microservices or serverless
     computing.
 
-- [Linux](https://archidep.ch/course/403-linux/slides/)
+- [Linux](https://archidep.ch/course/401-cloud-computing/slides/)
 
   You must know:
   - What Linux is and how it relates to Unix.
@@ -173,7 +173,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   You do not need to know:
   - The history of Unix or Linux distributions.
 
-- [Unix basics & administration](https://archidep.ch/course/404-unix-basics/)
+- [Unix basics & administration](https://archidep.ch/course/402-unix-basics/)
 
   You must know:
   - That Linux uses a case-sensitive file system by default.
@@ -197,7 +197,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   - The syntax of the `chmod` and `chown` commands (e.g. symbolic and octal
     modes).
 
-- [Unix processes](https://archidep.ch/course/406-unix-processes/)
+- [Unix processes](https://archidep.ch/course/408-unix-streams-and-pipelines/)
 
   You must know:
   - What a process is.
@@ -216,7 +216,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   - The commands used in the pipeline exercise.
   - The list of Unix signals, or how to trap signals.
 
-- [Unix networking](https://archidep.ch/course/408-unix-networking/)
+- [Unix networking](https://archidep.ch/course/406-unix-networking/)
 
   You must know:
   - What HTTP and TCP are and how they are related.

@@ -34,6 +34,26 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     "/course/205-guessit/" => "/course/205-php-todolist/",
     "/course/603-graded-deployment/" => "/course/603-floodit-deployment/"
   }
+  # The Basic Deployment section was reordered after 2025, so it is not written
+  # back from the course's order but listed as 2025 published it, each page
+  # paired with the path of the page that answers for it now. "Linux" was a
+  # deck of its own and became part of the deck of "Cloud Computing"; "Unix
+  # Processes" became "Unix Streams and Pipelines". The pages the section has
+  # gained since, the "Cloud Computing" subject among them, are not in it.
+  @basic_deployment_in_2025 [
+    {"/course/401-cloud-computing/slides/", "/course/401-cloud-computing/slides/"},
+    {"/course/402-run-virtual-server/", "/course/404-run-virtual-server/"},
+    {"/course/403-linux/slides/", "/course/401-cloud-computing/slides/"},
+    {"/course/404-unix-basics/", "/course/402-unix-basics/"},
+    {"/course/405-permissions/", "/course/403-permissions/"},
+    {"/course/406-unix-processes/", "/course/408-unix-streams-and-pipelines/"},
+    {"/course/407-pipeline/", "/course/409-pipe-redirect-kill/"},
+    {"/course/408-unix-networking/", "/course/406-unix-networking/"},
+    {"/course/408-unix-networking/slides/", "/course/406-unix-networking/slides/"},
+    {"/course/409-tcp/", "/course/407-tcp/"},
+    {"/course/410-sftp-deployment/", "/course/410-sftp-deployment/"},
+    {"/course/411-how-to-improve/", "/course/413-how-to-improve/"}
+  ]
   @hello_git "/course/202-hello-git/"
   @branching_in_2025 "/course/202-git-branching/slides/"
   @git_slides "/course/201-git/slides/"
@@ -65,7 +85,7 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   describe "resolve/1" do
     test "sends an archived chapter to what the course now holds at its name" do
       assert Archives.resolve("/2025/course/402-run-virtual-server/") ==
-               {:ok, {:document, DocumentRef.new(402, "run-virtual-server", :exercise)}}
+               {:ok, {:document, DocumentRef.new(404, "run-virtual-server", :exercise)}}
     end
 
     test "sends an archived deck to the deck of its chapter" do
@@ -115,9 +135,26 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   defp published_pages do
     [
       {@current_edition, Enum.map(current_pages(), &{PageRef.output_path(&1), &1})},
-      {"2025", Enum.map(pages_of_2025(), &path_in_2025/1)}
+      {"2025", published_in_2025()}
     ]
   end
+
+  defp published_in_2025 do
+    {before, rest} =
+      pages_of_2025()
+      |> Enum.map(&path_in_2025/1)
+      |> Enum.split_while(fn {path, _page} -> not basic_deployment?(path) end)
+
+    basic_deployment =
+      Enum.map(@basic_deployment_in_2025, fn {path, current_path} ->
+        {path, current_page(current_path)}
+      end)
+
+    before ++
+      basic_deployment ++ Enum.reject(rest, fn {path, _page} -> basic_deployment?(path) end)
+  end
+
+  defp basic_deployment?(path), do: String.starts_with?(path, "/course/4")
 
   # A manifest lists the home page, then the chapters, then the cheatsheets.
   # 2025 published "Shell Scripting" as a chapter, so its manifest lists it
@@ -149,8 +186,9 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     end
   end
 
-  defp git_slides,
-    do: Enum.find(current_pages(), &(PageRef.output_path(&1) == @git_slides))
+  defp git_slides, do: current_page(@git_slides)
+
+  defp current_page(path), do: Enum.find(current_pages(), &(PageRef.output_path(&1) == path))
 
   defp current_pages do
     structure = Material.structure()

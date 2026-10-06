@@ -52,7 +52,7 @@ Taught later, so do not explain them here beyond what the page does:
   Permissions".
 - `sudo` and the system directories (`/etc`, `/usr/bin`): "Unix Basics".
 - Processes, signals (what `Ctrl-C` sends), pipes and redirection other than
-  `>` and `>>`: "Unix Processes", "Unix Pipeline".
+  `>` and `>>`: "Unix Streams and Pipelines", "Pipe, redirect and kill".
 - Environment variables in general, `export` and `source`: "Unix Environment
   Variables". Until then, the course applies a configuration change by opening
   a new terminal.

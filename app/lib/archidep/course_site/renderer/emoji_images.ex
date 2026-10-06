@@ -20,7 +20,7 @@ defmodule ArchiDep.CourseSite.Renderer.EmojiImages do
   ## What it leaves alone
 
   Code is never swept. The course teaches the command line, and
-  `404-unix-basics` alone holds six `/etc/passwd` lines such as `jde:x:1004:`
+  `402-unix-basics` alone holds six `/etc/passwd` lines such as `jde:x:1004:`
   that are shortcode-shaped by accident; elsewhere sit timestamps like `:00:`
   and the `:--:` of a table's alignment row.
 

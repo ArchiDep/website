@@ -1,5 +1,5 @@
 ---
-title: Unix Processes
+title: Unix Streams and Pipelines
 ---
 
 Learn about processes in Unix operating systems, as well as how to manage them

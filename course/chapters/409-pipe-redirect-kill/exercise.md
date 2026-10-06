@@ -1,5 +1,5 @@
 ---
-title: Unix Pipeline
+title: Pipe, redirect and kill
 cloud_server: details
 excerpt_separator: <!-- more -->
 ---

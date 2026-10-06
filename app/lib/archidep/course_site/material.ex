@@ -93,7 +93,7 @@ defmodule ArchiDep.CourseSite.Material do
   @sections @structure.sections
   @cheatsheets @structure.cheatsheets
 
-  @run_virtual_server_exercise Structure.chapter!(@structure, 402, "run-virtual-server")
+  @run_virtual_server_exercise Structure.chapter!(@structure, 404, "run-virtual-server")
 
   @run_virtual_server_page Chapter.page_ref(@run_virtual_server_exercise)
   @sysadmin_page @structure |> Structure.cheatsheet!("sysadmin") |> Cheatsheet.page_ref()

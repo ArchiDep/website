@@ -17,7 +17,7 @@ Learn the basics of the [Domain Name System (DNS)][dns] and configure a domain n
 
 **Recommended reading**
 
-- [Unix Networking]({% link chapters/408-unix-networking/subject.md %})
+- [Unix Networking]({% link chapters/406-unix-networking/subject.md %})
 
 ---
 

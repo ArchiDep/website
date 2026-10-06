@@ -269,7 +269,7 @@ puts it in one place for the whole application.
 
 **A page the dashboard names is an attribute, resolved at compile time.** The
 exercise a student is sent to for their virtual server is
-`Structure.chapter!(structure, 402, "run-virtual-server")` in `Material` rather
+`Structure.chapter!(structure, 404, "run-virtual-server")` in `Material` rather
 than a lookup at each of the twelve places that link to it, so a renamed chapter
 is one compilation failure naming the reference instead of twelve dead links.
 The lookup matches on the number **and** the slug — either going stale is a link

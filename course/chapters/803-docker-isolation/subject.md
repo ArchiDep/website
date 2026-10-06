@@ -49,7 +49,7 @@ Let's demonstrate how the default bridge network works.
 
 You may remember that before you started deployment exercises, you [established
 a bi-directional TCP connection between servers using the `nc` (**n**et**c**at)
-command]({% link chapters/409-tcp/exercise.md
+command]({% link chapters/407-tcp/exercise.md
 %}#establish-a-bi-directional-tcp-connection). Let's do the same
 between containers.
 
@@ -381,7 +381,8 @@ $> docker inspect nc-client
 ```
 
 You learned about the concept of [IP subnets and netmasks]({% link
-chapters/408-unix-networking/slides/slides.md %}#/11) when we covered Unix networking.
+chapters/406-unix-networking/slides/slides.md %}#/11) when we covered Unix
+networking.
 
 Look at the `IPPrefixLen` property in the JSON description of both containers,
 which defines the netmask: it is `16` in both examples above, meaning the first
@@ -1033,7 +1034,7 @@ magically handled for you by the Docker daemon using the `-v/--volume` option.
 
 You can confirm this using the [`df` command you previously used to inspect disk
 usage when learning about Unix basics]({% link
-chapters/404-unix-basics/subject.md %}#inspecting-volumes). If you run this
+chapters/402-unix-basics/subject.md %}#inspecting-volumes). If you run this
 command inside the container, you should see that the `/usr/share/nginx/html`
 directory is a separate mount:
 

@@ -18,8 +18,8 @@ page's "What have I done?" states what the student should understand
 afterwards; check their explanations against it.
 
 Used as recipes, not explained: `chmod +x` and "Permission denied" ("Unix
-Permissions"), `curl … | bash` ("Unix Processes"). A hint mentions the `*`
-wildcard only to advise against it.
+Permissions"), `curl … | bash` ("Unix Streams and Pipelines"). A hint mentions
+the `*` wildcard only to advise against it.
 
 ## Where it leads
 

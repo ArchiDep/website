@@ -1,9 +1,9 @@
-<!-- Generated from diagrams/409-tcp.svg and 409-tcp.ts by "npm run diagrams": edit those instead. -->
-<div class="diagram-figure" data-diagram="409-tcp">
+<!-- Generated from diagrams/407-tcp.svg and 407-tcp.ts by "npm run diagrams": edit those instead. -->
+<div class="diagram-figure" data-diagram="407-tcp">
 <div class="diagram-canvas">
-<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 960 500" role="img" aria-labelledby="diagram-409-tcp-title">
-<title id="diagram-409-tcp-title">Two netcat processes connected over TCP</title>
-<style id="diagram-409-tcp-diagram-styles">
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 960 500" role="img" aria-labelledby="diagram-407-tcp-title">
+<title id="diagram-407-tcp-title">Two netcat processes connected over TCP</title>
+<style id="diagram-407-tcp-diagram-styles">
 svg.diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
 svg.diagram .lane-heading { font-size: 24px; font-weight: 700; fill: #000; text-anchor: middle; }
 svg.diagram .boundary line { stroke: #000; stroke-width: 5; stroke-dasharray: 14 12; }
@@ -473,44 +473,44 @@ break-inside: avoid;
 }
 }
 </style>
-<defs id="diagram-409-tcp-diagram-defs">
-<marker id="diagram-409-tcp-arrow-comm" viewBox="0 0 12 8" refX="12" refY="4" markerWidth="12" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+<defs id="diagram-407-tcp-diagram-defs">
+<marker id="diagram-407-tcp-arrow-comm" viewBox="0 0 12 8" refX="12" refY="4" markerWidth="12" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
 <path class="marker-comm" d="M0,0 L12,4 L0,8 z"/>
 </marker>
-<marker id="diagram-409-tcp-arrow-control" viewBox="-1 -1 14 10" refX="12" refY="4" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+<marker id="diagram-407-tcp-arrow-control" viewBox="-1 -1 14 10" refX="12" refY="4" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
 <path class="marker-control" d="M0,0 L12,4 L0,8 z"/>
 </marker>
 </defs>
-<g id="diagram-409-tcp-lanes">
-<text id="diagram-409-tcp-lane-alice" class="lane-heading" x="255" y="58">Alice’s Server</text>
-<text id="diagram-409-tcp-lane-bob" class="lane-heading" x="832" y="58">Bob’s Server</text>
+<g id="diagram-407-tcp-lanes">
+<text id="diagram-407-tcp-lane-alice" class="lane-heading" x="255" y="58">Alice’s Server</text>
+<text id="diagram-407-tcp-lane-bob" class="lane-heading" x="832" y="58">Bob’s Server</text>
 </g>
-<g id="diagram-409-tcp-boundary-internet" class="boundary">
+<g id="diagram-407-tcp-boundary-internet" class="boundary">
 <line x1="435" y1="48" x2="435" y2="412"/>
 <line x1="637" y1="48" x2="637" y2="412"/>
 </g>
-<g id="diagram-409-tcp-cloud-internet" class="cloud">
+<g id="diagram-407-tcp-cloud-internet" class="cloud">
 <path d="M505,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
 <text x="537" y="80">Internet</text>
 </g>
-<g id="diagram-409-tcp-node-alice-nc" class="fragment spawn process" data-fragment-index="1" style="--chars: 15; --t0: 0.3s; --type: 1.2s; --enter: 1.9s; --launch: 2.1s"><g class="prompt" style="--at: 3"><text class="sign" x="163" y="115">$&gt;</text><text class="typed" x="163" y="115">nc W.X.Y.Z 3000</text><text class="cursor" x="163" y="115">█</text></g>
+<g id="diagram-407-tcp-node-alice-nc" class="fragment spawn process" data-fragment-index="1" style="--chars: 15; --t0: 0.3s; --type: 1.2s; --enter: 1.9s; --launch: 2.1s"><g class="prompt" style="--at: 3"><text class="sign" x="163" y="115">$&gt;</text><text class="typed" x="163" y="115">nc W.X.Y.Z 3000</text><text class="cursor" x="163" y="115">█</text></g>
 <rect x="157" y="127" width="200" height="54" rx="8"/>
 <text class="label" x="257" y="150">netcat</text>
 <text class="command" x="257" y="168">nc W.X.Y.Z 3000</text>
 </g>
-<g id="diagram-409-tcp-node-bob-nc" class="fragment spawn process" data-fragment-index="0" style="--chars: 10; --t0: 0.3s; --type: 0.8s; --enter: 1.5s; --launch: 1.7s"><g class="prompt" style="--at: 3"><text class="sign" x="733" y="115">$&gt;</text><text class="typed" x="733" y="115">nc -l 3000</text><text class="cursor" x="733" y="115">█</text></g>
+<g id="diagram-407-tcp-node-bob-nc" class="fragment spawn process" data-fragment-index="0" style="--chars: 10; --t0: 0.3s; --type: 0.8s; --enter: 1.5s; --launch: 1.7s"><g class="prompt" style="--at: 3"><text class="sign" x="733" y="115">$&gt;</text><text class="typed" x="733" y="115">nc -l 3000</text><text class="cursor" x="733" y="115">█</text></g>
 <rect x="727" y="127" width="210" height="54" rx="8"/>
 <text class="label" x="832" y="150">netcat</text>
 <text class="command" x="832" y="168">nc -l 3000</text>
-<g id="diagram-409-tcp-socket-bob-nc-3000" class="socket">
+<g id="diagram-407-tcp-socket-bob-nc-3000" class="socket">
 <path d="M727,147 L709,131 M727,161 L709,177"/>
 <text x="712" y="125">3000</text>
 </g>
 </g>
-<g id="diagram-409-tcp-edge-alice-nc-bob-nc" class="fragment draw-on edge comm" data-fragment-index="1" style="--delay: 2.35s">
-<path d="M357,154 H727" marker-end="url(#diagram-409-tcp-arrow-comm)" pathLength="1"/>
+<g id="diagram-407-tcp-edge-alice-nc-bob-nc" class="fragment draw-on edge comm" data-fragment-index="1" style="--delay: 2.35s">
+<path d="M357,154 H727" marker-end="url(#diagram-407-tcp-arrow-comm)" pathLength="1"/>
 </g>
-<g id="diagram-409-tcp-legend" class="legend">
+<g id="diagram-407-tcp-legend" class="legend">
 <rect class="frame" x="32" y="292" width="308" height="190"/>
 <text class="title" x="186" y="318">Legend</text>
 <g class="process">
@@ -518,9 +518,9 @@ break-inside: avoid;
 <text class="label" x="185" y="358">Process</text>
 </g>
 <text class="entry" x="147" y="397">Communication</text>
-<g class="edge comm"><path d="M157,393 H320" marker-end="url(#diagram-409-tcp-arrow-comm)"/></g>
+<g class="edge comm"><path d="M157,393 H320" marker-end="url(#diagram-407-tcp-arrow-comm)"/></g>
 <text class="entry" x="147" y="419">Control</text>
-<g class="edge control"><path d="M157,415 H320" marker-end="url(#diagram-409-tcp-arrow-control)"/></g>
+<g class="edge control"><path d="M157,415 H320" marker-end="url(#diagram-407-tcp-arrow-control)"/></g>
 <text class="entry" x="147" y="441">Network Boundary</text>
 <g class="boundary"><line x1="157" y1="437" x2="322" y2="437"/></g>
 <text class="entry" x="147" y="465">Listening Port</text>
