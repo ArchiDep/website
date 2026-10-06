@@ -4,6 +4,7 @@ import ClipboardJS from 'clipboard';
 import { isRight } from 'fp-ts/lib/Either';
 import { Socket } from 'phoenix';
 
+import { setUpPageDiagrams } from '../diagrams/runtime';
 import './course/back-to-top';
 import { cloudServer, cloudServerDataType } from './course/cloud-server';
 import './course/randomize';
@@ -35,6 +36,7 @@ const standalone =
   document.querySelector('head')?.dataset['archidepStandalone'] === 'true';
 
 defineStoryElement();
+setUpPageDiagrams();
 
 window['logOut'] = logOut;
 

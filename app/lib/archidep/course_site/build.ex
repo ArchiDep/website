@@ -39,10 +39,11 @@ defmodule ArchiDep.CourseSite.Build do
   @cache_manifest "cache_manifest.json"
   @assets_dir "assets"
 
-  # Only the partials a *document* includes, which are the icons. The chrome a
-  # page is wrapped in is the application's own layout rather than anything the
-  # course holds.
-  @includes "icons/**/*.html"
+  # Only the partials a *document* includes: the icons, and the architecture
+  # diagrams the course's own `npm run diagrams` generates. The chrome a page is
+  # wrapped in is the application's own layout rather than anything the course
+  # holds.
+  @includes ["icons/**/*.html", "diagrams/*.html"]
 
   # The files anchored at the build's mount point rather than under its edition,
   # which is what `{:root_file, _}` means. They are named one by one rather than
@@ -379,9 +380,8 @@ defmodule ArchiDep.CourseSite.Build do
   @spec include_files(Path.t()) :: [String.t()]
   def include_files(includes_dir),
     do:
-      includes_dir
-      |> Path.join(@includes)
-      |> Path.wildcard()
+      @includes
+      |> Enum.flat_map(&Path.wildcard(Path.join(includes_dir, &1)))
       |> Enum.map(&Path.relative_to(&1, includes_dir))
       |> Enum.sort()
 

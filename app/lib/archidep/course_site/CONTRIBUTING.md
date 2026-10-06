@@ -292,9 +292,9 @@ it is kept to what it must be: the two pages that are named, with the renderer's
 passes dropped. Rendering the whole course, or rendering it with its passes,
 would put a build's asset manifests inside `mix compile`. The partials are
 needed even so — it is the tags of the course rather than its documents that
-include them, a note drawing its icon that way — so `course/icons` is a
-compile-time input alongside the content roots, and the
-[`Dockerfile`](../../../../Dockerfile) copies it.
+include them, a note drawing its icon that way — so `course/icons`, and the
+partials generated into `course/diagrams`, are a compile-time input alongside
+the content roots, and the [`Dockerfile`](../../../../Dockerfile) copies them.
 
 **Two mechanisms decide when it is compiled again**, because neither covers the
 other's case:

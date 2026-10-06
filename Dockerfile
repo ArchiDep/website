@@ -215,8 +215,10 @@ COPY --chown=app:app ./course/course.yml /usr/src/course/course.yml
 COPY --chown=app:app ./course/archives/ /usr/src/course/archives/
 COPY --chown=app:app ./course/archives.yml /usr/src/course/archives.yml
 # The partials too: a page names its headings by being rendered, and it is the
-# tags of the course that include them rather than its documents.
+# tags of the course that include them rather than its documents. Of the
+# diagrams, only the partials generated from them are included.
 COPY --chown=app:app ./course/icons/ /usr/src/course/icons/
+COPY --chown=app:app ./course/diagrams/*.html /usr/src/course/diagrams/
 
 # What the application reports itself as, and what the source code links of the
 # course material site it renders point at. A build that already knows is
@@ -347,6 +349,7 @@ COPY ./course/chapters/ /usr/share/archidep/course/chapters/
 COPY ./course/cheatsheets/ /usr/share/archidep/course/cheatsheets/
 COPY ./course/images/ /usr/share/archidep/course/images/
 COPY ./course/icons/ /usr/share/archidep/course/icons/
+COPY ./course/diagrams/*.html /usr/share/archidep/course/diagrams/
 COPY ./course/favicons/ /usr/share/archidep/course/favicons/
 COPY ./course/course.yml ./course/index.md ./course/favicon.ico /usr/share/archidep/course/
 

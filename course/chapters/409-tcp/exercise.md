@@ -190,7 +190,7 @@ You can also now fully appreciate what your browser does for you every day.
 This is a simplified architecture of the main running processes and
 communication flow during this exercise:
 
-![Architecture diagram](images/architecture.png)
+{% include diagrams/409-tcp.html %}
 
 ## :boom: Troubleshooting
 

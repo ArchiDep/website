@@ -3,5 +3,10 @@
   "compilerOptions": {
     "target": "es6"
   },
-  "include": ["./src/assets/**/*.ts", "./src/utils/**/*.ts"]
+  "include": [
+    "./src/assets/**/*.ts",
+    "./src/diagrams/runtime/**/*.ts",
+    "./src/diagrams/runtime/**/*.tsx",
+    "./src/utils/**/*.ts"
+  ]
 }

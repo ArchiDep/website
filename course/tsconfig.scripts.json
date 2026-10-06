@@ -1,7 +1,14 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "es2024"
+    "target": "es2024",
+    // The definitions of the diagrams are beside the diagrams, outside `src`.
+    "rootDir": "."
   },
-  "include": ["./src/scripts/**/*.ts", "./src/utils/**/*.ts"]
+  "include": [
+    "./src/scripts/**/*.ts",
+    "./src/diagrams/build/**/*.ts",
+    "./diagrams/*.ts",
+    "./src/utils/**/*.ts"
+  ]
 }

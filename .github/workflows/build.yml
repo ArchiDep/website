@@ -243,6 +243,11 @@ jobs:
       - name: Check formatting
         run: npm run --workspace course format
 
+      # The pages include the partials generated from the diagrams, which are
+      # committed: one that is out of date shows a diagram nobody drew.
+      - name: Check that the diagrams are up to date
+        run: npm run --workspace course diagrams -- --check
+
       # Built here rather than downloaded from the jobs beside this one: their
       # theme artifact carries `assets/theme` and not `assets/emoji`, which
       # every page of this renderer needs.

@@ -225,6 +225,33 @@ defmodule ArchiDep.CourseSite.Build.SearchIndexTest do
              ]
     end
 
+    test "reads the prose of a page rather than what it draws, styles or scripts" do
+      urls = CourseSiteFactory.build(:url_context, base_path: "", version: "2039")
+      page = {:document, DocumentRef.new(409, "tcp", :exercise)}
+
+      html = """
+      <p>Two netcats, one connection.</p>
+      <div class="diagram-figure">
+        <!-- Generated. -->
+        <svg class="diagram"><style>svg.diagram { fill: #000; }</style><text>netcat</text></svg>
+        <template class="diagram-captions"><p>Bob runs nc.</p></template>
+        <script>step()</script>
+      </div>
+      <p>Data travels both ways.</p>
+      """
+
+      assert SearchIndex.entries(urls, page, entry(urls, page, "TCP"), html) == [
+               %Entry{
+                 id: "/course/409-tcp/",
+                 type: "exercise",
+                 url: "/2039/course/409-tcp/",
+                 title: "TCP",
+                 subtitle: "TCP",
+                 text: "Two netcats, one connection. Data travels both ways."
+               }
+             ]
+    end
+
     test "reads a page under the mount point and the edition it is published at" do
       urls = CourseSiteFactory.build(:url_context, base_path: "/website", version: "2040")
       page = {:document, DocumentRef.new(901, "ansible", :subject)}

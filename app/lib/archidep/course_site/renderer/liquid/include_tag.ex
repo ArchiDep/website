@@ -3,10 +3,11 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.IncludeTag do
   `{% include icons/photo.html class="size-6" %}` — a partial rendered in place,
   with the values it was given available to it as `{{ include.… }}`.
 
-  The course uses this for one thing: putting an icon into the page. The
-  partials themselves are given to the renderer already parsed, so that a build
-  is a function of what it was handed rather than of what happens to be on disk
-  when it runs.
+  The course uses this for two things: putting an icon into the page, and an
+  architecture diagram (`{% include diagrams/409-tcp.html %}`), whose partial
+  the course generates itself. The partials themselves are given to the renderer
+  already parsed, so that a build is a function of what it was handed rather
+  than of what happens to be on disk when it runs.
 
   Like `ArchiDep.CourseSite.Renderer.Liquid.LinkTag`, this reads its markup as
   text rather than as a Liquid expression, because the path of a partial

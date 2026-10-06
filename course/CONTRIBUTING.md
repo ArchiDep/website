@@ -28,6 +28,7 @@ for AI assistants and automated agents.
     - [Side-by-Side Columns](#side-by-side-columns)
     - [Solutions](#solutions)
     - [Mermaid Diagrams](#mermaid-diagrams)
+    - [Architecture Diagrams](#architecture-diagrams)
     - [Forced Markdown](#forced-markdown)
     - [Code Blocks](#code-blocks)
     - [Cloud Server Widget](#cloud-server-widget)
@@ -111,6 +112,9 @@ the dashboard functionality is only available during the current semester).
   - `cheatsheets`: Cheatsheets for students to quickly reference key concepts
     and commands.
   - `icons`: SVG icons the course's tags draw by name.
+  - `diagrams`: The [architecture diagrams](#architecture-diagrams), the
+    definitions of their steps, and the partials generated from them that pages
+    and decks include.
 - **Important Files**
   - `src/assets/course.ts` & `src/assets/course/**/*.{ts,tsx,html}`: TypeScript
     and HTML files for client-side interactivity, such as the search dialog,
@@ -129,6 +133,10 @@ the dashboard functionality is only available during the current semester).
   - `src/assets/slides.ts`: TypeScript file to set up slide presentations.
   - `src/assets/slides-mermaid.ts`: TypeScript file to render Mermaid diagrams
     in slides.
+  - `src/diagrams/`: The toolchain of the [architecture
+    diagrams](#architecture-diagrams), kept apart from the rest of the site so
+    that it can become a project of its own: `build/` generates them, `runtime/`
+    steps through them in a page or a deck, and `diagram.css` is their motion.
 - **Other Things**
   - `favicons`: Favicons for various platforms and devices.
   - `src/assets/logging.ts`: Shared logging utilities for client-side scripts.
@@ -715,6 +723,72 @@ Mermaid diagrams on slides are rendered by
 graph LR A[Client] --> B[Server]
 {% endmermaid %}
 ```
+
+#### Architecture Diagrams
+
+An architecture diagram draws the processes of a lesson and the connections
+between them, and is revealed one step at a time while it is explained: a
+process typed into being at a prompt, a connection drawing itself, data
+travelling along it, a process working. Include one by the partial generated for
+it:
+
+```liquid
+{% include diagrams/409-tcp.html %}
+```
+
+It shows the same steps wherever it is included:
+
+- **In a deck**, each step is a fragment of its slide, and its legend is hidden,
+  the teacher being there to explain.
+- **In a page**, it opens fully drawn, with its legend, and a button steps
+  through it, each step with its caption. The arrow keys step once it has focus.
+- **In print and without JavaScript**, deck and page alike, it is fully drawn,
+  legend included: what was drawn in the file, without what only a step shows.
+
+A diagram is three files in [`diagrams/`](./diagrams), all named after it:
+
+- **`409-tcp.svg`**, the drawing, as the diagram ends up. It is edited in
+  Inkscape or by hand, and stays readable on its own.
+- **`409-tcp.ts`**, its steps: what each click does, and the sentence said over
+  it, which is the caption a page shows. The actions a step is made of are in
+  [`src/diagrams/build/index.ts`](./src/diagrams/build/index.ts).
+- **`409-tcp.html`**, generated from the other two: never edit it.
+
+After changing a diagram, its steps, [`shared.svg`](./diagrams/shared.svg) or
+the motion, run:
+
+```bash
+npm run --workspace course diagrams
+```
+
+It copies the look, the arrowheads and the legend of `shared.svg` into every
+drawing, which is the one place they are edited, and generates the partials.
+With `-- --check`, it changes nothing and fails if anything is out of date,
+which CI does.
+
+The steps find what they reveal by its `id` in the drawing, so the drawing keeps
+to a few conventions:
+
+- **Ids name what they are**: `node-…` for a process, `edge-…` for a
+  connection, a `lane-…`, `boundary-internet`, `cloud-internet`, and `legend`.
+- **Classes say what it is**, and are what the shared look styles: `process`, a
+  `label` and a `command` text inside it, `edge comm` or `edge control`,
+  `socket` for a listening port. Never set a colour or a font on a shape itself:
+  Inkscape's Fill & Stroke dialog writes an inline style that overrides the
+  shared look.
+- **No transform on a group**, except the legend, which is placed with one.
+  Positions are read from the shapes' own attributes.
+- **No flowed text**, which browsers do not draw.
+- What only some steps need is said with attributes: `data-to-listener` on a
+  connection that is handed over, for the shape it first takes into the
+  listening port; `data-unfolded` and `data-unfolded-d` for processes that fold
+  into stacks; the `transient` class for what is shown from its step until it is
+  torn down, but not when fully drawn; `arrives` for what appears once the data
+  bringing it has arrived.
+
+The partial carries its own stylesheet, and the site's scripts do the stepping:
+[`src/diagrams/runtime`](./src/diagrams/runtime), from `course.ts` in a page and
+as a reveal.js plugin in a deck.
 
 #### Forced Markdown
 

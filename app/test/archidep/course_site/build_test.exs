@@ -292,9 +292,16 @@ defmodule ArchiDep.CourseSite.BuildTest do
       write!(includes_dir, "icons/photo.html", "<svg/>")
       write!(includes_dir, "icons/nested/gem.html", "<svg/>")
       write!(includes_dir, "icons/README.md", "Icons.")
+      write!(includes_dir, "diagrams/409-tcp.html", "<div/>")
+      write!(includes_dir, "diagrams/409-tcp.svg", "<svg/>")
+      write!(includes_dir, "diagrams/nested/draft.html", "<div/>")
       write!(includes_dir, "head.html", "{% seo %}")
 
-      assert Build.include_files(includes_dir) == ["icons/nested/gem.html", "icons/photo.html"]
+      assert Build.include_files(includes_dir) == [
+               "diagrams/409-tcp.html",
+               "icons/nested/gem.html",
+               "icons/photo.html"
+             ]
     end
 
     test "lists nothing when there is no includes directory", %{tmp_dir: tmp_dir} do

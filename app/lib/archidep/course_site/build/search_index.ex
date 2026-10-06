@@ -29,7 +29,9 @@ defmodule ArchiDep.CourseSite.Build.SearchIndex do
   What that HTML says is read with `LazyHTML`, the same parser the build reads
   its finished pages with. The emoji of a heading are pictures by this point and
   contribute nothing to its text, which is what keeps a heading's title the
-  words it is made of.
+  words it is made of. Nor does what is not prose: a stylesheet, a script, the
+  labels of a drawing, or the captions an architecture diagram keeps in a
+  template until a script shows them.
   """
 
   alias ArchiDep.CourseSite.Build.SearchIndex.Entry
@@ -38,6 +40,7 @@ defmodule ArchiDep.CourseSite.Build.SearchIndex do
   alias ArchiDep.CourseSite.Urls.UrlContext
 
   @headings ~w(h1 h2 h3 h4 h5 h6)
+  @unread ~w(script style svg template)
 
   # The one thing the dialog can find that the course does not write: the
   # dashboard a student manages their account and their server from. It has no
@@ -116,9 +119,19 @@ defmodule ArchiDep.CourseSite.Build.SearchIndex do
       # already been folded into it — which is what makes a nested heading
       # prose.
       {tag in @headings, element |> LazyHTML.attribute("id") |> List.first(),
-       element |> LazyHTML.text() |> normalize()}
+       element |> LazyHTML.to_tree() |> prose() |> normalize()}
     end)
   end
+
+  # What a reader reads of an element: its text, but not the text of what is
+  # not prose. An architecture diagram brings its stylesheet into the page, and
+  # labels that make sense only where they are drawn; its captions are kept in a
+  # template until a script shows them one at a time.
+  defp prose(nodes) when is_list(nodes), do: Enum.map_join(nodes, &prose/1)
+  defp prose({tag, _attributes, _children}) when tag in @unread, do: ""
+  defp prose({_tag, _attributes, children}), do: prose(children)
+  defp prose({:comment, _comment}), do: ""
+  defp prose(text) when is_binary(text), do: text
 
   # One element of the page, against the entry being filled. It does two
   # separate things, in this order: it may close that entry and open another,

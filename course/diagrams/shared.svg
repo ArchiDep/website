@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="20 280 332 214" width="332" height="214">
+  <title>What every architecture diagram shares: its look, its arrowheads and its legend</title>
+  <!-- The one place these are edited. "npm run diagrams" copies the contents of
+       the three elements below into every diagram, which keeps the position of
+       its own legend. -->
+  <style id="diagram-styles">
+    svg.diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    svg.diagram .lane-heading { font-size: 24px; font-weight: 700; fill: #000; text-anchor: middle; }
+    svg.diagram .boundary line { stroke: #000; stroke-width: 5; stroke-dasharray: 14 12; }
+    svg.diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    svg.diagram .cloud text { font-size: 15px; fill: #666; text-anchor: middle; }
+    svg.diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    svg.diagram .process text { fill: #fff; text-anchor: middle; }
+    svg.diagram .process .label { font-size: 16px; font-weight: 700; }
+    svg.diagram .process .subtitle { font-size: 12px; font-style: italic; }
+    svg.diagram .process .command { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; font-weight: 700; }
+    svg.diagram .edge path { fill: none; stroke: #000; stroke-width: 1.25; }
+    svg.diagram .edge.control path { stroke-dasharray: 3 4; }
+    svg.diagram .edge text { font-size: 14px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    svg.diagram .edge text.beside { text-anchor: end; }
+    svg.diagram .socket path { fill: none; stroke: #000; stroke-width: 1.5; stroke-linecap: round; }
+    svg.diagram .process .socket text, svg.diagram .socket text { font-size: 14px; fill: #000; text-anchor: end; }
+    svg.diagram .marker-comm { fill: #000; }
+    svg.diagram .marker-control { fill: #fff; stroke: #000; stroke-width: 1.25; }
+    svg.diagram .legend .frame { fill: none; stroke: #999; stroke-dasharray: 2 2; }
+    svg.diagram .legend .title { font-size: 18px; font-style: italic; text-anchor: middle; }
+    svg.diagram .legend .entry { font-size: 12px; text-anchor: end; }
+  </style>
+  <defs id="diagram-defs">
+    <marker id="arrow-comm" viewBox="0 0 12 8" refX="12" refY="4" markerWidth="12" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L12,4 L0,8 z"/>
+    </marker>
+    <marker id="arrow-control" viewBox="-1 -1 14 10" refX="12" refY="4" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-control" d="M0,0 L12,4 L0,8 z"/>
+    </marker>
+  </defs>
+
+  <g id="legend" class="legend">
+    <rect class="frame" x="32" y="292" width="308" height="190"/>
+    <text class="title" x="186" y="318">Legend</text>
+    <g class="process">
+      <rect x="94" y="337" width="182" height="31" rx="6"/>
+      <text class="label" x="185" y="358">Process</text>
+    </g>
+    <text class="entry" x="147" y="397">Communication</text>
+    <g class="edge comm"><path d="M157,393 H320" marker-end="url(#arrow-comm)"/></g>
+    <text class="entry" x="147" y="419">Control</text>
+    <g class="edge control"><path d="M157,415 H320" marker-end="url(#arrow-control)"/></g>
+    <text class="entry" x="147" y="441">Network Boundary</text>
+    <g class="boundary"><line x1="157" y1="437" x2="322" y2="437"/></g>
+    <text class="entry" x="147" y="465">Listening Port</text>
+    <g class="process"><rect x="304" y="452" width="22" height="18" rx="3"/></g>
+    <g class="socket"><path d="M304,457 L291,448 M304,465 L291,474"/></g>
+  </g>
+</svg>

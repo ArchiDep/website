@@ -9,6 +9,7 @@ import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/solarized.css';
 import 'reveal.js/plugin/highlight/monokai.css';
 import 'tippy.js/dist/tippy.css';
+import { diagramsPlugin } from '../diagrams/runtime';
 // The embeds need no reveal.js lifecycle wiring: each one defers on its own
 // IntersectionObserver and replays when its slide comes back.
 import { defineStoryElement } from './simgit';
@@ -52,11 +53,13 @@ const deck = new Reveal({
   },
   plugins: [
     Markdown,
-    // Beware that the order of plugins matters! Both of these must be after
-    // Markdown: Highlight so that the code blocks it converts are highlighted,
-    // and the title slide so that there is a slide of the deck to mark.
+    // Beware that the order of plugins matters! These must be after Markdown:
+    // Highlight so that the code blocks it converts are highlighted, the title
+    // slide so that there is a slide of the deck to mark, and the diagrams so
+    // that there are diagrams in the slides to set up.
     Highlight,
     titleSlide,
+    diagramsPlugin({ print: printPdfMode }),
     Notes,
     Search
   ],

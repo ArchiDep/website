@@ -1,0 +1,473 @@
+/* The steps of a diagram: what they hide, show and move, in a deck and in a
+   page alike. The generator copies this file into every diagram it generates,
+   after the diagram's own look, so that an included diagram needs no stylesheet
+   of the site's. The motion script and the page stepper only change classes.
+
+   A diagram is "fully drawn" when no step is reached: what was drawn in the
+   file, without what only a step shows. That is the state a page opens with,
+   the one a deck prints, and the one shown without JavaScript. */
+
+/* --- At rest ------------------------------------------------------------- */
+
+svg.diagram .prompt,
+svg.diagram .process .cog {
+  display: none;
+}
+svg.diagram .process rect.glow {
+  fill: #fff;
+  stroke: none;
+  opacity: 0;
+}
+svg.diagram .process .cog path {
+  fill: #fff;
+  fill-rule: evenodd;
+  stroke: none;
+}
+/* Travelling data exists only while it travels. */
+svg.diagram .overlay:not(.visible) {
+  display: none;
+}
+/* Transient: shown from its step until it is torn down, but not when fully
+   drawn, such as a command that has finished by the end of the story. */
+svg.diagram .transient:not(.visible) {
+  display: none;
+}
+/* A short-lived process, and the control edge that started it, only while
+   their step is the current one. */
+svg.diagram .passing:not(.current-fragment) {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* --- Typing -------------------------------------------------------------- */
+
+/* The typed text and the cursor are placed after the prompt in characters of
+   the monospace font, whichever one shows them. */
+svg.diagram .prompt text,
+svg.diagram .process .prompt text,
+svg.diagram .prompt-line text {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  fill: #000;
+  text-anchor: start;
+}
+svg.diagram .prompt .typed,
+svg.diagram .prompt .cursor {
+  transform: translateX(calc(var(--at, 0) * 1ch));
+}
+svg.diagram .prompt .cursor {
+  display: none;
+}
+
+/* --- Folding ------------------------------------------------------------- */
+
+/* Until the fold, each folded process shows its own label, and the edges
+   between them are drawn; after it, the stack's label. The motion script moves
+   the processes and sets `unfolded`. */
+svg.diagram .process .own {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .own {
+  opacity: 1;
+}
+svg.diagram .process .stack-label {
+  transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .stack-label {
+  opacity: 0;
+}
+svg.diagram .folds-away path {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+svg.diagram.unfolded .folds-away path {
+  opacity: 1;
+}
+
+/* --- Data ---------------------------------------------------------------- */
+
+/* A trip in two clicks: to the middle, where it waits, then the rest of the
+   way. Along the edge from --from to --to, which run backwards when it travels
+   against the arrow. */
+svg.diagram .packet path {
+  fill: #1f6feb;
+  stroke: #1f6feb;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+svg.diagram .packet text {
+  fill: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+svg.diagram .packet .leg {
+  offset-rotate: 0deg;
+  offset-distance: 50%;
+}
+/* The second click must not hide the data before it is reached. */
+svg.diagram .packet .leg.fragment {
+  opacity: 1;
+  visibility: inherit;
+}
+svg.diagram .packet .leg.fragment.visible {
+  offset-distance: var(--to);
+  opacity: 0;
+}
+/* In one click: gone once the next step is reached. */
+svg.diagram .packet.whole.visible:not(.current-fragment) .leg:not(.visible) {
+  animation: none;
+  opacity: 0;
+}
+/* Nor does the second half of a trip outlive its step, such as a slow one cut
+   short by a click. */
+svg.diagram .packet .leg.fragment.visible:not(.current-fragment) {
+  animation: none;
+  opacity: 0;
+}
+
+/* --- Torn down ----------------------------------------------------------- */
+
+/* Gone from a step on, such as a session closing; the fully drawn diagram still
+   shows it. The motion script sets `gone`. */
+svg.diagram .gone {
+  /* Important: reveal.js's rules for visible fragments are more specific. */
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition:
+    opacity 0.6s,
+    visibility 0s 0.6s !important;
+}
+
+/* --- Motion -------------------------------------------------------------- */
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  /* A connection draws itself from the side that opened it: the path's length
+     is 1 (`pathLength`), whatever its shape. */
+  svg.diagram .draw-on.visible path {
+    stroke-dasharray: 1 1;
+    animation: diagram-draw 0.7s ease-out var(--delay, 0s) both;
+  }
+  /* Its label arrives with the line, not before. */
+  svg.diagram .draw-on.visible text {
+    animation: diagram-fade-in 0.3s ease-out calc(var(--delay, 0s) + 0.5s) both;
+  }
+  /* A control edge appears, then the process it starts. */
+  svg.diagram .fade-on.visible {
+    animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) both;
+  }
+
+  /* The cursor types, then disappears on Enter. */
+  svg.diagram :is(.spawn, .input).visible .prompt .cursor {
+    display: inline;
+    animation:
+      diagram-cursor-move var(--type) steps(var(--chars), end) var(--t0) both,
+      diagram-cursor-blink 0.5s step-end infinite,
+      diagram-cursor-off 0.01s var(--enter) both;
+  }
+  /* Typed at a shell's prompt or into an application, which clears on Enter. */
+  svg.diagram :is(.spawn, .input).visible .prompt {
+    display: inline;
+    animation: diagram-cursor-off 0.01s var(--enter) both;
+  }
+  svg.diagram :is(.spawn, .input).visible .prompt .typed {
+    animation: diagram-type var(--type) steps(var(--chars), end) var(--t0) both;
+  }
+
+  /* The process starts: its box, its text, then its listening port. */
+  svg.diagram :is(.spawn, .child).visible > rect:not(.glow) {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: diagram-box-in 0.35s ease-out var(--launch) both;
+  }
+  svg.diagram :is(.spawn, .child).visible > text {
+    animation: diagram-fade-in 0.3s ease-out var(--launch) both;
+  }
+  svg.diagram :is(.spawn, .child).visible .socket {
+    animation: diagram-fade-in 0.3s ease-out calc(var(--launch) + 0.4s) both;
+  }
+
+  /* A process working while its step is the current one: its box brightens
+     three times while a cog turns in its top right corner, then both settle,
+     the cog slowing to a stop as the last pulse ends. A still cog means
+     settings, so it fades out as it stops. */
+  svg.diagram .process:has(> .pulse.current-fragment) > .glow {
+    animation: diagram-glow 0.8s ease-in-out 3;
+  }
+  svg.diagram .process:has(> .pulse.current-fragment) .cog {
+    display: inline;
+    animation: diagram-fade-out 0.3s ease-in 2.3s both;
+  }
+  svg.diagram .process:has(> .pulse.current-fragment) .cog path {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) both;
+  }
+
+  svg.diagram .packet.visible .leg:not(.visible) {
+    animation: diagram-leg-1 0.9s ease-in-out both;
+  }
+  svg.diagram .packet.whole.visible .leg:not(.visible) {
+    animation: diagram-trip 1.8s ease-in-out both;
+  }
+  svg.diagram .packet.visible .leg.visible {
+    animation: diagram-leg-2 1.6s ease-in-out both;
+  }
+  /* Heavy data, such as the hundreds of files of node_modules, is slower. */
+  svg.diagram .packet.heavy.visible .leg:not(.visible) {
+    animation-duration: 2.7s;
+  }
+  svg.diagram .packet.heavy.visible .leg.visible {
+    animation-duration: 4.8s;
+  }
+
+  /* A short-lived process works once started, then exits after a moment to
+     read it: its box and its edge fade out. No transition into its step:
+     Firefox would hold the box at the start of the transition, transparent,
+     while its exit animation waits to begin. */
+  svg.diagram .process.passing.current-fragment,
+  svg.diagram .edge.passing.current-fragment {
+    transition: none;
+  }
+  svg.diagram .passing.current-fragment > .glow {
+    animation: diagram-glow 0.8s ease-in-out var(--work) 3;
+  }
+  svg.diagram .passing.current-fragment .cog {
+    display: inline;
+    animation: diagram-fade-out 0.3s ease-in calc(var(--work) + 2.3s) both;
+  }
+  svg.diagram .passing.current-fragment .cog path {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) var(--work) both;
+  }
+  svg.diagram .process.passing.current-fragment {
+    animation: diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+  }
+  svg.diagram .edge.passing.current-fragment {
+    animation:
+      diagram-fade-in 0.4s ease-out var(--delay, 0s) both,
+      diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+  }
+
+  /* Shown once the data that brings it has arrived. */
+  svg.diagram .arrives.visible {
+    animation: diagram-fade-in 0.2s ease-out 1.1s both;
+  }
+}
+
+@keyframes diagram-draw {
+  /* The arrowhead waits for the line to reach it. */
+  from {
+    stroke-dashoffset: 1;
+    marker-end: none;
+  }
+  99% {
+    marker-end: none;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes diagram-leg-1 {
+  from {
+    offset-distance: var(--from);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    offset-distance: 50%;
+    opacity: 1;
+  }
+}
+/* Delivered: it sits on the box a moment, then fades. */
+@keyframes diagram-leg-2 {
+  from {
+    offset-distance: 50%;
+    opacity: 1;
+  }
+  55% {
+    offset-distance: var(--to);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  to {
+    offset-distance: var(--to);
+    opacity: 0;
+  }
+}
+@keyframes diagram-trip {
+  from {
+    offset-distance: var(--from);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  60% {
+    offset-distance: var(--to);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    offset-distance: var(--to);
+    opacity: 0;
+  }
+}
+@keyframes diagram-cursor-move {
+  from {
+    transform: translateX(calc(var(--at, 0) * 1ch));
+  }
+  to {
+    transform: translateX(calc((var(--at, 0) + var(--chars)) * 1ch));
+  }
+}
+@keyframes diagram-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes diagram-cursor-off {
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes diagram-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+@keyframes diagram-box-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8, 0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes diagram-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes diagram-glow {
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes diagram-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@keyframes diagram-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes diagram-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* --- Around the diagram -------------------------------------------------- */
+
+/* Drawn for a white background, in a dark page and on a slide alike. */
+.diagram-figure .diagram-canvas {
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px;
+}
+.diagram-figure svg.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* A deck hides the legend, the teacher being there to explain, except in
+   print, which shows the diagram fully drawn. */
+.diagram-figure.in-deck:not(.printed) .legend {
+  display: none;
+}
+.diagram-figure.in-deck svg.diagram {
+  max-height: 520px;
+}
+
+/* A page stepping through the diagram does what reveal.js does in a deck:
+   hides the steps not reached yet. The captions say what the legend would. */
+.diagram-figure.stepping svg.diagram .fragment {
+  transition: opacity 0.2s;
+}
+.diagram-figure.stepping svg.diagram .fragment:not(.visible):not(.leg) {
+  opacity: 0;
+  visibility: hidden;
+}
+.diagram-figure.stepping .legend {
+  display: none;
+}
+
+/* The page's controls, in whatever colours the page is in. */
+.diagram-figure .diagram-caption {
+  margin: 0.5em 0.25em 0;
+}
+.diagram-figure .diagram-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 0.5em;
+}
+.diagram-figure .diagram-controls button {
+  font: inherit;
+  font-size: 0.9em;
+  color: inherit;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 6px;
+  padding: 0.2em 0.75em;
+  cursor: pointer;
+}
+.diagram-figure .diagram-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.diagram-figure .diagram-controls button.primary {
+  background: #1f6feb;
+  border-color: #1f6feb;
+  color: #fff;
+}
+.diagram-figure .diagram-controls .counter {
+  min-width: 7em;
+  text-align: center;
+  font-size: 0.9em;
+  opacity: 0.7;
+}
+
+/* Printed fully drawn, with the caption that goes with it. */
+@media print {
+  .diagram-figure .diagram-controls {
+    display: none;
+  }
+  .diagram-figure .diagram-canvas {
+    break-inside: avoid;
+  }
+}
