@@ -291,18 +291,8 @@
             server={server}
             state={Map.get(@server_state_map, server.id)}
             details_link={~p"/servers/#{server.id}"}
-            on_edit={
-              JS.dispatch("open-dialog", detail: %{dialog: EditServerDialogLive.id(server)})
-            }
-            edit_enabled={
-              not ServerView.set_up?(server) and
-                ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
-                  :server_authentication_failed,
-                  :server_connection_timed_out,
-                  :server_connection_refused,
-                  :server_key_exchange_failed
-                ])
-            }
+            on_edit={EditServerDialogLive.open(server)}
+            edit_enabled={editable?(server, Map.get(@server_state_map, server.id))}
             on_retry_connection={JS.push("retry_connecting", value: %{server_id: server.id})}
             on_retry_operation={JS.push("retry_operation", value: %{server_id: server.id})}
           />
@@ -322,14 +312,7 @@
         <.server_help auth={@auth} server={server} state={Map.get(@server_state_map, server.id)} />
 
         <.live_component
-          :if={
-            not ServerView.set_up?(server) and
-              ServerRealTimeState.problem?(Map.get(@server_state_map, server.id), [
-                :server_authentication_failed,
-                :server_connection_timed_out,
-                :server_connection_refused
-              ])
-          }
+          :if={editable?(server, Map.get(@server_state_map, server.id))}
           module={EditServerDialogLive}
           id={EditServerDialogLive.id(server)}
           auth={@auth}

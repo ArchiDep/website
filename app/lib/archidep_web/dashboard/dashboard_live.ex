@@ -184,6 +184,18 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         end)
       end)
 
+  # Decides both whether a server card offers the edit button and whether the
+  # edit dialog it opens is rendered, so that the two cannot disagree.
+  defp editable?(server, state),
+    do:
+      not ServerView.set_up?(server) and
+        ServerRealTimeState.problem?(state, [
+          :server_authentication_failed,
+          :server_connection_timed_out,
+          :server_connection_refused,
+          :server_key_exchange_failed
+        ])
+
   defp active_servers(servers), do: Enum.filter(servers, & &1.active)
 
   defp any_inactive_servers?(servers), do: Enum.any?(servers, &(not &1.active))

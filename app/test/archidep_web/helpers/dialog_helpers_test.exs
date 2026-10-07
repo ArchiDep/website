@@ -34,11 +34,15 @@ defmodule ArchiDepWeb.Helpers.DialogHelpersTest do
           :dialog_form,
           name_changeset(%{"name" => "draft"}),
           fn _form_data -> {:ok, validated_changeset} end,
-          new_socket()
+          new_socket("success-dialog-form")
         )
 
       assert assigned_form(result) ==
-               to_form(validated_changeset, as: :dialog_form, action: :validate)
+               to_form(validated_changeset,
+                 as: :dialog_form,
+                 id: "success-dialog-form",
+                 action: :validate
+               )
     end
 
     test "assigns the form built from the invalid changeset when the data cannot be applied" do
@@ -50,10 +54,11 @@ defmodule ArchiDepWeb.Helpers.DialogHelpersTest do
           :dialog_form,
           invalid_changeset,
           fn _form_data -> flunk("the validating function must not run on invalid data") end,
-          new_socket()
+          new_socket("invalid-dialog-form")
         )
 
-      assert assigned_form(result) == to_form(errored_changeset, as: :dialog_form)
+      assert assigned_form(result) ==
+               to_form(errored_changeset, as: :dialog_form, id: "invalid-dialog-form")
     end
 
     test "assigns the form built from the validating function's changeset on its error" do
@@ -64,14 +69,21 @@ defmodule ArchiDepWeb.Helpers.DialogHelpersTest do
           :dialog_form,
           name_changeset(%{"name" => "draft"}),
           fn _form_data -> {:error, error_changeset} end,
-          new_socket()
+          new_socket("error-dialog-form")
         )
 
-      assert assigned_form(result) == to_form(error_changeset, as: :dialog_form)
+      assert assigned_form(result) ==
+               to_form(error_changeset, as: :dialog_form, id: "error-dialog-form")
     end
   end
 
-  defp new_socket, do: %Socket{assigns: %{__changed__: %{}}}
+  defp new_socket(form_id),
+    do: %Socket{
+      assigns: %{
+        __changed__: %{},
+        form: to_form(name_changeset(%{}), as: :dialog_form, id: form_id)
+      }
+    }
 
   defp assigned_form({:noreply, %Socket{assigns: %{form: form}}}), do: form
 

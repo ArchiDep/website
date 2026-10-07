@@ -320,6 +320,31 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
              |> render_change()
              |> form_errors("new-server-form") == []
     end
+
+    # Regression test: the first validation rebuilt the form without its id,
+    # renaming every input, so the browser replaced the input being typed in and
+    # it lost focus.
+    test "keeps the ids of its inputs when validating", %{conn: conn, auth: auth} do
+      stub_page(auth, [], build_owner())
+
+      expected_ids = [
+        "new-server-form_name",
+        "new-server-form_active",
+        "new-server-form_ip_address",
+        "new-server-form_username",
+        "new-server-form_ssh_port",
+        "new-server-form_ssh_host_keys"
+      ]
+
+      {:ok, view, html} = live(conn, "/app/my-servers")
+
+      assert new_server_form_input_ids(html) == expected_ids
+
+      assert view
+             |> form("#new-server-form", server: %{name: "w"})
+             |> render_change()
+             |> new_server_form_input_ids() == expected_ids
+    end
   end
 
   describe "as a root user" do
@@ -447,6 +472,12 @@ defmodule ArchiDepWeb.Dashboard.MyServersLiveTest do
   end
 
   defp card_text(element), do: element |> html_element_text() |> String.trim()
+
+  defp new_server_form_input_ids(html),
+    do:
+      html
+      |> find_html_elements("#new-server-form input[id], #new-server-form textarea[id]")
+      |> Enum.map(&html_element_attribute(&1, "id"))
 
   defp form_errors(html, form_id),
     do:

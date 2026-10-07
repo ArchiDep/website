@@ -29,13 +29,17 @@ defmodule ArchiDepWeb.Helpers.DialogHelpers do
           Socket.t()
         ) :: {:noreply, Socket.t()}
   def validate_dialog_form(name, validate_changeset, validate, socket) do
+    # The ids of the form's inputs derive from its id. Keeping it unchanged keeps
+    # the browser from replacing the inputs, and the focused one losing focus.
+    id = socket.assigns.form.id
+
     with {:ok, form_data} <-
            Changeset.apply_action(validate_changeset, :validate),
          {:ok, changeset} <- validate.(form_data) do
-      {:noreply, assign(socket, form: to_form(changeset, as: name, action: :validate))}
+      {:noreply, assign(socket, form: to_form(changeset, as: name, id: id, action: :validate))}
     else
       {:error, %Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset, as: name))}
+        {:noreply, assign(socket, form: to_form(changeset, as: name, id: id))}
     end
   end
 end

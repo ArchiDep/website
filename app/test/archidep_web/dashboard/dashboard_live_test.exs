@@ -444,6 +444,92 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
         gettext("Updated server {server}", server: "web-renamed")
       )
     end
+
+    # Regression test: the card offered the edit button for a failed key
+    # exchange without rendering the dialog it opens, so the button did nothing.
+    for problem <- [
+          :server_authentication_failed_problem,
+          :server_connection_refused_problem,
+          :server_connection_timed_out_problem,
+          :server_key_exchange_failed_problem
+        ] do
+      test "opens the edit dialog filled with the server's data (#{problem})", %{
+        conn: conn,
+        auth: auth
+      } do
+        server =
+          build_dashboard_server(auth,
+            name: "web-07",
+            ip_address: %Postgrex.INET{address: {10, 0, 7, 1}},
+            username: "keeper",
+            ssh_port: 2207,
+            ssh_host_keys: "ssh-ed25519 AAAAweb07 root@web-07",
+            set_up_at: nil
+          )
+
+        state =
+          real_time_state(server, problems: [apply(ServersFactory, unquote(problem), [])])
+
+        stub_page(auth,
+          student: build_creating_student(),
+          servers: [server],
+          server_state_map: %{server.id => state}
+        )
+
+        {:ok, view, _html} = live(conn, @path)
+
+        assert view |> edit_server_button() |> render_click() |> edit_server_form() == %{
+                 name: "web-07",
+                 ip_address: "10.0.7.1",
+                 username: "keeper",
+                 ssh_port: "2207",
+                 ssh_host_keys: "ssh-ed25519 AAAAweb07 root@web-07",
+                 active: true
+               }
+      end
+    end
+
+    # Regression test: the card's edit button only showed the dialog without
+    # telling it that it was opened, so a dialog reopened after being closed
+    # stayed on its loading skeleton.
+    test "reopens the edit dialog filled with the server's data after closing it", %{
+      conn: conn,
+      auth: auth
+    } do
+      server =
+        build_dashboard_server(auth,
+          name: "web-08",
+          ip_address: %Postgrex.INET{address: {10, 0, 8, 1}},
+          username: "warden",
+          ssh_port: 2208,
+          ssh_host_keys: "ssh-ed25519 AAAAweb08 root@web-08",
+          active: true,
+          set_up_at: nil
+        )
+
+      state =
+        real_time_state(server, problems: [ServersFactory.server_connection_timed_out_problem()])
+
+      stub_page(auth,
+        student: build_creating_student(),
+        servers: [server],
+        server_state_map: %{server.id => state}
+      )
+
+      {:ok, view, _html} = live(conn, @path)
+
+      view |> edit_server_button() |> render_click()
+      view |> element("#edit-server-form button", gettext("Close")) |> render_click()
+
+      assert view |> edit_server_button() |> render_click() |> edit_server_form() == %{
+               name: "web-08",
+               ip_address: "10.0.8.1",
+               username: "warden",
+               ssh_port: "2208",
+               ssh_host_keys: "ssh-ed25519 AAAAweb08 root@web-08",
+               active: true
+             }
+    end
   end
 
   # The page holds the full owned-server list and renders only the active ones;
@@ -1093,6 +1179,40 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       {html_element_attribute(link, "href"),
        %{name: normalized_text(name_element), badge: normalized_text(badge_element)}}
     end)
+  end
+
+  defp edit_server_button(view), do: element(view, ".card button", gettext("Edit"))
+
+  # Projects the edit dialog's form to its editable values, or to `:loading`
+  # while it shows skeleton placeholders instead of its inputs.
+  defp edit_server_form(html) do
+    if find_html_elements(html, "#edit-server-form .skeleton") != [] do
+      :loading
+    else
+      %{
+        name: edit_server_input_value(html, "name"),
+        ip_address: edit_server_input_value(html, "ip_address"),
+        username: edit_server_input_value(html, "username"),
+        ssh_port: edit_server_input_value(html, "ssh_port"),
+        ssh_host_keys:
+          html
+          |> find_html_elements("#edit-server-form textarea[name='server[ssh_host_keys]']")
+          |> Enum.map(&html_element_text/1)
+          |> List.first(),
+        active:
+          find_html_elements(
+            html,
+            "#edit-server-form input[type='checkbox'][name='server[active]'][checked]"
+          ) != []
+      }
+    end
+  end
+
+  defp edit_server_input_value(html, field) do
+    html
+    |> find_html_elements("#edit-server-form input[name='server[#{field}]']")
+    |> Enum.map(&html_element_attribute(&1, "value"))
+    |> List.first()
   end
 
   defp normalized_text(element),
