@@ -422,6 +422,18 @@ defmodule ArchiDep.Support.ServersFactory do
     {:server_ansible_playbook_failed, playbook_name, playbook_state, playbook_stats}
   end
 
+  @spec server_ansible_playbook_repeatedly_failed_problem() ::
+          Types.server_ansible_playbook_repeatedly_failed_problem()
+  def server_ansible_playbook_repeatedly_failed_problem,
+    do:
+      {:server_ansible_playbook_repeatedly_failed,
+       Enum.map(1..3, fn _n ->
+         {:server_ansible_playbook_failed, playbook, state, stats} =
+           server_ansible_playbook_failed_problem(playbook: "setup")
+
+         {playbook, state, stats}
+       end)}
+
   @spec server_authentication_failed_problem :: Types.server_authentication_failed_problem()
   def server_authentication_failed_problem,
     do:

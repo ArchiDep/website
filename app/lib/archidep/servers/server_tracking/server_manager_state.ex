@@ -977,7 +977,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     |> connect_with_app_username()
     |> then(&add_action(&1, connect_action(&1)))
     |> stop_measuring_load_average()
-    |> drop_problems(server_ansible_playbook_failed_problem?("setup"))
+    |> drop_setup_playbook_problems()
   end
 
   defp handle_ansible_playbook_completed(
@@ -989,13 +989,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
        ),
        do:
          state
-         |> drop_problems(server_ansible_playbook_failed_problem?("setup"))
+         |> drop_setup_playbook_problems()
          |> maybe_add_problem(determine_ansible_playbook_problem(run))
 
   defp determine_ansible_playbook_problem(%AnsiblePlaybookRun{state: :succeeded}), do: nil
 
   defp determine_ansible_playbook_problem(failed_run),
     do: server_ansible_playbook_failed_problem(failed_run)
+
+  # The outcome of a newly completed setup playbook run supersedes both the
+  # failure of the previous run and the list of repeated failures that stopped
+  # the setup playbook from being run automatically.
+  defp drop_setup_playbook_problems(state),
+    do:
+      state
+      |> drop_problems(server_ansible_playbook_failed_problem?("setup"))
+      |> drop_problems([:server_ansible_playbook_repeatedly_failed])
 
   @impl ServerManagerBehaviour
   def retry_ansible_playbook(
@@ -1600,7 +1609,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         "Not re-running Ansible setup playbook for server #{state.server.id} because it has failed 3 times"
       )
 
-      add_problem(state, server_ansible_playbook_repeatedly_failed_problem(last_runs))
+      state
+      |> drop_problems([:server_ansible_playbook_repeatedly_failed])
+      |> add_problem(server_ansible_playbook_repeatedly_failed_problem(last_runs))
     else
       run_setup_playbook(state, cause, vars_and_digest)
     end

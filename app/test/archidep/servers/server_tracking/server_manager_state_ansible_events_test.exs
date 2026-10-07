@@ -260,7 +260,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         username: server.username,
         ansible: {playbook_run, previous_task, fake_cause},
         problems: [
-          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
+          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup"),
+          ServersFactory.server_ansible_playbook_repeatedly_failed_problem()
         ]
       )
 
@@ -827,7 +828,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateAnsibleEventsTest do
         username: server.username,
         ansible: {playbook_run, previous_task, fake_cause},
         problems: [
-          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup")
+          ServersFactory.server_ansible_playbook_failed_problem(playbook: "setup"),
+          ServersFactory.server_ansible_playbook_repeatedly_failed_problem()
         ]
       )
 
