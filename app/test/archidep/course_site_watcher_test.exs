@@ -49,7 +49,7 @@ defmodule ArchiDep.CourseSiteWatcherTest do
 
       send(watcher, file_event(Path.join(course_dir, "chapters/507-dns/subject.md")))
 
-      assert_receive {:proxy, ^rebuilder, {:cast, :request}}
+      assert_receive {:proxy, ^rebuilder, {:cast, :request}}, 500
     end
 
     test "asks for nothing when it is not", %{tmp_dir: tmp_dir} do
@@ -69,8 +69,8 @@ defmodule ArchiDep.CourseSiteWatcherTest do
       send(watcher, file_event(Path.join(course_dir, "chapters/507-dns/subject.md")))
       send(watcher, file_event(Path.join(course_dir, "chapters/508-tls/subject.md")))
 
-      assert_receive {:proxy, ^rebuilder, {:cast, :request}}
-      assert_receive {:proxy, ^rebuilder, {:cast, :request}}
+      assert_receive {:proxy, ^rebuilder, {:cast, :request}}, 500
+      assert_receive {:proxy, ^rebuilder, {:cast, :request}}, 500
       refute_receive {:proxy, ^rebuilder, _message}
     end
   end
