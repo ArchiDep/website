@@ -15,6 +15,29 @@ Azure resources as a student.
 
 ![Azure for Students Landing Page](images/azure-for-students-signup.png)
 
+## :exclamation: Choose or confirm your username for the course
+
+You need a username for the course before you create your server. If you have
+not chosen it yet, go to the dashboard, which asks for it: it suggests one,
+which you can accept or change.
+
+<div class="text-center">
+  <a href="/app" class="btn btn-primary btn-xl">
+    <span class="flex items-center gap-2">
+      <span>🛠️</span>
+      <span class="font-title">Go to the dashboard</span>
+    </span>
+  </a>
+</div>
+
+You will use this username for the administrator account of your server, and as
+part of its hostname. **Choose it now**: changing it later does not change it on
+a server you have already created, which you would then have to do by hand.
+
+Once you have confirmed it, your username, your assigned domain and the hostname
+made from them are shown on this page when you are logged in. You will need them
+later in this exercise.
+
 ## :exclamation: Get your public SSH key
 
 You can display your public SSH key in your terminal with the following command:
@@ -91,10 +114,9 @@ text area.
 {% note type: warning %}
 
 **Your Unix username MUST NOT** contain spaces, accented characters (e.g. é),
-hyphens (-) or dots (.). If you use the same name later in the course as a
-subdomain, it **MUST NOT** contain any underscores (\_). We suggest you choose a
-name that starts with a letter (a-z) and contains only alphanumeric characters
-(a-z and 0-9).
+dots (.) or underscores (\_), since it is also part of your server's subdomain.
+We suggest you choose a name that starts with a letter (a-z) and contains only
+letters, digits (0-9) and hyphens (-).
 
 {% endnote %}
 
@@ -590,12 +612,14 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDL6EKznX0xg652E/oWppt3TBYTZlArXmjx6Qs3UOzE
 Copy all of these lines. Just one more step, go back to the dashboard, and paste
 them into the **SSH host public keys** field when you register your server:
 
-<a href="/app?server=ready" class="btn btn-primary btn-xl">
-  <span class="flex items-center gap-2">
-    <span>🎉</span>
-    <span class="font-title">Register your virtual server</span>
-  </span>
-</a>
+<div class="text-center">
+  <a href="/app?server=ready" class="btn btn-primary btn-xl">
+    <span class="flex items-center gap-2">
+      <span>🎉</span>
+      <span class="font-title">Register your virtual server</span>
+    </span>
+  </a>
+</div>
 
 {% callout type: more, id: providing-virtual-server-ssh-host-public-keys %}
 
