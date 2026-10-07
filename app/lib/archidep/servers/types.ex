@@ -47,7 +47,11 @@ defmodule ArchiDep.Servers.Types do
           {:server_expected_property_mismatch, atom(), term(), term()}
   @type server_fact_gathering_failed_problem :: {:server_fact_gathering_failed, term()}
   @type server_key_exchange_failed_problem ::
-          {:server_key_exchange_failed, String.t() | nil, String.t() | nil}
+          {:server_key_exchange_failed, unknown_host_key() | nil, String.t() | nil}
+  # The SHA-256 fingerprint and the algorithm name of a host key presented by a
+  # server that matches none of its registered host keys, e.g.
+  # `{"SHA256:<base64>", "ED25519"}`.
+  @type unknown_host_key :: {String.t(), String.t()}
   @type server_missing_sudo_access_problem ::
           {:server_missing_sudo_access, String.t(), String.t()}
   @type server_open_ports_check_failed_problem ::

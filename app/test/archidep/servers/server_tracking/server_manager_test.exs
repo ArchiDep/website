@@ -118,13 +118,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
     end)
 
     # Initialize the server manager with a connection action.
-    initialize.([connect(host, port, username)])
+    options = [verify_host_key: fn _fingerprint, _algorithm -> true end]
+    initialize.([connect(host, port, username, options)])
 
     # Wait for the message indicating that the faker server connection has
     # received and forwarded the connection call.
     assert_receive {:proxy, ^server_conn,
-                    {:call, {:connect, ^host, ^port, ^username, silently_accept_hosts: true},
-                     from}},
+                    {:call, {:connect, ^host, ^port, ^username, ^options}, from}},
                    500
 
     # Ensure that the server manager has called the connection function.
@@ -644,13 +644,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                   starting_version: starting_version,
                   done_version: done_version
                 } ->
-               fake_fingerprint = SSHFactory.random_ssh_host_key_fingerprint()
+               {fake_fingerprint, fake_algorithm} = SSHFactory.random_unknown_host_key()
 
                expect(ServerManagerMock, :on_message, 2, fn
                  %ServerManagerState{
                    version: ^starting_version
                  } = state,
-                 {:unknown_key_fingerprint, ^fake_fingerprint} ->
+                 {:unknown_key_fingerprint, ^fake_fingerprint, ^fake_algorithm} ->
                    done.(state)
 
                  %ServerManagerState{version: ^done_version} =
@@ -660,7 +660,10 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
                    state
                end)
 
-               send(server_manager_pid, {:unknown_key_fingerprint, fake_fingerprint})
+               send(
+                 server_manager_pid,
+                 {:unknown_key_fingerprint, fake_fingerprint, fake_algorithm}
+               )
 
                assert_receive :done, 500
              end,
@@ -1046,12 +1049,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
 
   defp cancel_timer(ref), do: {:cancel_timer, ref}
 
-  defp connect(host, port, username) do
+  defp connect(host, port, username, options) do
     test_pid = self()
 
     {:connect,
      fn state, task_factory ->
-       task = task_factory.(host, port, username, silently_accept_hosts: true)
+       task = task_factory.(host, port, username, options)
        send(test_pid, {:connect_task, task})
        state
      end}

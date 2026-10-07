@@ -75,15 +75,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblems do
           Types.server_fact_gathering_failed_problem()
   def server_fact_gathering_failed_problem(reason), do: {:server_fact_gathering_failed, reason}
 
-  @spec server_key_exchange_failed_problem(Server.t(), String.t() | nil) ::
+  @spec server_key_exchange_failed_problem(Server.t(), Types.unknown_host_key() | nil) ::
           Types.server_key_exchange_failed_problem()
   def server_key_exchange_failed_problem(
         %Server{
           ssh_host_keys: ssh_host_keys
         },
-        unknown_fingerprint
+        unknown_host_key
       ),
-      do: {:server_key_exchange_failed, unknown_fingerprint, ssh_host_keys}
+      do: {:server_key_exchange_failed, unknown_host_key, ssh_host_keys}
 
   @spec server_missing_sudo_access_problem(String.t(), String.t()) ::
           Types.server_missing_sudo_access_problem()

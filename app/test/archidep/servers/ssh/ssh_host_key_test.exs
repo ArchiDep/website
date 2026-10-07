@@ -4,6 +4,8 @@ defmodule ArchiDep.Servers.SSH.SSHHostKeyTest do
   alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDep.Support.SSHFactory
 
+  doctest SSHHostKey
+
   describe "parse/1" do
     for key_kind <- [:ed25519, :ecdsa_nistp256, :ecdsa_nistp384, :ecdsa_nistp521, :rsa] do
       test "parses a #{key_kind} key from a .pub file line" do

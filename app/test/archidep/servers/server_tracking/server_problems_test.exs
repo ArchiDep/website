@@ -72,14 +72,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblemsTest do
                {:server_fact_gathering_failed, :enoent}
     end
 
-    test "a key exchange failed problem carries the unknown fingerprint and the server's fingerprints" do
+    test "a key exchange failed problem carries the unknown host key and the server's host keys" do
       server = ServersFactory.build(:server)
 
-      assert ServerProblems.server_key_exchange_failed_problem(server, "SHA256:unknown") ==
-               {:server_key_exchange_failed, "SHA256:unknown", server.ssh_host_keys}
+      assert ServerProblems.server_key_exchange_failed_problem(server, {"SHA256:unknown", "RSA"}) ==
+               {:server_key_exchange_failed, {"SHA256:unknown", "RSA"}, server.ssh_host_keys}
     end
 
-    test "a key exchange failed problem accepts a nil unknown fingerprint" do
+    test "a key exchange failed problem accepts a nil unknown host key" do
       server = ServersFactory.build(:server)
 
       assert ServerProblems.server_key_exchange_failed_problem(server, nil) ==
@@ -121,7 +121,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerProblemsTest do
 
   describe "problem predicates" do
     @sample_problems [
-      {:server_key_exchange_failed, "SHA256:unknown", "fingerprints"},
+      {:server_key_exchange_failed, {"SHA256:unknown", "ED25519"}, "fingerprints"},
       {:server_ansible_playbook_failed, "setup", :failed, %{}},
       {:server_expected_property_mismatch, :hostname, "expected", "actual"},
       {:server_connection_refused, {127, 0, 0, 1}, 22, "root"}

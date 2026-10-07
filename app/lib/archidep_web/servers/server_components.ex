@@ -667,11 +667,11 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   end
 
   def server_problem(
-        %{problem: {:server_key_exchange_failed, unknown_fingerprint, ssh_host_keys}} = assigns
+        %{problem: {:server_key_exchange_failed, unknown_host_key, ssh_host_keys}} = assigns
       ) do
     assigns =
       assign(assigns,
-        unknown_fingerprint: unknown_fingerprint,
+        unknown_host_key: unknown_host_key,
         keys: SSH.stored_ssh_host_keys(ssh_host_keys)
       )
 
@@ -681,12 +681,15 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
       <div>
         <div class="w-full flex flex-col gap-2">
           <p><strong>{gettext("SSH key exchange failed")}</strong></p>
-          <p :if={@unknown_fingerprint == nil}>{gettext("Server host key fingerprint is unknown")}</p>
-          <%= if @unknown_fingerprint != nil do %>
+          <p :if={@unknown_host_key == nil}>{gettext("Server host key fingerprint is unknown")}</p>
+          <%= if @unknown_host_key != nil do %>
             <p class="mt-1">
               {gettext("The host key fingerprint provided by the server is:")}
             </p>
-            <p><code class="break-all">{@unknown_fingerprint}</code></p>
+            <p>
+              <code class="break-all">{elem(@unknown_host_key, 0)}</code>
+              ({elem(@unknown_host_key, 1)})
+            </p>
           <% end %>
           <p :if={@keys == []}>{gettext("No host public keys were registered")}</p>
           <%= if @keys != [] do %>

@@ -395,6 +395,9 @@ ArchiDep.Servers.Supervisor                      (rest_for_one)
   parsing and validating SSH host public keys (see
   [`SSHHostKey`](./ssh/ssh_host_key.ex), which also computes their MD5/SHA-256
   fingerprints) and locating the application's SSH key pair from configuration.
+  [`KeyCallback`](./ssh/key_callback.ex) is the `:ssh` key callback through
+  which `ServerConnection` verifies a server's host key against its registered
+  keys, so that an unknown key can be reported with its algorithm.
 
 The [`ServerConnection`](./server_tracking/server_connection.ex) state machine
 ([`ServerConnectionState`](./server_tracking/server_connection_state.ex))

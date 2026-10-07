@@ -15,11 +15,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.Client
   alias ArchiDep.Servers.SSH.ConnectError
+  alias ArchiDep.Servers.SSH.KeyCallback
   alias Ecto.UUID
   require Logger
 
   @type connect_options :: [connect_option()]
-  @type connect_option :: {:silently_accept_hosts, boolean()}
+  @type connect_option :: {:verify_host_key, KeyCallback.verify_host_key_fun()}
 
   @connection_timeout Application.compile_env!(
                         :archidep,
@@ -156,9 +157,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         port,
         auth_methods: ~c"publickey",
         connect_timeout: @connection_timeout,
-        # key_cb: {:ssh_agent, timeout: 5000},
+        key_cb:
+          {KeyCallback,
+           verify_host_key: Keyword.get(options, :verify_host_key, &reject_host_key/2)},
         save_accepted_host: false,
-        silently_accept_hosts: Keyword.get(options, :silently_accept_hosts, false),
+        silently_accept_hosts: false,
         user: to_charlist(username),
         user_dir: to_charlist(SSH.ssh_dir()),
         user_interaction: false
@@ -176,6 +179,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnection do
         handle_connect_error(reason, server_id, target)
     end
   end
+
+  defp reject_host_key(_fingerprint, _algorithm), do: false
 
   # Erlang's SSH library reports these failures as strings; `ConnectError` owns
   # the strings and maps them to stable atoms.

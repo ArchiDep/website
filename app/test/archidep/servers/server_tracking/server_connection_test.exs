@@ -8,9 +8,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionTest do
   alias ArchiDep.Servers.SSH
   alias ArchiDep.Servers.SSH.Client
   alias ArchiDep.Servers.SSH.ConnectError
+  alias ArchiDep.Servers.SSH.KeyCallback
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.NoOpGenServer
   alias ArchiDep.Support.ServersFactory
+  alias ArchiDep.Support.SSHFactory
 
   setup :verify_on_exit!
 
@@ -57,17 +59,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionTest do
       {:ok, connection_ref}
     end)
 
-    assert ServerConnection.connect(server, {1, 2, 3, 4}, 22, "root", silently_accept_hosts: true) ==
-             :ok
+    verify_host_key = fn _fingerprint, _algorithm -> true end
+
+    assert ServerConnection.connect(server, {1, 2, 3, 4}, 22, "root",
+             verify_host_key: verify_host_key
+           ) == :ok
 
     assert_receive {:connect_called, {1, 2, 3, 4}, 22, opts}, 500
-    assert opts == expected_connect_opts(true)
+    assert opts == expected_connect_opts(verify_host_key)
   end
 
-  test "opening an SSH connection defaults to not silently accepting hosts", %{
-    server: server,
-    server_id: server_id
-  } do
+  test "opening an SSH connection without a host key verification function rejects every host key",
+       %{
+         server: server,
+         server_id: server_id
+       } do
     test_pid = self()
     conn = start_and_idle!(server_id)
     allow(Client.Mock, test_pid, conn)
@@ -81,8 +87,14 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionTest do
 
     assert ServerConnection.connect(server, {1, 2, 3, 4}, 22, "root") == :ok
 
+    # The default verification function is private to the connection, so it is
+    # bound from the options and its behaviour asserted.
     assert_receive {:connect_called, opts}, 500
-    assert opts == expected_connect_opts(false)
+    assert {KeyCallback, [verify_host_key: default_verify_host_key]} = opts[:key_cb]
+    assert opts == expected_connect_opts(default_verify_host_key)
+
+    {fingerprint, algorithm} = SSHFactory.random_unknown_host_key()
+    assert default_verify_host_key.(fingerprint, algorithm) == false
   end
 
   test "opening an SSH connection maps an authentication failure", %{
@@ -306,12 +318,13 @@ defmodule ArchiDep.Servers.ServerTracking.ServerConnectionTest do
   # The full set of options the connection passes to the SSH boundary, so each
   # test asserts the whole options list by equality while varying only what it
   # exercises.
-  defp expected_connect_opts(silently_accept_hosts),
+  defp expected_connect_opts(verify_host_key),
     do: [
       auth_methods: ~c"publickey",
       connect_timeout: connection_timeout(),
+      key_cb: {KeyCallback, verify_host_key: verify_host_key},
       save_accepted_host: false,
-      silently_accept_hosts: silently_accept_hosts,
+      silently_accept_hosts: false,
       user: ~c"root",
       user_dir: to_charlist(SSH.ssh_dir()),
       user_interaction: false

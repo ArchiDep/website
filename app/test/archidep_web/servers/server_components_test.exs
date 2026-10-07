@@ -923,7 +923,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
       # Real host public keys generated with ssh-keygen: the expected
       # fingerprints are the output of `ssh-keygen -lf` for them.
       problem =
-        {:server_key_exchange_failed, "SHA256:m8HPD1dZ8lHmxBEY0nWUQakBAGBsHLkmfbq9fGl7a2I",
+        {:server_key_exchange_failed,
+         {"SHA256:m8HPD1dZ8lHmxBEY0nWUQakBAGBsHLkmfbq9fGl7a2I", "RSA"},
          """
          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e
          ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7xhOu0n7K5DlCoqSwRLA5aZExh4s9fhsf0NELpSrJVnoNHwqfd5LUQdmrq4W8PNcloyilUhidRR/tEP2MfU0=
@@ -932,7 +933,20 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
       assert problem(problem) == %{
                severity: :error,
                text:
-                 "SSH key exchange failed The host key fingerprint provided by the server is: SHA256:m8HPD1dZ8lHmxBEY0nWUQakBAGBsHLkmfbq9fGl7a2I The fingerprints of the host public keys registered for this server are: SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY (ED25519) SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ (ECDSA)",
+                 "SSH key exchange failed The host key fingerprint provided by the server is: SHA256:m8HPD1dZ8lHmxBEY0nWUQakBAGBsHLkmfbq9fGl7a2I (RSA) The fingerprints of the host public keys registered for this server are: SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY (ED25519) SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ (ECDSA)",
+               retry: nil
+             }
+    end
+
+    test "reports that no keys are registered when the server presents an unknown key" do
+      problem =
+        {:server_key_exchange_failed,
+         {"SHA256:0aZTeJEc/ke5sI65fcpc70c8hNQiqsSJ7Aukqo9xe2Y", "ECDSA"}, nil}
+
+      assert problem(problem) == %{
+               severity: :error,
+               text:
+                 "SSH key exchange failed The host key fingerprint provided by the server is: SHA256:0aZTeJEc/ke5sI65fcpc70c8hNQiqsSJ7Aukqo9xe2Y (ECDSA) No host public keys were registered",
                retry: nil
              }
     end

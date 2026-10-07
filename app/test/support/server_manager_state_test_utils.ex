@@ -24,7 +24,6 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.GenServerProxy
-  alias ArchiDep.Support.NetFactory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDep.Support.SSHFactory
   alias Ecto.UUID
@@ -45,45 +44,37 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
 
     %ServerManagerState{} =
       result =
-      connect_fn.(state, fn ^expected_host, ^expected_port, ^username, opts! ->
-        assert {{:sha256, silently_accept_hosts}, opts!} =
-                 Keyword.pop!(opts!, :silently_accept_hosts)
-
-        assert Keyword.keys(opts!) == []
-        send(test_pid, {:connect_called, silently_accept_hosts})
+      connect_fn.(state, fn ^expected_host, ^expected_port, ^username, opts ->
+        send(test_pid, {:connect_called, opts})
         fake_task
       end)
 
     assert result == %ServerManagerState{state | tasks: %{connect: fake_task.ref}}
 
-    assert_receive {:connect_called, silently_accept_hosts_fn}, 500
-    assert is_function(silently_accept_hosts_fn, 2)
+    # The verification function cannot be compared by value; it is the only
+    # option, and its behaviour is asserted below.
+    assert_receive {:connect_called, opts}, 500
+    assert [verify_host_key: verify_host_key] = opts
+    assert is_function(verify_host_key, 2)
 
     {:ok, ssh_host_keys} = SSH.parse_ssh_host_keys(server.ssh_host_keys)
 
     for key <- ssh_host_keys do
-      random_peer = :inet.ntoa(NetFactory.ip_address())
-
-      assert silently_accept_hosts_fn.(
-               random_peer,
-               key |> SSHHostKey.fingerprint(:sha256) |> to_charlist()
-             ) == true
+      assert verify_host_key.(SSHHostKey.fingerprint(key, :sha256), SSHHostKey.algorithm(key)) ==
+               true
     end
 
-    refute_received {:unknown_key_fingerprint, _unknown_fingerprint}
+    refute_received {:unknown_key_fingerprint, _unknown_fingerprint, _unknown_algorithm}
 
-    random_peer = :inet.ntoa(NetFactory.ip_address())
-    unknown_fingerprint = SSHFactory.random_ssh_host_key_fingerprint()
+    {unknown_fingerprint, unknown_algorithm} = SSHFactory.random_unknown_host_key()
 
     assert {false, msg} =
-             with_log(fn ->
-               silently_accept_hosts_fn.(random_peer, to_charlist(unknown_fingerprint))
-             end)
+             with_log(fn -> verify_host_key.(unknown_fingerprint, unknown_algorithm) end)
 
     assert msg =~
-             "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(unknown_fingerprint)} does not match any of its registered host public keys"
+             "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(unknown_fingerprint)} (#{unknown_algorithm}) does not match any of its registered host public keys"
 
-    assert_receive {:unknown_key_fingerprint, ^unknown_fingerprint}, 500
+    assert_receive {:unknown_key_fingerprint, ^unknown_fingerprint, ^unknown_algorithm}, 500
 
     result
   end

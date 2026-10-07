@@ -504,9 +504,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       "Server manager could not connect to server #{server.id} as #{state.username} because key exchange failed"
     )
 
-    unknown_fingerprint =
+    unknown_host_key =
       Enum.find(state.problems, fn
-        {:server_key_exchange_failed, _fingerprint, _ssh_host_key_fingerprints} -> true
+        {:server_key_exchange_failed, _unknown_host_key, _ssh_host_keys} -> true
         _anything_else -> false
       end) || {:server_key_exchange_failed, nil, nil}
 
@@ -518,7 +518,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       )
     )
     |> add_action(update_tracking_action())
-    |> set_problem(server_key_exchange_failed_problem(server, elem(unknown_fingerprint, 1)))
+    |> set_problem(server_key_exchange_failed_problem(server, elem(unknown_host_key, 1)))
   end
 
   defp handle_connect_task_result(
@@ -1406,12 +1406,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   def on_message(%__MODULE__{connection_state: connected_state()} = state, :measure_load_average),
     do: add_action(state, get_load_average())
 
-  def on_message(%__MODULE__{server: server} = state, {:unknown_key_fingerprint, fingerprint})
-      when is_binary(fingerprint),
+  def on_message(
+        %__MODULE__{server: server} = state,
+        {:unknown_key_fingerprint, fingerprint, algorithm}
+      )
+      when is_binary(fingerprint) and is_binary(algorithm),
       do:
         state
         |> drop_problems(server_key_exchange_failed_problem?())
-        |> add_problem(server_key_exchange_failed_problem(server, fingerprint))
+        |> add_problem(server_key_exchange_failed_problem(server, {fingerprint, algorithm}))
 
   def on_message(state, :measure_load_average) do
     Logger.warning(
@@ -1766,23 +1769,19 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
      fn %__MODULE__{} = task_state, task_factory ->
        task =
          task_factory.(host, port, username,
-           silently_accept_hosts:
-             {:sha256,
-              fn _peer_name, fingerprint_charlist ->
-                fingerprint = to_string(fingerprint_charlist)
+           verify_host_key: fn fingerprint, algorithm ->
+             match = fingerprint in expected_fingerprints
 
-                match = fingerprint in expected_fingerprints
+             if not match do
+               Logger.warning(
+                 "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(fingerprint)} (#{algorithm}) does not match any of its registered host public keys"
+               )
 
-                if not match do
-                  Logger.warning(
-                    "Refusing to connect to server #{server.id} because its SSH host key fingerprint #{inspect(fingerprint)} does not match any of its registered host public keys"
-                  )
+               send(pid, {:unknown_key_fingerprint, fingerprint, algorithm})
+             end
 
-                  send(pid, {:unknown_key_fingerprint, fingerprint})
-                end
-
-                match
-              end}
+             match
+           end
          )
 
        %__MODULE__{task_state | tasks: Map.put(task_state.tasks, :connect, task.ref)}

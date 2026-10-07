@@ -1835,11 +1835,13 @@ an [`SSHDaemon`][ssh-daemon] — a happy-path connect / `echo` round-trip /
 disconnect against an authorized fixture key, plus an authentication failure
 (unauthorized key) and a key-exchange failure (disjoint algorithms), each
 asserting the whole error tuple equals `ConnectError.authentication_failed/0` /
-`key_exchange_failed/0` (pinning the real `:ssh` string). A fourth case
-certifies the security-relevant behaviour rather than a string: with
-`silently_accept_hosts: false` (production's default), real `:ssh` rejects an
-unknown host key, and the reason classifies as `:other` — the app does not
-branch on that string, so it is deliberately not pinned. The mocked
+`key_exchange_failed/0` (pinning the real `:ssh` string). The other cases
+certify the security-relevant host key verification, which production plugs into
+`:ssh` as a key callback ([`KeyCallback`][key-callback]): for each kind of host
+key, the fingerprint and algorithm real `:ssh` hands it match what `ssh-keygen
+-l` reports for the daemon's key, a rejected key fails as a key exchange failure
+(the outcome the server manager keys off), and no other option
+(`silently_accept_hosts: true`) can override a rejection. The mocked
 [`ServerConnection`][server-connection-test] tests return the auth/kex tuples to
 check the `classify/1` mapping fires end to end, and
 [`ConnectErrorTest`][connect-error-test] pins `classify/1` against each
@@ -1905,6 +1907,7 @@ exit.
 [ssh-daemon]: ../test/support/ssh_daemon.ex
 [system-client-compatibility-test]: ../test/archidep/servers/ssh/client/system_client_compatibility_test.exs
 [connect-error]: ../lib/archidep/servers/ssh/connect_error.ex
+[key-callback]: ../lib/archidep/servers/ssh/key_callback.ex
 [connect-error-test]: ../test/archidep/servers/ssh/connect_error_test.exs
 [runner-compatibility-test]: ../test/archidep/servers/ansible/runner_compatibility_test.exs
 [ubuntu-server-container]: ../test/support/ubuntu_server_container.ex

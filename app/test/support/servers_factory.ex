@@ -466,7 +466,7 @@ defmodule ArchiDep.Support.ServersFactory do
   @spec server_key_exchange_failed_problem() :: Types.server_key_exchange_failed_problem()
   def server_key_exchange_failed_problem,
     do:
-      {:server_key_exchange_failed, optional(&SSHFactory.random_ssh_host_key_fingerprint/0),
+      {:server_key_exchange_failed, optional(&SSHFactory.random_unknown_host_key/0),
        optional(&SSHFactory.random_ssh_host_keys/0)}
 
   @spec server_missing_sudo_access_problem :: Types.server_missing_sudo_access_problem()

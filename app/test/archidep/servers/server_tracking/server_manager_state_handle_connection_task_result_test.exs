@@ -521,7 +521,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
     server = build_active_server(set_up_at: nil)
 
     fake_connect_task_ref = make_ref()
-    fake_ssh_host_key_fingerprint = SSHFactory.random_ssh_host_key_fingerprint()
+    fake_unknown_host_key = SSHFactory.random_unknown_host_key()
 
     connecting = ServersFactory.random_connecting_state(%{retrying: false})
     connecting_state(connection_pid: connection_pid) = connecting
@@ -535,7 +535,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
         tasks: %{connect: fake_connect_task_ref},
         problems: [
           ServersFactory.server_authentication_failed_problem(),
-          {:server_key_exchange_failed, fake_ssh_host_key_fingerprint, server.ssh_host_keys}
+          {:server_key_exchange_failed, fake_unknown_host_key, server.ssh_host_keys}
         ],
         version: 9
       )
@@ -572,8 +572,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateHandleConnectionTask
                actions: actions,
                tasks: %{},
                problems: [
-                 {:server_key_exchange_failed, fake_ssh_host_key_fingerprint,
-                  server.ssh_host_keys}
+                 {:server_key_exchange_failed, fake_unknown_host_key, server.ssh_host_keys}
                ],
                version: 9
            }

@@ -66,7 +66,23 @@ defmodule ArchiDep.Servers.SSH.SSHHostKey do
   `ED25519`.
   """
   @spec algorithm(t()) :: String.t()
-  def algorithm(%__MODULE__{type: type}), do: Map.fetch!(@key_algorithms, type)
+  def algorithm(%__MODULE__{type: type}), do: algorithm_name(type)
+
+  @doc """
+  Returns the name `ssh-keygen -l` shows for the algorithm of keys of the given
+  type, e.g. `ED25519` for `ssh-ed25519`, or the type itself for a type that
+  cannot be parsed into a host key, e.g. `ssh-dss`.
+
+  ## Examples
+
+      iex> ArchiDep.Servers.SSH.SSHHostKey.algorithm_name("ecdsa-sha2-nistp384")
+      "ECDSA"
+
+      iex> ArchiDep.Servers.SSH.SSHHostKey.algorithm_name("ssh-dss")
+      "ssh-dss"
+  """
+  @spec algorithm_name(String.t()) :: String.t()
+  def algorithm_name(type) when is_binary(type), do: Map.get(@key_algorithms, type, type)
 
   @spec to_openssh(t()) :: String.t()
   def to_openssh(%__MODULE__{type: type, key: key}),

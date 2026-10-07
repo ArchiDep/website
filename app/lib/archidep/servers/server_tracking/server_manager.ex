@@ -297,8 +297,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     |> noreply()
   end
 
-  def handle_info({:unknown_key_fingerprint, fingerprint} = message, {state_module, state})
-      when is_binary(fingerprint) do
+  def handle_info(
+        {:unknown_key_fingerprint, fingerprint, algorithm} = message,
+        {state_module, state}
+      )
+      when is_binary(fingerprint) and is_binary(algorithm) do
     state
     |> state_module.on_message(message)
     |> execute_actions()

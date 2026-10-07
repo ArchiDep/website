@@ -74,6 +74,15 @@ defmodule ArchiDep.Support.SSHFactory do
   def random_ssh_host_key_fingerprint,
     do: "SHA256:#{32 |> Faker.random_bytes() |> Base.encode64(padding: false)}"
 
+  @doc """
+  Generates a random SHA256 SSH host key fingerprint and the name of a host key
+  algorithm, e.g. to simulate a key presented by a server that does not match
+  any known key.
+  """
+  @spec random_unknown_host_key() :: {String.t(), String.t()}
+  def random_unknown_host_key,
+    do: {random_ssh_host_key_fingerprint(), Enum.random(["ED25519", "ECDSA", "RSA"])}
+
   defp random_ecdsa_host_key(ssh_curve_name, curve) do
     {:ECPrivateKey, _version, _private_key, parameters, public_key, _attributes} =
       :public_key.generate_key({:namedCurve, curve})
