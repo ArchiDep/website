@@ -506,7 +506,7 @@ msgstr ""
 msgid "Connection information"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:988
+#: lib/archidep_web/servers/server_components.ex:991
 #, elixir-autogen, icu-format
 msgid "Connection timed out."
 msgstr ""
@@ -516,7 +516,7 @@ msgstr ""
 msgid "Context"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:810
+#: lib/archidep_web/servers/server_components.ex:813
 #, elixir-autogen, icu-format
 msgid "Could not check whether {cs}{username}{ce} has sudo access"
 msgstr ""
@@ -531,7 +531,7 @@ msgstr ""
 msgid "Could not gather facts from the server"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:834
+#: lib/archidep_web/servers/server_components.ex:837
 #, elixir-autogen, icu-format
 msgid "Could not reconnect to server after setup"
 msgstr ""
@@ -714,7 +714,7 @@ msgstr ""
 msgid "Official name of the student's academic class"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:850
+#: lib/archidep_web/servers/server_components.ex:853
 #, elixir-autogen, icu-format
 msgid "Oops, an unexpected problem occurred"
 msgstr ""
@@ -751,7 +751,7 @@ msgid "Remember Me"
 msgstr ""
 
 #: lib/archidep_web/servers/server_components.ex:538
-#: lib/archidep_web/servers/server_components.ex:778
+#: lib/archidep_web/servers/server_components.ex:781
 #, elixir-autogen, icu-format
 msgid "Retry"
 msgstr ""
@@ -783,57 +783,57 @@ msgstr ""
 msgid "Server"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:883
+#: lib/archidep_web/servers/server_components.ex:886
 #, elixir-autogen, icu-format
 msgid "Server has {actual} CPU {actual, plural, =1 {core} other {cores}} when it should have {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:899
+#: lib/archidep_web/servers/server_components.ex:902
 #, elixir-autogen, icu-format
 msgid "Server has {actual} MB of RAM when it should have {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:906
+#: lib/archidep_web/servers/server_components.ex:909
 #, elixir-autogen, icu-format
 msgid "Server has {actual} MB of swap when it should have {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:875
+#: lib/archidep_web/servers/server_components.ex:878
 #, elixir-autogen, icu-format
 msgid "Server has {actual} {actual, plural, =1 {CPU} other {CPUs}} when it should have {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:891
+#: lib/archidep_web/servers/server_components.ex:894
 #, elixir-autogen, icu-format
 msgid "Server has {actual} {actual, plural, =1 {vCPU} other {vCPUs}} when it should have {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:913
+#: lib/archidep_web/servers/server_components.ex:916
 #, elixir-autogen, icu-format
 msgid "Server is running a system of type {actual} when it should be {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:927
+#: lib/archidep_web/servers/server_components.ex:930
 #, elixir-autogen, icu-format
 msgid "Server is running an operating system of the {actual} family when it should be {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:942
+#: lib/archidep_web/servers/server_components.ex:945
 #, elixir-autogen, icu-format
 msgid "Server is running distribution release {actual} when it should be {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:949
+#: lib/archidep_web/servers/server_components.ex:952
 #, elixir-autogen, icu-format
 msgid "Server is running distribution version {actual} when it should be {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:920
+#: lib/archidep_web/servers/server_components.ex:923
 #, elixir-autogen, icu-format
 msgid "Server is running on architecture {actual} when it should be {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:935
+#: lib/archidep_web/servers/server_components.ex:938
 #, elixir-autogen, icu-format
 msgid "Server is running the {actual} Linux distribution when it should be {expected}"
 msgstr ""
@@ -843,12 +843,12 @@ msgstr ""
 msgid "Server not found"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:956
+#: lib/archidep_web/servers/server_components.ex:959
 #, elixir-autogen, icu-format
 msgid "Server property {property} has value {actual} when it should be {expected}"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:985
+#: lib/archidep_web/servers/server_components.ex:988
 #, elixir-autogen, icu-format
 msgid "Server unreachable."
 msgstr ""
@@ -943,7 +943,7 @@ msgstr ""
 msgid "Upload"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:717
+#: lib/archidep_web/servers/server_components.ex:720
 #, elixir-autogen, icu-format
 msgid "User {cs}{username}{ce} does not have sudo access"
 msgstr ""
@@ -951,7 +951,7 @@ msgstr ""
 #: lib/archidep_web/admin/classes/class_live.html.heex:282
 #: lib/archidep_web/admin/classes/student_form_component.ex:61
 #: lib/archidep_web/dashboard/components/what_is_your_name_live.html.heex:34
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:21
+#: lib/archidep_web/dashboard/dashboard_live.ex:180
 #: lib/archidep_web/profile/profile_live.html.heex:24
 #: lib/archidep_web/servers/server_form_component.ex:182
 #: lib/archidep_web/servers/server_live.html.heex:30
@@ -961,22 +961,22 @@ msgstr ""
 
 #: lib/archidep_web/auth/auth_controller.ex:30
 #: lib/archidep_web/auth/auth_controller.ex:167
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:8
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:9
 #, elixir-autogen, icu-format
 msgid "Welcome!"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:993
+#: lib/archidep_web/servers/server_components.ex:996
 #, elixir-autogen, icu-format
 msgid "Will retry in '{seconds}'s"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:997
+#: lib/archidep_web/servers/server_components.ex:1000
 #, elixir-autogen, icu-format
 msgid "Will retry in {count}s"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:994
+#: lib/archidep_web/servers/server_components.ex:997
 #, elixir-autogen, icu-format
 msgid "Will retry soon"
 msgstr ""
@@ -1004,7 +1004,7 @@ msgstr ""
 msgid "Your Switch edu-ID account is not authorized to access this application."
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:1000
+#: lib/archidep_web/servers/server_components.ex:1003
 #, elixir-autogen, icu-format
 msgid "attempt #{count}"
 msgstr ""
@@ -1109,7 +1109,7 @@ msgstr ""
 msgid "  This form allows you to register the existing cloud server you\n  have created by following the {as}{ss}{exercise}{se}{ae}\n  exercise. We will connect to your server and verify that you\n  have set it up correctly for the purposes of the course. We will\n  also create our own user account on the server to facilitate\n  future debugging and to help you if you lose your own access.\n"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:1037
+#: lib/archidep_web/servers/server_components.ex:1040
 #, elixir-autogen, icu-format
 msgid "#{count}"
 msgstr ""
@@ -1124,7 +1124,7 @@ msgstr ""
 msgid "Account username"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:110
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:51
 #, elixir-autogen, icu-format
 msgid "Action Required!"
 msgstr ""
@@ -1145,7 +1145,7 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:209
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:150
 #, elixir-autogen, icu-format
 msgid "All right!"
 msgstr ""
@@ -1169,7 +1169,7 @@ msgstr ""
 msgid "Are you sure you want to permanently delete the session of {date}, {title}?"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:123
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:64
 #, elixir-autogen, icu-format
 msgid "Armed with your username, {cs}{username}{ce}, and your assigned domain, {cs}{domain}{ce}, battle through the {as}{ss}{exercise}{se}{ae} exercise, then come back here to register your hard-won server."
 msgstr ""
@@ -1209,7 +1209,7 @@ msgstr ""
 msgid "Change"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:186
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:127
 #, elixir-autogen, icu-format
 msgid "Change username"
 msgstr ""
@@ -1239,7 +1239,7 @@ msgstr ""
 msgid "Clear filters"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:262
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:203
 #, elixir-autogen, icu-format
 msgid "Completed"
 msgstr ""
@@ -1276,7 +1276,7 @@ msgstr ""
 msgid "Copy to clipboard"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:791
+#: lib/archidep_web/servers/server_components.ex:794
 #, elixir-autogen, icu-format
 msgid "Could not check open ports on the server"
 msgstr ""
@@ -1385,7 +1385,7 @@ msgstr ""
 msgid "Every section and chapter of the course is done"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:61
+#: lib/archidep_web/dashboard/dashboard_live.ex:216
 #, elixir-autogen, icu-format
 msgid "Exercise server SSH host key fingerprints"
 msgstr ""
@@ -1447,22 +1447,22 @@ msgstr ""
 msgid "Hello, {name}!"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:276
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:217
 #, elixir-autogen, icu-format
 msgid "Hostname"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:243
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:184
 #, elixir-autogen, icu-format
 msgid "How do I connect?"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:158
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:99
 #, elixir-autogen, icu-format
 msgid "I am ready"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:160
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:101
 #, elixir-autogen, icu-format
 msgid "I am ready to undertake this quest"
 msgstr ""
@@ -1482,7 +1482,7 @@ msgstr ""
 msgid "Impersonate"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:15
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:16
 #, elixir-autogen, icu-format
 msgid "In the meantime, here's your connection details to the SSH server we have set up for you for the Hello SSH exercise:"
 msgstr ""
@@ -1513,7 +1513,7 @@ msgstr ""
 msgid "Inventory"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:211
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:152
 #, elixir-autogen, icu-format
 msgid "It has been done"
 msgstr ""
@@ -1540,7 +1540,7 @@ msgstr ""
 msgid "Key"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:112
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:53
 #, elixir-autogen, icu-format
 msgid "Let's get started!"
 msgstr ""
@@ -1565,12 +1565,12 @@ msgstr ""
 msgid "My name is Sir Lancelot of Camelot."
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:148
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:89
 #, elixir-autogen, icu-format
 msgid "My server stands ready"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:173
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:114
 #: lib/archidep_web/dashboard/my_servers_live.html.heex:16
 #, elixir-autogen, icu-format
 msgid "My servers"
@@ -1609,7 +1609,7 @@ msgstr ""
 msgid "No connection to this server"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:691
+#: lib/archidep_web/servers/server_components.ex:694
 #, elixir-autogen, icu-format
 msgid "No host public keys were registered"
 msgstr ""
@@ -1644,7 +1644,7 @@ msgstr ""
 msgid "None registered"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:273
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:214
 #, elixir-autogen, icu-format
 msgid "Not completed"
 msgstr ""
@@ -1664,7 +1664,7 @@ msgstr ""
 msgid "Owner"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:24
+#: lib/archidep_web/dashboard/dashboard_live.ex:183
 #, elixir-autogen, icu-format
 msgid "Password"
 msgstr ""
@@ -1691,7 +1691,7 @@ msgstr ""
 msgid "Playbook"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:761
+#: lib/archidep_web/servers/server_components.ex:764
 #, elixir-autogen, icu-format
 msgid "Port {port}: {message}"
 msgstr ""
@@ -1773,7 +1773,7 @@ msgstr ""
 msgid "Server host key fingerprint is unknown"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:864
+#: lib/archidep_web/servers/server_components.ex:867
 #, elixir-autogen, icu-format
 msgid "Server hostname is {cs}{actual}{ce} when it should be {cs}{expected}{ce}"
 msgstr ""
@@ -1801,7 +1801,7 @@ msgstr ""
 msgid "Session no longer exists"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:254
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:195
 #: lib/archidep_web/servers/server_components.ex:358
 #, elixir-autogen, icu-format
 msgid "Setup"
@@ -1883,7 +1883,7 @@ msgstr ""
 msgid "Switch edu-ID name"
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:196
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:137
 #, elixir-autogen, icu-format
 msgid "Take me back to the exercise"
 msgstr ""
@@ -1920,7 +1920,7 @@ msgstr ""
 msgid "That link does not name a page of any edition of the course we have published."
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:694
+#: lib/archidep_web/servers/server_components.ex:697
 #, elixir-autogen, icu-format
 msgid "The fingerprints of the host public keys registered for this server are:"
 msgstr ""
@@ -1970,7 +1970,7 @@ msgstr ""
 msgid "The site was rendered again."
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:119
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:60
 #, elixir-autogen, icu-format
 msgid "The time has come to get your own server!"
 msgstr ""
@@ -2068,7 +2068,7 @@ msgstr ""
 msgid "Warnings will be issued if the server does not meet these expected properties. Default expected properties are inherited from the server's group, but can be overridden here (use 0 or * to unset an expected property)."
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:10
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:11
 #, elixir-autogen, icu-format
 msgid "Welcome to the Architecture & Deployment course dashboard. There's not much to see here yet, but come back for more later."
 msgstr ""
@@ -2108,17 +2108,17 @@ msgstr ""
 msgid "You are no longer impersonating another user."
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:115
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:56
 #, elixir-autogen, icu-format
 msgid "You are root. Register as many servers as you like."
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:268
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:209
 #, elixir-autogen, icu-format
 msgid "You have not completed the initial server setup yet. You should not proceed with deployment exercises until you have done so."
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:259
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:200
 #, elixir-autogen, icu-format
 msgid "You have successfully set up your server and can use it for exercises."
 msgstr ""
@@ -2129,7 +2129,7 @@ msgstr ""
 msgid "You will use this name as the username of your Unix user account on your virtual server. It will also be part of the subdomain pointing to your server, e.g. {sc}{subdomain}.{domain}{ec}."
 msgstr ""
 
-#: lib/archidep_web/dashboard/dashboard_live.html.heex:240
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:181
 #, elixir-autogen, icu-format
 msgid "Your server"
 msgstr ""
@@ -2169,12 +2169,12 @@ msgstr ""
 msgid "connecting"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:738
+#: lib/archidep_web/servers/server_components.ex:741
 #, elixir-autogen, icu-format
 msgid "connection refused"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:741
+#: lib/archidep_web/servers/server_components.ex:744
 #, elixir-autogen, icu-format
 msgid "connection timeout"
 msgstr ""
@@ -2205,7 +2205,7 @@ msgstr ""
 msgid "enabled for class"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:744
+#: lib/archidep_web/servers/server_components.ex:747
 #, elixir-autogen, icu-format
 msgid "error"
 msgstr ""
@@ -2261,17 +2261,17 @@ msgstr ""
 msgid "reconnecting"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:1030
+#: lib/archidep_web/servers/server_components.ex:1033
 #, elixir-autogen, icu-format
 msgid "retry '{seconds}'s"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:1031
+#: lib/archidep_web/servers/server_components.ex:1034
 #, elixir-autogen, icu-format
 msgid "retry soon"
 msgstr ""
 
-#: lib/archidep_web/servers/server_components.ex:1034
+#: lib/archidep_web/servers/server_components.ex:1037
 #, elixir-autogen, icu-format
 msgid "retry {count}s"
 msgstr ""
@@ -2396,4 +2396,14 @@ msgstr ""
 #: lib/archidep_web/servers/server_form_component.ex:671
 #, elixir-autogen, icu-format
 msgid "e.g. resolute"
+msgstr ""
+
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:283
+#, elixir-autogen, icu-format
+msgid "Connection details for the shared SSH exercise server"
+msgstr ""
+
+#: lib/archidep_web/dashboard/dashboard_live.html.heex:287
+#, elixir-autogen, icu-format
+msgid "This shared server is only used for the SSH and Unix permissions exercises. All further exercises happen on your own server."
 msgstr ""

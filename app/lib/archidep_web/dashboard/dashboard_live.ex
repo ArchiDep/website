@@ -166,6 +166,78 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
     student
   end
 
+  # The student's credentials for the SSH exercise VM and the fingerprints of
+  # its host keys, shown on the welcome screen and, once the student can create
+  # servers, in a collapsed panel they can still open, since later exercises
+  # are done on that VM.
+  attr :student, StudentView, required: true
+  attr :fingerprints, :list, required: true
+
+  defp ssh_exercise_details(assigns) do
+    ~H"""
+    <div>
+      <.data_display class="mt-4" responsive_class="sm:grid-cols-2">
+        <.data_display_element title={gettext("Username")}>
+          <span class="font-mono">{@student.username}</span>
+        </.data_display_element>
+        <.data_display_element title={gettext("Password")}>
+          <div
+            id="student-ssh-exercise-password"
+            class="flex justify-center items-center gap-2"
+          >
+            <div class="toggle-password font-mono">********</div>
+            <div class="toggle-password font-mono hidden">
+              {@student.ssh_exercise_password}
+            </div>
+            <.copy_button
+              id="student-ssh-exercise-password-copy"
+              text={@student.ssh_exercise_password}
+            />
+            <Heroicons.eye
+              class="toggle-password size-4 cursor-pointer text-base-content/75 hover:text-base-content"
+              phx-click={
+                JS.toggle_class("hidden",
+                  to: "#student-ssh-exercise-password .toggle-password"
+                )
+              }
+            />
+            <Heroicons.eye_slash
+              class="toggle-password size-4 hidden cursor-pointer text-base-content/75 hover:text-base-content"
+              phx-click={
+                JS.toggle_class("hidden",
+                  to: "#student-ssh-exercise-password .toggle-password"
+                )
+              }
+            />
+          </div>
+        </.data_display_element>
+      </.data_display>
+      <.data_display :if={@fingerprints != []} class="mt-4" responsive={false}>
+        <.data_display_element title={gettext("Exercise server SSH host key fingerprints")}>
+          <div
+            id="ssh-exercise-vm-host-key-fingerprints"
+            class="mt-1 flex flex-col text-left divide-y divide-base-content/20"
+          >
+            <ul
+              :for={group <- @fingerprints}
+              class="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
+            >
+              <li
+                :for={{id, algorithm, fingerprint} <- group}
+                class="flex items-start gap-2 -mx-2 px-2 py-0.5 rounded-sm text-xs hover:bg-base-content/15"
+              >
+                <span class="w-16 shrink-0 text-base-content/75">{algorithm}</span>
+                <code class="grow select-all break-all">{fingerprint}</code>
+                <.copy_button id={id} text={fingerprint} class="shrink-0" />
+              </li>
+            </ul>
+          </div>
+        </.data_display_element>
+      </.data_display>
+    </div>
+    """
+  end
+
   # The exercise VM's fingerprints, in one group per digest: the page lists
   # every host key's SHA256 fingerprint, then every host key's MD5 one, since
   # which of the two a student is comparing against depends on the client they

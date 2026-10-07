@@ -29,6 +29,40 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
   @path "/app"
   @now ~U[2026-06-27 12:00:00Z]
 
+  # Real host public keys generated with ssh-keygen, and the page's projection
+  # of their fingerprints: the output of `ssh-keygen -lf` and
+  # `ssh-keygen -E md5 -lf` for them.
+  @ssh_exercise_vm_host_keys """
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e
+  ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7xhOu0n7K5DlCoqSwRLA5aZExh4s9fhsf0NELpSrJVnoNHwqfd5LUQdmrq4W8PNcloyilUhidRR/tEP2MfU0=
+  """
+  @ssh_exercise_vm_fingerprints [
+    [
+      %{
+        algorithm: "ED25519",
+        fingerprint: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY",
+        copied: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY"
+      },
+      %{
+        algorithm: "ECDSA",
+        fingerprint: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ",
+        copied: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ"
+      }
+    ],
+    [
+      %{
+        algorithm: "ED25519",
+        fingerprint: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb",
+        copied: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb"
+      },
+      %{
+        algorithm: "ECDSA",
+        fingerprint: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd",
+        copied: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd"
+      }
+    ]
+  ]
+
   setup do
     stub(ArchiDep.Clock.Mock, :now, fn -> @now end)
     :ok
@@ -46,13 +80,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
           now: @now,
           active: true,
           servers_enabled: false,
-          # Real host public keys generated with ssh-keygen: the expected
-          # fingerprints below are the output of `ssh-keygen -lf` and
-          # `ssh-keygen -E md5 -lf` for them.
-          ssh_exercise_vm_host_keys: """
-          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e
-          ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7xhOu0n7K5DlCoqSwRLA5aZExh4s9fhsf0NELpSrJVnoNHwqfd5LUQdmrq4W8PNcloyilUhidRR/tEP2MfU0=
-          """
+          ssh_exercise_vm_host_keys: @ssh_exercise_vm_host_keys
         )
 
       student =
@@ -70,35 +98,12 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       assert_html_title(html, "Dashboard · ArchiDep")
 
       assert dashboard(html) == %{
-               welcome: %{
+               ssh_exercise: %{
+                 display: :welcome,
+                 note: nil,
                  username: "alice",
                  password: "hunter2",
-                 fingerprints: [
-                   [
-                     %{
-                       algorithm: "ED25519",
-                       fingerprint: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY",
-                       copied: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY"
-                     },
-                     %{
-                       algorithm: "ECDSA",
-                       fingerprint: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ",
-                       copied: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ"
-                     }
-                   ],
-                   [
-                     %{
-                       algorithm: "ED25519",
-                       fingerprint: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb",
-                       copied: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb"
-                     },
-                     %{
-                       algorithm: "ECDSA",
-                       fingerprint: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd",
-                       copied: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd"
-                     }
-                   ]
-                 ]
+                 fingerprints: @ssh_exercise_vm_fingerprints
                },
                name_prompt?: false,
                call_to_action: nil,
@@ -132,7 +137,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       {:ok, _view, html} = live(conn, @path)
 
       assert dashboard(html) == %{
-               welcome: %{username: "bob", password: "s3cret", fingerprints: []},
+               ssh_exercise: %{
+                 display: :welcome,
+                 note: nil,
+                 username: "bob",
+                 password: "s3cret",
+                 fingerprints: []
+               },
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -150,7 +161,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       {:ok, _view, html} = live(conn, @path)
 
       assert dashboard(html) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: true,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -218,7 +229,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       {:ok, _view, html} = live(conn, @path)
 
       assert dashboard(html) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: :student,
                change_username_dialog?: true,
@@ -358,7 +369,47 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       {:ok, _view, html} = live(conn, @path)
 
       assert dashboard(html) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
+               name_prompt?: false,
+               call_to_action: nil,
+               change_username_dialog?: false,
+               servers: %{"/servers/#{server.id}" => %{name: "web-01", badge: "Not connected"}}
+             }
+    end
+
+    test "keeps the exercise connection details on demand once the server is set up", %{
+      conn: conn,
+      auth: auth
+    } do
+      class =
+        CourseFactory.build(:class,
+          now: @now,
+          active: true,
+          servers_enabled: true,
+          ssh_exercise_vm_host_keys: @ssh_exercise_vm_host_keys
+        )
+
+      student =
+        build_student(class,
+          active: true,
+          servers_enabled: true,
+          username: "carol",
+          ssh_exercise_password: "hunter2"
+        )
+
+      server = build_dashboard_server(auth, name: "web-01", set_up_at: @now)
+      stub_page(auth, student: student, servers: [server])
+
+      {:ok, _view, html} = live(conn, @path)
+
+      assert dashboard(html) == %{
+               ssh_exercise: %{
+                 display: :collapsed,
+                 note: ssh_exercise_note(),
+                 username: "carol",
+                 password: "hunter2",
+                 fingerprints: @ssh_exercise_vm_fingerprints
+               },
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -559,7 +610,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -593,7 +644,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -632,7 +683,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       # The inactive server joins the owned-server list but the dashboard renders
       # only active servers, so no card appears for it.
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -664,7 +715,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -704,7 +755,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -738,7 +789,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -767,7 +818,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -797,7 +848,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: :student,
                change_username_dialog?: true,
@@ -841,7 +892,13 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: %{username: "zoe", password: "ssh-pw", fingerprints: []},
+               ssh_exercise: %{
+                 display: :welcome,
+                 note: nil,
+                 username: "zoe",
+                 password: "ssh-pw",
+                 fingerprints: []
+               },
                name_prompt?: false,
                call_to_action: nil,
                change_username_dialog?: false,
@@ -874,7 +931,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
       assert dashboard(render(view)) == %{
-               welcome: nil,
+               ssh_exercise: collapsed_ssh_exercise(),
                name_prompt?: false,
                call_to_action: :student,
                change_username_dialog?: true,
@@ -929,7 +986,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       assert_html_title(html, "Dashboard · ArchiDep")
 
       assert dashboard(html) == %{
-               welcome: nil,
+               ssh_exercise: nil,
                name_prompt?: false,
                call_to_action: :root,
                change_username_dialog?: false,
@@ -1010,11 +1067,26 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
       )
 
   defp build_creating_student(opts \\ []) do
-    class = CourseFactory.build(:class, now: @now, active: true, servers_enabled: true)
+    class =
+      CourseFactory.build(:class,
+        now: @now,
+        active: true,
+        servers_enabled: true,
+        ssh_exercise_vm_host_keys: nil
+      )
 
     build_student(
       class,
-      Keyword.merge([active: true, servers_enabled: true, username_confirmed: true], opts)
+      Keyword.merge(
+        [
+          active: true,
+          servers_enabled: true,
+          username: "alice",
+          username_confirmed: true,
+          ssh_exercise_password: "ssh-pw"
+        ],
+        opts
+      )
     )
   end
 
@@ -1033,6 +1105,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
         [
           active: true,
           servers_enabled: false,
+          username: "alice",
           ssh_exercise_password: "ssh-pw",
           user: CourseFactory.build(:user)
         ],
@@ -1082,36 +1155,78 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
 
   defp empty_dashboard,
     do: %{
-      welcome: nil,
+      ssh_exercise: nil,
       name_prompt?: false,
       call_to_action: nil,
       change_username_dialog?: false,
       servers: %{}
     }
 
+  # The SSH exercise details as a student who can create servers gets them by
+  # default: collapsed, for a student built by `build_creating_student/1` or
+  # `build_welcome_student/1` in a class that declares no host keys.
+  defp collapsed_ssh_exercise,
+    do: %{
+      display: :collapsed,
+      note: ssh_exercise_note(),
+      username: "alice",
+      password: "ssh-pw",
+      fingerprints: []
+    }
+
+  defp ssh_exercise_note,
+    do:
+      gettext(
+        "This shared server is only used for the SSH and Unix permissions exercises. All further exercises happen on your own server."
+      )
+
   # Projects the meaningful, mutually-exclusive regions of the page so each test
   # pins the whole page state — a region that should not render must be absent.
   defp dashboard(html),
     do: %{
-      welcome: welcome(html),
+      ssh_exercise: ssh_exercise(html),
       name_prompt?: shown?(html, "#what-is-your-name"),
       call_to_action: call_to_action(html),
       change_username_dialog?: shown?(html, "#change-username-dialog"),
       servers: server_cards(html)
     }
 
-  defp welcome(html) do
-    case find_html_elements(html, "#student-ssh-exercise-password-copy") do
-      [] ->
+  # Where the SSH exercise connection details are shown — on the welcome screen,
+  # or in the panel offered once the student can create servers, collapsed or
+  # expanded — and what they show.
+  defp ssh_exercise(html) do
+    case {find_html_elements(html, "#welcome"),
+          find_html_elements(html, "#ssh-exercise-details-panel")} do
+      {[], []} ->
         nil
 
-      [copy | _rest] ->
-        %{
-          username: dd_value(html, gettext("Username")),
-          password: html_element_attribute(copy, "data-clipboard-text"),
-          fingerprints: fingerprint_groups(html)
-        }
+      {[welcome], []} ->
+        ssh_exercise_details(welcome, :welcome, nil)
+
+      {[], [panel]} ->
+        [_toggle] =
+          find_html_elements(html, "button[aria-controls='ssh-exercise-details-panel']")
+
+        display =
+          if "hidden" in String.split(html_element_attribute(panel, "class")),
+            do: :collapsed,
+            else: :expanded
+
+        [note] = find_html_elements(panel, "#ssh-exercise-details-note .content")
+        ssh_exercise_details(panel, display, normalized_text(note))
     end
+  end
+
+  defp ssh_exercise_details(html, display, note) do
+    [copy] = find_html_elements(html, "#student-ssh-exercise-password-copy")
+
+    %{
+      display: display,
+      note: note,
+      username: dd_value(html, gettext("Username")),
+      password: html_element_attribute(copy, "data-clipboard-text"),
+      fingerprints: fingerprint_groups(html)
+    }
   end
 
   # The fingerprints as the page groups them, one list per digest, each row
