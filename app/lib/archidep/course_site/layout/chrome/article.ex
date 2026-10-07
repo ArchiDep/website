@@ -95,7 +95,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
             </nav>
           </div>
 
-          <div :if={@page.cloud_server} class="pt-2 sticky top-0 z-10">
+          <div :if={@page.cloud_server} class="pt-2 sticky top-0 z-10 pointer-events-none">
             <div
               class="cloud-server-data not-prose @toc:hidden"
               data-mode={@page.cloud_server}

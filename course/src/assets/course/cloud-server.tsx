@@ -3,7 +3,7 @@ import { signal } from '@preact/signals';
 import * as t from 'io-ts';
 import { sample } from 'lodash-es';
 import { render } from 'preact';
-import { JSX, useState } from 'react';
+import { createContext, JSX, useContext, useState } from 'react';
 import {
   ArrowPathIcon,
   ChevronDownIcon,
@@ -53,9 +53,17 @@ const cloudServerCardWarningProps = {
   titleClass: '!text-warning-content'
 };
 
+type CloudServerLayout = 'horizontal' | 'vertical';
+
+// Lets every card know where it sits, to collapse into a badge only over the
+// page's content, and to remember its open state separately for each layout, so
+// that collapsing the sticky card at the top of a narrow page does not also
+// collapse the one in the sidebar of a wide page.
+const CloudServerLayoutContext = createContext<CloudServerLayout>('vertical');
+
 type CloudServerInstructionsProps = {
   readonly mode: 'creation' | 'details';
-  readonly layout?: 'horizontal' | 'vertical';
+  readonly layout?: CloudServerLayout;
 };
 
 function CloudServerInstructions(
@@ -247,8 +255,16 @@ function StudentCloudServerCreationInstructions({
       : '';
   const instructionsClass = layout === 'horizontal' ? 'sr-only' : '';
 
+  let cardProps: CloudServerCardStyle = cloudServerCardPrimaryProps;
+  if (layout === 'horizontal') {
+    cardProps = {
+      ...cardProps,
+      sizeClass: 'card-xs sm:card-sm md:card-md'
+    };
+  }
+
   return (
-    <CloudServerCard title={title} {...cloudServerCardPrimaryProps}>
+    <CloudServerCard title={title} {...cardProps}>
       <p className={instructionsClass}>
         Follow this exercise to create your cloud server. Use the following
         information.
@@ -309,6 +325,8 @@ function CloudServerDetails({
       : '';
 
   const instructionsClass = layout === 'horizontal' ? 'sr-only' : 'mb-4';
+  const entryClass =
+    layout === 'horizontal' ? 'flex items-baseline gap-2' : 'flex flex-col';
   const instructions =
     mode === 'creation'
       ? "Congratulations! You've successfully set up your cloud server. You can now use it for the next exercises."
@@ -324,11 +342,11 @@ function CloudServerDetails({
           .filter(G.isNotNullable)
           .join('');
 
-  let cardProps = cloudServerCardSuccessProps;
+  let cardProps: CloudServerCardStyle = cloudServerCardSuccessProps;
   if (layout === 'horizontal') {
     cardProps = {
       ...cardProps,
-      cardClass: `${cardProps.cardClass} card-xs sm:card-sm md:card-md`
+      sizeClass: 'card-xs sm:card-sm md:card-md'
     };
   }
 
@@ -336,21 +354,21 @@ function CloudServerDetails({
     <CloudServerCard title={title} {...cardProps}>
       <p className={instructionsClass}>{instructions}</p>
       <dl className={`mt-2 ${dlClass}`}>
-        <div className="flex flex-col">
+        <div className={entryClass}>
           <dt className="font-bold text-xs">Username</dt>
           <dd className="flex items-center gap-2">
             <span className="font-mono">{username}</span>
             <CopyButton textToCopy={username} />
           </dd>
         </div>
-        <div className="flex flex-col">
+        <div className={entryClass}>
           <dt className="mt-1 font-bold text-xs">IP address</dt>
           <dd className="flex items-center gap-2">
             <span className="font-mono">{ipAddress}</span>
             <CopyButton textToCopy={ipAddress} />
           </dd>
         </div>
-        <div className="flex flex-col">
+        <div className={entryClass}>
           <dt className="mt-1 font-bold text-xs">SSH command to connect</dt>
           <dd className="flex items-center gap-2">
             <span className="font-mono">
@@ -360,7 +378,7 @@ function CloudServerDetails({
           </dd>
         </div>
         {domain && (
-          <div className="flex flex-col">
+          <div className={entryClass}>
             <dt className="mt-1 font-bold text-xs">Hostname</dt>
             <dd className="flex items-center gap-2">
               <span className="font-mono">
@@ -377,28 +395,56 @@ function CloudServerDetails({
 
 type CloudServerCardProps = {
   readonly cardClass?: string;
+  // Not applied to the collapsed badge, which is always extra small.
+  readonly sizeClass?: string;
   readonly title?: string | undefined;
   readonly titleClass?: string;
   readonly children: JSX.Element | JSX.Element[] | string;
 };
 
+type CloudServerCardStyle = Pick<
+  CloudServerCardProps,
+  'cardClass' | 'sizeClass' | 'titleClass'
+>;
+
 function CloudServerCard(props: CloudServerCardProps): JSX.Element {
   const { children } = props;
 
-  const [open, setOpen] = useState(true);
-  const toggleOpen = () => setOpen(B.not);
+  const layout = useContext(CloudServerLayoutContext);
+  const storageKey = `archidep:cloud-server-open:${layout}`;
+  const [open, setOpen] = useState(() => loadOpen(storageKey));
+  const toggleOpen = () =>
+    setOpen(previous => {
+      const next = B.not(previous);
+      saveOpen(storageKey, next);
+      return next;
+    });
+
+  // Collapsed over the page's content, the card shrinks to a badge in the
+  // corner, so that it hides as little of the content as possible.
+  const badge = !open && layout === 'horizontal';
 
   const cardClass = props.cardClass ?? 'bg-info text-info-content';
-  const title = props.title ?? 'Cloud server exercise';
+  const sizeClass = badge
+    ? 'w-fit ml-auto card-xs shadow-md'
+    : `w-full ${props.sizeClass ?? ''}`;
+  const title = badge
+    ? 'Cloud server'
+    : (props.title ?? 'Cloud server exercise');
   const titleClass = props.titleClass ?? '!text-info-content';
   const detailsClass = open ? '' : 'hidden';
 
   return (
-    <div className={`card ${cardClass} w-full`}>
+    <div className={`card ${cardClass} ${sizeClass} pointer-events-auto`}>
       <div className="card-body">
         <div className="card-title flex justify-between items-center gap-4">
-          <h2 className={titleClass}>{title}</h2>
-          <button type="button" className="cursor-pointer" onClick={toggleOpen}>
+          {/* The theme underlines every h2 in the page's prose, even here. */}
+          <h2 className={`${titleClass} border-0! pb-0!`}>{title}</h2>
+          <button
+            type="button"
+            className="flex cursor-pointer"
+            onClick={toggleOpen}
+          >
             {open && <ChevronUpIcon />}
             {open || <ChevronDownIcon />}
           </button>
@@ -409,6 +455,24 @@ function CloudServerCard(props: CloudServerCardProps): JSX.Element {
   );
 }
 
+// The card starts open until the student collapses it, including when storage
+// is unavailable (e.g. blocked site data).
+function loadOpen(storageKey: string): boolean {
+  try {
+    return localStorage.getItem(storageKey) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+function saveOpen(storageKey: string, open: boolean): void {
+  try {
+    localStorage.setItem(storageKey, String(open));
+  } catch {
+    // Not remembering the state is harmless.
+  }
+}
+
 for (const element of document.getElementsByClassName('cloud-server-data')) {
   const htmlElement = element as HTMLElement;
 
@@ -417,5 +481,10 @@ for (const element of document.getElementsByClassName('cloud-server-data')) {
   const layout =
     htmlElement.dataset['layout'] === 'horizontal' ? 'horizontal' : 'vertical';
 
-  render(<CloudServerInstructions mode={mode} layout={layout} />, element);
+  render(
+    <CloudServerLayoutContext.Provider value={layout}>
+      <CloudServerInstructions mode={mode} layout={layout} />
+    </CloudServerLayoutContext.Provider>,
+    element
+  );
 }

@@ -225,7 +225,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
 
   defp cloud_server_markup(mode),
     do:
-      ~s(<div class="pt-2 sticky top-0 z-10">\n) <>
+      ~s(<div class="pt-2 sticky top-0 z-10 pointer-events-none">\n) <>
         ~s(        <div class="cloud-server-data not-prose @toc:hidden" data-mode="#{mode}" data-layout="horizontal">\n) <>
         ~s(        </div>\n) <>
         ~s(      </div>)
