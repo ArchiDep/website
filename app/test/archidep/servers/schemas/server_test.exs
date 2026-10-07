@@ -36,7 +36,7 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
   # Both usernames are validated against the same format, so both report it with
   # this message.
-  @username_format_error "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+  @username_format_error "must contain only lowercase letters (without accents), numbers and hyphens, start with a letter and not end with a hyphen"
 
   # `Server.new/4`, `Server.new_group_member_server/3`, `Server.update/3` and
   # `Server.update_group_member_server/4` all run the same `validate/1` rules.
@@ -78,6 +78,19 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
 
       test "the username must start with a letter" do
         assert errors_on(changeset(unquote(variant), username: "1user")) ==
+                 %{username: [@username_format_error]}
+      end
+
+      # The username is also the first label of the server's default hostname,
+      # and a DNS label cannot end with a hyphen.
+      test "the username cannot end with a hyphen" do
+        assert errors_on(changeset(unquote(variant), username: "user-")) ==
+                 %{username: [@username_format_error]}
+      end
+
+      # Ubuntu's `adduser` refuses uppercase letters in an account name.
+      test "the username cannot contain uppercase letters" do
+        assert errors_on(changeset(unquote(variant), username: "myUser")) ==
                  %{username: [@username_format_error]}
       end
 
@@ -158,6 +171,16 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                  %{app_username: [@username_format_error]}
       end
 
+      test "the app username cannot end with a hyphen" do
+        assert errors_on(changeset(unquote(variant), app_username: "app-")) ==
+                 %{app_username: [@username_format_error]}
+      end
+
+      test "the app username cannot contain uppercase letters" do
+        assert errors_on(changeset(unquote(variant), app_username: "myApp")) ==
+                 %{app_username: [@username_format_error]}
+      end
+
       test "the app username cannot be the same as the username" do
         assert errors_on(
                  changeset(unquote(variant), username: "samename", app_username: "samename")
@@ -176,9 +199,16 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
                  %{username: ["this username is reserved and cannot be used"]}
       end
 
+      # The format already refuses uppercase letters; the reserved check still
+      # names the reason that matters to the user.
       test "rejects the reserved username case-insensitively" do
         assert errors_on(changeset(unquote(variant), username: "ARCHIDEP")) ==
-                 %{username: ["this username is reserved and cannot be used"]}
+                 %{
+                   username: [
+                     "this username is reserved and cannot be used",
+                     @username_format_error
+                   ]
+                 }
       end
     end
   end

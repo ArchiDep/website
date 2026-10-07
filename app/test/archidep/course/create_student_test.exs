@@ -201,7 +201,8 @@ defmodule ArchiDep.Course.CreateStudentTest do
 
     broadcasts = subscribe_student_broadcasts(class.id)
 
-    # The uniqueness check is case-insensitive and scoped to the class.
+    # The uniqueness check is scoped to the class, and case-insensitive against
+    # an uppercase username stored before usernames had to be lowercase.
     data = CourseFactory.build(:student_data, email: "DUP@example.archidep.ch")
     auth = Factory.build(:authentication, root: true)
 
@@ -217,11 +218,11 @@ defmodule ArchiDep.Course.CreateStudentTest do
     create_student: create_student
   } do
     class = CourseFactory.insert(:class)
-    CourseFactory.insert(:student, class: class, username: "taken")
+    CourseFactory.insert(:student, class: class, username: "TAKEN")
     broadcasts = subscribe_student_broadcasts(class.id)
 
     # The uniqueness check is case-insensitive and scoped to the class.
-    data = CourseFactory.build(:student_data, username: "TAKEN")
+    data = CourseFactory.build(:student_data, username: "taken")
     auth = Factory.build(:authentication, root: true)
 
     previous_counts = count_rows(@affected_tables)

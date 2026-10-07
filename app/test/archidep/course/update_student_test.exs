@@ -292,7 +292,8 @@ defmodule ArchiDep.Course.UpdateStudentTest do
 
     broadcasts = subscribe_student_broadcasts(original)
 
-    # The uniqueness check is case-insensitive.
+    # The uniqueness check is case-insensitive against an uppercase username
+    # stored before usernames had to be lowercase.
     data = CourseFactory.build(:student_data, email: "TAKEN@example.archidep.ch")
     auth = Factory.build(:authentication, root: true)
 
@@ -308,7 +309,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     update_student: update_student
   } do
     class = CourseFactory.insert(:class)
-    CourseFactory.insert(:student, class: class, username: "taken")
+    CourseFactory.insert(:student, class: class, username: "TAKEN")
 
     original =
       CourseFactory.insert(:student, %{
@@ -324,7 +325,7 @@ defmodule ArchiDep.Course.UpdateStudentTest do
     broadcasts = subscribe_student_broadcasts(original)
 
     # The uniqueness check is case-insensitive.
-    data = CourseFactory.build(:student_data, username: "TAKEN")
+    data = CourseFactory.build(:student_data, username: "taken")
     auth = Factory.build(:authentication, root: true)
 
     previous_counts = count_rows(@affected_tables)

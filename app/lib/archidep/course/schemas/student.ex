@@ -237,9 +237,9 @@ defmodule ArchiDep.Course.Schemas.Student do
     # Username
     |> update_change(:username, &trim/1)
     |> validate_length(:username, max: 20, message: "must be at most {count} characters long")
-    |> validate_format(:username, ~r/\A[a-z][\-a-z0-9]*\z/i,
+    |> validate_format(:username, ~r/\A[a-z](?:[\-a-z0-9]*[a-z0-9])?\z/,
       message:
-        "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+        "must contain only lowercase letters (without accents), numbers and hyphens, start with a letter and not end with a hyphen"
     )
     |> validate_exclusion(:username, ["archidep"],
       message: "this username is reserved and cannot be used"
@@ -286,9 +286,9 @@ defmodule ArchiDep.Course.Schemas.Student do
       |> validate_length(:academic_class, max: 30)
       # Username
       |> validate_length(:username, max: 20)
-      |> validate_format(:username, ~r/\A[a-z][\-a-z0-9]*\z/i,
+      |> validate_format(:username, ~r/\A[a-z](?:[\-a-z0-9]*[a-z0-9])?\z/,
         message:
-          "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+          "must contain only lowercase letters (without accents), numbers and hyphens, start with a letter and not end with a hyphen"
       )
       |> unique_constraint(:username, name: :students_username_unique)
       # Domain

@@ -12,13 +12,28 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
   @now ~U[2024-01-01 08:00:00.000000Z]
 
   # A username must be valid as both a Unix user name and a DNS subdomain label,
-  # so it may contain only unaccented letters, digits and hyphens and must start
-  # with a letter (see the "what is your name" / "change username" dialogs). The
-  # values below are each rejected for one of the things we explicitly forbid: a
-  # leading digit, a leading hyphen, an underscore (accepted in a Unix name but
-  # not a DNS label), a dot, a space, an accent, and other punctuation.
-  @forbidden_usernames ["1nope", "-nope", "no_pe", "no.pe", "no pe", "café", "nope!", "no@pe"]
-  @username_format_error "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+  # so it may contain only lowercase unaccented letters, digits and hyphens,
+  # must start with a letter and must not end with a hyphen (see the "what is
+  # your name" / "change username" dialogs). The values below are each rejected
+  # for one of the things we explicitly forbid: a leading digit, a leading
+  # hyphen, a trailing hyphen (accepted in a Unix name but not a DNS label), an
+  # uppercase letter (accepted in a DNS label but refused by Ubuntu's
+  # `adduser`), an underscore (accepted in a Unix name but not a DNS label), a
+  # dot, a space, an accent, and other punctuation.
+  @forbidden_usernames [
+    "1nope",
+    "-nope",
+    "nope-",
+    "Nope",
+    "noPe",
+    "no_pe",
+    "no.pe",
+    "no pe",
+    "café",
+    "nope!",
+    "no@pe"
+  ]
+  @username_format_error "must contain only lowercase letters (without accents), numbers and hyphens, start with a letter and not end with a hyphen"
 
   # `Student.new/3` and `Student.update/3` run the same `validate/1` rules. Each
   # rule is written once below and the `for` comprehension generates one test
@@ -155,11 +170,14 @@ defmodule ArchiDep.Course.Schemas.StudentTest do
                %{email: ["has already been taken"]}
     end
 
+    # Usernames are now lowercase only, but a student stored before that rule
+    # may still have an uppercase one, which must keep blocking its lowercase
+    # spelling.
     test "the username must not already be taken (case-insensitive)" do
       class = insert(:class, now: @now)
-      insert(:student, class: class, username: "taken", now: @now)
+      insert(:student, class: class, username: "TAKEN", now: @now)
 
-      assert errors_on(Student.new(build(:student_data, username: "TAKEN"), class, @now)) ==
+      assert errors_on(Student.new(build(:student_data, username: "taken"), class, @now)) ==
                %{username: ["has already been taken"]}
     end
 

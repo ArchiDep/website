@@ -36,9 +36,11 @@ defmodule ArchiDep.Servers.Schemas.Server do
 
   # Both usernames name a Unix account on the server — the one the application
   # logs in as, and the one it creates for itself — so both are restricted to
-  # the characters such an account name may have.
-  @username_format ~r/\A[a-z][\-a-z0-9]*\z/i
-  @username_format_message "must contain only letters (without accents), numbers and hyphens, and start with a letter"
+  # the characters such an account name may have: no uppercase letters, which
+  # Ubuntu's `adduser` refuses. The username is also the first label of the
+  # server's default hostname, so it cannot end with a hyphen either.
+  @username_format ~r/\A[a-z](?:[\-a-z0-9]*[a-z0-9])?\z/
+  @username_format_message "must contain only lowercase letters (without accents), numbers and hyphens, start with a letter and not end with a hyphen"
 
   @ssh_host_keys_required_message "must be provided for an active server"
 

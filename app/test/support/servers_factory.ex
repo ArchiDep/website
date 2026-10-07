@@ -30,9 +30,9 @@ defmodule ArchiDep.Support.ServersFactory do
   @failed_ansible_playbook_run_states [:failed, :interrupted, :timeout]
   @finished_ansible_playbook_run_states [:succeeded] ++ @failed_ansible_playbook_run_states
 
-  # The characters `Server` accepts in a username: it must start with a letter
-  # and may then also contain digits and hyphens.
-  @username_first_characters ~c"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  # The characters `Server` accepts in a username: it must start with a
+  # lowercase letter and may then also contain digits and hyphens.
+  @username_first_characters ~c"abcdefghijklmnopqrstuvwxyz"
   @username_characters @username_first_characters ++ ~c"0123456789-"
 
   @spec ansible_playbook_event_factory(map()) :: AnsiblePlaybookEvent.t()
