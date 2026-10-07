@@ -261,7 +261,7 @@ you cannot read it:
 
 ```bash
 $> cat mydir/mine.txt
-cat: mine.txt: Permission denied
+cat: mydir/mine.txt: Permission denied
 ```
 
 Being the owner of a file does not exempt you from its permissions. As its
@@ -301,7 +301,7 @@ These two commands are equivalent:
 
 ```bash
 $> chmod 755 script.sh
-$> chmod u=rwx,g=rx,o=rx notes.txt
+$> chmod u=rwx,g=rx,o=rx script.sh
 ```
 
 ---

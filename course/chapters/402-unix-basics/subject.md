@@ -214,7 +214,7 @@ changing file permissions can only be performed by the `root` user.
 If you have the `root` user's password (or an authorized public key), you can
 **log in as root** directly. But **you should avoid it** as often as possible.
 
-It is **dangereous to log in as `root`**. One wrong move and you could
+It is **dangerous to log in as `root`**. One wrong move and you could
 irreversibly damage the system. For example:
 
 - Delete a system-critical file or files
@@ -694,7 +694,7 @@ purpose, such as `useradd`, `passwd` and `groupadd` for Linux.
 ### The `/etc/passwd` file
 
 Each line in [`/etc/passwd`][etc-passwd] defines a user account, with data
-separated by semicolons:
+separated by colons:
 
 ```
 jde:x:500:500:jde:/home/jde:/bin/bash
@@ -721,7 +721,7 @@ logging in (e.g. by using `/bin/false` or `/usr/sbin/nologin`).
 
 ### The `/etc/group` file
 
-Each line in [`/etc/group`][etc-group] defines a group, also semicolon-separated:
+Each line in [`/etc/group`][etc-group] defines a group, also colon-separated:
 
 ```
 vip:x:512:bob,eve
