@@ -11,7 +11,7 @@ The subject page is short on purpose: the subject is taught in the room.
 
 The students' copy of Guess It is the one from 205, running on their own
 computer. What the analysis is meant to find is not written here, so that these
-notes give nothing away. See "The security analysis" below for how to help.
+notes give nothing away. "The security analysis" below has the hints.
 
 ## Left out
 
@@ -62,30 +62,31 @@ beyond what a student needs to recognise it.
 ## The security analysis
 
 In the room, the groups search their own Guess It for vulnerabilities, before
-the teacher demonstrates them. Until then, the search is the exercise:
+the teacher demonstrates them. Which vulnerabilities it has, and where, is the
+answer to the analysis. These notes do not hold it, and neither does any page
+of the course before the demonstration.
 
-- **Do not name, confirm or rule out a vulnerability**, and do not point to a
-  line of `server.js` or to a part of the application. Do not read the code for
-  the student and report what you find. If the student asks whether they found
-  one, ask them to explain it instead (below); the demonstration settles it.
-- **Help with the method.** Questions to ask, from the most general:
-  - What can a visitor send to the application? List every way in: each form,
-    each field, each part of a URL.
-  - For each of them, where does it go in `server.js`? What does the
-    application do with it, and where does it end up?
-  - Could what a visitor sends change what the application does, rather than
-    only being a value it stores or compares?
-  - What happens with input the developer did not expect: empty, very long, or
-    full of special characters?
-  - Which categories of the OWASP Top 10 could apply to an application like this
-    one? Read each category's description, and look for it in the code.
-- **When a student thinks they have found something**, ask: what exactly would
-  an attacker send, what would the application do with it, and who would be
-  harmed? Then let them try it.
-- **Only on their own copy.** Tests run against the student's own Guess It on
-  their own computer. Never help attack a classmate's application, a deployed
-  one, or any system the student does not own. A test that damages data only
-  loses the student's own games, but say so before they run it.
+Hints for the search, from the most general:
+
+- Which categories of the OWASP Top 10 could apply to an application like this
+  one? Each category's description says what to look for.
+- What can a visitor send to the application? Every way in: each form, each
+  field, each part of a URL.
+- Where does each of them go in `server.js`? What does the application do with
+  it, and where does it end up?
+- Could what a visitor sends change what the application does, rather than only
+  being a value it stores or compares?
+- What happens with input the developer did not expect: empty, very long, or
+  full of special characters?
+
+A student who thinks they have found one can test it with three questions: what
+exactly would an attacker send, what would the application do with it, and who
+would be harmed?
+
+The analysis is done on the student's own copy, on their own computer.
+Attacking a classmate's application, a deployed one, or any system the student
+does not own is outside the exercise. A test that damages data loses only the
+student's own games.
 
 ## Used in
 

@@ -28,14 +28,13 @@ provider's firewall, giving the server a public key instead of a password, then
 working on it with `sudo`. The page's "What have I done?" is short: the steps
 themselves are what the rest of the course needs.
 
-Most of the page is a recipe. What is worth understanding is the reason behind
-each step, and the "Tell me more" boxes give it: the firewall, the hostname, the
-swap space and the host keys. Ask for those reasons rather than letting the
-student copy commands.
+Most of the page is a recipe. The "Tell me more" boxes explain some of its steps
+(the firewall, the hostname, the swap space and the host keys) for students who
+want to dig further. They are not examinable.
 
 Headings marked ❓ are optional. Skipping the fingerprint check teaches students
-to answer `yes` without checking, which 103 warns against: encourage it, but do
-not block the student on it.
+to answer `yes` without checking, which 103 warns against. The rest of the
+exercise does not depend on it.
 
 Seen here, explained later: public and private IP addresses ("Unix
 Networking"), ports ("Make TCP connections"), DNS and the assigned domain
@@ -82,7 +81,7 @@ one cannot do any exercise after it. In particular:
   does it come from? It must be the one the page's box shows, and Azure refuses
   some common names such as `admin` or `root`.
 - **"Configure open ports".** Ask: what would happen to a web request on port
-  80 without the rule? The answer is in the "Tell me more" box.
+  80 without the rule? The "Tell me more" box answers it, as optional reading.
 - **"Review your monthly cost".** Under $20 a month or $0.025 an hour. Above
   that, the size or the region is wrong: the student would run out of credits
   before the end of the course.
@@ -123,8 +122,8 @@ one cannot do any exercise after it. In particular:
 - **The student's own key no longer works after "Give the teacher access to your
   virtual machine"**: `--append` was left out, and `tee` replaced the student's
   key with the teacher's. If the student is still logged in, they can add their
-  own key back to the file. If not, send them to the teacher, who can log in.
-  Tell the student not to close the connection before checking.
+  own key back to the file. Once they have logged out, only the teacher can
+  still log in to repair it.
 - **`sudo` prints `unable to resolve host`** after the hostname changed: a
   warning that the server cannot find its new name. It does not stop the
   command.
@@ -132,11 +131,11 @@ one cannot do any exercise after it. In particular:
   redirection is done by the student's shell, which cannot write the file.
   Hint: compare with the page's command. Ask: which program writes to the file
   in each version?
-- **`/etc/fstab` lost its other lines**: `-a` was left out of `tee`. **The
-  student must not reboot**: the server may no longer start. Send them to the
-  teacher.
+- **`/etc/fstab` lost its other lines**: `-a` was left out of `tee`. **Rebooting
+  now may leave the server unable to start**, and only the teacher can repair
+  it then.
 - **`findmnt --verify` reports errors**, beyond the two warnings the page
-  expects: do not reboot. Hint: compare the last line of `/etc/fstab` with the
+  expects: rebooting is just as risky. Hint: compare the last line of `/etc/fstab` with the
   page's, character by character.
 - **The server does not answer after `sudo reboot`**: it takes a couple of
   minutes. `Connection refused` or a timeout during that time is expected.
@@ -146,5 +145,5 @@ one cannot do any exercise after it. In particular:
   terminal where you edited it?
 - **The fingerprint does not match** any of the serial console's: the student
   may be comparing it with another key type's. Hint: which type does the
-  warning name? If the ED25519 fingerprints really differ, the student should
-  not connect: send them to the teacher.
+  warning name? If the ED25519 fingerprints really differ, connecting would
+  trust a server that may not be theirs: a case for the teacher.

@@ -4,15 +4,14 @@
 
 - 402 Unix Basics: the exercise practises its "Permissions" and "Permission
   management" sections, `chmod` in both modes and the base conversion behind
-  octal mode. When the student asks about permissions themselves, send them to
-  those sections.
+  octal mode. Those sections are the reference for the permissions themselves.
 - 104 Hello SSH: the student logs in to the SSH exercise server
   (`ssh.archidep.ch`) with their own username. Every step runs there.
 - The SSH exercise server is the only place the whole exercise works. The page
   does not mention working locally. On the student's own computer, the defaults
   are different (new files are `-rw-r--r--`, and on macOS every user's main
-  group is `staff`), and the last two parts need other users. Send a student who
-  works locally back to the server.
+  group is `staff`), and the last two parts need other users. A student working
+  locally cannot finish the exercise.
 - No `sudo`: students are not administrators on the SSH exercise server, and
   nothing in the exercise needs it.
 
@@ -31,7 +30,7 @@ both the symbolic and the octal form: either one is enough.
 
 Not in the exercise: `chown` (it needs `sudo`), sharing a file through a group,
 the `umask` (the page only says what the server gives new files), the special
-bits (setuid, setgid, sticky) and ACLs. Do not bring them in.
+bits (setuid, setgid, sticky) and ACLs. None of them is in the course.
 
 ## Where it leads
 
@@ -116,7 +115,7 @@ permissions. In particular:
 - **The student asks to write to the classmate's file** after giving it `o+w`,
   and is refused. The page avoids this on purpose: Ubuntu refuses writing to
   another user's file in a directory everyone can write to, such as `/tmp`,
-  whatever its permissions. This protection is not in the course: say so, and
-  bring the student back to reading.
+  whatever its permissions. This protection is not in the course, and the step
+  is about reading.
 - **`sudo` asks for a password, then refuses**: students are not administrators
   on the SSH exercise server. Nothing in the exercise needs `sudo`.

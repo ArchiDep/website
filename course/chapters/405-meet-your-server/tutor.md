@@ -5,8 +5,8 @@
 - 404 Run your own virtual server on Microsoft Azure, finished: the server
   exists, has its swap file, and the student logs in to it with their key. A
   student without a server cannot do this exercise.
-- 402 Unix Basics: users, `sudo` and permissions, which the page links to. When
-  the student asks about them, send them to those sections.
+- 402 Unix Basics: users, `sudo` and permissions, which the page links to.
+  Those sections are the reference for them.
 - 403 Unix Permissions: reading `ls -l` as owner, group and other. `/etc/shadow`
   was looked at there, so it is not repeated here.
 
@@ -25,10 +25,10 @@ the reason behind it before the student opens the box.
 Not in the exercise: the syntax of the sudoers file and `visudo`, which the page
 only names; the fields of `/etc/passwd`, in the appendix of 402; reading
 `htop`, which has no question; and how the cloud provider routes the public
-address to the private one ("Unix Networking"). Do not walk the student through
-giving their account a password or changing the `sudo` configuration, which the
-page mentions for real production servers: a mistake there can cost them `sudo`
-on a server with no other administrator.
+address to the private one ("Unix Networking"). Giving the account a password
+or changing the `sudo` configuration, which the page mentions for real
+production servers, is not in the course either. A mistake there can cost the
+student `sudo` on a server with no other administrator.
 
 ## Where it leads
 
@@ -64,7 +64,7 @@ address`, and private and public addresses.
   anything.
 - **"Which address is yours?"** Before: will the server know the address you
   connect to? After: an `inet` address under `eth0` that is not the public one.
-  Leave the "why" open if the student asks how it reaches the server: it is the
+  How the public address reaches the server is not answered here: it is the
   question "Unix Networking" takes up.
 
 ## Common pitfalls
@@ -73,8 +73,8 @@ address`, and private and public addresses.
   the password of the student's computer**: the commands ran on the student's
   own computer. Hint: what does `hostname` print?
 - **`ls: cannot access '/swapfile': No such file or directory`**: the swap step
-  of 404 was skipped or undone. Hint: what does `free -h` say about swap? Then
-  send the student back to "Add swap space to your virtual server".
+  of 404 was skipped or undone. Hint: what does `free -h` say about swap? Then:
+  "Add swap space to your virtual server" in 404.
 - **`sudo -l` shows more than the page**, such as a `Matching Defaults entries`
   paragraph first: expected, the page only shows the lines that matter.
 - **More than one address besides `lo`**, for example an `inet6` line: the page
