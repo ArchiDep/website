@@ -10,10 +10,15 @@
   commit must carry. The repository's `.gitignore` keeps `node_modules` out, as
   in 202.
 - A Unix shell, as in 101. On Windows, everything runs in the WSL: Node.js,
-  PostgreSQL, the clone and `npm`. Only the browser is on the Windows side.
-- A PostgreSQL server may already be installed on the student's computer, from
-  an earlier database course. "Check what you already have" decides what to do
-  with it: ask for its outputs before anything is installed.
+  PostgreSQL, the clone and `npm`. Only the browser is on the Windows side, and
+  Docker Desktop if the student runs PostgreSQL in it.
+- The page puts a PostgreSQL container in Docker Desktop first, on host port
+  5434 so that it never collides with a server already on 5432. Containers are
+  used here as a recipe: the course does not teach them.
+- Without Docker Desktop, a PostgreSQL server may already be installed on the
+  student's computer, from an earlier database course. "Check what you already
+  have" decides what to do with it: ask for its outputs before anything is
+  installed.
 - Placeholders: `jde` in error messages is the student's own username, and
   `postgresql@17` stands for the version `brew list` printed.
 
@@ -64,6 +69,12 @@ In particular:
 - **"Install Node.js".** After: `node --version` prints `v22` or newer, in the
   terminal where the application will run. Ask, on Windows: which terminal is
   that?
+- **"Run PostgreSQL with Docker Desktop".** After: `nc -zv 127.0.0.1 5434`
+  succeeds, `psql -h 127.0.0.1 -p 5434 -U guessit guessit` reaches the
+  `guessit=#` prompt with the password set in `POSTGRES_PASSWORD`, and pasting
+  the `CREATE TABLE` statement prints `CREATE TABLE`. The student then skips to
+  "Configure and start the application", where `DATABASE_URL` takes port 5434.
+  Ask: which port is on your computer, and which one inside the container?
 - **"Check what you already have".** A diagnosis: ask for the outputs, and for
   the row of the table they lead to, before any install. Ask: what does
   `succeeded!` tell you, and what does it not tell you? (Something listens on
@@ -141,6 +152,14 @@ error code ENOENT`** about `package.json`: the command was run outside the
   instead of `npm ci`, and it rewrote the file. Hint: which command did you run?
   Then: `git restore package-lock.json` (202's "Discard a change"). It is not
   part of the commit.
+- **Docker Desktop: `ECONNREFUSED`, or `password authentication failed`**:
+  `DATABASE_URL` still says 5432, so the application reaches no server or
+  another one; or Docker Desktop or the `guessit-db` container is stopped, for
+  example after a restart. Hint: which port did you give the container? Is it
+  running in Docker Desktop?
+- **Docker Desktop: `relation "game" does not exist`**: the container was
+  created, but the `CREATE TABLE` statement was not run in it. Hint: what does
+  the container create by itself, and what not?
 - **A server nobody knows the `postgres` password of** ("Any other server"): the
   page has no way around it, and resetting it is not in the course. Send the
   student to the teacher. On macOS, the `psql` of the installer of

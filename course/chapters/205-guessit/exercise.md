@@ -72,11 +72,114 @@ The application needs a PostgreSQL server, version 14 or newer. It connects to
 it at `localhost`, on port 5432: that is the address in its connection URL. On
 Windows, the application runs in the WSL, so the server must answer in the WSL.
 
-You may already have a PostgreSQL server, installed for another course. Check
-before you install anything: two PostgreSQL servers on the same computer both
-want port 5432, and only one of them can have it.
+The simplest way is to run PostgreSQL in a **container** with [Docker
+Desktop][docker-desktop]: [Run PostgreSQL with Docker Desktop][pg-docker]. It
+does not interfere with any PostgreSQL server you may already have.
 
-## :exclamation: Check what you already have
+If you would rather not install Docker Desktop, you can use a PostgreSQL server
+installed on your computer instead: [Check what you already have][pg-check].
+
+## :exclamation: Run PostgreSQL with Docker Desktop
+
+Install [Docker Desktop][docker-desktop] by following the instructions for
+[macOS][docker-macos] or [Windows][docker-windows], and start it. On Windows,
+keep the default settings: Docker Desktop uses the WSL to run its containers.
+
+Type `postgres:18` in the search bar at the top of Docker Desktop, and click
+`Run` next to the `postgres:18` image. Docker Desktop downloads the image the
+first time.
+
+![Search for the postgres:18 image](images/guessit-docker-postgres.png)
+
+Open the `Optional settings`. Name the container `guessit-db`, and enter `5434`
+as its host port:
+
+![Name the container and choose its port](images/guessit-docker-container.png)
+
+PostgreSQL listens on port 5432 inside the container. Docker Desktop forwards
+port 5434 of your computer to it. Using 5434 rather than 5432 avoids a conflict
+with a PostgreSQL server you may already have on your computer. Choose another
+port number if 5434 is also taken.
+
+Below, add three environment variables, and click `Run`:
+
+![Set the environment variables of the container](images/guessit-docker-env.png)
+
+| Variable            | Value           |
+| :------------------ | :-------------- |
+| `POSTGRES_USER`     | `guessit`       |
+| `POSTGRES_DB`       | `guessit`       |
+| `POSTGRES_PASSWORD` | `change-me-now` |
+
+Choose a password made only of letters, digits and dashes: it goes into a URL
+later, where other characters would have to be encoded. When the container
+starts, PostgreSQL creates the `guessit` user with that password, and the
+`guessit` database.
+
+Check that the server answers on port 5434 (or the port you chose). Run this in
+your terminal on macOS, or in the WSL on Windows:
+
+```bash
+$> nc -zv 127.0.0.1 5434
+Connection to 127.0.0.1 5434 port [tcp/*] succeeded!
+```
+
+Then connect to the database with `psql`, as the `guessit` user. It asks for the
+password you chose:
+
+```bash
+$> psql -h 127.0.0.1 -p 5434 -U guessit guessit
+Password for user guessit:
+guessit=#
+```
+
+`-h 127.0.0.1` makes `psql` connect over the network, to the port given by
+`-p`, rather than look for a server running on your computer itself. `-U` is the
+user, and the last argument the database.
+
+If `psql` is not found, install it: `sudo apt install postgresql-client` in the
+WSL; `brew install libpq` on macOS, followed by the `echo 'export PATH=...' >>
+~/.zshrc` command that its output gives, and a new terminal.
+
+The database is still empty. The repository's `schema.sql` file would also
+create the user and the database, which already exist, so only its
+`CREATE TABLE game (...)` statement is needed. Copy it from the file, from
+`CREATE TABLE` to the `;` that ends it, paste it at the `guessit=#` prompt, and
+press `Enter`:
+
+```bash
+guessit=# CREATE TABLE game (
+...
+);
+CREATE TABLE
+```
+
+Quit `psql` with `\q`. Then go on to [Configure and start the
+application][pg-configure]: you do not need the other PostgreSQL steps.
+
+{% note type: tip %}
+
+The container keeps its data while it exists, even when it is stopped. After you
+restart your computer, start Docker Desktop, and start the `guessit-db`
+container again from its `Containers` list. Do not delete the container: its
+database would be deleted with it.
+
+{% endnote %}
+
+{% note type: more %}
+
+`POSTGRES_USER` makes `guessit` the superuser of the server in the container.
+That server holds the Guess It database and nothing else, so the application
+still cannot reach the databases of your other projects.
+
+{% endnote %}
+
+## :question: Check what you already have
+
+If you do not use Docker Desktop, you may already have a PostgreSQL server,
+installed for another course. Check before you install anything: two PostgreSQL
+servers on the same computer both want port 5432, and only one of them can have
+it.
 
 First, check whether a server already answers on port 5432. Run this in your
 terminal on macOS, or in the WSL on Windows:
@@ -293,6 +396,13 @@ const DATABASE_URL =
 //                       change this
 ```
 
+If you run PostgreSQL with Docker Desktop, also replace the port `5432` with
+`5434`, the host port of your container:
+
+```js
+const DATABASE_URL = 'postgresql://guessit:my-password@localhost:5434/guessit';
+```
+
 If the application is still running from the [optional step of Hello
 GitHub][hg-run], it has restarted by itself when you saved `server.js`.
 Otherwise, install its dependencies, and start it:
@@ -407,7 +517,8 @@ database server, all installed and configured before the first page could load.
 
 Along the way, you:
 
-- Installed Node.js, and found, started or installed a PostgreSQL server.
+- Installed Node.js, and ran a PostgreSQL server in a container, or found,
+  started or installed one.
 - Created a database, and a user for the application.
 - Configured the application to connect to it, and ran it.
 - Implemented a query, and shared it with your group through GitHub.
@@ -517,6 +628,9 @@ port 5432: your PostgreSQL server is either not running or is not reachable on
 that port. [Check what you have][pg-check] again, and start your server if it is
 stopped.
 
+With Docker Desktop, check that Docker Desktop and the `guessit-db` container
+are running, and that the `DATABASE_URL` in `server.js` uses port `5434`.
+
 ### :boom: `psql: command not found`
 
 On macOS, the `psql` command of Postgres.app and of Homebrew's PostgreSQL is not
@@ -547,6 +661,9 @@ again.
 
 [ex-repo]: https://github.com/ArchiDep/guessit-ex
 [brew-postgres]: https://formulae.brew.sh/formula/postgresql@18
+[docker-desktop]: https://www.docker.com/products/docker-desktop/
+[docker-macos]: https://docs.docker.com/desktop/setup/install/mac-install/
+[docker-windows]: https://docs.docker.com/desktop/setup/install/windows-install/
 [git]: https://git-scm.com
 [github]: https://github.com
 
@@ -565,7 +682,9 @@ again.
 [node-download]: https://nodejs.org/en/download
 [node-install]: #install-nodejs
 [pg-check]: #check-what-you-already-have
+[pg-configure]: #configure-and-start-the-application
 [pg-connect]: #connect-as-a-superuser
+[pg-docker]: #run-postgresql-with-docker-desktop
 [pg-macos]: #install-postgresql-on-macos
 [pg-start]: #start-your-server
 [pg-wsl]: #install-postgresql-in-the-wsl
