@@ -30,6 +30,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
               {state(), :ok | {:error, :server_not_connected} | {:error, :server_busy}}
   @callback retry_checking_open_ports(state()) ::
               {state(), :ok | {:error, :server_not_connected} | {:error, :server_busy}}
+  @callback retry_checking_sudo_access(state()) ::
+              {state(), :ok | {:error, :server_not_connected} | {:error, :server_busy}}
   @callback group_updated(state(), map(), EventReference.t()) :: state()
   @callback connection_crashed(state(), pid(), reason) :: state() when reason: term()
   @callback update_server(state(), Authentication.t(), Types.server_data()) ::

@@ -776,6 +776,22 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
            end) == result
   end
 
+  test "request a server manager to retry checking sudo access", %{
+    initialize: initialize,
+    server: server,
+    test_pid: test_pid
+  } do
+    result = Enum.random([:ok, {:error, :server_not_connected}, {:error, :server_busy}])
+
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
+             expect(ServerManagerMock, :retry_checking_sudo_access, fn state ->
+               {done.(state), result}
+             end)
+
+             ServerManager.retry_checking_sudo_access(server)
+           end) == result
+  end
+
   test "update a server through its manager", %{
     initialize: initialize,
     server: %Server{} = server,

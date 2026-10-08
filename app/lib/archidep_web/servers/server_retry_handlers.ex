@@ -72,6 +72,26 @@ defmodule ArchiDepWeb.Servers.ServerRetryHandlers do
     end
   end
 
+  @spec handle_retry_checking_sudo_access_event(Socket.t(), UUID.t()) :: {:noreply, Socket.t()}
+  def handle_retry_checking_sudo_access_event(
+        %Socket{assigns: %{auth: auth}} = socket,
+        server_id
+      ) do
+    case Servers.retry_checking_sudo_access(auth, server_id) do
+      :ok ->
+        noreply(socket)
+
+      {:error, :server_not_found} ->
+        server_not_found(socket)
+
+      {:error, :server_not_connected} ->
+        server_not_connected(socket)
+
+      {:error, :server_busy} ->
+        server_is_busy(socket)
+    end
+  end
+
   defp server_not_found(socket),
     do:
       socket

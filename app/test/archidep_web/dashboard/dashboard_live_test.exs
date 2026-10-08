@@ -993,6 +993,33 @@ defmodule ArchiDepWeb.Dashboard.DashboardLiveTest do
                servers: %{}
              }
     end
+
+    test "retrying a sudo access check delegates to the context", %{conn: conn, auth: auth} do
+      server =
+        build_dashboard_server(auth,
+          name: "admin-01",
+          owner: build_owner(id: auth.principal_id, root: true)
+        )
+
+      stub_page(auth,
+        owner: build_owner(id: auth.principal_id, root: true),
+        groups: [server.group],
+        servers: [server]
+      )
+
+      server_id = server.id
+
+      expect(Servers.ContextMock, :retry_checking_sudo_access, fn ^auth, ^server_id -> :ok end)
+
+      {:ok, view, _html} = live(conn, @path)
+
+      render_hook(view, "retry_operation", %{
+        "server_id" => server.id,
+        "operation" => "check-sudo-access"
+      })
+
+      assert flash_notifications(view) == []
+    end
   end
 
   test "accessing the page redirects to the login page without authentication", %{conn: conn} do

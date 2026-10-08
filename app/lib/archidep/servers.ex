@@ -243,6 +243,16 @@ defmodule ArchiDep.Servers do
   defdelegate retry_checking_open_ports(auth, server_id), to: @implementation
 
   @doc """
+  Retry checking whether the server manager has sudo access on a server.
+  """
+  @spec retry_checking_sudo_access(Authentication.t(), UUID.t()) ::
+          :ok
+          | {:error, :server_not_found}
+          | {:error, :server_not_connected}
+          | {:error, :server_busy}
+  defdelegate retry_checking_sudo_access(auth, server_id), to: @implementation
+
+  @doc """
   Receive a notification that a server is up. This is used to automatically
   attempt to connect to a server as soon as it boots.
   """

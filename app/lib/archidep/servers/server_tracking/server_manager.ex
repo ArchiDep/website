@@ -96,6 +96,12 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
     do: GenServer.call(name(server), :retry_checking_open_ports)
 
   @impl ServerManagerClientBehaviour
+  @spec retry_checking_sudo_access(Server.t()) ::
+          :ok | {:error, :server_not_connected} | {:error, :server_busy}
+  def retry_checking_sudo_access(server),
+    do: GenServer.call(name(server), :retry_checking_sudo_access)
+
+  @impl ServerManagerClientBehaviour
   @spec update_server(Server.t(), Authentication.t(), Types.server_data()) ::
           {:ok, Server.t(), EventReference.t()}
           | {:error, Changeset.t()}
@@ -214,6 +220,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
 
   def handle_call(:retry_checking_open_ports, _from, {state_module, state}) do
     {new_state, result} = state_module.retry_checking_open_ports(state)
+
+    new_state
+    |> execute_actions()
+    |> pair(state_module)
+    |> reply_with(result)
+  end
+
+  def handle_call(:retry_checking_sudo_access, _from, {state_module, state}) do
+    {new_state, result} = state_module.retry_checking_sudo_access(state)
 
     new_state
     |> execute_actions()

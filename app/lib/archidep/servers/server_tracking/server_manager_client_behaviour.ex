@@ -39,6 +39,9 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerClientBehaviour do
   @callback retry_checking_open_ports(Server.t()) ::
               :ok | {:error, :server_not_connected} | {:error, :server_busy}
 
+  @callback retry_checking_sudo_access(Server.t()) ::
+              :ok | {:error, :server_not_connected} | {:error, :server_busy}
+
   @callback update_server(Server.t(), Authentication.t(), Types.server_data()) ::
               {:ok, Server.t(), EventReference.t()}
               | {:error, Changeset.t()}

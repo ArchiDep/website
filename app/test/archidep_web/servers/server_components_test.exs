@@ -696,6 +696,58 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                  retry: nil
                }
     end
+
+    test "offers a root user to retry a failed sudo-access check" do
+      assert problem({:server_sudo_access_check_failed, "archidep", :timeout},
+               auth: auth(root: true),
+               connected: true,
+               on_retry_operation: JS.push("retry")
+             ) ==
+               %{
+                 severity: :error,
+                 text: "Could not check whether archidep has sudo access :timeout",
+                 retry: {:idle, "check-sudo-access"}
+               }
+    end
+
+    test "spins the retry action while sudo access is being checked again" do
+      assert problem({:server_sudo_access_check_failed, "archidep", :closed},
+               auth: auth(root: true),
+               connected: true,
+               current_job: :checking_access,
+               on_retry_operation: JS.push("retry")
+             ) ==
+               %{
+                 severity: :error,
+                 text: "Could not check whether archidep has sudo access :closed",
+                 retry: {:retrying, "check-sudo-access"}
+               }
+    end
+
+    test "does not offer a non-root user to retry a failed sudo-access check" do
+      assert problem({:server_sudo_access_check_failed, "student", :timeout},
+               connected: true,
+               on_retry_operation: JS.push("retry")
+             ) ==
+               %{
+                 severity: :error,
+                 text: "Could not check whether student has sudo access",
+                 retry: nil
+               }
+    end
+
+    test "does not offer to retry a failed sudo-access check on a disconnected server" do
+      assert problem({:server_sudo_access_check_failed, "ops", :timeout},
+               auth: auth(root: true),
+               connected: false,
+               on_retry_operation: JS.push("retry")
+             ) ==
+               %{
+                 severity: :error,
+                 text: "Could not check whether ops has sudo access :timeout",
+                 retry: nil
+               }
+    end
   end
 
   describe "server_problem/1 operation problems" do
@@ -770,7 +822,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Ansible playbook setup failed with state :failed (2 tasks failed)",
-                 retry: :idle
+                 retry: {:idle, "ansible-playbook"}
                }
     end
 
@@ -811,7 +863,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Ansible playbook setup failed with state :failed (2 tasks failed)",
-                 retry: :retrying
+                 retry: {:retrying, "ansible-playbook"}
                }
     end
 
@@ -842,7 +894,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                  severity: :warning,
                  text:
                    "The following ports might not be open: Port 8,080: connection refused Port 9,090: connection timeout Port 7,070: error :boom",
-                 retry: :idle
+                 retry: {:idle, "check-open-ports"}
                }
     end
 
@@ -1214,8 +1266,9 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
       [] ->
         nil
 
-      [button | _rest] ->
-        if find_html_elements(button, "svg.animate-spin") != [], do: :retrying, else: :idle
+      [button] ->
+        {if(find_html_elements(button, "svg.animate-spin") != [], do: :retrying, else: :idle),
+         html_element_attribute(button, "phx-value-operation")}
     end
   end
 

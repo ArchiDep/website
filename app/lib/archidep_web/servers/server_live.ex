@@ -78,6 +78,14 @@ defmodule ArchiDepWeb.Servers.ServerLive do
       do: handle_retry_checking_open_ports_event(socket, server_id)
 
   @impl LiveView
+  def handle_event(
+        "retry_operation",
+        %{"server_id" => server_id, "operation" => "check-sudo-access"},
+        %Socket{assigns: %{server: %ServerView{id: server_id}}} = socket
+      ),
+      do: handle_retry_checking_sudo_access_event(socket, server_id)
+
+  @impl LiveView
   def handle_info(
         {:server_state, server_id, new_server_state},
         %Socket{assigns: %{server: %ServerView{id: server_id}}} = socket

@@ -864,7 +864,11 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
   end
 
   def server_problem(%{problem: {:server_sudo_access_check_failed, username, reason}} = assigns) do
-    assigns = assigns |> assign(:username, username) |> assign(:reason, reason)
+    assigns =
+      assigns
+      |> assign(:username, username)
+      |> assign(:reason, reason)
+      |> assign(:retrying, assigns.current_job == :checking_access)
 
     ~H"""
     <div role="alert" class="alert alert-error alert-soft">
@@ -884,6 +888,18 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           </div>
         <% end %>
       </div>
+      <button
+        :if={@on_retry_operation != nil and @connected and root?(@auth)}
+        type="button"
+        class="btn btn-xs btn-warning flex items-center gap-x-1 tooltip"
+        data-tip="Retry"
+        disabled={@current_job != nil}
+        phx-click={@on_retry_operation}
+        phx-value-operation="check-sudo-access"
+      >
+        <Heroicons.arrow_path class={["size-4", if(@retrying, do: "animate-spin")]} />
+        <span class="sr-only">{gettext("Retry")}</span>
+      </button>
     </div>
     """
   end

@@ -125,6 +125,9 @@ defmodule ArchiDep.Events.Store.EventSchemaVersionDriftTest do
     ArchiDep.Servers.Events.ServerRetriedCheckingOpenPorts =>
       {1,
        "%{group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ports: [1..65535], ssh_port: 1..65535 | nil, ssh_username: String.t(), username: String.t()}"},
+    ArchiDep.Servers.Events.ServerRetriedCheckingSudoAccess =>
+      {1,
+       "%{group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_port: 1..65535 | nil, ssh_username: String.t(), username: String.t()}"},
     ArchiDep.Servers.Events.ServerRetriedConnecting =>
       {1,
        "%{group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_port: 1..65535 | nil, ssh_username: String.t(), username: String.t()}"},

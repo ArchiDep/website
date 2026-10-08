@@ -23,6 +23,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.Events.ServerReconnecting
   alias ArchiDep.Servers.Events.ServerRetriedAnsiblePlaybook
   alias ArchiDep.Servers.Events.ServerRetriedCheckingOpenPorts
+  alias ArchiDep.Servers.Events.ServerRetriedCheckingSudoAccess
   alias ArchiDep.Servers.Events.ServerRetriedConnecting
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
@@ -1119,6 +1120,58 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     Logger.info(
       # coveralls-ignore-next-line
       "Ignoring retry request for checking open ports for server #{server.id} because the server is not connected"
+    )
+
+    with_reply(state, {:error, :server_not_connected})
+  end
+
+  @impl ServerManagerBehaviour
+  def retry_checking_sudo_access(
+        %__MODULE__{
+          connection_state: connected_state(),
+          server: server,
+          problems: problems,
+          tasks: tasks,
+          ansible: nil
+        } = state
+      )
+      when tasks == %{} do
+    if Enum.any?(problems, server_problem?(:server_sudo_access_check_failed)) do
+      Logger.info("Retrying checking sudo access for server #{server.id}")
+
+      server
+      |> ServerRetriedCheckingSudoAccess.new(state.username)
+      |> persist_server_event!(server, DateTime.utc_now())
+
+      state
+      |> drop_problems([:server_sudo_access_check_failed])
+      |> add_actions([update_tracking_action(), check_sudo_access()])
+      |> with_reply(:ok)
+    else
+      Logger.info(
+        # coveralls-ignore-next-line
+        "Ignoring retry request for checking sudo access for server #{server.id} because there is no sudo access check problem"
+      )
+
+      with_reply(state, :ok)
+    end
+  end
+
+  def retry_checking_sudo_access(
+        %__MODULE__{connection_state: connected_state(), server: server} = state
+      ) do
+    Logger.info(
+      # coveralls-ignore-next-line
+      "Ignoring retry request for checking sudo access for server #{server.id} because the server is busy"
+    )
+
+    with_reply(state, {:error, :server_busy})
+  end
+
+  def retry_checking_sudo_access(%__MODULE__{server: server} = state) do
+    Logger.info(
+      # coveralls-ignore-next-line
+      "Ignoring retry request for checking sudo access for server #{server.id} because the server is not connected"
     )
 
     with_reply(state, {:error, :server_not_connected})

@@ -261,9 +261,9 @@ exceptions are marked **root-only**.
 - [`DeleteServer`](./use_cases/delete_server.ex) — `delete_server/2`: remove a
   server. **Root-only.**
 - [`ManageServer`](./use_cases/manage_server.ex) — `retry_connecting/2` and
-  `retry_checking_open_ports/2` (owner), and `retry_ansible_playbook/3`
-  (**root-only**): retry a failed step. Hands off to the
-  [server-tracking](./server_tracking) manager.
+  `retry_checking_open_ports/2` (owner), and `retry_ansible_playbook/3` and
+  `retry_checking_sudo_access/2` (**root-only**): retry a failed step. Hands off
+  to the [server-tracking](./server_tracking) manager.
 - [`ServerCallbacks`](./use_cases/server_callbacks.ex) — `notify_server_up/2`:
   a callback the **server itself** makes when it comes online, authenticated by
   the server's `secret_key` ([`Phoenix.Token`](./use_cases/server_callbacks.ex),
@@ -308,7 +308,8 @@ subsystems as setup progresses.
 - **Setup & checks:** [`ServerSetUp`](./events/server_set_up.ex),
   [`ServerFactsGathered`](./events/server_facts_gathered.ex),
   [`ServerOpenPortsChecked`](./events/server_open_ports_checked.ex),
-  [`ServerRetriedCheckingOpenPorts`](./events/server_retried_checking_open_ports.ex).
+  [`ServerRetriedCheckingOpenPorts`](./events/server_retried_checking_open_ports.ex),
+  [`ServerRetriedCheckingSudoAccess`](./events/server_retried_checking_sudo_access.ex).
 - **Ansible:**
   [`AnsiblePlaybookRunStarted`](./events/ansible_playbook_run_started.ex),
   [`AnsiblePlaybookRunRunning`](./events/ansible_playbook_run_running.ex),
@@ -332,8 +333,9 @@ otherwise:
   (still subject to the confirmed/enabled checks for updates).
 - Any authenticated user may `list_my_servers` and
   `fetch_authenticated_server_group_member`.
-- **Root-only:** `delete_server`, `retry_ansible_playbook`, all the server-group
-  and Ansible read operations, and `list_all_servers_in_group`.
+- **Root-only:** `delete_server`, `retry_ansible_playbook`,
+  `retry_checking_sudo_access`, all the server-group and Ansible read
+  operations, and `list_all_servers_in_group`.
 - `notify_server_up` is not user-authorized at all — it is authenticated by the
   server's `secret_key`.
 

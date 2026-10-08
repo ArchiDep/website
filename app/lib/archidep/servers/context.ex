@@ -126,6 +126,10 @@ defmodule ArchiDep.Servers.Context do
 
   @doc false
   @impl Behaviour
+  defdelegate retry_checking_sudo_access(auth, server_id), to: UseCases.ManageServer
+
+  @doc false
+  @impl Behaviour
   defdelegate notify_server_up(server_id, token), to: UseCases.ServerCallbacks
 
   # Ansible

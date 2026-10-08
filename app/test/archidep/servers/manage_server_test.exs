@@ -203,6 +203,87 @@ defmodule ArchiDep.Servers.ManageServerTest do
     end
   end
 
+  describe "retry_checking_sudo_access/2" do
+    test "retries checking sudo access on a server" do
+      {auth, server} = root_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServerManagerClientMock, :retry_checking_sudo_access, fn ^server -> :ok end)
+
+      assert ManageServer.retry_checking_sudo_access(auth, server.id) == :ok
+
+      assert_no_side_effects(previous_counts)
+    end
+
+    test "masks a non-root owner of the server as a missing server" do
+      {auth, server} = group_member_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      assert ManageServer.retry_checking_sudo_access(auth, server.id) ==
+               {:error, :server_not_found}
+
+      assert_no_side_effects(previous_counts)
+    end
+
+    test "passes through a server-not-connected error" do
+      {auth, server} = root_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServerManagerClientMock, :retry_checking_sudo_access, fn ^server ->
+        {:error, :server_not_connected}
+      end)
+
+      assert ManageServer.retry_checking_sudo_access(auth, server.id) ==
+               {:error, :server_not_connected}
+
+      assert_no_side_effects(previous_counts)
+    end
+
+    test "passes through a server-busy error" do
+      {auth, server} = root_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      expect(ServerManagerClientMock, :retry_checking_sudo_access, fn ^server ->
+        {:error, :server_busy}
+      end)
+
+      assert ManageServer.retry_checking_sudo_access(auth, server.id) == {:error, :server_busy}
+
+      assert_no_side_effects(previous_counts)
+    end
+
+    test "rejects a malformed server ID" do
+      {auth, _server} = root_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      assert ManageServer.retry_checking_sudo_access(auth, "not-a-uuid") ==
+               {:error, :server_not_found}
+
+      assert_no_side_effects(previous_counts)
+    end
+
+    test "rejects an unknown server ID" do
+      {auth, _server} = root_owner_and_server()
+      previous_counts = count_rows(@affected_tables)
+
+      assert ManageServer.retry_checking_sudo_access(auth, UUID.generate()) ==
+               {:error, :server_not_found}
+
+      assert_no_side_effects(previous_counts)
+    end
+
+    test "masks an unauthorized caller as a missing server" do
+      {_auth, server} = root_owner_and_server()
+      other = Factory.build(:authentication, principal_id: UUID.generate(), root: false)
+      previous_counts = count_rows(@affected_tables)
+
+      assert ManageServer.retry_checking_sudo_access(other, server.id) ==
+               {:error, :server_not_found}
+
+      assert_no_side_effects(previous_counts)
+    end
+  end
+
   defp root_owner_and_server do
     {auth, account} = ServersTestHelpers.register_root(@past)
     group = CourseFactory.insert(:class, now: @past)

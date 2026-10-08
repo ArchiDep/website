@@ -599,6 +599,23 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
 
       assert flash_notifications(view) == []
     end
+
+    test "retry checking sudo access delegates to the context", %{conn: conn, auth: auth} do
+      server = build_server()
+      stub_server_page(auth, server)
+      server_id = server.id
+
+      expect(Servers.ContextMock, :retry_checking_sudo_access, fn ^auth, ^server_id -> :ok end)
+
+      {:ok, view, _html} = live(conn, "/admin/servers/#{server.id}")
+
+      render_hook(view, "retry_operation", %{
+        "server_id" => server.id,
+        "operation" => "check-sudo-access"
+      })
+
+      assert flash_notifications(view) == []
+    end
   end
 
   test "accessing the server page redirects to the login page without authentication", %{

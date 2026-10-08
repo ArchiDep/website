@@ -218,6 +218,82 @@ defmodule ArchiDepWeb.Servers.ServerRetryHandlersTest do
     end
   end
 
+  describe "handle_retry_checking_sudo_access_event/2" do
+    test "retry checking sudo access" do
+      auth = Factory.build(:authentication, root: true)
+      server_id = UUID.generate()
+      socket = socket_with_auth(auth)
+
+      expect(Servers.ContextMock, :retry_checking_sudo_access, 1, fn ^auth, ^server_id -> :ok end)
+
+      assert {:noreply, returned} =
+               ServerRetryHandlers.handle_retry_checking_sudo_access_event(socket, server_id)
+
+      assert socket_state(returned) == socket_state(socket)
+    end
+
+    test "notify when the server is not connected" do
+      auth = Factory.build(:authentication, root: true)
+      server_id = UUID.generate()
+      socket = socket_with_auth(auth)
+
+      expect(Servers.ContextMock, :retry_checking_sudo_access, 1, fn ^auth, ^server_id ->
+        {:error, :server_not_connected}
+      end)
+
+      assert {:noreply, returned} =
+               ServerRetryHandlers.handle_retry_checking_sudo_access_event(socket, server_id)
+
+      assert socket_state(returned) == %{
+               socket_state(socket)
+               | notifications: [
+                   {:error, gettext("Cannot retry because the server is not connected.")}
+                 ]
+             }
+    end
+
+    test "notify when the server is busy" do
+      auth = Factory.build(:authentication, root: true)
+      server_id = UUID.generate()
+      socket = socket_with_auth(auth)
+
+      expect(Servers.ContextMock, :retry_checking_sudo_access, 1, fn ^auth, ^server_id ->
+        {:error, :server_busy}
+      end)
+
+      assert {:noreply, returned} =
+               ServerRetryHandlers.handle_retry_checking_sudo_access_event(socket, server_id)
+
+      assert socket_state(returned) == %{
+               socket_state(socket)
+               | notifications: [
+                   {:error,
+                    gettext("Cannot retry because the server is busy. Please try again later.")}
+                 ]
+             }
+    end
+
+    test "notify when the server no longer exists" do
+      auth = Factory.build(:authentication, root: true)
+      server_id = UUID.generate()
+      socket = socket_with_auth(auth)
+
+      expect(Servers.ContextMock, :retry_checking_sudo_access, 1, fn ^auth, ^server_id ->
+        {:error, :server_not_found}
+      end)
+
+      assert {:noreply, returned} =
+               ServerRetryHandlers.handle_retry_checking_sudo_access_event(socket, server_id)
+
+      assert socket_state(returned) == %{
+               socket_state(socket)
+               | notifications: [
+                   {:error, gettext("Cannot retry because the server no longer exists.")}
+                 ]
+             }
+    end
+  end
+
   # The retry handlers either leave the socket untouched or add a single flash
   # notification. Putting a flash spreads bookkeeping across assigns.flash, the
   # assigns change-tracking marker and private.live_temp[:flash]; projecting the

@@ -104,6 +104,14 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       do: handle_retry_checking_open_ports_event(socket, server_id)
 
   @impl LiveView
+  def handle_event(
+        "retry_operation",
+        %{"server_id" => server_id, "operation" => "check-sudo-access"},
+        socket
+      ),
+      do: handle_retry_checking_sudo_access_event(socket, server_id)
+
+  @impl LiveView
   def handle_info(
         {:student_deleted, %StudentDeleted{id: student_id}, _reference},
         %Socket{
