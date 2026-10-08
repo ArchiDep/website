@@ -23,7 +23,7 @@
 
   <div class="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
     <div>
-      <.data_display responsive_class="md:grid-cols-2 2xl:grid-cols-3">
+      <.data_display id="server-details" responsive_class="md:grid-cols-2 2xl:grid-cols-3">
         <.data_display_element title={gettext("IP address")} class="font-mono">
           {:inet.ntoa(@server.ip_address.address)}
         </.data_display_element>
@@ -102,6 +102,15 @@
       />
 
       <.server_help auth={@auth} server={@server} state={@state} />
+
+      <%!-- The registered keys are known not to match the server's while the key
+      exchange fails, and the problem already lists them as such. --%>
+      <.ssh_host_key_fingerprints
+        :if={not ServerRealTimeState.problem?(@state, [:server_key_exchange_failed])}
+        id="server-ssh-host-key"
+        title={gettext("SSH host key fingerprints")}
+        keys={SSH.stored_ssh_host_keys(@server.ssh_host_keys)}
+      />
     </div>
   </div>
 

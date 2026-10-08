@@ -17,6 +17,43 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
   alias ArchiDep.Support.ServersFactory
   alias Ecto.Changeset
 
+  # Real host public keys generated with ssh-keygen, and the page's projection
+  # of their fingerprints: the output of `ssh-keygen -lf` and
+  # `ssh-keygen -E md5 -lf` for them.
+  @ed25519_host_key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e"
+  @ssh_host_keys """
+  #{@ed25519_host_key}
+  ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7xhOu0n7K5DlCoqSwRLA5aZExh4s9fhsf0NELpSrJVnoNHwqfd5LUQdmrq4W8PNcloyilUhidRR/tEP2MfU0=
+  """
+  @ed25519_sha256_fingerprint %{
+    algorithm: "ED25519",
+    fingerprint: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY",
+    copied: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY"
+  }
+  @ed25519_md5_fingerprint %{
+    algorithm: "ED25519",
+    fingerprint: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb",
+    copied: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb"
+  }
+  @ssh_host_key_fingerprints [
+    [
+      @ed25519_sha256_fingerprint,
+      %{
+        algorithm: "ECDSA",
+        fingerprint: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ",
+        copied: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ"
+      }
+    ],
+    [
+      @ed25519_md5_fingerprint,
+      %{
+        algorithm: "ECDSA",
+        fingerprint: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd",
+        copied: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd"
+      }
+    ]
+  ]
+
   describe "the server detail page as an admin" do
     setup :register_and_log_in_root
 
@@ -28,6 +65,22 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
 
       assert_html_title(html, "web-01 · ArchiDep")
       assert server_page(html, server) == expected_admin_page()
+    end
+
+    test "omit the host key fingerprints of a server with no registered host keys", %{
+      conn: conn,
+      auth: auth
+    } do
+      server = build_server(active: false, ssh_host_keys: nil)
+      stub_server_page(auth, server)
+
+      {:ok, _view, html} = live(conn, "/admin/servers/#{server.id}")
+
+      assert server_page(html, server) ==
+               expected_admin_page(%{
+                 details: Map.put(expected_admin_details(), "Active", :inactive),
+                 ssh_host_key_fingerprints: []
+               })
     end
 
     test "redirect to the dashboard when the server is not found", %{conn: conn, auth: auth} do
@@ -58,7 +111,8 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       assert_html_title(html, "web-01 · ArchiDep")
 
       # The owner sees neither the group/owner rows nor the delete affordances
-      # (both root-only); the edit dialog is available to every principal.
+      # (both root-only); the host key fingerprints and the edit dialog are
+      # available to every principal.
       assert server_page(html, server) == %{
                heading: "web-01",
                details: %{
@@ -68,6 +122,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
                  "SSH port" => "2222",
                  "Active" => :active
                },
+               ssh_host_key_fingerprints: @ssh_host_key_fingerprints,
                edit_button: :enabled,
                edit_dialog: true,
                delete_button: :absent,
@@ -367,6 +422,37 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       assert server_page(render(view), server) == expected_admin_page(%{heading: "web-renamed"})
     end
 
+    test "reflect a host key update broadcast over PubSub", %{conn: conn, auth: auth} do
+      server = build_server()
+      stub_server_page(auth, server)
+
+      {:ok, view, html} = live(conn, "/admin/servers/#{server.id}")
+
+      assert server_page(html, server) == expected_admin_page()
+
+      updated = %{server | ssh_host_keys: @ed25519_host_key, version: server.version + 1}
+
+      :ok =
+        PubSub.publish_server_updated(
+          ServerUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> assigns.server.ssh_host_keys == @ed25519_host_key end,
+        "server host keys updated"
+      )
+
+      assert server_page(render(view), server) ==
+               expected_admin_page(%{
+                 ssh_host_key_fingerprints: [
+                   [@ed25519_sha256_fingerprint],
+                   [@ed25519_md5_fingerprint]
+                 ]
+               })
+    end
+
     test "disable the edit and delete actions when the tracker reports a busy server", %{
       conn: conn,
       auth: auth
@@ -393,6 +479,48 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
 
       assert server_page(render(view), server) ==
                expected_admin_page(%{edit_button: :disabled, delete_button: :disabled})
+    end
+
+    test "hide the host key fingerprints while the tracker reports a key exchange failure", %{
+      conn: conn,
+      auth: auth
+    } do
+      server = build_server()
+      stub_server_page(auth, server)
+
+      {:ok, view, html} = live(conn, "/admin/servers/#{server.id}")
+
+      assert server_page(html, server) == expected_admin_page()
+
+      key_exchange_failed_state =
+        real_time_state(server,
+          connection_state: ServersFactory.random_connection_failed_state(),
+          problems: [ServersFactory.server_key_exchange_failed_problem()]
+        )
+
+      send(view.pid, {:server_state, server.id, key_exchange_failed_state})
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> assigns.state == key_exchange_failed_state end,
+        "key exchange failure reported"
+      )
+
+      assert server_page(render(view), server) ==
+               expected_admin_page(%{ssh_host_key_fingerprints: []})
+
+      connected_state =
+        real_time_state(server, connection_state: ServersFactory.random_connected_state())
+
+      send(view.pid, {:server_state, server.id, connected_state})
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> assigns.state == connected_state end,
+        "server connected"
+      )
+
+      assert server_page(render(view), server) == expected_admin_page()
     end
 
     test "navigate to the admin dashboard when the server is deleted over PubSub", %{
@@ -501,6 +629,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
           username: "deploy",
           ssh_port: 2222,
           active: true,
+          ssh_host_keys: @ssh_host_keys,
           group: group,
           group_id: group.id,
           owner: owner,
@@ -540,7 +669,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       username: server.username,
       app_username: server.app_username,
       current_job: nil,
-      problems: [],
+      problems: Keyword.get(opts, :problems, []),
       version: 1
     }
 
@@ -552,15 +681,8 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       Map.merge(
         %{
           heading: "web-01",
-          details: %{
-            "IP address" => "192.168.1.10",
-            "Username" => "deploy",
-            "Domain" => "alice.archidep.ch",
-            "SSH port" => "2222",
-            "Active" => :active,
-            "Group" => "Crypto 101",
-            "Owner" => "Alice Owner"
-          },
+          details: expected_admin_details(),
+          ssh_host_key_fingerprints: @ssh_host_key_fingerprints,
           edit_button: :enabled,
           edit_dialog: true,
           delete_button: :enabled,
@@ -569,15 +691,27 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
         overrides
       )
 
+  defp expected_admin_details,
+    do: %{
+      "IP address" => "192.168.1.10",
+      "Username" => "deploy",
+      "Domain" => "alice.archidep.ch",
+      "SSH port" => "2222",
+      "Active" => :active,
+      "Group" => "Crypto 101",
+      "Owner" => "Alice Owner"
+    }
+
   # Projects the whole observable server page: the heading, the data-display
-  # rows, and the edit/delete affordances. Each action button projects to
-  # `:enabled` / `:disabled` (its `disabled` attribute tracks the real-time
-  # server state) or `:absent` when the principal cannot see it; each dialog
-  # projects to its presence.
+  # rows, the host key fingerprints, and the edit/delete affordances. Each
+  # action button projects to `:enabled` / `:disabled` (its `disabled`
+  # attribute tracks the real-time server state) or `:absent` when the
+  # principal cannot see it; each dialog projects to its presence.
   defp server_page(html, server),
     do: %{
       heading: server_heading(html),
       details: server_detail(html),
+      ssh_host_key_fingerprints: fingerprint_groups(html),
       edit_button: button_state(html, "#edit-server-button"),
       edit_dialog: present?(html, "#edit-server-dialog-#{server.id}"),
       delete_button: button_state(html, "#delete-server-button"),
@@ -601,12 +735,12 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
     html_element_text(heading)
   end
 
-  # Projects the server data display (the page's only `<dl>`) to a title-keyed
-  # map of meaningful values; the active row projects to `:active`/`:inactive`
-  # via its icon since the cell holds no text.
+  # Projects the server data display to a title-keyed map of meaningful values;
+  # the active row projects to `:active`/`:inactive` via its icon since the cell
+  # holds no text.
   defp server_detail(html) do
-    titles = html |> find_html_elements("dl dt") |> Enum.map(&html_element_text/1)
-    values = find_html_elements(html, "dl dd")
+    titles = html |> find_html_elements("#server-details dt") |> Enum.map(&html_element_text/1)
+    values = find_html_elements(html, "#server-details dd")
 
     titles
     |> Enum.zip(values)
@@ -617,6 +751,29 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
     do: if(find_html_elements(value, ".text-success") != [], do: :active, else: :inactive)
 
   defp detail_value(_title, value), do: html_element_text(value)
+
+  # The host key fingerprints as the page groups them, one list per digest, each
+  # row pinning what it shows next to what its copy button puts in the
+  # clipboard; empty when the page shows none.
+  defp fingerprint_groups(html),
+    do:
+      html
+      |> find_html_elements("#server-ssh-host-key-fingerprints > ul")
+      |> Enum.map(fn group ->
+        group
+        |> find_html_elements("li")
+        |> Enum.map(fn row ->
+          [algorithm] = find_html_elements(row, "span")
+          [fingerprint] = find_html_elements(row, "code")
+          [copy] = find_html_elements(row, "button")
+
+          %{
+            algorithm: html_element_text(algorithm),
+            fingerprint: html_element_text(fingerprint),
+            copied: html_element_attribute(copy, "data-clipboard-text")
+          }
+        end)
+      end)
 
   defp form_errors(html, form_id),
     do:

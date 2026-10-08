@@ -411,8 +411,10 @@ steps.
   serves both the student route (`/servers/:id`) and the admin route
   (`/admin/servers/:id`, with an admin scope passed via the route's `private`
   assign), showing the server's details, its [live
-  state](../archidep/servers/CONTRIBUTING.md#server-tracking) and problems, and
-  its [expected vs. actual
+  state](../archidep/servers/CONTRIBUTING.md#server-tracking) and problems, the
+  SHA-256 and MD5 fingerprints of its registered host public keys (with copy
+  buttons, as the [dashboard](#user-facing-pages) shows them for the SSH
+  exercise VM), and its [expected vs. actual
   properties](../archidep/servers/CONTRIBUTING.md#server-properties), tracked
   through a
   [`ServerTracker`](../archidep/servers/CONTRIBUTING.md#server-tracking).

@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.SSH
   alias ArchiDepWeb.LiveRefresh
   alias ArchiDepWeb.Servers.DeleteServerDialogLive
   alias ArchiDepWeb.Servers.EditServerDialogLive

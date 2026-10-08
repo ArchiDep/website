@@ -39,6 +39,67 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     """
   end
 
+  attr(:id, :string,
+    doc: "the prefix of the identifiers of the fingerprint list and its copy buttons",
+    required: true
+  )
+
+  attr(:title, :string, doc: "the title of the fingerprint list", required: true)
+  attr(:keys, :list, doc: "the SSH host keys whose fingerprints to display", required: true)
+  attr(:class, :string, doc: "extra CSS classes to apply to the fingerprint list", default: nil)
+
+  @doc """
+  The fingerprints of a machine's SSH host keys, each with a button to copy it,
+  for checking the host key an SSH client presents on first connection. Nothing
+  is rendered when there are no keys.
+  """
+  @spec ssh_host_key_fingerprints(map()) :: Rendered.t()
+  def ssh_host_key_fingerprints(assigns) do
+    assigns = assign(assigns, :groups, host_key_fingerprint_groups(assigns.id, assigns.keys))
+
+    ~H"""
+    <.data_display :if={@groups != []} class={@class} responsive={false}>
+      <.data_display_element title={@title}>
+        <div
+          id={"#{@id}-fingerprints"}
+          class="mt-1 flex flex-col text-left divide-y divide-base-content/20"
+        >
+          <ul
+            :for={group <- @groups}
+            class="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
+          >
+            <li
+              :for={{copy_id, algorithm, fingerprint} <- group}
+              class="flex items-start gap-2 -mx-2 px-2 py-0.5 rounded-sm text-xs hover:bg-base-content/15"
+            >
+              <span class="w-16 shrink-0 text-base-content/75">{algorithm}</span>
+              <code class="grow select-all break-all">{fingerprint}</code>
+              <.copy_button id={copy_id} text={fingerprint} class="shrink-0" />
+            </li>
+          </ul>
+        </div>
+      </.data_display_element>
+    </.data_display>
+    """
+  end
+
+  # The fingerprints in one group per digest: every host key's SHA256
+  # fingerprint, then every host key's MD5 one, since which of the two is being
+  # compared against depends on the SSH client in use. Each fingerprint carries
+  # the identifier of its row's copy button, unique across both groups.
+  defp host_key_fingerprint_groups(_id, []), do: []
+
+  defp host_key_fingerprint_groups(id, keys),
+    do:
+      Enum.map([:sha256, :md5], fn digest ->
+        keys
+        |> Enum.with_index()
+        |> Enum.map(fn {key, index} ->
+          {"#{id}-#{index}-#{digest}-copy", SSHHostKey.algorithm(key),
+           SSHHostKey.fingerprint(key, digest)}
+        end)
+      end)
+
   attr(:auth, Authentication, doc: "the authentication context")
   attr(:server, ServerView, doc: "the server to display")
   attr(:state, ServerRealTimeState, doc: "the current state of the server", default: nil)

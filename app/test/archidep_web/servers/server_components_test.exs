@@ -7,6 +7,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
   alias ArchiDep.Helpers.LoadingHelpers
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerView
+  alias ArchiDep.Servers.SSH
   alias ArchiDep.Support.Factory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDepWeb.Servers.ServerComponents
@@ -65,6 +66,57 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                struck_through: false,
                tooltip: nil
              }
+    end
+  end
+
+  describe "ssh_host_key_fingerprints/1" do
+    test "lists every key's SHA256 fingerprint, then every key's MD5 one, each with a copy button" do
+      # Real host public keys generated with ssh-keygen: the expected
+      # fingerprints are the output of `ssh-keygen -lf` and
+      # `ssh-keygen -E md5 -lf` for them.
+      keys =
+        SSH.stored_ssh_host_keys("""
+        ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJDLOpPWR7r89VjK9kPMhsuqERGVbUi5RZnBlccQnt4e
+        ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLw7xhOu0n7K5DlCoqSwRLA5aZExh4s9fhsf0NELpSrJVnoNHwqfd5LUQdmrq4W8PNcloyilUhidRR/tEP2MfU0=
+        """)
+
+      assert fingerprints_projection(keys) == %{
+               title: "Host keys",
+               groups: [
+                 [
+                   %{
+                     copy_button_id: "host-key-0-sha256-copy",
+                     algorithm: "ED25519",
+                     fingerprint: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY",
+                     copied: "SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY"
+                   },
+                   %{
+                     copy_button_id: "host-key-1-sha256-copy",
+                     algorithm: "ECDSA",
+                     fingerprint: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ",
+                     copied: "SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ"
+                   }
+                 ],
+                 [
+                   %{
+                     copy_button_id: "host-key-0-md5-copy",
+                     algorithm: "ED25519",
+                     fingerprint: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb",
+                     copied: "MD5:67:86:ac:3d:e9:46:24:eb:82:5c:af:02:11:58:3b:fb"
+                   },
+                   %{
+                     copy_button_id: "host-key-1-md5-copy",
+                     algorithm: "ECDSA",
+                     fingerprint: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd",
+                     copied: "MD5:43:01:27:8e:c7:01:bf:60:87:4c:b7:d9:e7:d8:59:cd"
+                   }
+                 ]
+               ]
+             }
+    end
+
+    test "renders nothing when there are no keys" do
+      assert fingerprints_projection([]) == nil
     end
   end
 
@@ -987,6 +1039,49 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
       struck_through: "line-through" in classes,
       tooltip: html_element_attribute(wrapper, "data-tip")
     }
+  end
+
+  # The fingerprint list's title and its rows, one list per digest, each row
+  # pinning what it shows next to what its copy button puts in the clipboard, or
+  # `nil` when nothing is rendered.
+  defp fingerprints_projection(keys) do
+    html =
+      render_component(&ServerComponents.ssh_host_key_fingerprints/1,
+        id: "host-key",
+        title: "Host keys",
+        keys: keys
+      )
+
+    case find_html_elements(html, "dl") do
+      [] ->
+        nil
+
+      [list] ->
+        [title] = find_html_elements(list, "dt")
+
+        %{
+          title: normalized_text(title),
+          groups:
+            list
+            |> find_html_elements("#host-key-fingerprints > ul")
+            |> Enum.map(fn group ->
+              group
+              |> find_html_elements("li")
+              |> Enum.map(fn row ->
+                [algorithm] = find_html_elements(row, "span")
+                [fingerprint] = find_html_elements(row, "code")
+                [copy] = find_html_elements(row, "button")
+
+                %{
+                  copy_button_id: html_element_attribute(copy, "id"),
+                  algorithm: normalized_text(algorithm),
+                  fingerprint: normalized_text(fingerprint),
+                  copied: html_element_attribute(copy, "data-clipboard-text")
+                }
+              end)
+            end)
+        }
+    end
   end
 
   defp server(opts \\ []),

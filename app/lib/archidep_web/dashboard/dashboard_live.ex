@@ -18,7 +18,6 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   alias ArchiDep.Servers.ServerTracking.ServerTrackerClient
   alias ArchiDep.Servers.ServerView
   alias ArchiDep.Servers.SSH
-  alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDepWeb.Course.ChangeUsernameDialogLive
   alias ArchiDepWeb.Dashboard.Components.WhatIsYourNameLive
   alias ArchiDepWeb.LiveRefresh
@@ -39,10 +38,10 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
         )
       ])
 
-    ssh_exercise_vm_host_key_fingerprints =
+    ssh_exercise_vm_host_keys =
       case student do
         %StudentView{class: %ClassView{ssh_exercise_vm_host_keys: keys}} ->
-          keys |> SSH.stored_ssh_host_keys() |> host_key_fingerprints()
+          SSH.stored_ssh_host_keys(keys)
 
         _not_a_student ->
           []
@@ -64,7 +63,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
       page_title: gettext("Dashboard"),
       now: Clock.now(),
       student: student,
-      ssh_exercise_vm_host_key_fingerprints: ssh_exercise_vm_host_key_fingerprints,
+      ssh_exercise_vm_host_keys: ssh_exercise_vm_host_keys,
       servers: servers,
       server_state_map: ServerTrackerClient.server_state_map(servers),
       groups: groups
@@ -171,7 +170,7 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
   # servers, in a collapsed panel they can still open, since later exercises
   # are done on that VM.
   attr :student, StudentView, required: true
-  attr :fingerprints, :list, required: true
+  attr :host_keys, :list, required: true
 
   defp ssh_exercise_details(assigns) do
     ~H"""
@@ -212,49 +211,15 @@ defmodule ArchiDepWeb.Dashboard.DashboardLive do
           </div>
         </.data_display_element>
       </.data_display>
-      <.data_display :if={@fingerprints != []} class="mt-4" responsive={false}>
-        <.data_display_element title={gettext("Exercise server SSH host key fingerprints")}>
-          <div
-            id="ssh-exercise-vm-host-key-fingerprints"
-            class="mt-1 flex flex-col text-left divide-y divide-base-content/20"
-          >
-            <ul
-              :for={group <- @fingerprints}
-              class="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
-            >
-              <li
-                :for={{id, algorithm, fingerprint} <- group}
-                class="flex items-start gap-2 -mx-2 px-2 py-0.5 rounded-sm text-xs hover:bg-base-content/15"
-              >
-                <span class="w-16 shrink-0 text-base-content/75">{algorithm}</span>
-                <code class="grow select-all break-all">{fingerprint}</code>
-                <.copy_button id={id} text={fingerprint} class="shrink-0" />
-              </li>
-            </ul>
-          </div>
-        </.data_display_element>
-      </.data_display>
+      <.ssh_host_key_fingerprints
+        id="ssh-exercise-vm-host-key"
+        title={gettext("Exercise server SSH host key fingerprints")}
+        keys={@host_keys}
+        class="mt-4"
+      />
     </div>
     """
   end
-
-  # The exercise VM's fingerprints, in one group per digest: the page lists
-  # every host key's SHA256 fingerprint, then every host key's MD5 one, since
-  # which of the two a student is comparing against depends on the client they
-  # connect with. Each fingerprint carries the identifier of its row's copy
-  # button, unique across both groups.
-  defp host_key_fingerprints([]), do: []
-
-  defp host_key_fingerprints(keys),
-    do:
-      Enum.map([:sha256, :md5], fn digest ->
-        keys
-        |> Enum.with_index()
-        |> Enum.map(fn {key, index} ->
-          {"ssh-exercise-vm-host-key-#{index}-#{digest}-copy", SSHHostKey.algorithm(key),
-           SSHHostKey.fingerprint(key, digest)}
-        end)
-      end)
 
   # Decides both whether a server card offers the edit button and whether the
   # edit dialog it opens is rendered, so that the two cannot disagree.
