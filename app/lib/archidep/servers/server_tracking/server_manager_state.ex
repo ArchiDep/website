@@ -233,6 +233,21 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
+  # A new connection process can only start once the previous one has died,
+  # since both register the same global name, so the manager has not yet
+  # processed the previous connection's crash. Handle that crash now; its late
+  # `:DOWN` message will then be ignored because it no longer matches the
+  # current connection.
+  def connection_idle(%__MODULE__{server: server} = state, connection_pid) do
+    Logger.warning(
+      "Connection #{inspect(connection_pid)} for server #{server.id} became idle while in connection state #{inspect(state.connection_state)}; considering the previous connection lost"
+    )
+
+    state
+    |> disconnect(:connection_replaced)
+    |> connection_idle(connection_pid)
+  end
+
   @impl ServerManagerBehaviour
 
   def retry_connecting(
@@ -294,10 +309,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       )
       |> add_action(update_tracking_action())
       |> maybe_cancel_retry_timer()
-      |> add_actions([
-        connect_action(state),
-        monitor_action(connection_pid)
-      ])
+      |> add_action(connect_action(state))
       |> drop_problems([
         :server_missing_sudo_access,
         :server_reconnection_failed,
@@ -1207,12 +1219,27 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
     end
   end
 
+  # The manager monitors each connection process once, when it becomes idle, so
+  # a `:DOWN` message from any other process (e.g. a previous connection whose
+  # crash has already been handled) is stale.
   @impl ServerManagerBehaviour
   def connection_crashed(
-        %__MODULE__{connection_state: connection_state} = state,
-        connection_pid,
+        %__MODULE__{connection_state: connection_state, server: server} = state,
+        crashed_pid,
         reason
       ) do
+    if connection_pid(connection_state) == crashed_pid do
+      handle_connection_crash(state, reason)
+    else
+      Logger.debug(
+        "Ignoring crash of process #{inspect(crashed_pid)} which is not the current connection for server #{server.id}"
+      )
+
+      state
+    end
+  end
+
+  defp handle_connection_crash(%__MODULE__{connection_state: connection_state} = state, reason) do
     now = DateTime.utc_now()
 
     connected_time =
@@ -1225,14 +1252,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
       duration: DateTime.diff(now, connected_time, :millisecond) / 1000
     })
 
-    disconnect(state, connection_pid(connection_state), connection_pid, reason)
+    disconnect(state, reason)
   end
-
-  defp disconnect(state, connection_pid, connection_pid, reason) when is_pid(connection_pid),
-    do: disconnect(state, reason)
-
-  defp disconnect(state, _connection_pid, _disconnected_pid, reason),
-    do: disconnect(state, reason)
 
   defp disconnect(state, reason) do
     server = state.server

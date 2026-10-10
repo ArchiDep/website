@@ -58,7 +58,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                ) = connection_state,
              actions:
                [
-                 {:monitor, ^test_pid},
                  {:connect, connect_fn},
                  {:cancel_timer, ^retry_timer},
                  {:update_tracking, "servers", update_tracking_fn}
@@ -128,7 +127,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                ),
              actions:
                [
-                 {:monitor, ^test_pid},
                  {:connect, connect_fn},
                  {:cancel_timer, ^retry_timer},
                  {:update_tracking, "servers", update_tracking_fn}
@@ -202,7 +200,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                ) = connection_state,
              actions:
                [
-                 {:monitor, ^test_pid},
                  {:connect, connect_fn},
                  {:cancel_timer, ^retry_timer},
                  {:update_tracking, "servers", update_tracking_fn}
@@ -266,7 +263,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateRetryConnectingTest 
                ) = connection_state,
              actions:
                [
-                 {:monitor, ^test_pid},
                  {:connect, connect_fn},
                  {:cancel_timer, ^retry_timer},
                  {:update_tracking, "servers", update_tracking_fn}

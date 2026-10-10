@@ -3,6 +3,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
 
   import ArchiDep.Servers.ServerTracking.ServerConnectionState
   import ArchiDep.Support.ServerManagerStateTestUtils
+  import ExUnit.CaptureLog
   import Hammox
   alias ArchiDep.Servers.ServerTracking.ServerManagerBehaviour
   alias ArchiDep.Servers.ServerTracking.ServerManagerState
@@ -205,4 +206,182 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
              {real_time_state(server, connection_state: result.connection_state, version: 43),
               %ServerManagerState{result | version: 43}}
   end
+
+  test "a server manager still referencing a previous connection treats a new idle connection as its replacement",
+       %{connection_idle: connection_idle} do
+    server =
+      build_active_server(
+        ssh_port: true,
+        set_up_at: nil
+      )
+
+    new_connection_pid = spawn(fn -> :ok end)
+    fake_connection_timer_ref = make_ref()
+
+    for {connection_state, connection_timer} <- [
+          {ServersFactory.random_not_connected_state(%{connection_pid: self()}), nil},
+          {ServersFactory.random_connection_pending_state(), fake_connection_timer_ref},
+          {ServersFactory.random_connecting_state(), nil},
+          {ServersFactory.random_retry_connecting_state(), nil},
+          {ServersFactory.random_reconnecting_state(), nil},
+          {ServersFactory.random_connection_failed_state(), nil}
+        ] do
+      %ServerManagerState{} =
+        initial_state =
+        ServersFactory.build(:server_manager_state,
+          connection_state: connection_state,
+          connection_timer: connection_timer,
+          server: server,
+          username: server.username
+        )
+
+      now = DateTime.utc_now()
+
+      {%ServerManagerState{} = result, log} =
+        with_log([format: "[$level] $message\n"], fn ->
+          connection_idle.(initial_state, new_connection_pid)
+        end)
+
+      assert log_lines_about(log, server) == [
+               "[warning] Connection #{inspect(new_connection_pid)} for server #{server.id} became idle while in connection state #{inspect(connection_state)}; considering the previous connection lost"
+             ]
+
+      assert_no_stored_events!()
+
+      assert %ServerManagerState{
+               connection_state: retry_connecting_state(retrying: %{time: time}),
+               actions:
+                 [
+                   {:monitor, ^new_connection_pid},
+                   {:send_message, send_message_fn},
+                   {:update_tracking, "servers", update_tracking_fn}
+                   | disconnect_actions
+                 ] = actions
+             } = result
+
+      assert disconnect_actions ==
+               Enum.map(List.wrap(connection_timer), &{:cancel_timer, &1}) ++
+                 [:notify_server_offline, {:update_tracking, "servers", update_tracking_fn}]
+
+      assert_in_delta DateTime.diff(now, time, :second), 0, 1
+
+      assert result == %ServerManagerState{
+               initial_state
+               | connection_state:
+                   retry_connecting_state(
+                     connection_pid: new_connection_pid,
+                     retrying: %{
+                       retry: 1,
+                       backoff: 0,
+                       time: time,
+                       in_seconds: 5,
+                       reason: :disconnected
+                     }
+                   ),
+                 connection_timer: nil,
+                 actions: actions
+             }
+
+      fake_retry_timer_ref = make_ref()
+
+      %ServerManagerState{} =
+        send_message_result =
+        send_message_fn.(result, fn :retry_connecting, 5_000 ->
+          fake_retry_timer_ref
+        end)
+
+      assert send_message_result ==
+               %ServerManagerState{result | retry_timer: fake_retry_timer_ref}
+
+      assert update_tracking_fn.(send_message_result) ==
+               {real_time_state(server,
+                  connection_state: result.connection_state,
+                  version: result.version + 1
+                ), %ServerManagerState{send_message_result | version: result.version + 1}}
+    end
+  end
+
+  test "a connected server manager records the previous connection as disconnected when a new connection becomes idle",
+       %{connection_idle: connection_idle} do
+    server =
+      build_active_server(
+        ssh_port: true,
+        set_up_at: nil
+      )
+
+    %ServerManagerState{} =
+      initial_state =
+      ServersFactory.build(:server_manager_state,
+        connection_state: ServersFactory.random_connected_state(),
+        server: server,
+        username: server.username
+      )
+
+    new_connection_pid = spawn(fn -> :ok end)
+    now = DateTime.utc_now()
+
+    {%ServerManagerState{} = result, log} =
+      with_log([format: "[$level] $message\n"], fn ->
+        connection_idle.(initial_state, new_connection_pid)
+      end)
+
+    assert log_lines_about(log, server) == [
+             "[warning] Connection #{inspect(new_connection_pid)} for server #{server.id} became idle while in connection state #{inspect(initial_state.connection_state)}; considering the previous connection lost"
+           ]
+
+    assert_server_disconnected_event!(server, now, ":connection_replaced")
+
+    assert %ServerManagerState{
+             connection_state: retry_connecting_state(retrying: %{time: time}),
+             actions:
+               [
+                 {:monitor, ^new_connection_pid},
+                 {:send_message, send_message_fn},
+                 {:update_tracking, "servers", update_tracking_fn},
+                 :notify_server_offline,
+                 {:update_tracking, "servers", update_tracking_fn}
+               ] = actions
+           } = result
+
+    assert_in_delta DateTime.diff(now, time, :second), 0, 1
+
+    assert result == %ServerManagerState{
+             initial_state
+             | connection_state:
+                 retry_connecting_state(
+                   connection_pid: new_connection_pid,
+                   retrying: %{
+                     retry: 1,
+                     backoff: 0,
+                     time: time,
+                     in_seconds: 5,
+                     reason: :disconnected
+                   }
+                 ),
+               actions: actions
+           }
+
+    fake_retry_timer_ref = make_ref()
+
+    %ServerManagerState{} =
+      send_message_result =
+      send_message_fn.(result, fn :retry_connecting, 5_000 ->
+        fake_retry_timer_ref
+      end)
+
+    assert send_message_result ==
+             %ServerManagerState{result | retry_timer: fake_retry_timer_ref}
+
+    assert update_tracking_fn.(send_message_result) ==
+             {real_time_state(server,
+                connection_state: result.connection_state,
+                version: result.version + 1
+              ), %ServerManagerState{send_message_result | version: result.version + 1}}
+  end
+
+  # Log capture is global, so concurrent tests' logs are interleaved with this
+  # test's. Each test builds its own server, so its ID identifies this test's
+  # lines.
+  defp log_lines_about(log, server),
+    do: log |> String.split("\n", trim: true) |> Enum.filter(&String.contains?(&1, server.id))
 end

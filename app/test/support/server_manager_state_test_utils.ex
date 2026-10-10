@@ -9,6 +9,8 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   import ExUnit.Assertions
   import ExUnit.Callbacks
   import ExUnit.CaptureLog
+  alias ArchiDep.Events.Store.EventReference
+  alias ArchiDep.Events.Store.StoredEvent
   alias ArchiDep.Repo
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -22,6 +24,7 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
   alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDep.Support.AccountsFactory
   alias ArchiDep.Support.CourseFactory
+  alias ArchiDep.Support.DataCase
   alias ArchiDep.Support.FactoryHelpers
   alias ArchiDep.Support.GenServerProxy
   alias ArchiDep.Support.ServersFactory
@@ -279,5 +282,72 @@ defmodule ArchiDep.Support.ServerManagerStateTestUtils do
     :ok = GenServer.reply(from, :ok)
 
     Task.await(result_task)
+  end
+
+  @spec assert_server_disconnected_event!(Server.t(), DateTime.t(), String.t()) ::
+          EventReference.t()
+  def assert_server_disconnected_event!(server, now, reason) do
+    assert [
+             %StoredEvent{
+               id: event_id,
+               data: %{"uptime" => uptime},
+               occurred_at: occurred_at
+             } = registered_event
+           ] =
+             Repo.all(
+               from e in StoredEvent,
+                 order_by: [asc: e.occurred_at]
+             )
+
+    assert_in_delta DateTime.diff(now, occurred_at, :second), 0, 1
+
+    assert registered_event == %StoredEvent{
+             __meta__: DataCase.loaded(StoredEvent, "events"),
+             id: event_id,
+             stream: "servers:servers:#{server.id}",
+             version: server.version,
+             schema_version: 1,
+             type: "archidep/servers/server-disconnected",
+             data: %{
+               "id" => server.id,
+               "name" => server.name,
+               "ip_address" => server.ip_address.address |> :inet.ntoa() |> to_string(),
+               "username" => server.username,
+               "ssh_username" =>
+                 if(server.set_up_at, do: server.app_username, else: server.username),
+               "ssh_port" => server.ssh_port,
+               "uptime" => uptime,
+               "reason" => reason,
+               "group" => %{
+                 "id" => server.group.id,
+                 "name" => server.group.name
+               },
+               "owner" => %{
+                 "id" => server.owner.id,
+                 "username" => server.owner.username,
+                 "name" =>
+                   if server.owner.group_member do
+                     server.owner.group_member.name
+                   else
+                     nil
+                   end,
+                 "root" => server.owner.root
+               }
+             },
+             meta: %{},
+             initiator: "servers:servers:#{server.id}",
+             causation_id: event_id,
+             correlation_id: event_id,
+             occurred_at: occurred_at,
+             entity: nil
+           }
+
+    %EventReference{
+      id: event_id,
+      causation_id: registered_event.causation_id,
+      correlation_id: registered_event.correlation_id,
+      version: registered_event.version,
+      occurred_at: registered_event.occurred_at
+    }
   end
 end

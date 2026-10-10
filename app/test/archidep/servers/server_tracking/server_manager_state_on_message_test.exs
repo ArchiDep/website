@@ -44,7 +44,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                connecting_state(connection_ref: connection_ref, time: connection_time),
              actions:
                [
-                 {:monitor, ^test_pid},
                  {:connect, connect_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -126,7 +125,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
                connecting_state(connection_ref: connection_ref, time: connection_time),
              actions:
                [
-                 {:monitor, ^test_pid},
                  {:connect, connect_fn},
                  {:update_tracking, "servers", update_tracking_fn}
                ] = actions
@@ -263,14 +261,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateOnMessageTest do
 
     assert_no_stored_events!()
 
-    test_pid = self()
-
     assert %ServerManagerState{
              connection_state:
                connecting_state(connection_ref: connection_ref, time: connecting_time),
              actions:
                [
-                 {:monitor, ^test_pid},
                  {:connect, connect_fn},
                  {:cancel_timer, ^fake_retry_timer_ref},
                  {:update_tracking, "servers", update_tracking_fn}
