@@ -238,7 +238,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
       now = DateTime.utc_now()
 
       {%ServerManagerState{} = result, log} =
-        with_log([format: "[$level] $message\n"], fn ->
+        with_log([format: "[$level] $message\n", colors: [enabled: false]], fn ->
           connection_idle.(initial_state, new_connection_pid)
         end)
 
@@ -321,7 +321,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerStateConnectionIdleTest d
     now = DateTime.utc_now()
 
     {%ServerManagerState{} = result, log} =
-      with_log([format: "[$level] $message\n"], fn ->
+      with_log([format: "[$level] $message\n", colors: [enabled: false]], fn ->
         connection_idle.(initial_state, new_connection_pid)
       end)
 
