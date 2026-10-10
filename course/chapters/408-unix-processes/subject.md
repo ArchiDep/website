@@ -1,9 +1,10 @@
 ---
-title: Unix Streams and Pipelines
+title: Unix Processes
 ---
 
-Learn about processes in Unix operating systems, as well as how to manage them
-and make them communicate.
+Learn about processes in Unix operating systems: how they are identified, how
+they report success or failure, how they receive their input and send their
+output, and how they can be chained together.
 
 **You will need**
 
@@ -14,6 +15,7 @@ and make them communicate.
 
 - [Command Line Introduction]({% link chapters/101-command-line/subject.md %})
 - [Secure Shell (SSH)]({% link chapters/103-ssh/subject.md %})
+- [Unix Basics]({% link chapters/402-unix-basics/subject.md %})
 
 ## What is a process?
 
@@ -55,13 +57,12 @@ browsers will run at least one child process per tab.
 ### Unix processes
 
 Processes work differently depending on the operating system. We will focus on
-processes in Unix systems, which have the following features:
+processes in Unix systems, and these features in particular:
 
 | Feature                     | Description                                                                                                        |
 | :-------------------------- | :----------------------------------------------------------------------------------------------------------------- |
 | [Process ID (PID)][pid]     | A number uniquely identifying a process at a given time                                                            |
 | [Exit status][exit-status]  | A number given when a process exits, indicating whether it was successful                                          |
-| [Signals][signals]          | Notifications sent to a process, a form of [inter-process communication (IPC)][ipc]                                |
 | [Standard streams][streams] | Preconnected input and output communication channels between a process and its environment                         |
 | [Pipelines][pipes]          | A way to chain processes in sequence by their standard streams, a form of [inter-process communication (IPC)][ipc] |
 
@@ -72,20 +73,22 @@ Operating System Interface (POSIX)][posix].
 
 {% endnote %}
 
+{% note %}
+
+Later, we will also talk about [signals][signals], a way for processes to send
+each other notifications.
+
+{% endnote %}
+
 ## Process ID
 
 Let's talk about how running processes are identified.
-
-<div class="w-full p-4 rounded-2xl flex justify-center dark:bg-radial dark:from-gray-500 dark:from-40% dark:to-transparent">
-  <img src='images/pid.png' />
-</div>
 
 ### What is a process identifier?
 
 Any process that is created in a Unix system is assigned an **identifier (or
 PID)**. Each new process gets the next available PID. This ID can be used to
-reference the process, for example to terminate it with the `kill` command (more
-about that later).
+reference the process.
 
 PIDs are sometimes reused as processes die and are created again,
 but **at any given time, a PID uniquely identifies a specific process**.
@@ -254,8 +257,9 @@ jde      3791  3789  0 18:21 pts/1    00:00:00  \_ -bash
 jde      3812  3791  0 18:23 pts/1    00:00:00      \_ sleep 1000
 ```
 
-You can indeed see the running process started with the `sleep` command.
-You can stop it with `Ctrl-C` (in the terminal when it's running) when you're done.
+You can indeed see the running process started with the `sleep` command. It ends
+on its own once its 1000 seconds have passed, or you can stop it with `Ctrl+C`
+in the second terminal.
 
 ### Other monitoring commands
 
@@ -281,18 +285,6 @@ The `-m` option of the `free` command displays memory size in
 [mebibytes][mebibyte], a more human-readable quantity, instead of bytes.
 
 {% endnote %}
-
-### Welcome to the future
-
-Some of the previously-mentioned commands may be older than you, although they
-are regularly updated. But new command line tools are also being developed
-today:
-
-- The [`procs` command][procs] is a modern interactive alternative to the `ps`
-  command for listing processes, written in [Rust][rust], a modern systems
-  programming language.
-- The [`btm` command][bottom] is a modern alternative to `htop` and `top` with
-  more features, also written in [Rust][rust].
 
 ## Exit status
 
@@ -364,152 +356,6 @@ But this will be different for other programs or applications.
 The only thing you can rely on for the majority of programs is that **0 is good,
 anything else is probably bad**.
 
-## Signals
-
-<div class="w-full flex justify-center">
-  <img src='images/kill-9.jpg' />
-</div>
-
-### What is a signal?
-
-A signal is an **[asynchronous][asynchrony] notification sent to a process** to
-notify it that an event has occurred. Signals are sent by other processes or by
-the system (i.e. the kernel).
-
-<div class="w-full p-4 rounded-2xl flex justify-center dark:bg-radial dark:from-gray-500 dark:from-40% dark:to-transparent">
-  <img src='images/sighup-diagram.png' />
-</div>
-
-If the process has registered a **signal handler** for that specific signal, it
-is executed. Otherwise the **default signal handler** is executed.
-
-### Common Unix signals
-
-A signal is defined by the `SIG` prefix followed by a mnemonic name for the
-signal. Some signals also have a standard number assigned to them. Here are some
-of the most commonly encountered Unix signals:
-
-| Signal     | Number | Default handler                         | Description                                                    |
-| :--------- | -----: | :-------------------------------------- | :------------------------------------------------------------- |
-| `SIGHUP`   |      1 | Terminate                               | Hangup (i.e. connection lost)                                  |
-| `SIGINT`   |      2 | Terminate                               | Interrupt signal (sent when you use `Ctrl-C`)                  |
-| `SIGTERM`  |     15 | Terminate                               | Termination signal (default signal sent by the `kill` command) |
-| `SIGQUIT`  |      3 | Terminate (with [core dump][core-dump]) | Termination signal                                             |
-| `SIGKILL`  |      9 | Terminate                               | Kill (cannot be caught or ignored)                             |
-| `SIGUSR1`  |      - | Terminate                               | User-defined signal 1                                          |
-| `SIGUSR2`  |      - | Terminate                               | User-defined signal 2                                          |
-| `SIGWINCH` |      - | Ignore                                  | Terminal window size changed                                   |
-
-{% note type: tip %}
-
-You can **l**ist available signals on your system by running `kill -l`. Here's
-a more complete list: [POSIX signals][signals-list].
-
-{% endnote %}
-
-#### The terminal interrupt signal (`SIGINT`)
-
-When you type `Ctrl-C` in your terminal to terminate a running process, you are
-actually using Unix signals.
-
-The shortcut is interpreted by your shell, which then sends a **terminal
-interrupt signal**, or **`SIGINT`**, to the running process.
-
-Most processes handle that signal by terminating (altough some don't respond to
-it, like some interactive helps, e.g. `man ls`).
-
-### The `kill` command
-
-The `kill` command **sends a signal to a process**.
-
-Since the default signal handler for most signals is to terminate the process,
-it often has that effect, hence the name "kill".
-
-Its syntax is:
-
-```
-kill [-<SIGNAL>] <PID>
-kill [-s <SIGNAL>] <PID>
-```
-
-| Command             | Effect                                                                           |
-| :------------------ | :------------------------------------------------------------------------------- |
-| `kill 10000`        | Send the **default `SIGTERM` signal** to process with PID `10000`                |
-| `kill -s HUP 10000` | Send the `SIGHUP` signal to that same process                                    |
-| `kill -HUP 10000`   | Equivalent to the previous command                                               |
-| `kill -1 10000`     | Equivalent to the previous command (1 is the official POSIX number for `SIGHUP`) |
-
-#### Trapping signals
-
-This command will run a
-[badly behaved script](https://gist.github.com/AlphaHydrae/162f28e3e2bd9355a95914e04cd4dd0c/91dda64d9e0ca26168d25195a189ca6a69a14ee6)
-which traps and ignores all signals sent to it:
-
-```bash
-$> curl -s -L https://git.io/JitFQ|sh -s
-Hi, I'm running with PID 10000
-Try and kill me!
-```
-
-Since it ignores the `SIGINT` signal among others,
-you will not be able to stop it with `Ctrl-C`.
-
-Open another terminal and try to kill the process by referring to its PID
-(which is `10000` in this example but will be different on your machine):
-
-```bash
-$> kill 10000
-$> kill -s HUP 10000
-$> kill -s QUIT 10000
-$> kill -s USR1 10000
-```
-
-The script will simply log that it is ignoring your signal and continue executing.
-
-#### The `KILL` signal
-
-There is one signal that cannot be ignored: **the `KILL` signal**.
-
-Although a process can detect the signal and attempt to perform additional operations,
-**the OS will permanently kill the process** shortly after it is received,
-and the process can do nothing to prevent it.
-
-Send a `KILL` signal to the process with the same PID as before:
-
-```bash
-$> kill -s KILL 10000
-```
-
-The script will finally have the decency to die.
-
-### Unix signals in the real world
-
-Many widely-used programs react to Unix signals, for example:
-
-- [Nginx][nginx-signals]
-- [PostgreSQL][postgres-signals]
-- [OpenSSH][sshd-signals]
-
-{% cols columns: 3 %}
-
-<!-- col md:col-span-2 -->
-
-A common example is the `SIGHUP` signal. Originally it was meant to indicate
-that the modem hanged up.
-
-That's not relevant to programs not directly connected to a terminal, but some
-programs repurposed it for another use.
-
-Many background services like Nginx and PostgreSQL will reload their
-configuration (without shutting down) when receiving that signal. Many other
-tools follow this convention.
-
-<!-- col -->
-
-![SIGHUP](images/sighup.jpg)
-
-{% endcols %}
-
 ## Standard streams
 
 **Standard streams** are preconnected input and output communication channels
@@ -521,31 +367,7 @@ between a process and its environment.
 
 In **pre-Unix** (before 1970) systems, programs had to **explicitly connect to
 input and output devices**. This was done differently for each device (e.g.
-magnetic tape drive, disk drive, printer, etc) and operating system. For
-example, IBM mainframes used a [**J**ob **C**ontrol **L**anguage (JCL)][jcl] to
-establish connections between programs and devices.
-
-<!-- slide-column 25 -->
-
-**Unix file copy**
-
-`cp a.txt b.txt`
-
-<!-- slide-column -->
-
-**JCL copy instructions for [OS/360][os360]**
-
-```
-//IS198CPY JOB (IS198T30500),'COPY JOB',CLASS=L,MSGCLASS=X
-//COPY01   EXEC PGM=IEBGENER
-//SYSPRINT DD SYSOUT=*
-//SYSUT1   DD DSN=a.txt,DISP=SHR
-//SYSUT2   DD DSN=b.txt,
-//            DISP=(NEW,CATLG,DELETE),
-//            SPACE=(CYL,(40,5),RLSE),
-//            DCB=(LRECL=115,BLKSIZE=1150)
-//SYSIN  DD DUMMY
-```
+magnetic tape drive, disk drive, printer, etc) and operating system.
 
 ### Unix streams
 
@@ -571,8 +393,6 @@ default:
 | **St**an**d**ard **in**put  | `stdin`   | Stream **data** (often text) **going into a program**                                                                                                                                                                  |
 | **St**an**d**ard **out**put | `stdout`  | Stream where a program writes its **output data**                                                                                                                                                                      |
 | **St**an**d**ard **err**or  | `stderr`  | Another output stream programs can use to output **error messages or diagnostics** (separate from standard output, allowing output and errors to be distinguished, solving the [semipredicate problem][semipredicate]) |
-
-![Standard streams](images/streams.jpg)
 
 #### Streams, the keyboard, and the terminal
 
@@ -612,7 +432,7 @@ you do not have to explicitly connect your keyboard input to this new process.
 As the SSH client is a child process of the shell, it inherits the same standard
 input.
 
-![SSH channel and processes](images/ssh-channel-and-processes.png)
+{% include diagrams/408-streams.html %}
 
 #### Optional input stream
 
@@ -626,12 +446,22 @@ has arguments, but that does not come from the input data stream).
 
 #### Optional output stream
 
-**The `cd` command** takes no input and **produces no output** either,
-although it can produce an error.
+Similarly, a process is not obligated to use its output streams. For example,
+when you `cat` a file, it outputs the content of the file to the standard output
+stream, but it does not use the standard error stream:
 
-<div class="w-full p-4 rounded-2xl flex justify-center dark:bg-radial dark:from-gray-500 dark:from-40% dark:to-transparent">
-  <img src='images/streams-cd.png' />
-</div>
+```bash
+$> cat data.txt
+Hello World
+```
+
+Unless the file does not exist, in which case it will output an error message to
+the standard error stream, and nothing to the standard output stream.
+
+```bash
+$> cat unknown-file
+cat: unknown-file: No such file or directory
+```
 
 ### Stream redirection
 
@@ -664,15 +494,22 @@ is redirected** to the file `data.txt`:
 $> ls -a 1> data.txt
 
 $> ls
-data.txt
+data.txt  directory1  file1
 
 $> cat data.txt
 .
 ..
-file1
+data.txt
 directory1
-...
+file1
 ```
+
+{% note type: more %}
+
+`data.txt` is in its own list: the shell creates the file before it starts
+`ls`, so that it can connect the standard output of `ls` to it.
+
+{% endnote %}
 
 #### How to use standard output redirection
 
@@ -696,7 +533,8 @@ Hello
 World
 ```
 
-If you specify no file descriptor, **standard output is redirected by default**:
+If you specify no file descriptor, **standard output (`1`) is redirected by
+default**:
 
 ```bash
 $> echo Hello > data.txt
@@ -735,93 +573,95 @@ ls: unknown-file: No such file or directory
 ### Both standard output and error streams
 
 Some commands will **send data to both output streams** (standard output and
-standard error). As we've seen, both are displayed in the terminal by default.
+standard error) in the same run. As we've seen, both are displayed in the
+terminal by default.
 
-For example, the `curl` (**C**lient **URL**) command is used to make HTTP
-requests. By default, it only outputs the HTTP response body to the standard
-output stream, but with the `-v` (**v**erbose) option it also prints diagnostics
-information to the standard error stream:
+For example, the `grep` command prints the lines of a file that contain a word,
+and with the `-r` (**r**ecursive) option, it searches all the files of a
+directory. The following command searches the SSH configuration files for the
+word `PasswordAuthentication`. Run as a regular user, it prints the lines it
+finds to the standard output stream, and an error to the standard error stream
+for each file it is not allowed to read, such as the server's private SSH keys,
+which only `root` may read:
 
 ```bash
-$> curl -L -v https://git.io/fAp8D
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
- TCP_NODELAY set
- Connected to git.io (54.152.127.232) port 443 (#0)
-...
-Hello World
-...
+$> grep -r PasswordAuthentication /etc/ssh
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config:#PasswordAuthentication yes
+/etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
+/etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 ```
 
-Here, `Hello World` is the output data, while the rest of the output is the
-diagnostics information on the standard error stream.
+Here, the lines starting with `/etc/ssh/` are the output data, while the lines
+starting with `grep:` are error messages on the standard error stream.
 
-#### Redirect standard output stream (curl)
+#### Redirect standard output stream (grep)
 
 This example demonstrates how the **standard output and error streams** can be
 **redirected separately**.
 
-The following version redirects standard output to the file `curl-output.txt`:
+The following version redirects standard output to the file `found.txt`:
 
 ```bash
-$> curl -L -v https://git.io/fAp8D > curl-output.txt
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
- TCP_NODELAY set
- Connected to git.io (54.152.127.232) port 443 (#0)
-...
+$> grep -r PasswordAuthentication /etc/ssh > found.txt
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 
-$> cat curl-output.txt
-Hello World
+$> cat found.txt
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config:#PasswordAuthentication yes
+/etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
+/etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
 ```
 
-As you can see, the `Hello World` output data is no longer displayed since it
-has been redirected to the file, but the diagnostics information printed on the
-standard error stream is still displayed.
+As you can see, the lines that were found are no longer displayed since they
+have been redirected to the file, but the error messages printed on the
+standard error stream are still displayed.
 
-#### Redirect standard error stream (curl)
+#### Redirect standard error stream (grep)
 
-The following version redirects standard error to the file `curl-error.txt`:
+The following version redirects standard error to the file `errors.txt`:
 
 ```bash
-$> curl -L -v https://git.io/fAp8D 2> curl-error.txt
-Hello World
+$> grep -r PasswordAuthentication /etc/ssh 2> errors.txt
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config:#PasswordAuthentication yes
+/etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
+/etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
 
-$> cat curl-error.txt
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
- TCP_NODELAY set
- Connected to git.io (54.152.127.232) port 443 (#0)
-...
+$> cat errors.txt
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 ```
 
-This time, the `Hello World` output data is displayed in the terminal as with
-the initial command, but the diagnostics information has been redirected to the
-file.
+This time, the lines that were found are displayed in the terminal as with the
+initial command, but the error messages have been redirected to the file.
 
-#### Redirect both standard output and error streams (curl)
+#### Redirect both standard output and error streams (grep)
 
 You can **perform both redirections at once** in one command:
 
 ```bash
-$> curl -L -v https://git.io/fAp8D > curl-output.txt 2> curl-error.txt
+$> grep -r PasswordAuthentication /etc/ssh 1> found.txt 2> errors.txt
 
-$> cat curl-error.txt
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
- TCP_NODELAY set
- Connected to git.io (54.152.127.232) port 443 (#0)
-...
+$> cat errors.txt
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 
-$> cat curl-output.txt
-Hello World
+$> cat found.txt
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config:#PasswordAuthentication yes
+/etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
+/etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
 ```
 
-#### Combine standard output and error streams (curl)
+#### Combine standard output and error streams (grep)
 
 In some situations, you might want to **redirect all of a command's output**
 (both the standard output stream and error stream) to the same file.
@@ -829,17 +669,16 @@ In some situations, you might want to **redirect all of a command's output**
 You can do that with the `&>` operator:
 
 ```bash
-$> curl -L -v https://git.io/fAp8D &> curl-result.txt
+$> grep -r PasswordAuthentication /etc/ssh &> all.txt
 
-$> cat curl-result.txt
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
- TCP_NODELAY set
- Connected to git.io (54.152.127.232) port 443 (#0)
-...
-Hello World
-...
+$> cat all.txt
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config:#PasswordAuthentication yes
+/etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
+/etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
 ```
 
 {% note type: tip %}
@@ -848,126 +687,11 @@ Hello World
 
 {% endnote %}
 
-### Discard an output stream
+{% note type: more %}
 
-Sometimes you might not be interested in one of the output streams.
-
-For example, let's say you want to display the diagnostics information from a
-`curl` command to identify a network issue, but you **don't care about the
-standard output**. You don't want to have to delete a useless file either.
-
-#### The `/dev/null` device
-
-The file `/dev/null` is available on all Unix systems and is a [**null
-device**][null-device] (sometimes also called a _black hole_). It's a [Unix
-device file][device-file] that you can write anything to, but that will discard
-all received data.
-
-It never contains anything:
-
-```bash
-$> cat /dev/null
-```
-
-Even after you write to it:
-
-```bash
-$> echo Hello World > /dev/null
-
-$> cat /dev/null
-```
-
-#### Redirect a stream to the null device
-
-When you don't care about an output stream, you can simply **redirect it to the
-null device**:
-
-```bash
-$> curl -L -v https://git.io/fAp8D > /dev/null
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
- TCP_NODELAY set
- Connected to git.io (54.152.127.232) port 443 (#0)
-...
-```
-
-In this example, the standard output stream is redirected to the null device,
-and therefore discarded, while the standard error stream is displayed normally.
-
-#### Other redirections to the null device
-
-You can also redirect the standard error stream to the null device:
-
-```bash
-$> curl -L -v https://git.io/fAp8D 2> /dev/null
-Hello World
-```
-
-Or you can redirect both output streams.
-In this case, all output, diagnostics information and error messages will be discarded:
-
-```bash
-$> curl -L -v https://git.io/fAp8D &> /dev/null
-```
-
-{% note %}
-
-Please send complaints to `/dev/null`.
-
-{% endnote %}
-
-### Redirect one output stream to another
-
-You can also redirect one output stream into another output stream.
-
-{% cols columns: 5 %}
-
-<!-- col md:col-span-2 -->
-
-For example, the `echo` command prints its data to the standard output stream by
-default:
-
-<!-- col md:col-span-3 -->
-
-```bash
-$> echo Hello World
-Hello World
-
-$> echo Hello World > /dev/null
-
-$> echo Hello World 2> /dev/null
-Hello World
-```
-
-{% endcols %}
-
-The `i>&j` operator redirects file descriptor `i` to file descriptor `j`.
-
-{% cols columns: 5 %}
-
-<!-- col md:col-span-2 -->
-
-This `echo` command has its data redirected to the standard error stream:
-
-<!-- col md:col-span-3 -->
-
-```bash
-$> echo Hello World 1>&2
-Hello World
-
-$> echo Hello World > /dev/null 1>&2
-Hello World
-
-$> echo Hello World 2> /dev/null 1>&2
-```
-
-{% endcols %}
-
-{% note type: tip %}
-
-This can be useful if you're writing a shell script and want to print error
-messages to the standard error stream.
+The lines are not in the same order as in the terminal. When its standard output
+is a file, `grep` collects the lines it finds and writes them in one go, while
+it writes each error as soon as it happens.
 
 {% endnote %}
 
@@ -995,37 +719,6 @@ The above command combines two redirections to compress the contents of the
 `bar.txt` file and save the result into `bar.txt.gz`.
 
 {% endnote %}
-
-#### Here documents
-
-The `<<` operator also performs **standard input stream redirection** but is a
-bit different. It's called a [**here document**][here-document] and can be used
-to send multiline input to a command or script, preserving line breaks and other
-whitespace. For example, you could use it to send a list of names or a set of
-commands to be executed to a script.
-
-Typing the following `cat` command starts a here document delimited by the
-string `EOF`:
-
-```bash
-$> cat << EOF
-heredoc> Hello
-heredoc> World
-heredoc> EOF
-Hello
-World
-```
-
-{% note type: tip %}
-
-After you type the first line, you won't get a prompt back. The here document
-remains open and you can type more text. Typing `EOF` again and pressing `Enter`
-closes the document.
-
-{% endnote %}
-
-As you can see, the text you typed is printed by `cat`, with line breaks
-preserved.
 
 ## Pipelines
 
@@ -1094,6 +787,27 @@ directory.
 
 {% endcols %}
 
+A pipeline is also a way to find what you are looking for in a long output. The
+`ps -ef` command lists every process running on the system, and the `grep`
+command keeps only the lines of its input that contain a word. Together, they
+find the processes of the SSH server:
+
+```bash
+$> ps -ef | grep sshd
+root        3824       1  0 11:07 ?        00:00:00 sshd: /usr/sbin/sshd [listener] 0 of 10-100 startups
+root        3840    3824  0 11:07 ?        00:00:00 sshd: jde [priv]
+jde         3851    3840  0 11:07 ?        00:00:00 sshd: jde@pts/0
+jde         3854    3852  0 11:07 pts/0    00:00:00 grep --color=auto sshd
+```
+
+{% note type: tip %}
+
+The last line is `grep` itself. Both commands of a pipeline run at the same
+time, so `grep` was running while `ps` listed the processes, with `sshd` in its
+command line.
+
+{% endnote %}
+
 ### The Unix philosophy
 
 Pipelines are one of the core features of Unix systems.
@@ -1128,7 +842,7 @@ result. **Each of these commands only knows how to do one job**:
 ```bash
 $> find . -type f | \
    sed 's/.*\///' | \
-   egrep ".+\.[^\.]+$" | \
+   grep -E ".+\.[^\.]+$" | \
    sed 's/.*\.//' | \
    sort | \
    uniq -c
@@ -1148,8 +862,9 @@ extension.
 
 - `find` is used to recursively list all files in the current directory.
 - `sed` (**s**tream **ed**itor) is used to obtain the files' basenames.
-- `egrep` (**e**xtended **g**lobal **r**egular **e**xpression search and
-  **p**rint) is used to filter out names that do not have an extension.
+- `grep -E` (**g**lobal **r**egular **e**xpression search and **p**rint, with
+  **E**xtended regular expressions) is used to filter out names that do not have
+  an extension.
 - `sed` is used again to transform basenames into just their extension.
 - `sort` is used to sort the resulting list alphabetically.
 - `uniq` is used to group identical adjacent lines and count them.
@@ -1161,17 +876,181 @@ extension.
 - [The Linux Process Journey - PID 0 (swapper) - Shlomi Boutnaru](https://medium.com/@boutnaru/the-linux-process-journey-pid-0-swapper-7868d1131316)
 - [The Linux Process Journey - PID 1 (init) - Shlomi Boutnaru](https://medium.com/@boutnaru/the-linux-process-journey-pid-1-init-60765a069f17)
 - [The Linux Process Journey - PID 2 (kthreadd) - Shlomi Boutnaru](https://medium.com/@boutnaru/the-linux-process-journey-pid-2-kthreadd-38657c2f0fa2)
-- [SIGINT And Other Termination Signals in Linux](https://www.baeldung.com/linux/sigint-and-other-termination-signals)
 - [What is the main purpose of the swapper process in Unix? - superuser][pid-0]
 - [I/O Redirection (The Linux Documentation Project)](https://www.tldp.org/LDP/abs/html/io-redirection.html)
 - [Here Documents (The Linux Documentation Project)][here-document]
 - [Unix/Linux - Shell Input/Output Redirections](https://www.tutorialspoint.com/unix/unix-io-redirections.htm)
-- [Signals - Unix fundamentals 201 - Ops School Curriculum](http://www.opsschool.org/unix_signals.html)
 
-[asynchrony]: https://en.wikipedia.org/wiki/Asynchrony_(computer_programming)
+## Appendix: Discard an output stream
+
+Sometimes you might not be interested in one of the output streams.
+
+For example, you may only want the error messages of the `grep` command from
+[the previous examples](#both-standard-output-and-error-streams), to see which
+files it could not read, and **don't care about the lines it found**. You don't
+want to have to delete a useless file either.
+
+### The `/dev/null` device
+
+The file `/dev/null` is available on all Unix systems and is a [**null
+device**][null-device] (sometimes also called a _black hole_). It's a [Unix
+device file][device-file] that you can write anything to, but that will discard
+all received data.
+
+It never contains anything:
+
+```bash
+$> cat /dev/null
+```
+
+Even after you write to it:
+
+```bash
+$> echo Hello World > /dev/null
+
+$> cat /dev/null
+```
+
+### Redirect a stream to the null device
+
+When you don't care about an output stream, you can simply **redirect it to the
+null device**:
+
+```bash
+$> grep -r PasswordAuthentication /etc/ssh > /dev/null
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
+```
+
+In this example, the standard output stream is redirected to the null device,
+and therefore discarded, while the standard error stream is displayed normally.
+
+### Other redirections to the null device
+
+You can also redirect the standard error stream to the null device, to see only
+the lines that were found:
+
+```bash
+$> grep -r PasswordAuthentication /etc/ssh 2> /dev/null
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config:#PasswordAuthentication yes
+/etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
+/etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+```
+
+Or you can redirect both output streams. In this case, all output and error
+messages will be discarded:
+
+```bash
+$> grep -r PasswordAuthentication /etc/ssh &> /dev/null
+```
+
+{% note %}
+
+Please send complaints to `/dev/null`.
+
+{% endnote %}
+
+## Appendix: Redirect one output stream to another
+
+You can also redirect one output stream into another output stream.
+
+{% cols columns: 5 %}
+
+<!-- col md:col-span-2 -->
+
+For example, the `echo` command prints its data to the standard output stream by
+default:
+
+<!-- col md:col-span-3 -->
+
+```bash
+$> echo Hello World
+Hello World
+
+$> echo Hello World > /dev/null
+
+$> echo Hello World 2> /dev/null
+Hello World
+```
+
+{% endcols %}
+
+The `i>&j` operator redirects file descriptor `i` to file descriptor `j`.
+
+{% cols columns: 5 %}
+
+<!-- col md:col-span-2 -->
+
+This `echo` command has its data redirected to the standard error stream:
+
+<!-- col md:col-span-3 -->
+
+```bash
+$> echo Hello World 1>&2
+Hello World
+
+$> echo Hello World > /dev/null 1>&2
+Hello World
+
+$> echo Hello World 2> /dev/null 1>&2
+```
+
+{% endcols %}
+
+{% note type: tip %}
+
+This can be useful if you're writing a shell script and want to print error
+messages to the standard error stream.
+
+{% endnote %}
+
+## Appendix: Here documents
+
+The `<<` operator also performs **standard input stream redirection** but is a
+bit different. It's called a [**here document**][here-document] and can be used
+to send multiline input to a command or script, preserving line breaks and other
+whitespace. For example, you could use it to send a list of names or a set of
+commands to be executed to a script.
+
+Typing the following `cat` command starts a here document delimited by the
+string `EOF`:
+
+```bash
+$> cat << EOF
+> Hello
+> World
+> EOF
+Hello
+World
+```
+
+{% note type: tip %}
+
+After you type the first line, you won't get your usual prompt back, only the
+`>` prompt of a line still being typed. The here document remains open and you
+can type more text. Typing `EOF` again and pressing `Enter`
+closes the document.
+
+{% endnote %}
+
+As you can see, the text you typed is printed by `cat`, with line breaks
+preserved.
+
+## Appendix: Welcome to the future
+
+Some of the previously-mentioned commands are older than you, although they are
+regularly updated. But new command line tools are also being developed today:
+
+- The [`procs` command][procs] is a modern interactive alternative to the `ps`
+  command for listing processes, written in [Rust][rust], a modern systems
+  programming language.
+- The [`btm` command][bottom] is a modern alternative to `htop` and `top` with
+  more features, also written in [Rust][rust].
+
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 [bottom]: https://github.com/ClementTsang/bottom
-[core-dump]: https://en.wikipedia.org/wiki/Core_dump
 [daemon]: https://en.wikipedia.org/wiki/Daemon_(computing)
 [device-file]: https://en.wikipedia.org/wiki/Device_file
 [exit-status]: https://en.wikipedia.org/wiki/Exit_status
@@ -1184,27 +1063,20 @@ extension.
 [init]: https://en.wikipedia.org/wiki/Init
 [ipc]: https://en.wikipedia.org/wiki/Inter-process_communication
 [java-process-exit-value]: https://docs.oracle.com/javase/7/docs/api/java/lang/Process.html#exitValue()
-[jcl]: https://en.wikipedia.org/wiki/Job_Control_Language
 [mebibyte]: https://simple.wikipedia.org/wiki/Mebibyte
-[nginx-signals]: http://nginx.org/en/docs/control.html
 [node-spawn]: https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
 [null-device]: https://en.wikipedia.org/wiki/Null_device
-[os360]: https://en.wikipedia.org/wiki/OS/360_and_successors
 [php-exec]: http://php.net/manual/en/function.exec.php
 [pid]: https://en.wikipedia.org/wiki/Process_identifier
 [pid-0]: https://superuser.com/a/377675
 [pipes]: https://en.wikipedia.org/wiki/Pipeline_(Unix)
 [posix]: https://en.wikipedia.org/wiki/POSIX
-[postgres-signals]: https://www.postgresql.org/docs/current/static/app-postgres.html#id-1.9.5.14.9
 [process]: https://en.wikipedia.org/wiki/Process_(computing)
 [procs]: https://github.com/dalance/procs
-[ps-fields]: https://kb.iu.edu/d/afnv
 [rust]: https://www.rust-lang.org
 [semipredicate]: https://en.wikipedia.org/wiki/Semipredicate_problem
 [signals]: https://en.wikipedia.org/wiki/Signal_(IPC)
-[signals-list]: https://en.wikipedia.org/wiki/Signal_(IPC)#POSIX_signals
 [sleep]: https://linux.die.net/man/1/sleep
-[sshd-signals]: https://linux.die.net/man/8/sshd
 [streams]: https://en.wikipedia.org/wiki/Standard_streams
 [top]: https://linux.die.net/man/1/top
 [unix-philosophy]: https://en.wikipedia.org/wiki/Unix_philosophy

@@ -1,0 +1,569 @@
+<!-- Generated from diagrams/408-streams.svg and 408-streams.ts by "npm run diagrams": edit those instead. -->
+<div class="diagram-figure" data-diagram="408-streams">
+<div class="diagram-canvas">
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 1100 670" role="img" aria-labelledby="diagram-408-streams-title">
+<title id="diagram-408-streams-title">What you type and what a command prints, through an SSH connection</title>
+<style id="diagram-408-streams-diagram-styles">
+svg.diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+svg.diagram .lane-heading { font-size: 24px; font-weight: 700; fill: #000; text-anchor: middle; }
+svg.diagram .boundary line { stroke: #000; stroke-width: 5; stroke-dasharray: 14 12; }
+svg.diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+svg.diagram .cloud text { font-size: 15px; fill: #666; text-anchor: middle; }
+svg.diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+svg.diagram .process text { fill: #fff; text-anchor: middle; }
+svg.diagram .process .label { font-size: 16px; font-weight: 700; }
+svg.diagram .process .subtitle { font-size: 12px; font-style: italic; }
+svg.diagram .process .command { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; font-weight: 700; }
+svg.diagram .edge path { fill: none; stroke: #000; stroke-width: 1.25; }
+svg.diagram .edge.control path { stroke-dasharray: 3 4; }
+svg.diagram .edge text { font-size: 14px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+svg.diagram .edge text.beside { text-anchor: end; }
+svg.diagram .socket path { fill: none; stroke: #000; stroke-width: 1.5; stroke-linecap: round; }
+svg.diagram .process .socket text, svg.diagram .socket text { font-size: 14px; fill: #000; text-anchor: end; }
+svg.diagram .marker-comm { fill: #000; }
+svg.diagram .marker-control { fill: #fff; stroke: #000; stroke-width: 1.25; }
+svg.diagram .legend .frame { fill: none; stroke: #999; stroke-dasharray: 2 2; }
+svg.diagram .legend .title { font-size: 18px; font-style: italic; text-anchor: middle; }
+svg.diagram .legend .entry { font-size: 12px; text-anchor: end; }
+</style><style class="diagram-motion">/* The steps of a diagram: what they hide, show and move, in a deck and in a
+page alike. The generator copies this file into every diagram it generates,
+after the diagram's own look, so that an included diagram needs no stylesheet
+of the site's. The motion script and the page stepper only change classes.
+A diagram is "fully drawn" when no step is reached: what was drawn in the
+file, without what only a step shows. That is the state a page opens with,
+the one a deck prints, and the one shown without JavaScript. */
+/* --- At rest ------------------------------------------------------------- */
+svg.diagram .prompt,
+svg.diagram .process .cog {
+display: none;
+}
+svg.diagram .process rect.glow {
+fill: #fff;
+stroke: none;
+opacity: 0;
+}
+svg.diagram .process .cog path {
+fill: #fff;
+fill-rule: evenodd;
+stroke: none;
+}
+/* Travelling data exists only while it travels. */
+svg.diagram .overlay:not(.visible) {
+display: none;
+}
+/* Transient: shown from its step until it is torn down, but not when fully
+drawn, such as a command that has finished by the end of the story. */
+svg.diagram .transient:not(.visible) {
+display: none;
+}
+/* A short-lived process, and the control edge that started it, only while
+their step is the current one. */
+svg.diagram .passing:not(.current-fragment) {
+opacity: 0;
+visibility: hidden;
+}
+/* --- Typing -------------------------------------------------------------- */
+/* The typed text and the cursor are placed after the prompt in characters of
+the monospace font, whichever one shows them. */
+svg.diagram .prompt text,
+svg.diagram .process .prompt text,
+svg.diagram .prompt-line text {
+font-family:
+ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+'Courier New', monospace;
+font-size: 12px;
+font-weight: 700;
+fill: #000;
+text-anchor: start;
+}
+svg.diagram .prompt .typed,
+svg.diagram .prompt .cursor {
+transform: translateX(calc(var(--at, 0) * 1ch));
+}
+svg.diagram .prompt .cursor {
+display: none;
+}
+/* --- Folding ------------------------------------------------------------- */
+/* Until the fold, each folded process shows its own label, and the edges
+between them are drawn; after it, the stack's label. The motion script moves
+the processes and sets `unfolded`. */
+svg.diagram .process .own {
+opacity: 0;
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .own {
+opacity: 1;
+}
+svg.diagram .process .stack-label {
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .stack-label {
+opacity: 0;
+}
+svg.diagram .folds-away path {
+opacity: 0;
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .folds-away path {
+opacity: 1;
+}
+/* --- Data ---------------------------------------------------------------- */
+/* A trip in two clicks: to the middle, where it waits, then the rest of the
+way. Along the edge from --from to --to, which run backwards when it travels
+against the arrow. */
+svg.diagram .packet path {
+fill: #1f6feb;
+stroke: #1f6feb;
+stroke-width: 3;
+stroke-linejoin: round;
+}
+svg.diagram .packet text {
+fill: #fff;
+font-size: 13px;
+font-weight: 700;
+text-anchor: middle;
+}
+svg.diagram .packet .leg {
+offset-rotate: 0deg;
+offset-distance: 50%;
+}
+/* The second click must not hide the data before it is reached. */
+svg.diagram .packet .leg.fragment {
+opacity: 1;
+visibility: inherit;
+}
+svg.diagram .packet .leg.fragment.visible {
+offset-distance: var(--to);
+opacity: 0;
+}
+/* In one click: gone once the next step is reached. */
+svg.diagram .packet.whole.visible:not(.current-fragment) .leg:not(.visible) {
+animation: none;
+opacity: 0;
+}
+/* Nor does the second half of a trip outlive its step, such as a slow one cut
+short by a click. */
+svg.diagram .packet .leg.fragment.visible:not(.current-fragment) {
+animation: none;
+opacity: 0;
+}
+/* --- Torn down ----------------------------------------------------------- */
+/* Gone from a step on, such as a session closing; the fully drawn diagram still
+shows it. The motion script sets `gone`. */
+svg.diagram .gone {
+/* Important: reveal.js's rules for visible fragments are more specific. */
+opacity: 0 !important;
+visibility: hidden !important;
+transition:
+opacity 0.6s,
+visibility 0s 0.6s !important;
+}
+/* --- Motion -------------------------------------------------------------- */
+@media screen and (prefers-reduced-motion: no-preference) {
+/* A connection draws itself from the side that opened it: the path's length
+is 1 (`pathLength`), whatever its shape. */
+svg.diagram .draw-on.visible path {
+stroke-dasharray: 1 1;
+animation: diagram-draw 0.7s ease-out var(--delay, 0s) both;
+}
+/* Its label arrives with the line, not before. */
+svg.diagram .draw-on.visible text {
+animation: diagram-fade-in 0.3s ease-out calc(var(--delay, 0s) + 0.5s) both;
+}
+/* A control edge appears, then the process it starts. */
+svg.diagram .fade-on.visible {
+animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) both;
+}
+/* The cursor types, then disappears on Enter. */
+svg.diagram :is(.spawn, .input).visible .prompt .cursor {
+display: inline;
+animation:
+diagram-cursor-move var(--type) steps(var(--chars), end) var(--t0) both,
+diagram-cursor-blink 0.5s step-end infinite,
+diagram-cursor-off 0.01s var(--enter) both;
+}
+/* Typed at a shell's prompt or into an application, which clears on Enter. */
+svg.diagram :is(.spawn, .input).visible .prompt {
+display: inline;
+animation: diagram-cursor-off 0.01s var(--enter) both;
+}
+svg.diagram :is(.spawn, .input).visible .prompt .typed {
+animation: diagram-type var(--type) steps(var(--chars), end) var(--t0) both;
+}
+/* The process starts: its box, its text, then its listening port. */
+svg.diagram :is(.spawn, .child).visible &gt; rect:not(.glow) {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-box-in 0.35s ease-out var(--launch) both;
+}
+svg.diagram :is(.spawn, .child).visible &gt; text {
+animation: diagram-fade-in 0.3s ease-out var(--launch) both;
+}
+svg.diagram :is(.spawn, .child).visible .socket {
+animation: diagram-fade-in 0.3s ease-out calc(var(--launch) + 0.4s) both;
+}
+/* A process working while its step is the current one: its box brightens
+three times while a cog turns in its top right corner, then both settle,
+the cog slowing to a stop as the last pulse ends. A still cog means
+settings, so it fades out as it stops. */
+svg.diagram .process:has(&gt; .pulse.current-fragment) &gt; .glow {
+animation: diagram-glow 0.8s ease-in-out 3;
+}
+svg.diagram .process:has(&gt; .pulse.current-fragment) .cog {
+display: inline;
+animation: diagram-fade-out 0.3s ease-in 2.3s both;
+}
+svg.diagram .process:has(&gt; .pulse.current-fragment) .cog path {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) both;
+}
+svg.diagram .packet.visible .leg:not(.visible) {
+animation: diagram-leg-1 0.9s ease-in-out both;
+}
+svg.diagram .packet.whole.visible .leg:not(.visible) {
+animation: diagram-trip 1.8s ease-in-out both;
+}
+svg.diagram .packet.visible .leg.visible {
+animation: diagram-leg-2 1.6s ease-in-out both;
+}
+/* Heavy data, such as the hundreds of files of node_modules, is slower. */
+svg.diagram .packet.heavy.visible .leg:not(.visible) {
+animation-duration: 2.7s;
+}
+svg.diagram .packet.heavy.visible .leg.visible {
+animation-duration: 4.8s;
+}
+/* A short-lived process works once started, then exits after a moment to
+read it: its box and its edge fade out. No transition into its step:
+Firefox would hold the box at the start of the transition, transparent,
+while its exit animation waits to begin. */
+svg.diagram .process.passing.current-fragment,
+svg.diagram .edge.passing.current-fragment {
+transition: none;
+}
+svg.diagram .passing.current-fragment &gt; .glow {
+animation: diagram-glow 0.8s ease-in-out var(--work) 3;
+}
+svg.diagram .passing.current-fragment .cog {
+display: inline;
+animation: diagram-fade-out 0.3s ease-in calc(var(--work) + 2.3s) both;
+}
+svg.diagram .passing.current-fragment .cog path {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) var(--work) both;
+}
+svg.diagram .process.passing.current-fragment {
+animation: diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+svg.diagram .edge.passing.current-fragment {
+animation:
+diagram-fade-in 0.4s ease-out var(--delay, 0s) both,
+diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+/* Shown once the data that brings it has arrived. */
+svg.diagram .arrives.visible {
+animation: diagram-fade-in 0.2s ease-out 1.1s both;
+}
+}
+@keyframes diagram-draw {
+/* The arrowhead waits for the line to reach it. */
+from {
+stroke-dashoffset: 1;
+marker-end: none;
+}
+99% {
+marker-end: none;
+}
+to {
+stroke-dashoffset: 0;
+}
+}
+@keyframes diagram-leg-1 {
+from {
+offset-distance: var(--from);
+opacity: 0;
+}
+20% {
+opacity: 1;
+}
+to {
+offset-distance: 50%;
+opacity: 1;
+}
+}
+/* Delivered: it sits on the box a moment, then fades. */
+@keyframes diagram-leg-2 {
+from {
+offset-distance: 50%;
+opacity: 1;
+}
+55% {
+offset-distance: var(--to);
+opacity: 1;
+}
+80% {
+opacity: 1;
+}
+to {
+offset-distance: var(--to);
+opacity: 0;
+}
+}
+@keyframes diagram-trip {
+from {
+offset-distance: var(--from);
+opacity: 0;
+}
+10% {
+opacity: 1;
+}
+60% {
+offset-distance: var(--to);
+opacity: 1;
+}
+85% {
+opacity: 1;
+}
+to {
+offset-distance: var(--to);
+opacity: 0;
+}
+}
+@keyframes diagram-cursor-move {
+from {
+transform: translateX(calc(var(--at, 0) * 1ch));
+}
+to {
+transform: translateX(calc((var(--at, 0) + var(--chars)) * 1ch));
+}
+}
+@keyframes diagram-cursor-blink {
+50% {
+opacity: 0;
+}
+}
+@keyframes diagram-cursor-off {
+to {
+visibility: hidden;
+}
+}
+@keyframes diagram-type {
+from {
+clip-path: inset(0 100% 0 0);
+}
+to {
+clip-path: inset(0);
+}
+}
+@keyframes diagram-box-in {
+from {
+opacity: 0;
+transform: scale(0.8, 0.5);
+}
+to {
+opacity: 1;
+transform: none;
+}
+}
+@keyframes diagram-fade-in {
+from {
+opacity: 0;
+}
+}
+@keyframes diagram-glow {
+50% {
+opacity: 0.3;
+}
+}
+@keyframes diagram-spin {
+to {
+transform: rotate(1turn);
+}
+}
+@keyframes diagram-fade-out {
+to {
+opacity: 0;
+}
+}
+@keyframes diagram-exit {
+from {
+opacity: 1;
+}
+to {
+opacity: 0;
+}
+}
+/* --- Around the diagram -------------------------------------------------- */
+/* Drawn for a white background, in a dark page and on a slide alike. */
+.diagram-figure .diagram-canvas {
+background: #fff;
+border-radius: 8px;
+padding: 8px;
+}
+.diagram-figure svg.diagram {
+display: block;
+width: 100%;
+height: auto;
+}
+/* A deck hides the legend, the teacher being there to explain, except in
+print, which shows the diagram fully drawn. */
+.diagram-figure.in-deck:not(.printed) .legend {
+display: none;
+}
+.diagram-figure.in-deck svg.diagram {
+max-height: 520px;
+}
+/* A page stepping through the diagram does what reveal.js does in a deck:
+hides the steps not reached yet. The captions say what the legend would. */
+.diagram-figure.stepping svg.diagram .fragment {
+transition: opacity 0.2s;
+}
+.diagram-figure.stepping svg.diagram .fragment:not(.visible):not(.leg) {
+opacity: 0;
+visibility: hidden;
+}
+.diagram-figure.stepping .legend {
+display: none;
+}
+/* The page's controls, in whatever colours the page is in. */
+.diagram-figure .diagram-caption {
+margin: 0.5em 0.25em 0;
+}
+.diagram-figure .diagram-controls {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 0.5em;
+margin-top: 0.5em;
+}
+.diagram-figure .diagram-controls button {
+font: inherit;
+font-size: 0.9em;
+color: inherit;
+background: color-mix(in srgb, currentColor 8%, transparent);
+border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+border-radius: 6px;
+padding: 0.2em 0.75em;
+cursor: pointer;
+}
+.diagram-figure .diagram-controls button:disabled {
+opacity: 0.4;
+cursor: default;
+}
+.diagram-figure .diagram-controls button.primary {
+background: #1f6feb;
+border-color: #1f6feb;
+color: #fff;
+}
+.diagram-figure .diagram-controls .counter {
+min-width: 7em;
+text-align: center;
+font-size: 0.9em;
+opacity: 0.7;
+}
+/* Printed fully drawn, with the caption that goes with it. */
+@media print {
+.diagram-figure .diagram-controls {
+display: none;
+}
+.diagram-figure .diagram-canvas {
+break-inside: avoid;
+}
+}
+</style>
+<defs id="diagram-408-streams-diagram-defs">
+<marker id="diagram-408-streams-arrow-comm" viewBox="0 0 12 8" refX="12" refY="4" markerWidth="12" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+<path class="marker-comm" d="M0,0 L12,4 L0,8 z"/>
+</marker>
+<marker id="diagram-408-streams-arrow-control" viewBox="-1 -1 14 10" refX="12" refY="4" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+<path class="marker-control" d="M0,0 L12,4 L0,8 z"/>
+</marker>
+</defs><g class="fragment teardown" data-fragment-index="2"/><g class="fragment teardown" data-fragment-index="1"/>
+<g id="diagram-408-streams-lane-computer" class="lane"><text class="lane-heading" x="260" y="58">Your Computer</text></g>
+<g id="diagram-408-streams-lane-server" class="lane"><text class="lane-heading" x="880" y="58">Server</text></g>
+<g id="diagram-408-streams-boundary-internet" class="boundary">
+<line x1="520" y1="48" x2="520" y2="650"/>
+<line x1="660" y1="48" x2="660" y2="650"/>
+</g>
+<g id="diagram-408-streams-cloud-internet" class="cloud">
+<path d="M558,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+<text x="590" y="80">Internet</text>
+</g>
+<g id="diagram-408-streams-node-terminal" class="process">
+<rect x="40" y="96" width="200" height="46" rx="8"/>
+<text class="label" x="140" y="124">Terminal</text>
+</g>
+<g id="diagram-408-streams-node-local-shell" class="process">
+<rect x="40" y="186" width="200" height="46" rx="8"/>
+<text class="label" x="140" y="214">Shell (Bash/Zsh)</text>
+</g>
+<g id="diagram-408-streams-node-ssh-client" class="process">
+<rect x="290" y="186" width="200" height="46" rx="8"/>
+<text class="label" x="390" y="206">SSH Client</text>
+<text class="command" x="390" y="222">ssh jde@example.com</text>
+</g>
+<g id="diagram-408-streams-node-sshd" class="process">
+<rect x="760" y="96" width="200" height="46" rx="8"/>
+<text class="label" x="860" y="124">SSH Server</text>
+<g id="diagram-408-streams-socket-sshd-22" class="socket">
+<path d="M760,112 L742,96 M760,126 L742,142"/>
+<text x="746" y="90">22</text>
+</g>
+</g>
+<g id="diagram-408-streams-node-ssh-session" class="process">
+<rect x="760" y="186" width="200" height="46" rx="8"/>
+<text class="label" x="860" y="214">SSH Session</text>
+</g>
+<g id="diagram-408-streams-node-remote-shell" class="process">
+<rect x="760" y="276" width="200" height="46" rx="8"/>
+<text class="label" x="860" y="304">Shell (Bash/Zsh)</text>
+</g>
+<g id="diagram-408-streams-remote-prompt-l" class="fragment prompt-line transient arrives" data-fragment-index="0" data-gone-from="1" style="--gone-delay: 1.1s"><text x="766" y="340">$&gt; l</text></g>
+<g id="diagram-408-streams-remote-prompt-ls" class="fragment prompt-line transient arrives" data-fragment-index="1" data-gone-from="2" style="--gone-delay: 1.1s"><text x="766" y="340">$&gt; ls</text></g>
+<g id="diagram-408-streams-node-remote-command" class="fragment child process" data-fragment-index="2" style="--launch: 1.7s">
+<rect x="760" y="366" width="200" height="46" rx="8"/><rect x="760" y="366" width="200" height="46" rx="8" class="glow"/><g class="cog"><path d="M952.35,377.72 L954.45,378.18 L954.45,379.82 L952.35,380.28 L951.69,381.87 L952.85,383.69 L951.69,384.85 L949.87,383.69 L948.28,384.35 L947.82,386.45 L946.18,386.45 L945.72,384.35 L944.13,383.69 L942.31,384.85 L941.15,383.69 L942.31,381.87 L941.65,380.28 L939.55,379.82 L939.55,378.18 L941.65,377.72 L942.31,376.13 L941.15,374.31 L942.31,373.15 L944.13,374.31 L945.72,373.65 L946.18,371.55 L947.82,371.55 L948.28,373.65 L949.87,374.31 L951.69,373.15 L952.85,374.31 L951.69,376.13 Z M949.3,379 A2.3,2.3 0 1 0 944.7,379 A2.3,2.3 0 1 0 949.3,379 Z"/></g>
+<text class="label" x="860" y="386">Command</text>
+<text class="command" x="860" y="402">ls</text>
+<g class="fragment pulse" data-fragment-index="3"/></g>
+<g id="diagram-408-streams-edge-terminal-local-shell" class="edge control">
+<path d="M140,142 V186" marker-end="url(#diagram-408-streams-arrow-control)"/>
+</g>
+<g id="diagram-408-streams-edge-local-shell-ssh-client" class="edge control">
+<path d="M240,209 H290" marker-end="url(#diagram-408-streams-arrow-control)"/>
+</g>
+<g id="diagram-408-streams-edge-ssh-client-ssh-session" class="edge comm">
+<path d="M490,209 H560 C640,209 640,209 760,209" marker-end="url(#diagram-408-streams-arrow-comm)"/>
+<text x="590" y="214">example.com</text>
+</g>
+<g id="diagram-408-streams-edge-sshd-ssh-session" class="edge control">
+<path d="M860,142 V186" marker-end="url(#diagram-408-streams-arrow-control)"/>
+</g>
+<g id="diagram-408-streams-edge-ssh-session-remote-shell" class="edge control">
+<path d="M860,232 V276" marker-end="url(#diagram-408-streams-arrow-control)"/>
+</g>
+<g id="diagram-408-streams-edge-remote-shell-remote-command" class="fragment fade-on edge control" data-fragment-index="2" style="--delay: 1.1s">
+<path d="M860,322 V366" marker-end="url(#diagram-408-streams-arrow-control)"/>
+</g>
+<g id="diagram-408-streams-legend" class="legend" transform="translate(0,170)">
+<rect class="frame" x="32" y="292" width="308" height="190"/>
+<text class="title" x="186" y="318">Legend</text>
+<g class="process">
+<rect x="94" y="337" width="182" height="31" rx="6"/>
+<text class="label" x="185" y="358">Process</text>
+</g>
+<text class="entry" x="147" y="397">Communication</text>
+<g class="edge comm"><path d="M157,393 H320" marker-end="url(#diagram-408-streams-arrow-comm)"/></g>
+<text class="entry" x="147" y="419">Control</text>
+<g class="edge control"><path d="M157,415 H320" marker-end="url(#diagram-408-streams-arrow-control)"/></g>
+<text class="entry" x="147" y="441">Network Boundary</text>
+<g class="boundary"><line x1="157" y1="437" x2="322" y2="437"/></g>
+<text class="entry" x="147" y="465">Listening Port</text>
+<g class="process"><rect x="304" y="452" width="22" height="18" rx="3"/></g>
+<g class="socket"><path d="M304,457 L291,448 M304,465 L291,474"/></g>
+</g>
+<g class="overlay packet fragment whole" data-fragment-index="0"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 0%; --to: 100%"><path d="M-15,-12 H5 L15,0 L5,12 H-15 Z"/><text x="-5" y="5">l</text></g></g><g class="overlay packet fragment whole" data-fragment-index="1"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 0%; --to: 100%"><path d="M-15,-12 H5 L15,0 L5,12 H-15 Z"/><text x="-5" y="5">s</text></g></g><g class="overlay packet fragment whole" data-fragment-index="2"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 0%; --to: 100%"><path d="M-15,-12 H5 L15,0 L5,12 H-15 Z"/><text x="-5" y="5">⏎</text></g></g><g class="overlay packet fragment whole" data-fragment-index="4"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 100%; --to: 0%"><path d="M-35,-12 H25 L35,0 L25,12 H-35 Z" transform="scale(-1,1)"/><text x="5" y="5">output</text></g></g></svg>
+</div>
+<template class="diagram-captions"><p data-caption="rest">The SSH client inherited the standard streams of your shell: it reads what you type, and writes to your terminal. On the server, the shell and the commands it starts read from and write to the SSH session.</p><p data-caption="0">You are connected to a server over SSH. Your shell started the SSH client, and on the server, the SSH session started a shell. The connection is open, waiting for you to type.</p><p data-caption="1">You type <code>l</code>. It goes to the standard input of the SSH client, which it inherited from your shell. The client sends it over the connection, and on the server, the session hands it to the standard input of the shell.</p><p data-caption="2">You type <code>s</code>: it travels the same way.</p><p data-caption="3">You press Enter, which travels too. Once it has arrived, the server’s shell starts <code>ls</code>, which inherits the shell’s standard streams.</p><p data-caption="4"><code>ls</code> lists the files of the current directory on the server, and writes them to its standard output. It does not know where that goes.</p><p data-caption="5">Its output goes to the SSH session, back over the connection, and out of the standard output of the SSH client: your terminal displays it.</p></template>
+</div>

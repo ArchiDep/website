@@ -31,7 +31,7 @@ but Avalon's hints send students back to the tip at the end of "Spot the
 difference", on running a single command.
 
 Used once, as recipes: `-o PubkeyAuthentication=no`, `ssh -p`, `chmod` ("Unix
-Permissions"), and the `<` of the signature check ("Pipe, redirect and kill").
+Permissions"), and the `<` of the signature check ("Unix plumbing").
 Taught later: `~/.ssh/config` ("Run your own virtual server on Microsoft
 Azure"). Not in the course: configuring the SSH server (such as refusing
 passwords), `scp` options beyond the page's examples, and rsync.

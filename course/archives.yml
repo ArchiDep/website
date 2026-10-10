@@ -37,9 +37,6 @@
   # "Linux" was a deck of its own. It became part of the deck of "Cloud
   # Computing".
   /course/403-linux/slides/: /course/401-cloud-computing/slides/
-  # "Unix Processes" became "Unix Streams and Pipelines". The slug it left is
-  # now the exercise "Unix Processes", which would otherwise be matched instead.
-  /course/406-unix-processes/: /course/408-unix-streams-and-pipelines/
-  # "Unix Pipeline" became "Pipe, redirect and kill", named for stopping
-  # programs as well as for pipelines and redirections.
-  /course/407-pipeline/: /course/409-pipe-redirect-kill/
+  # "Unix Pipeline" became "Unix plumbing", named for redirections as well as
+  # pipelines.
+  /course/407-pipeline/: /course/409-unix-plumbing/

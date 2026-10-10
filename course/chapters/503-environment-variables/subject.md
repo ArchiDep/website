@@ -14,7 +14,7 @@ processes in Unix-like operating systems, and how to manage them.
 
 **Recommended reading**
 
-- [Unix Streams and Pipelines]({% link chapters/408-unix-streams-and-pipelines/subject.md %})
+- [Unix Processes]({% link chapters/408-unix-processes/subject.md %})
 
 ## What is an environment variable?
 

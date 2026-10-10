@@ -14,8 +14,7 @@ Learn the basics of Unix networking and how to make TCP connections.
 
 **Recommended reading**
 
-- [Unix Basics & Administration]({% link chapters/402-unix-basics/subject.md %})
-- [Unix Streams and Pipelines]({% link chapters/408-unix-streams-and-pipelines/subject.md %})
+- [Unix Basics]({% link chapters/402-unix-basics/subject.md %})
 
 ## Useful commands
 

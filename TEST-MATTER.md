@@ -197,7 +197,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   - The syntax of the `chmod` and `chown` commands (e.g. symbolic and octal
     modes).
 
-- [Unix processes](https://archidep.ch/course/408-unix-streams-and-pipelines/)
+- [Unix processes](https://archidep.ch/course/408-unix-processes/)
 
   You must know:
   - What a process is.

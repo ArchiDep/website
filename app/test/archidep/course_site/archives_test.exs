@@ -38,16 +38,16 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   # back from the course's order but listed as 2025 published it, each page
   # paired with the path of the page that answers for it now. "Linux" was a
   # deck of its own and became part of the deck of "Cloud Computing"; "Unix
-  # Processes" became "Unix Streams and Pipelines". The pages the section has
-  # gained since, the "Cloud Computing" subject among them, are not in it.
+  # Pipeline" became "Unix plumbing". The pages the section has gained since,
+  # the "Cloud Computing" subject among them, are not in it.
   @basic_deployment_in_2025 [
     {"/course/401-cloud-computing/slides/", "/course/401-cloud-computing/slides/"},
     {"/course/402-run-virtual-server/", "/course/404-run-virtual-server/"},
     {"/course/403-linux/slides/", "/course/401-cloud-computing/slides/"},
     {"/course/404-unix-basics/", "/course/402-unix-basics/"},
     {"/course/405-permissions/", "/course/403-permissions/"},
-    {"/course/406-unix-processes/", "/course/408-unix-streams-and-pipelines/"},
-    {"/course/407-pipeline/", "/course/409-pipe-redirect-kill/"},
+    {"/course/406-unix-processes/", "/course/408-unix-processes/"},
+    {"/course/407-pipeline/", "/course/409-unix-plumbing/"},
     {"/course/408-unix-networking/", "/course/406-unix-networking/"},
     {"/course/408-unix-networking/slides/", "/course/406-unix-networking/slides/"},
     {"/course/409-tcp/", "/course/407-tcp/"},

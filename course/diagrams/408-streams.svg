@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 1100 670" width="1100" height="670">
+  <title>What you type and what a command prints, through an SSH connection</title>
+  <style id="diagram-styles">
+    svg.diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    svg.diagram .lane-heading { font-size: 24px; font-weight: 700; fill: #000; text-anchor: middle; }
+    svg.diagram .boundary line { stroke: #000; stroke-width: 5; stroke-dasharray: 14 12; }
+    svg.diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    svg.diagram .cloud text { font-size: 15px; fill: #666; text-anchor: middle; }
+    svg.diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    svg.diagram .process text { fill: #fff; text-anchor: middle; }
+    svg.diagram .process .label { font-size: 16px; font-weight: 700; }
+    svg.diagram .process .subtitle { font-size: 12px; font-style: italic; }
+    svg.diagram .process .command { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; font-weight: 700; }
+    svg.diagram .edge path { fill: none; stroke: #000; stroke-width: 1.25; }
+    svg.diagram .edge.control path { stroke-dasharray: 3 4; }
+    svg.diagram .edge text { font-size: 14px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    svg.diagram .edge text.beside { text-anchor: end; }
+    svg.diagram .socket path { fill: none; stroke: #000; stroke-width: 1.5; stroke-linecap: round; }
+    svg.diagram .process .socket text, svg.diagram .socket text { font-size: 14px; fill: #000; text-anchor: end; }
+    svg.diagram .marker-comm { fill: #000; }
+    svg.diagram .marker-control { fill: #fff; stroke: #000; stroke-width: 1.25; }
+    svg.diagram .legend .frame { fill: none; stroke: #999; stroke-dasharray: 2 2; }
+    svg.diagram .legend .title { font-size: 18px; font-style: italic; text-anchor: middle; }
+    svg.diagram .legend .entry { font-size: 12px; text-anchor: end; }
+  </style>
+  <defs id="diagram-defs">
+    <marker id="arrow-comm" viewBox="0 0 12 8" refX="12" refY="4" markerWidth="12" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L12,4 L0,8 z"/>
+    </marker>
+    <marker id="arrow-control" viewBox="-1 -1 14 10" refX="12" refY="4" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-control" d="M0,0 L12,4 L0,8 z"/>
+    </marker>
+  </defs>
+
+  <g id="lane-computer" class="lane"><text class="lane-heading" x="260" y="58">Your Computer</text></g>
+
+  <g id="lane-server" class="lane"><text class="lane-heading" x="880" y="58">Server</text></g>
+
+  <g id="boundary-internet" class="boundary">
+    <line x1="520" y1="48" x2="520" y2="650"/>
+    <line x1="660" y1="48" x2="660" y2="650"/>
+  </g>
+
+  <g id="cloud-internet" class="cloud">
+    <path d="M558,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+    <text x="590" y="80">Internet</text>
+  </g>
+
+  <!-- Your computer -->
+
+  <g id="node-terminal" class="process">
+    <rect x="40" y="96" width="200" height="46" rx="8"/>
+    <text class="label" x="140" y="124">Terminal</text>
+  </g>
+
+  <g id="node-local-shell" class="process">
+    <rect x="40" y="186" width="200" height="46" rx="8"/>
+    <text class="label" x="140" y="214">Shell (Bash/Zsh)</text>
+  </g>
+
+  <g id="node-ssh-client" class="process">
+    <rect x="290" y="186" width="200" height="46" rx="8"/>
+    <text class="label" x="390" y="206">SSH Client</text>
+    <text class="command" x="390" y="222">ssh jde@example.com</text>
+  </g>
+
+  <!-- Server -->
+
+  <g id="node-sshd" class="process">
+    <rect x="760" y="96" width="200" height="46" rx="8"/>
+    <text class="label" x="860" y="124">SSH Server</text>
+    <g id="socket-sshd-22" class="socket">
+      <path d="M760,112 L742,96 M760,126 L742,142"/>
+      <text x="746" y="90">22</text>
+    </g>
+  </g>
+
+  <g id="node-ssh-session" class="process">
+    <rect x="760" y="186" width="200" height="46" rx="8"/>
+    <text class="label" x="860" y="214">SSH Session</text>
+  </g>
+
+  <g id="node-remote-shell" class="process">
+    <rect x="760" y="276" width="200" height="46" rx="8"/>
+    <text class="label" x="860" y="304">Shell (Bash/Zsh)</text>
+  </g>
+
+  <!-- The remote shell's prompt line as what you type arrives, one line per
+       keystroke, each replacing the last: transient, not drawn fully. -->
+  <g id="remote-prompt-l" class="prompt-line transient arrives"><text x="766" y="340">$&gt; l</text></g>
+  <g id="remote-prompt-ls" class="prompt-line transient arrives"><text x="766" y="340">$&gt; ls</text></g>
+
+  <g id="node-remote-command" class="process">
+    <rect x="760" y="366" width="200" height="46" rx="8"/>
+    <text class="label" x="860" y="386">Command</text>
+    <text class="command" x="860" y="402">ls</text>
+  </g>
+
+  <!-- Edges -->
+
+  <g id="edge-terminal-local-shell" class="edge control">
+    <path d="M140,142 V186" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-local-shell-ssh-client" class="edge control">
+    <path d="M240,209 H290" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-ssh-client-ssh-session" class="edge comm">
+    <path d="M490,209 H560 C640,209 640,209 760,209" marker-end="url(#arrow-comm)"/>
+    <text x="590" y="214">example.com</text>
+  </g>
+  <g id="edge-sshd-ssh-session" class="edge control">
+    <path d="M860,142 V186" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-ssh-session-remote-shell" class="edge control">
+    <path d="M860,232 V276" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-remote-shell-remote-command" class="edge control">
+    <path d="M860,322 V366" marker-end="url(#arrow-control)"/>
+  </g>
+
+  <g id="legend" class="legend" transform="translate(0,170)">
+    <rect class="frame" x="32" y="292" width="308" height="190"/>
+    <text class="title" x="186" y="318">Legend</text>
+    <g class="process">
+      <rect x="94" y="337" width="182" height="31" rx="6"/>
+      <text class="label" x="185" y="358">Process</text>
+    </g>
+    <text class="entry" x="147" y="397">Communication</text>
+    <g class="edge comm"><path d="M157,393 H320" marker-end="url(#arrow-comm)"/></g>
+    <text class="entry" x="147" y="419">Control</text>
+    <g class="edge control"><path d="M157,415 H320" marker-end="url(#arrow-control)"/></g>
+    <text class="entry" x="147" y="441">Network Boundary</text>
+    <g class="boundary"><line x1="157" y1="437" x2="322" y2="437"/></g>
+    <text class="entry" x="147" y="465">Listening Port</text>
+    <g class="process"><rect x="304" y="452" width="22" height="18" rx="3"/></g>
+    <g class="socket"><path d="M304,457 L291,448 M304,465 L291,474"/></g>
+  </g>
+</svg>

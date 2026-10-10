@@ -17,7 +17,7 @@ processes in Unix-like operating systems.
 
 **Recommended reading**
 
-- [Unix Streams and Pipelines]({% link chapters/408-unix-streams-and-pipelines/subject.md %})
+- [Unix Processes]({% link chapters/408-unix-processes/subject.md %})
 
 ---
 

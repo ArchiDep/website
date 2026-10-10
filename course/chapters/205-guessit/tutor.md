@@ -43,10 +43,10 @@ later chapters work from this code as the page gives it.
 
 Used as recipes, taught later: `sudo` ("Unix Basics"), ports and `nc` ("Unix
 Networking", "Make TCP connections"), and a program that holds the terminal
-until `Ctrl-C` ("Unix Streams and Pipelines"). Not in the course: PostgreSQL
-administration beyond the page (its authentication settings, other roles),
-pgAdmin and other graphical clients, Express, and npm beyond `npm ci` and `npm
-run dev`.
+("Unix Processes") until `Ctrl-C` ("Process Management on Linux"). Not in the
+course: PostgreSQL administration beyond the page (its authentication settings,
+other roles), pgAdmin and other graphical clients, Express, and npm beyond `npm
+ci` and `npm run dev`.
 
 ## Where it leads
 

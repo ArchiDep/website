@@ -157,16 +157,22 @@
       "slug": "tcp"
     },
     {
-      "path": "/course/408-unix-streams-and-pipelines/",
+      "path": "/course/408-unix-processes/",
       "kind": "chapter",
       "num": 408,
-      "slug": "unix-streams-and-pipelines"
+      "slug": "unix-processes"
     },
     {
-      "path": "/course/409-pipe-redirect-kill/",
+      "path": "/course/408-unix-processes/slides/",
+      "kind": "chapter_slides",
+      "num": 408,
+      "slug": "unix-processes"
+    },
+    {
+      "path": "/course/409-unix-plumbing/",
       "kind": "chapter",
       "num": 409,
-      "slug": "pipe-redirect-kill"
+      "slug": "unix-plumbing"
     },
     {
       "path": "/course/410-sftp-deployment/",
@@ -181,10 +187,10 @@
       "slug": "how-a-computer-works"
     },
     {
-      "path": "/course/412-unix-processes/",
+      "path": "/course/412-watch-your-processes/",
       "kind": "chapter",
       "num": 412,
-      "slug": "unix-processes"
+      "slug": "watch-your-processes"
     },
     {
       "path": "/course/413-how-to-improve/",

@@ -1,5 +1,5 @@
 ---
-title: Pipe, redirect and kill
+title: Unix plumbing
 cloud_server: details
 excerpt_separator: <!-- more -->
 ---

@@ -51,8 +51,9 @@ Taught later, so do not explain them here beyond what the page does:
 - Permissions (`chmod +x` is given as a recipe): "Unix Basics", "Unix
   Permissions".
 - `sudo` and the system directories (`/etc`, `/usr/bin`): "Unix Basics".
-- Processes, signals (what `Ctrl-C` sends), pipes and redirection other than
-  `>` and `>>`: "Unix Streams and Pipelines", "Pipe, redirect and kill".
+- Processes, pipes and redirection other than `>` and `>>`: "Unix Processes",
+  "Unix plumbing". Signals (what `Ctrl-C` sends): "Process Management on
+  Linux".
 - Environment variables in general, `export` and `source`: "Unix Environment
   Variables". Until then, the course applies a configuration change by opening
   a new terminal.
