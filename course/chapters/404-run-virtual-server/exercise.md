@@ -58,8 +58,41 @@ If you have an older SSH client, you may want to try displaying the contents of
 Once you have your Azure account, you can launch the virtual server you will be
 using for the rest of the course.
 
-Access the [Azure portal][azure-portal] and go to the **Virtual machines**
-section:
+### :exclamation: Find the regions you are allowed to use
+
+As a student, you are not allowed to run your virtual machine in any region.
+Azure only allows each student a handful of regions, and **they are different
+for each student**. Find out which ones are yours before you create your virtual
+machine.
+
+Access the [Azure portal][azure-portal], type "Policy" (or "Stratégie" in
+French) in the search bar at the top, and open the **Policy** (Stratégie) page.
+In the menu on the left, open **Authoring**, then **Assignments**
+("Attributions" in French):
+
+![Azure: policy assignments](images/azure-policy.png)
+
+Click the assignment named **Allowed resource deployment regions**. Under its
+**Parameters** tab, the value of the `listOfAllowedLocations` parameter is your
+list of allowed regions:
+
+![Azure: allowed regions](images/azure-student-regions.png)
+
+{% note type: warning %}
+
+This screenshot comes from another student's account, and **your list is not
+the same**. Read your own.
+
+{% endnote %}
+
+Each region is written as a code, such as `germanywestcentral`. When you create
+your virtual machine, the **Region** menu shows the same region with its full
+name, `(Europe) Germany West Central`. **Choose one of the regions in your list.
+Other regions will not work.**
+
+### :exclamation: Create a new virtual machine
+
+Go to the **Virtual machines** section of the Azure portal:
 
 ![Azure Portal](images/azure-portal-menu.png)
 
@@ -89,6 +122,8 @@ machine's name, region, image and size):
 
 {% note type: tip %}
 
+Choose one of the regions [you are allowed to
+use](#find-the-regions-you-are-allowed-to-use) from the list you found earlier.
 If you cannot select the right size, [see
 below](#i-cant-select-the-right-size-or-region) for troubleshooting.
 
@@ -142,17 +177,12 @@ zone, or another of the regions you are allowed to use.
 
 {% note type: tip %}
 
-As a student, you are not allowed to run your virtual machine in any region.
-Azure only allows each student a handful of regions, and **they are different
-for each student**. Choose one of the regions listed as **Recommended** for you;
-those listed as **Ineligible** will not work:
-
-![Azure: recommended regions](images/azure-vm-recommended-regions.png)
-
-Among your allowed regions, choosing one closer to where you are (or where your
-customers are) will reduce latency. Prices vary slightly between regions: the
-[cost review](#review-your-monthly-cost) below will tell you if your choice is
-too expensive.
+If a region does not work, try another one from [your list of allowed
+regions](#find-the-regions-you-are-allowed-to-use). Among them, choosing one
+closer to where you are (or where your customers are) will reduce latency.
+Prices vary slightly between regions: the [cost
+review](#review-your-monthly-cost) below will tell you if your choice is too
+expensive.
 
 {% endnote %}
 
@@ -254,8 +284,9 @@ Double-check that you are launching one virtual machine of size `B1s` or
 If Azure tells you that you cannot create a virtual machine in the region you
 have selected (some regions, like West Europe, may not accept new customers even
 if they are allowed), go back to the [basic settings](#configure-basic-settings)
-and find a region that works. **Make sure to re-check your estimated monthly
-cost afterwards.**
+and try another region from [your
+list](#find-the-regions-you-are-allowed-to-use). **Make sure to re-check your
+estimated monthly cost afterwards.**
 
 {% endnote %}
 

@@ -73,10 +73,15 @@ one cannot do any exercise after it. In particular:
   not reach the server.
 - **"Get your public SSH key".** Before: which of the two files does Azure
   need, and why is it safe to paste it into a website?
+- **"Find the regions you are allowed to use".** The regions allowed differ
+  from one student to another, and the page's screenshot shows another
+  student's: ask the student to read their own list from the portal and to
+  pick from it. The list gives region codes (`germanywestcentral`); the
+  **Region** menu gives full names (`(Europe) Germany West Central`). Do not
+  suggest editing or deleting the policy assignment.
 - **"Configure basic settings"**, with "I can't select the right size or
-  region". Check the image (`Ubuntu 26.04`, x64) and the size (`B1s` or
-  `B2ats_v2`) before going on. The regions allowed differ from one student to
-  another.
+  region". Check the image (`Ubuntu 26.04`, x64), the size (`B1s` or
+  `B2ats_v2`) and that the region is in the student's list before going on.
 - **"Configure your administrator account".** Ask: which username, and where
   does it come from? It must be the one the page's box shows, and Azure refuses
   some common names such as `admin` or `root`.
