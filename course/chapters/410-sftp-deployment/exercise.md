@@ -1,12 +1,11 @@
 ---
-title: Deploy a PHP application with SFTP
+title: Deploy a web application with SFTP
 cloud_server: details
 excerpt_separator: <!-- more -->
 ---
 
-This guide describes how to deploy a [PHP][php] application over [SFTP][sftp] on
-a server with PHP and [MySQL][mysql] installed, using the PHP development
-server.
+This guide describes how to deploy a [Node.js][node] application over
+[SFTP][sftp] on a server with Node.js and [PostgreSQL][postgres] installed.
 
 {% callout type: exercise %}
 
@@ -16,21 +15,153 @@ Connect to your cloud server with SSH for this exercise.
 
 <!-- more -->
 
-## :exclamation: Setup
+## :exclamation: Make sure your Guess It is up to date
 
-Use the previous PHP Todolist Exercice. Clone the [PHP Todolist
-Exercice][php-todolist] on your local machine if you do not have it. Be sure to
-use a version with the three SQL queries implemented, i.e. the fork you worked
-on as a group.
+You will deploy [Guess It][guessit], with the three queries implemented and its
+vulnerabilities fixed.
 
-### :exclamation: Install MySQL
+The original Guess It repository, [`ArchiDep/guessit-ex`][ex-repo], has changed
+since you forked it. It now has the three queries, and the fixes for the
+vulnerabilities we found during the [security analysis][security]. Your
+application will be on the Internet, where anyone can attack it, so you must
+deploy that fixed version.
 
-Update your package lists and install the MySQL database server:
+- **If you have your own fork:** [Make sure your fork is up to
+  date](#make-sure-your-fork-is-up-to-date).
+- **If you do not have your own fork yet:** [Fork the
+  repository](#fork-the-repository).
+- **If you have a fork but prefer to start over from a clean state:** [Fork
+  again](#fork-again).
+
+### :question: Make sure your fork is up to date
+
+If your group's fork belongs to you (it's under your own GitHub account), you
+can update it with the latest changes.
+
+Open a terminal and go into your local clone of the fork:
+
+```bash
+$> cd guessit-ex
+$> git status
+```
+
+Make sure you are in a clean state on your `main` branch, with no uncommitted
+changes. If you have uncommitted changes, commit them (or throw them away with
+`git restore .`).
+
+Add the original repository as a second remote, named `upstream`, fetch it, and
+merge its `main` branch into yours:
+
+```bash
+$> git remote add upstream git@github.com:ArchiDep/guessit-ex.git
+
+$> git fetch upstream
+
+$> git merge upstream/main
+```
+
+Git will probably report a conflict in `server.js`: your group and the original
+repository both implemented the same queries, and the original repository then
+rewrote them to fix the vulnerabilities. Resolve each conflict by keeping the
+original repository's version, the part between `=======` and
+`>>>>>>> upstream/main`. Then finish the merge and push it:
+
+```bash
+# Mark the conflict as resolved
+$> git add server.js
+
+# Finish the merge
+$> git commit
+
+# Push the merge commit to your fork
+$> git push
+```
+
+{% note type: tip %}
+
+If Git reports no conflict, it has already finished the merge by itself: only
+`git push` is left to do.
+
+{% endnote %}
+
+### :question: Fork the repository
+
+If you do not have a fork of your own yet, either fork your group's repository
+(**after** the owner has updated it), or fork the original
+[`ArchiDep/guessit-ex` repository][ex-repo], using the **Fork** button:
+
+![Fork button](images/fork.png)
+
+Then clone your fork on your computer:
+
+```bash
+$> cd /path/to/projects
+$> git clone git@github.com:YOUR_GITHUB_USERNAME/guessit-ex.git
+$> cd guessit-ex
+```
+
+{% note type: troubleshooting %}
+
+If `git clone` fails because `guessit-ex` already exists, see [:boom:
+`destination path 'guessit-ex' already exists`][clone-exists].
+
+{% endnote %}
+
+### :question: Fork again
+
+If you prefer to start again from the clean course repository, you can fork it
+again. The new fork will not have your group's commits, but it will have the
+working queries and the fixes of the vulnerabilities.
+
+You can delete your own fork on GitHub, in the **Danger Zone** at the bottom of
+the repository's **Settings**:
+
+![Delete repository](images/repo-delete.png)
+
+You can then fork [`ArchiDep/guessit-ex`][ex-repo] again:
+
+![Fork button](images/fork.png)
+
+Then clone your fork on your computer:
+
+```bash
+$> cd /path/to/projects
+$> git clone git@github.com:YOUR_GITHUB_USERNAME/guessit-ex.git
+$> cd guessit-ex
+```
+
+{% note type: troubleshooting %}
+
+If `git clone` fails because `guessit-ex` already exists, see [:boom:
+`destination path 'guessit-ex' already exists`][clone-exists].
+
+{% endnote %}
+
+## :exclamation: Install the dependencies
+
+Make sure to install the dependencies in your Guess It fork, even if you had
+already done it. The XSS vulnerability was fixed by adding the `mustache`
+dependency to escape user input, so you need to install it.
+
+```bash
+$> npm ci
+```
+
+{% note type: more %}
+
+This reinstalls all dependencies, including the new `mustache` dependency, in
+the `node_modules` directory.
+
+{% endnote %}
+
+## :exclamation: Install PostgreSQL
+
+Update your package lists and install the PostgreSQL database server:
 
 ```bash
 $> sudo apt update
 
-$> sudo apt install mysql-server
+$> sudo apt install postgresql
 ```
 
 {% note type: tip %}
@@ -51,179 +182,90 @@ cheatsheet][sysadmin-cheatsheet-apt].
 
 {% endnote %}
 
-APT should automatically start MySQL after installation. You can check this with
-the following command:
+APT should automatically start PostgreSQL after installation. You can check this
+with the following command:
 
 ```bash
-$> sudo systemctl status mysql
+$> sudo systemctl status postgresql
 ```
 
-Secure your installation by running the `mysql_secure_installation` tool that
-comes with MySQL. It will ask you several questions to help you improve the
-security of your MySQL installation.
+## :exclamation: Install Node.js
 
-{% note type: tip %}
-
-We suggest that you configure low password strength validation in MySQL when
-asked. [A password that is hard to remember is not a good
-password.](https://xkcd.com/936/)
-
-{% endnote %}
+Guess It needs Node.js. The version that Ubuntu provides is too old, so install
+Node.js 26 from [NodeSource][node-install] instead:
 
 ```bash
-$> sudo mysql_secure_installation
+$> sudo apt-get install -y curl
 
-Securing the MySQL server deployment.
+$> curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash -
 
-Connecting to MySQL using a blank password.
+$> sudo apt-get install -y nodejs
 
-VALIDATE PASSWORD COMPONENT can be used to test passwords
-and improve security. It checks the strength of password
-and allows the users to set only those passwords which are
-secure enough. Would you like to setup VALIDATE PASSWORD component?
-
-Press y|Y for Yes, any other key for No: y
-
-There are three levels of password validation policy:
-
-LOW    Length >= 8
-MEDIUM Length >= 8, numeric, mixed case, and special characters
-STRONG Length >= 8, numeric, mixed case, special characters and dictionary file
-
-Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG: 0
-
-Skipping password set for root as authentication with auth_socket is used by default.
-If you would like to use password authentication instead, this can be done with the "ALTER_USER" command.
-See https://dev.mysql.com/doc/refman/8.0/en/alter-user.html#alter-user-password-management for more information.
-
-By default, a MySQL installation has an anonymous user,
-allowing anyone to log into MySQL without having to have
-a user account created for them. This is intended only for
-testing, and to make the installation go a bit smoother.
-You should remove them before moving into a production
-environment.
-
-Remove anonymous users? (Press y|Y for Yes, any other key for No) : y
-Success.
-
-Normally, root should only be allowed to connect from
-'localhost'. This ensures that someone cannot guess at
-the root password from the network.
-
-Disallow root login remotely? (Press y|Y for Yes, any other key for No) : y
-Success.
-
-By default, MySQL comes with a database named 'test' that
-anyone can access. This is also intended only for testing,
-and should be removed before moving into a production
-environment.
-
-Remove test database and access to it? (Press y|Y for Yes, any other key for No) : y
- - Dropping test database...
-Success.
-
- - Removing privileges on test database...
-Success.
-
-Reloading the privilege tables will ensure that all changes
-made so far will take effect immediately.
-
-Reload privilege tables now? (Press y|Y for Yes, any other key for No) : y
-Success.
-
-All done!
+$> node -v
+v26.x.y
 ```
 
-### :exclamation: Install PHP
+## :exclamation: Generate a password
 
-Here you will install the bare minimum:
-
-- The [PHP **F**astCGI **p**rocess **m**anager (FPM)][php-fpm]
-- The [PHP MySQL extension][php-mysql]
-
-Simply run this command to install both:
+The `schema.sql` file creates a `guessit` user with the password
+`change-me-now`. Replace it with a random password. This command generates one,
+made of 32 random hexadecimal digits:
 
 ```bash
-$> sudo apt install php-fpm php-mysql
+$> openssl rand -hex 16
+cc46a7fcd8dd9c0ce9bc6f0aaf63eb3a
 ```
 
-{% callout type: more, id: php-runtime %}
-
-Traditionally, PHP is deployed using the [Apache web server][apache], which is a
-generic [web server][web-server] and [reverse proxy][reverse-proxy] but is also
-capable of executing PHP code. To simplify things in this exercise, we will not
-install Apache, but instead execute the PHP application directly from the
-command line using the simpler [PHP development server][php-dev-server].
-
-{% endcallout %}
-
-## :exclamation: Use a real password
-
-The `todolist.sql` file creates a `todolist` user with the password
-`change-me-now` by default. You should change the password to a more secure
-value. Make sure that the password you choose is strong enough per the minimum
-password requirements you chose when you secured the MySQL installation.
-
-{% note type: tip %}
-
-Need help choosing a good password? [Don't use something that is hard to
-remember](https://xkcd.com/936/). You're better off [using a
-passphrase](https://www.useapassphrase.com) (here's a [French
-version](https://passwordcreator.org/fr.html#good)).
-
-{% endnote %}
-
-{% callout type: more, id: mysql-users %}
-
-It is good practice to create a different user and password for each application
-that connects to the MySQL database server. That way, if one of the applications
-is compromised, it cannot access or modify the databases of the other
-applications (provided you configured appropriate access privileges).
-
-Notably, you should never use the MySQL `root` password to connect an
-application to its database. You, the system administrator, should be the only
-person who knows that password.
-
-{% endcallout %}
+A password made only of letters and digits can go into the connection URL of
+`server.js` as it is. Put yours in `schema.sql`, in your copy of the repository,
+in place of `change-me-now`. Keep it: you will need it again to configure the
+application.
 
 ## :exclamation: Upload the application
 
-**On your local machine**, use an SFTP client like [FileZilla][filezilla] or
-[Cyberduck][cyberduck] to upload the application to the server.
+**On your local machine**, use the SFTP application you set up in [Hello
+SSH][hello-ssh-sftp] to upload the application to your server: [WinSCP][winscp]
+on Windows, or [Cyberduck][cyberduck] on macOS. Configure a new connection the
+same way, with two differences:
 
-Connect the SFTP client to your server using SSH public key authentication. In
-FileZilla, open the Site Manager and configure your connection like this:
+- The **host** is your server's public IP address.
+- The **username** is your Unix username on your server.
 
-![Filezilla: SFTP configuration](images/filezilla-pubkey.png)
+Your private key is the same. On Windows, use the converted
+`id_ed25519.ppk` key you saved for WinSCP, as described in [Give your key to
+WinSCP][hello-ssh-winscp].
 
-You must select your **private key** (`id_ed25519` and not `id_ed25519.pub`) in
-FileZilla. The server you are connecting to has your public key. Just like when
-you use SSH on the command line, FileZilla will use your private key to prove to
-the server that you are the owner of your public key.
+**[Screenshot to add: WinSCP's login window, configured for the student's
+server.]**
 
-{% note type: tip %}
+{% note type: warning %}
 
-On Windows, your private key is in the WSL, not in your Windows files. Type
-`\\wsl.localhost\` in the address bar of the file selection window, then open
-your Linux distribution's directory (e.g. `Ubuntu`), then `home`, your Linux
-username, and `.ssh`. On macOS, use the `Cmd-Shift-.` shortcut in the file
-selection window to display hidden files. On most Linux distributions, the file
-manager will have an option to show hidden files under its menu.
+When you connect for the first time, check the server's key fingerprint, as you
+did when you first connected to your server with SSH.
 
 {% endnote %}
 
+Once you are connected to your server with your SFTP application, copy your
+`guessit-ex` directory to `/home/jde/guessit` (replacing `jde` with your Unix
+username). Copy the whole directory, including `node_modules`: the application
+cannot run without its dependencies.
+
+On Windows, your copy of the repository is in the WSL. In WinSCP's local panel,
+type its path in the address bar, for example
+`\\wsl.localhost\Ubuntu\home\jde\guessit-ex`, replacing `jde` with your Linux
+username.
+
+**[Screenshot to add: WinSCP uploading the `guessit-ex` directory to the
+server.]**
+
+You can simply drag-and-drop the directory from your machine to the server. You
+can then rename it if necessary.
+
 {% note type: tip %}
 
-On Windows, FileZilla may ask you to convert your private key to another format.
-You can do so.
+`node_modules` holds hundreds of small files, so the upload takes a while.
 
 {% endnote %}
-
-Once you are connected to your server with your SFTP client, copy the
-application to `/home/jde/todolist` (replacing `jde` with your Unix username).
-
-In FileZilla, you can simply drag-and-drop the directory from your machine on
-the left to the server on the right. You can then rename it if necessary.
 
 ## :exclamation: Initialize the database
 
@@ -233,123 +275,187 @@ the left to the server on the right. You can then rename it if necessary.
 $> hostname
 jde.archidep.ch
 
-$> cd ~/todolist
+$> cd ~/guessit
 ```
 
-Execute the project's SQL file to create the database and table (it will ask you
-for the MySQL `root` user's password you defined earlier):
+Run the project's SQL file as the PostgreSQL superuser, `postgres`, to create
+the user, the database and its table:
 
 ```bash
-$> sudo mysql < todolist.sql
+$> sudo -u postgres psql < schema.sql
+CREATE ROLE
+CREATE DATABASE
+You are now connected to database "guessit" as user "postgres".
+CREATE TABLE
+ALTER TABLE
 ```
 
 {% note type: more %}
 
-This uses the [Unix redirection operator `<`][unix-redirection] to send the
-contents of the `todolist.sql` file into the [standard input
-stream][unix-input-stream] of the `sudo mysql` command. When provided with SQL
-queries on its input stream, the `mysql` command will connect to the MySQL
-server and execute them, then stop.
+This uses the [redirection operator `<`][unix-redirection] to send the contents
+of the `schema.sql` file into the standard input stream of `psql`. When given
+SQL queries on its input stream, `psql` connects to the PostgreSQL server,
+executes them, then stops.
+
+`sudo -u postgres` runs `psql` as the `postgres` user of your server, which is
+allowed to connect to PostgreSQL as its superuser, also named `postgres`. That
+user is not allowed to read your files, so it could not open `schema.sql`
+itself: your shell opens it, and passes its content to `psql`.
 
 {% endnote %}
+
+{% callout type: more, id: database-users %}
+
+It is good practice to create a different user and password for each application
+that connects to a database server. That way, if one of the applications is
+compromised, it cannot access or modify the databases of the other applications.
+
+Notably, you should never connect an application to its database as the
+superuser. On your server, only you, the system administrator, can become the
+PostgreSQL superuser, with `sudo`.
+
+{% endcallout %}
 
 ### :question: Optional: make sure it worked
 
-To make sure everything worked, you can check that the table was created in the
-MySQL database server. You do not have a phpMyAdmin web interface to administer
-the database server, since you are installing everything on your server
-yourself, and you did not install that.
-
-Use the following command and SQL queries to first connect to the MySQL database
-server as the administrator (the MySQL `root` user), then display the `todo`
-table's schema:
+To make sure everything worked, you can check that the table was created. Connect
+to the `guessit` database as the superuser, and display the `game` table's
+schema with `\d`:
 
 ```bash
-$> sudo mysql
+$> sudo -u postgres psql guessit
 
-> connect todolist;
-
-> show create table todo;
-+-------+----------------------------------------------------+
-| Table | Create Table                                       |
-+-------+----------------------------------------------------+
-| todo  | CREATE TABLE `todo` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `title` varchar(2048) NOT NULL,
-  `done` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1 |
-+-------+----------------------------------------------------+
-1 row in set (0.00 sec)
+guessit=# \d game
+                          Table "public.game"
+   Column   |           Type           | Collation | Nullable | Default
+------------+--------------------------+-----------+----------+---------
+ id         | text                     |           | not null |
+ name       | text                     |           | not null |
+ secret     | integer                  |           | not null |
+ attempts   | integer                  |           | not null | 0
+ found_at   | timestamp with time zone |           |          |
+ created_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "game_pkey" PRIMARY KEY, btree (id)
 ```
 
-Everything went well if the table was created, since the creation of that table is the last step of the `todolist.sql` script.
+Everything went well if the table was created, since that is the last step of
+the `schema.sql` file.
 
-You may exit the interactive MySQL console like most shells by typing `exit`.
+You may exit `psql` with `\q`.
 
 ## :exclamation: Update the configuration
 
-Update the first few lines of the `index.php` file with the correct configuration:
+Update the `DATABASE_URL` at the top of the `server.js` file **on the server**,
+with the password you put in `schema.sql`:
 
-```php
-define('BASE_URL', '/');
-define('DB_USER', 'todolist');
-define('DB_PASS', 'your-secret-password');
-define('DB_NAME', 'todolist');
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', '3306');
+```js
+const DATABASE_URL =
+  'postgresql://guessit:your-secret-password@localhost:5432/guessit';
 ```
+
+If you ran PostgreSQL with Docker Desktop on your computer, your copy of
+`server.js` uses port `5434`. On your server, PostgreSQL listens on its usual
+port, `5432`.
 
 {% note type: tip %}
 
-The `index.php` file **on the server** must be modified. There are several ways
+The `server.js` file **on the server** must be modified. There are several ways
 you can do this:
 
-- Edit the file locally, then copy it to the server again using your SFTP client
-  like FileZilla.
+- Edit the file locally, then copy it to the server again with your SFTP
+  application.
 - Edit the file directly on the server with `nano` or `vim`.
-- Some SFTP clients allow you to open a remote file in your local editor. In
-  FileZilla, right-click a file, select View/Edit, then choose your favorite
-  editor. Make your changes and save the file. FileZilla should automatically
-  prompt you to upload the changes.
+- Your SFTP application can open a remote file in an editor. In WinSCP,
+  right-click the file and choose **Edit**. In Cyberduck, right-click the file
+  and choose **Edit With**, then your favorite editor. Make your changes and
+  save the file: the application uploads it again.
 
 {% endnote %}
 
-## :exclamation: Run the PHP development server
+## :exclamation: Run the application
 
-Also in the uploaded directory on the server, run a [PHP development
-server][php-dev-server] on port 3000:
+Also in the uploaded directory on the server, start the application, as you did
+on your computer:
 
 ```bash
-$> php -S 0.0.0.0:3000
+$> npm run dev
+
+> guessit@1.0.0 dev
+> node --watch server.js
+
+Guess It is listening on http://localhost:3000
 ```
 
-{% note type: tip %}
+You (and everybody else) should be able to access the application in a browser
+at your server's IP address and port 3000 (e.g. `http://W.X.Y.Z:3000`).
 
-You **must really use `0.0.0.0` for the `php -S` command, and not your server's
-IP address**. `0.0.0.0` is not an actual IP address; it is a special notation
-that tells the PHP development server to accept connections from any IP address.
+**[Screenshot to add: Guess It's home page, opened at the server's IP address
+and port 3000.]**
 
-{% endnote %}
+### :question: Optional: see who listens where
 
-{% note type: more %}
+Despite what its message says, the application does not only listen on
+`localhost`. In another SSH connection to your server, list the processes
+listening for TCP connections with `ss`:
 
-The `-S <addr:port>` option of the `php` command starts the [built-in web
-**s**erver][php-dev-server] on the given local address and port.
+```bash
+$> ss -tln
+State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+LISTEN 0      200        127.0.0.1:5432      0.0.0.0:*
+LISTEN 0      511                *:3000            *:*
+LISTEN 0      200            [::1]:5432         [::]:*
+...
+```
 
-{% endnote %}
-
-You (and everbody else) should be able to access the application in a browser at
-your server's IP address and the correct port (e.g. `http://W.X.Y.Z:3000`).
+PostgreSQL listens on port 5432 of the [loopback addresses][loopback],
+`127.0.0.1` and its IPv6 equivalent `::1`: only programs running on your server
+can connect to it. Guess It listens on port 3000 of `*`, all the addresses of
+your server: anyone who can reach your server can connect to it.
 
 ## :checkered_flag: What have I done?
 
-You have **deployed** a PHP application to a server running in the Microsoft
-Azure cloud.
+You have **deployed** an application to a server running in the Microsoft Azure
+cloud. It is now publicly accessible by anyone on the Internet, at your server's
+public IP address.
 
-The application is now publicly accessible by anyone on the Internet, at your
-instance's public IP address.
+Along the way, you:
+
+- Updated your fork with the fixes of the original repository.
+- Installed PostgreSQL and Node.js on your server.
+- Uploaded the application with SFTP, its dependencies included.
+- Created its database, configured it, and started it.
+
+Deploying an application means putting it on a computer where its users can
+reach it, and running it there. Here, that took the same steps as on your own
+computer: install what the application needs, create its database, configure
+it, and start it. Only the computer has changed.
+
+For Guess It, the files are the program. Node.js reads the JavaScript files as
+they are, so copying them to the server is enough, as long as Node.js is
+installed there. Its dependencies are files too, which is why you could copy
+your `node_modules` directory instead of installing the dependencies on the
+server.
+
+PostgreSQL and Guess It are two separate programs, running side by side on your
+server. Each is a server of its own, listening on its own port: 5432 for
+PostgreSQL, 3000 for Guess It. Guess It is a client of PostgreSQL, and your
+browser a client of Guess It.
+
+A program chooses which of the computer's addresses it listens on. PostgreSQL
+only listens on the loopback address, so it cannot be reached from the Internet,
+only by programs on the same server. Guess It listens on all addresses, which is
+what makes it public.
+
+The application still has a user of its own in the database, as it had on your
+computer. The superuser created that user and is not used again. The password
+is random, because nobody has to remember it.
+
+The application runs in your terminal, as a program you started yourself. Close
+your SSH connection, and it stops.
+
+Your deployment works, but it has flaws. We will discuss these flaws and improve
+this deployment, one flaw at a time.
 
 ## :classical_building: Architecture
 
@@ -371,245 +477,194 @@ communication flow at the end of this exercise.
 
 Here's a few tips about some problems you may encounter during this exercise.
 
+### :boom: `destination path 'guessit-ex' already exists`
+
+`git clone` refuses to clone your new fork:
+
+```bash
+$> git clone git@github.com:YOUR_GITHUB_USERNAME/guessit-ex.git
+fatal: destination path 'guessit-ex' already exists and is not an empty directory.
+```
+
+You already have a `guessit-ex` directory where you are cloning, probably your
+clone of your group's repository, or of your previous fork. Git will not clone
+into a directory that already has files in it.
+
+Move the old clone out of the way by renaming it, then clone again:
+
+```bash
+$> mv guessit-ex guessit-ex-old
+
+$> git clone git@github.com:YOUR_GITHUB_USERNAME/guessit-ex.git
+```
+
+{% note type: tip %}
+
+Your old clone is still there, in `guessit-ex-old`, if you need anything from
+it.
+
+{% endnote %}
+
 ### :boom: Daemons using outdated libraries
 
-When you install a package with APT (e.g. MySQL), it _may_ prompt you to reboot and/or to restart outdated daemons (i.e. background services):
+When you install a package with APT (e.g. PostgreSQL), it _may_ prompt you to
+reboot and/or to restart outdated daemons (i.e. background services):
 
 ![Restart outdated daemons](images/apt-outdated-daemons.png)
 
 Simply select "Ok" by pressing the Tab key, then press Enter to confirm.
 
 {% callout type: more, id:unattended-upgrades %}
-This happens because most recent Linux versions have [unattended upgrades][linux-unattended-upgrades]: a tool that automatically installs daily security upgrades on your server without human intervention. Sometimes, some of the background services running on your server may need to be restarted for these upgrades to be applied.
 
-Since you are installing a new background service (the MySQL server) which must be started, APT asks whether you want to apply upgrades to other
-background services by restarting them. Rebooting your server would also have the effect of restarting these services and applying the security upgrades.
+This happens because most recent Linux versions have [unattended
+upgrades][linux-unattended-upgrades]: a tool that automatically installs daily
+security upgrades on your server without human intervention. Sometimes, some of
+the background services running on your server may need to be restarted for
+these upgrades to be applied.
+
+Since you are installing a new background service (the PostgreSQL server) which
+must be started, APT asks whether you want to apply upgrades to other background
+services by restarting them. Rebooting your server would also have the effect of
+restarting these services and applying the security upgrades.
+
 {% endcallout %}
 
-### :boom: `SET PASSWORD has no significance` error when running `mysql_secure_installation`
+### :boom: `Cannot find module`
 
-You may encounter this error when `mysql_secure_installation` prompts you to set the password for the MySQL `root` user:
+The application stops as soon as it starts, with an error like this one:
 
 ```bash
-$> sudo mysql_secure_installation
+$> npm run dev
 ...
-
-Please set the password for root here.
-
-New password:
-Re-enter new password:
-
-Estimated strength of the password: 50
-Do you wish to continue with the password provided?(Press y|Y for Yes, any other key for No) : y
- ... Failed! Error: SET PASSWORD has no significance for user 'root'@'localhost'
-      as the authentication method used doesn't store authentication data in the
-      MySQL server. Please consider using ALTER USER instead if you want to
-      change authentication parameters.
+Error: Cannot find module 'mustache'
+Require stack:
+- /home/jde/guessit/server.js
+...
+Failed running 'server.js'. Waiting for file changes before restarting...
 ```
 
-This is a bug that exists with the latest versions of `mysql_secure_installation` and recent Ubuntu installations (since July 2022). If you encounter this bug, `mysql_secure_installation` will be stuck in a loop. **Close your terminal window** and **connect to your server again** in another terminal.
+The `node_modules` directory on your server is missing, or incomplete. Either
+your copy did not have all the dependencies, or the upload did not finish. Run
+`npm ci` in your copy of the repository, on your computer, then upload its
+`node_modules` directory again.
 
-Connect to the MySQL server:
+### :boom: The leaderboard could not be loaded
+
+The home page says that the leaderboard could not be loaded from the database.
+Look at the terminal where the application runs, at the error below `Could not
+load the leaderboard`:
 
 ```bash
-$> sudo mysql
+Could not load the leaderboard: error: password authentication failed for user "guessit"
+...
 ```
 
-Your prompt should change to reflect the fact that you are connected to the MySQL server. You can then run the following query:
+Then find that error below.
 
-```
-mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
-```
+### :boom: `password authentication failed for user "guessit"`
 
-Then exit the MySQL server:
-
-```
-mysql> exit
-```
-
-You can now re-run the original command:
+The application cannot connect to PostgreSQL as the `guessit` user:
 
 ```bash
-$> sudo mysql_secure_installation
+Could not load the leaderboard: error: password authentication failed for user "guessit"
 ```
 
-Once it is done, you can reconfigure MySQL to use passwordless [socket authentication][mysql-socket-auth] (it will ask you for the MySQL `root` password you have just defined):
+The password in the `DATABASE_URL` at the top of `server.js` **on the server**
+is not the one in the `schema.sql` file you ran. Put the same password in both.
+
+If they are already the same, you may have run `schema.sql` more than once: see
+[`role "guessit" already exists`](#role-guessit-already-exists). Or you may not
+have run it at all: go back to [Initialize the
+database](#initialize-the-database).
+
+### :boom: `connect ECONNREFUSED`
+
+The application cannot reach PostgreSQL at all:
 
 ```bash
-$> sudo mysql -p
-
-mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH auth_socket;
-
-mysql> exit
+Could not load the leaderboard: Error: connect ECONNREFUSED 127.0.0.1:5432
 ```
 
-If socket authentication is correctly configured, you should now be able to connect as the MySQL `root` user **without a password** with `sudo`:
+Nothing listens on port 5432 of your server: PostgreSQL is not running. Check
+its status, and start it if it is stopped:
 
 ```bash
-$> sudo mysql
+$> sudo systemctl status postgresql
 
-mysql> exit
+$> sudo systemctl start postgresql
 ```
 
-<div id="unix-socket-authentication"></div>
+Also check that the `DATABASE_URL` in `server.js` on the server uses port
+`5432`, and not the port you may have used on your computer.
 
-{% callout type: more, id: passwordless-sql %}
-This does not mean that anyone can access MySQL without a password.
-You can do so because you are using `sudo` and have just configured MySQL to use [socket authentication][mysql-socket-auth] for its `root` user.
+### :boom: `role "guessit" already exists`
 
-There are two sets of users here:
-
-- Your server has a number of Unix users (defined in `/etc/passwd`), one of them being the Unix `root` user.
-- The MySQL database server has its own list of MySQL users independent of the system. There is also a MySQL user named `root` by default.
-
-By default, the `mysql` command will attempt to connect as the MySQL user with the same name as the Unix user running the command. You can also specify which user to connect as with the `-u` (**u**ser) option:
+`psql` prints these errors when you run `schema.sql` a second time:
 
 ```bash
-$> whoami
-jde
-
-$> mysql               # connect to MySQL as the MySQL "jde" user (because
-                        # that is the name of the Unix user running the command)
-
-$> mysql -u alice      # connect to MySQL as the MySQL "alice" user
-
-$> sudo mysql          # connect as the MySQL `root` user (since you temporarily
-                       # become the Unix "root" user when using "sudo")
-
-$> sudo mysql -u root  # equivalent to the previous command
+$> sudo -u postgres psql < schema.sql
+ERROR:  role "guessit" already exists
+ERROR:  database "guessit" already exists
+You are now connected to database "guessit" as user "postgres".
+ERROR:  relation "game" already exists
+ALTER TABLE
 ```
 
-The first two `mysql` commands will probably fail:
+The first run created the user, the database and the table. The second run
+changed nothing: the user still has the password of the first run, even if you
+have changed it in `schema.sql` since.
 
-```
-ERROR 1045 (28000): Access denied for user 'jde'@'localhost' (using password: NO)
-ERROR 1045 (28000): Access denied for user 'alice'@'localhost' (using password: NO)
-```
-
-This is because MySQL has no `jde` or `alice` users (unless you created them yourself). It may also be because you are trying to connect as a MySQL user who has a password. In this case, you should add the `-p` (**p**assword) option to have MySQL prompt you for the password when connecting (e.g. `mysql -u alice -p`).
-
-If you followed the instructions above, you have replaced password authentication for the MySQL `root` user with the [socket authentication method][mysql-socket-auth] which delegates authentication to the Unix system. With this method, MySQL will compare the username of the Unix user running the `mysql` command with the MySQL user you are trying to connect as. It will only allow the connection if both are the same. In this case, since you are the Unix `root` user when using `sudo`, the MySQL server will allow a connection as the MySQL `root` user (you will not have to enter a password).
-
-(Source of the solution: https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-22-04)
-{% endcallout %}
-
-### :boom: Access denied for user 'root'@'localhost' (using password: NO)
-
-If you see this error after running a `sudo mysql` command:
-
-```
-ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)
-```
-
-It means that your MySQL server is configured to require a password for the
-`root` user. You have two choices:
-
-- **Either** add the `-p` option to all `mysql` commands. It will then prompt
-  you for the MySQL `root` password (that you defined when running
-  `mysql_secure_installation`).
-- **Or**, configure MySQL to use [socket authentication][mysql-socket-auth] for
-  the `root` user (the following command will ask you for the MySQL `root`
-  password you defined when running `mysql_secure_installation`):
-
-  ```bash
-  $> sudo mysql -p
-
-  mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH auth_socket;
-
-  mysql> exit
-  ```
-
-  If socket authentication is correctly configured, you should now be able to
-  connect as the MySQL `root` user **without a password** with `sudo`:
-
-  ```bash
-  $> sudo mysql
-
-  mysql> exit
-  ```
-
-See the [explanations in the previous troubleshooting section for more information about socket authentication](#unix-socket-authentication).
-
-### :boom: Error when running `todolist.sql`
-
-An error may occur when you execute the SQL queries in the `todolist.sql` script. For example, MySQL may tell you the `todolist` user's password in the
-script is not strong enough, depending on the settings you selected when securing the MySQL installation.
-
-To start over from scratch, connect to the MySQL server as an administrator and type the following queries:
+Give the `guessit` user the password of your `DATABASE_URL` (replacing
+`my-new-password` with that password):
 
 ```bash
-$> sudo mysql
-
-> drop table todolist.todo;
-> drop user todolist@localhost;
-> drop database todolist;
+$> sudo -u postgres psql -c "ALTER USER guessit WITH PASSWORD 'my-new-password';"
+ALTER ROLE
 ```
 
-{% note type: tip %}
-Some of these commands may cause errors if the `todolist.sql` script could not execute entirely. For example, if the script could not create the
-`todolist` user and/or the `todo` table, the first `drop table todolist.todo;` query will fail with:
+### :boom: `role "jde" does not exist`
 
-`ERROR 1051 (42S02): Unknown table 'todolist.todo'`
+`psql` refuses to connect:
 
-That's fine. Running the three queries will make sure you have nothing left that may have been created by the `todolist.sql` script, so you can start over
-with a clean state.
-{% endnote %}
-
-Once you have dropped everything, you can resume the exercise from the [database initialization step](#initialize-the-database).
-
-### :boom: HTTP ERROR 500 error when trying to access the todolist in my browser
-
-If you get an HTTP 500 error (which means an [internal server error][http-500]), look at the PHP development server logs in the terminal where you are running
-the `php -S 0.0.0.0:3000` command. You will probably see something like this:
-
-```
-$> php -S 0.0.0.0:3000
-[Thu Oct 20 09:29:40 2022] PHP 8.1.2 Development Server (http://0.0.0.0:3000) started
-[Thu Oct 20 09:29:41 2022] 213.3.2.128:44496 Accepted
-[Thu Oct 20 09:29:41 2022] PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY000] [1045] Access denied for user 'todolist'@'localhost' (using password: YES) in /home/jde/todolist/index.php:17
-Stack trace:
-#0 /home/jde/todolist/index.php(17): PDO->__construct()
-#1 {main}
-  thrown in /home/jde/todolist/index.php on line 17
-[Thu Oct 20 09:29:41 2022] 213.3.2.128:44496 [500]: GET / - Uncaught PDOException: SQLSTATE[HY000] [1045] Access denied for user 'todolist'@'localhost' (using password: YES) in /home/jde/todolist/index.php:17
-Stack trace:
-#0 /home/jde/todolist/index.php(17): PDO->__construct()
-#1 {main}
-  thrown in /home/jde/todolist/index.php on line 17
-[Thu Oct 20 09:29:41 2022] 213.3.2.128:44496 Closing
-[Thu Oct 20 09:29:41 2022] 213.3.2.128:44495 Accepted
+```bash
+$> psql < schema.sql
+psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  role "jde" does not exist
 ```
 
-If you see this `Access denied for user 'todolist'@'localhost' (using password: YES)` in the logs, it means that MySQL is not allowing the PHP todolist to open
-a MySQL connection as the `todolist` user. The `using password: YES` part indicates that a password is sent, but it is incorrect.
+You ran `psql` as yourself. By default, `psql` connects as the PostgreSQL user
+with the same name as your Unix user, and PostgreSQL has no such user. Run it as
+the `postgres` user of your server, with `sudo -u postgres psql`.
 
-You may be using the wrong password. Make sure the `DB_PASS` constant at the top of the `index.php` file on the server contains the correct password. This must
-be the password that was in the `todolist.sql` file when you executed it.
+### :boom: `Peer authentication failed for user "postgres"`
 
-{% note type: tip %}
-If you do not remember the password, follow the troubleshooting instructions for an [error running `todolist.sql`](#error-when-running-todolistsql) to re-create the database, user and password.
-{% endnote %}
+`psql` refuses to connect:
 
-[12factor-config]: https://12factor.net/config
-[apache]: https://www.apache.org
+```bash
+$> psql -U postgres < schema.sql
+psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  Peer authentication failed for user "postgres"
+```
+
+On Ubuntu, the PostgreSQL superuser, `postgres`, can only connect from the
+`postgres` user of your server. Use `sudo -u postgres psql`, not
+`psql -U postgres`.
+
 [apt]: https://en.wikipedia.org/wiki/APT_(software)
+[clone-exists]: #destination-path-guessit-ex-already-exists
 [cyberduck]: https://cyberduck.io
-[filezilla]: https://filezilla-project.org
-[http-500]: https://www.webfx.com/web-development/glossary/http-status-codes/what-is-a-500-status-code/
+[ex-repo]: https://github.com/ArchiDep/guessit-ex
+
+[guessit]: {% link chapters/205-guessit/exercise.md %}
+[hello-ssh-sftp]: {% link chapters/104-hello-ssh/exercise.md %}#copy-files-with-an-sftp-application
+[hello-ssh-winscp]: {% link chapters/104-hello-ssh/exercise.md %}#give-your-key-to-winscp-windows-only
 [linux-unattended-upgrades]: https://wiki.debian.org/UnattendedUpgrades
-[mysql]: https://www.mysql.com
-[mysql-socket-auth]: https://dev.mysql.com/doc/refman/8.0/en/socket-pluggable-authentication.html
-[nginx]: https://www.nginx.com
+[loopback]: https://en.wikipedia.org/wiki/Loopback#Virtual_loopback_interface
+[node]: https://nodejs.org
+[node-install]: https://nodesource.com/products/distributions
 [package-manager]: https://en.wikipedia.org/wiki/Package_manager
-[php]: https://www.php.net
-[php-dev-server]: https://www.php.net/manual/en/features.commandline.webserver.php
-[php-fpm]: https://www.php.net/manual/en/install.fpm.php
-[php-mysql]: https://www.php.net/manual/en/set.mysqlinfo.php
-[php-todolist]: https://github.com/ArchiDep/php-todo-ex
-[reverse-proxy]: https://en.wikipedia.org/wiki/Reverse_proxy
+[postgres]: https://www.postgresql.org
+[security]: {% link chapters/301-security/subject.md %}
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
 
 [sysadmin-cheatsheet-apt]: {% link cheatsheets/sysadmin/cheatsheet.md %}#installing--upgrading
-[unix-input-stream]: https://en.wikipedia.org/wiki/Standard_streams#Standard_input_(stdin)
-[unix-redirection]: https://www.guru99.com/linux-redirection.html
-[web-server]: https://en.wikipedia.org/wiki/Web_server
+[unix-redirection]: {% link chapters/408-unix-processes/subject.md %}#stream-redirection
+[winscp]: https://winscp.net

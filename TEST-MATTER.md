@@ -416,7 +416,7 @@ You must know how to deploy a PHP web application on a cloud platform with the
 Infrastructure-as-a-Service (IaaS) service model, which you put in practice
 during the following exercises:
 
-- [Deploy a PHP application with SFTP](https://archidep.ch/course/410-sftp-deployment/)
+- [Deploy a web application with SFTP](https://archidep.ch/course/410-sftp-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/410-sftp-deployment/#classical_building-architecture)
 - [Deploy a PHP application with Git](https://archidep.ch/course/501-git-clone-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/501-git-clone-deployment/#classical_building-architecture)

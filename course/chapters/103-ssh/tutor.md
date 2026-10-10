@@ -98,5 +98,5 @@ that exercises lean on in particular:
 - Hello GitHub checks a fingerprint against the ones GitHub publishes.
 - "Run your own virtual server on Microsoft Azure" gives the public key to a
   server at its creation, which then accepts no password.
-- "Deploy a PHP application with SFTP" uses an SFTP application with the
-  private key.
+- "Deploy a web application with SFTP" uses an SFTP application with the private
+  key.

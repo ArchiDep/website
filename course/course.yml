@@ -42,9 +42,8 @@ sections:
       groups and permissions, `sudo`, processes and signals, standard streams,
       redirection and pipelines, and basic networking (IP addresses, ports, TCP,
       and an HTTP request typed by hand). It ends with a first, deliberately
-      naive deployment of a PHP application uploaded with SFTP and run with
-      PHP's development server, and a list of its flaws that the next sections
-      fix. Linux internals, such as the kernel or scheduling, are out of scope.
+      naive deployment of a Node.js application uploaded with SFTP and run in
+      development mode, and a list of its flaws that the next sections fix. Linux internals, such as the kernel or scheduling, are out of scope.
   - title: Advanced Deployment
     description: >-
       Fixing the flaws of the basic deployment one by one, on the student's own

@@ -47,8 +47,8 @@ on is what students trip over in all of them. In particular:
 - "Run your own virtual server on Microsoft Azure": the public key is given to
   the server when it is created, and the server accepts no password, which
   answers "Is your password gone?". Its fingerprints are checked another way.
-- "Deploy a PHP application with SFTP": the SFTP application and the private
-  key again, on the student's own server.
+- "Deploy a web application with SFTP": the SFTP application and the private key
+  again, on the student's own server.
 
 ## Key steps
 

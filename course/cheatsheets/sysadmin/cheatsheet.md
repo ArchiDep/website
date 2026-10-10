@@ -236,7 +236,7 @@ managed by systemd.
 
 ### How do I find and kill a naughty process? (`ps`, `kill`)
 
-You might need this if you lost your SSH connection after you launched a process which listens on a port, e.g. 3000. If the process still runs, the port is no longer available. This could happen, for example, in the ["Deploy a PHP application with SFTP" exercise][sftp-deploy-ex].
+You might need this if you lost your SSH connection after you launched a process which listens on a port, e.g. 3000. If the process still runs, the port is no longer available. This could happen, for example, in the ["Deploy a web application with SFTP" exercise][sftp-deploy-ex].
 
 Find the process with `ps` and `grep`:
 
