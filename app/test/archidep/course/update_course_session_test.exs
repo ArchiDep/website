@@ -41,7 +41,7 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
   test "correct a session of the course", %{update_course_session: update_course_session} do
     broadcasts = subscribe_course_session_broadcasts()
 
-    recorded = CourseFactory.insert(:course_session, version: 1)
+    recorded = CourseFactory.insert(:course_session, version: 1, now: @now)
     data = CourseFactory.build(:course_session_data)
     auth = Factory.build(:authentication, root: true)
 
@@ -68,7 +68,13 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
     # unchecking the last box of a category has to empty it rather than leave
     # what was there.
     recorded =
-      CourseFactory.insert(:course_session, done: [100, 101], due: [102], next: [103], version: 1)
+      CourseFactory.insert(:course_session,
+        done: [100, 101],
+        due: [102],
+        next: [103],
+        version: 1,
+        now: @now
+      )
 
     data = %{
       date: recorded.date,
@@ -96,7 +102,7 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
   } do
     broadcasts = subscribe_course_session_broadcasts()
 
-    recorded = CourseFactory.insert(:course_session, version: 1)
+    recorded = CourseFactory.insert(:course_session, version: 1, now: @now)
     data = CourseFactory.build(:course_session_data)
     auth = Factory.build(:authentication, root: true)
 
@@ -113,7 +119,7 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
   } do
     broadcasts = subscribe_course_session_broadcasts()
 
-    recorded = CourseFactory.insert(:course_session, version: 1)
+    recorded = CourseFactory.insert(:course_session, version: 1, now: @now)
     data = CourseFactory.build(:course_session_data)
     auth = Factory.build(:authentication, root: false)
 
@@ -129,7 +135,7 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
   } do
     broadcasts = subscribe_course_session_broadcasts()
 
-    recorded = CourseFactory.insert(:course_session, version: 1)
+    recorded = CourseFactory.insert(:course_session, version: 1, now: @now)
     data = CourseFactory.build(:course_session_data, title: "")
     auth = Factory.build(:authentication, root: true)
 
@@ -146,7 +152,7 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
   } do
     broadcasts = subscribe_course_session_broadcasts()
 
-    recorded = CourseFactory.insert(:course_session, version: 1)
+    recorded = CourseFactory.insert(:course_session, version: 1, now: @now)
     data = CourseFactory.build(:course_session_data)
     auth = Factory.build(:authentication, root: true)
 
@@ -165,7 +171,7 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
   } do
     broadcasts = subscribe_course_session_broadcasts()
 
-    recorded = CourseFactory.insert(:course_session, version: 1)
+    recorded = CourseFactory.insert(:course_session, version: 1, now: @now)
     data = CourseFactory.build(:course_session_data, title: "")
     auth = Factory.build(:authentication, root: true)
 
@@ -184,7 +190,7 @@ defmodule ArchiDep.Course.UpdateCourseSessionTest do
   } do
     broadcasts = subscribe_course_session_broadcasts()
 
-    recorded = CourseFactory.insert(:course_session, version: 1)
+    recorded = CourseFactory.insert(:course_session, version: 1, now: @now)
     data = CourseFactory.build(:course_session_data)
     auth = Factory.build(:authentication, root: false)
 
