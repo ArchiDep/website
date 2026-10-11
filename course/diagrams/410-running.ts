@@ -73,8 +73,8 @@ export default diagram({
     ),
     step('You open a browser on your computer.', show('node-browser')),
     step(
-      'You type your server’s address and port into it. It connects to port ' +
-        '3000, where Guess It is listening.',
+      'You type your server’s public IP address and port into it. It ' +
+        'connects to port 3000, where Guess It is listening.',
       typedInto('node-browser', URL),
       connect(HTTP, { after: typing(URL).enter + 0.2 })
     ),

@@ -532,8 +532,10 @@ Along the way, you:
 
 Deploying an application means putting it on a computer where its users can
 reach it, and running it there. Here, that took the same steps as on your own
-computer: install what the application needs, create its database, configure
-it, and start it. Only the computer has changed.
+computer: install what the application needs, create its database, configure it,
+and start it. Only the computer has changed. On an IaaS cloud like Azure, that
+computer is all the provider gives you: as the administrator, installing what
+the application needs is your job.
 
 For Guess It, the files are the program. Node.js reads the JavaScript files as
 they are, so copying them to the server is enough, as long as Node.js is
@@ -544,7 +546,9 @@ server.
 PostgreSQL and Guess It are two separate programs, running side by side on your
 server. Each is a server of its own, listening on its own port: 5432 for
 PostgreSQL, 3000 for Guess It. Guess It is a client of PostgreSQL, and your
-browser a client of Guess It.
+browser a client of Guess It. Your browser connects as Alice's `nc` did to Bob's
+in the [TCP exercise][tcp], on the same port 3000, then sends an HTTP request,
+the same way you typed one to Google.
 
 A program chooses which of the computer's addresses it listens on. PostgreSQL
 only listens on the loopback address, so it cannot be reached from the Internet,
@@ -784,6 +788,7 @@ On Ubuntu, the PostgreSQL superuser, `postgres`, can only connect from the
 [postgres]: https://www.postgresql.org
 [security]: {% link chapters/301-security/subject.md %}
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
+[tcp]: {% link chapters/407-tcp/exercise.md %}
 
 [sysadmin-cheatsheet-apt]: {% link cheatsheets/sysadmin/cheatsheet.md %}#installing--upgrading
 [unix-pipe]: {% link chapters/408-unix-processes/subject.md %}#pipelines
