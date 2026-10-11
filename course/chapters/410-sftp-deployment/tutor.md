@@ -108,9 +108,11 @@ flaws:
   public IP address, port 3000, with an empty leaderboard and no warning that
   it could not be loaded.
 - **"Optional: see who listens where".** `ss -tln` shows PostgreSQL on
-  `127.0.0.1:5432` and `[::1]:5432`, and Guess It on `*:3000`. That is why a
-  browser reaches Guess It but not PostgreSQL. Sample question: why can your
-  browser reach Guess It but not PostgreSQL?
+  `127.0.0.1:5432` and `[::1]:5432`, and Guess It on `*:3000`. That is one
+  reason a browser reaches Guess It but not PostgreSQL. The other is the Azure
+  firewall: the student opened port 3000 in 404, not 5432. Either alone would
+  block PostgreSQL from the Internet. Sample question: why can your browser
+  reach Guess It but not PostgreSQL?
 
 ## Common pitfalls
 
