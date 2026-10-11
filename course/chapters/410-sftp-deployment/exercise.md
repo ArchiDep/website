@@ -343,6 +343,7 @@ your terminal. If your terminal is still connected to your server through SSH,
 list the uploaded directory (connect first if necessary):
 
 ```bash
+# Make sure you're still connected to your server
 $> hostname
 jde.archidep.ch
 

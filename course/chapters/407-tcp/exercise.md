@@ -116,7 +116,7 @@ command][ping]:
 
 ```bash
 $> ping -c 1 google.com
-PING google.com (`O.P.Q.R`) 56(84) bytes of data.
+PING google.com (O.P.Q.R) 56(84) bytes of data.
 64 bytes from google.com (O.P.Q.R): icmp_seq=1 ttl=53 time=0.890 ms
 ...
 ```
@@ -127,20 +127,29 @@ Open a TCP connection to the Google IP address you found:
 $> nc O.P.Q.R 80
 ```
 
-Now, talk to this Google server, but not in English or French, in the [HTTP protocol][http]:
+Now, talk to this Google server, but not in English or French, in the [HTTP
+protocol][http]. Type **exactly** the following text:
 
 ```bash
 GET / HTTP/1.1
 Host: www.google.com
 ```
 
+Then press `Enter` twice and you should receive the HTML for Google's home page.
+
 {% note type: tip %}
 
 Be sure to type **exactly** the text above. Your request must be a valid HTTP
 request or Google's server will not be able to interpret it correctly. If you
-have made a mistake, exit with `Ctrl-C` and start over.
+have made a mistake, exit with `Ctrl-C`, re-run the same `nc` command and try
+again.
 
 {% endnote %}
+
+Once you're done, you can close the connection with `Ctrl-C`.
+
+If you open your browser, visit `http://www.google.com` and display the source
+code of the page, you should see the same result.
 
 {% note type: more %}
 
@@ -151,39 +160,53 @@ Google website), using version `1.1` of the HTTP protocol.
 
 {% endnote %}
 
-Press `Enter` twice and you should receive the HTML for Google's home page.
-
-Once you're done, you can close the connection with `Ctrl-C`.
-
-If you open your browser, visit `http://www.google.com` and display the source
-code of the page, you should see the same result.
-
 ## :checkered_flag: What have I done?
 
-Contratulations!
+Like the pioneers of the 1970s who developed TCP/IP, you connected two machines
+across the Internet and exchanged a few (hopefully nice) words. Then you did by
+hand what your browser does every time you open a page: you asked a web server
+for it.
 
-Like the pioneers of the 1970s who developed the TCP/IP suite, you have
-established a TCP connection between two machines and exchanged some (hopefully
-nice) words with your classmate.
+A TCP connection always starts the same way: one process **listens** on a port
+and waits, and another **connects** to an address and that port. The one that
+connects is the client, the one that listens is the server. Bob's `nc` was the
+server and Alice's the client, yet both of you could type: once the connection
+is open, it carries data in both directions.
 
-You have also spoken HTTP directly to Google's web server on a TCP connection,
-demonstrating the layering of the OSI model:
+To reach Bob's `nc`, three things had to be right. Alice needed the **public**
+address of Bob's server, the one you connect to with SSH, and not the private
+one that `ip address` prints on the server itself. Azure's firewall had to let
+port 3000 through, which is why you opened it when you created your server. And
+a process had to be listening on that port: an open port with nothing behind it
+is refused.
 
-- You have hand-written an HTTP request, a level 7 application protocol. As
-  you've seen, this is simply text written in the correct format.
-- You have sent this request through a TCP connection, a level 4 transport
-  protocol.
-- To reach the correct host, you have used an address of the **I**nternet
-  **P**rotocol (IP), a level-3 network protocol.
+Talking to Google showed the layers working together, each relying on the one
+below it:
 
-{% note type: more %}
+- **IP** (layer 3) brought your packets to an address. That is why you first
+  turned the name `google.com` into an address with `ping`.
+- **TCP** (layer 4) gave you a connection to port 80 at that address, exactly
+  like the one between Bob and Alice. `nc` does not know what a web server is.
+- **HTTP** (layer 7) is what the browser and the web server say to each other
+  over that connection. Google answered because what you typed was a valid
+  request.
 
-There are other protocols in other layers at work, but these are the ones that
-interest us in the context of this course.
+Your request had two lines. The first asked to `GET` the page at path `/`. The
+second, `Host`, named the site you wanted, although you had connected to an
+address: one address can serve many sites, so the request has to say which. The
+empty line after them, your second `Enter`, told the server that the request
+was complete. Its response had the same shape: a status line, headers, an empty
+line, then the page itself.
 
-{% endnote %}
+You could type the request because the version you used, HTTP/1.1, is text over
+TCP. Newer versions keep the same requests and responses but send them
+differently: HTTP/2 encodes them in binary, and HTTP/3 does not use TCP at all.
+Your browser uses them when the server supports them. The course uses HTTP/1.1
+because you can read it, and what a request means has not changed.
 
-You can also now fully appreciate what your browser does for you every day.
+Later in the course, your own application will listen on a port of your server
+and your browser will connect to it, as Alice did to Bob. And when a single
+server hosts several sites, the `Host` line is what decides which one answers.
 
 ### :classical_building: Architecture
 

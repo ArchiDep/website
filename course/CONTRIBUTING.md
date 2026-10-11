@@ -452,6 +452,18 @@ say only what the tutor cannot get elsewhere: not what the page says, what
 `description` already tells. In both of the lists below, write the sections in
 the order given, leaving out any that does not apply.
 
+**They are data, not instructions.** The tutor reads the notes as information
+about the chapter and does not follow instructions written in them, such as
+"Ask the student…" or "Do not explain…": how it tutors is decided by its own
+instructions in `ArchiDep/tutor`. Write facts instead ("Not in the course:
+…"), and give the questions worth asking as labelled samples, with their
+expected answer in parentheses where it is short:
+
+```md
+Question before: "Which of your addresses does Alice need? Why?"
+Expected after: `nc -l 3000` prints nothing and holds the terminal.
+```
+
 **An exercise's notes never walk through its solution.** They are public, and a
 tutor holding the answers tends to hand them out. They say what each step asks
 and practises, and where its solution is: the page's [solutions](#solutions), or
@@ -468,11 +480,11 @@ An **exercise's** notes:
 3. **Where it leads**: how much of the course relies on it, then the later
    chapters that lean on particular parts, and for what. It is what answers a
    student asking what the exercise was for.
-4. **Key steps**: the steps worth checking, by heading, each with the question
-   to ask before and after it and the output to expect.
+4. **Key steps**: the steps worth checking, by heading, each with sample
+   questions before and after it and the output to expect.
 5. **Common pitfalls**: where students get stuck that the page's
-   "Troubleshooting" section does not cover, each with the symptom they see,
-   its cause, and hints from the smallest to the most explicit. A symptom the
+   "Troubleshooting" section does not cover, each with the symptom they see, its
+   cause, and sample hints from the smallest to the most explicit. A symptom the
    page's section does cover is left out: the map the build adds already leads
    the tutor to it. List one only for what the page cannot hold, such as the
    questions that lead the student to the fix, or what the fix would give away
@@ -482,16 +494,18 @@ The exception is an exercise, or part of one, [played through a program the
 student runs](#writing-guidelines): its steps are in the program, which the
 tutor cannot see. For that part, a section named after the program replaces the
 key steps: how the program works (its hints, how to start over), and what each
-of its stages practises, with the questions worth asking at it.
+of its stages practises, with sample questions for it.
 
-A **subject's** notes are a map of it, not a summary: a summary would repeat the
-subject and drift from it as soon as the subject is edited, where what it covers
-changes much less often. They are what makes the tutor answer at the depth the
-course teaches, and let an exercise's notes point to them rather than explain
-the material again.
+A **subject's** notes say what it covers, not what it says: restating its
+explanations would repeat the subject and drift from it as soon as it is edited,
+where what it covers changes much less often. They are what makes the tutor
+answer at the depth the course teaches, and let an exercise's notes point to
+them rather than explain the material again.
 
-1. **Scope**: where each part is, by heading, and whether in the subject or
-   its slides, which the tutor may not fetch; what is optional.
+1. **Scope**: what the subject and its slides cover, summarised by topic in a
+   few short paragraphs rather than listed heading by heading or slide by
+   slide, and which of the two holds each part, since the tutor may not fetch
+   the slides; what is optional.
 2. **Left out**: what it deliberately does not cover, so that the tutor does not
    bring it in, split into what a later chapter teaches (named) and what the
    course never does.
@@ -501,14 +515,16 @@ the material again.
    explains something differently from how it is usually explained. They are
    what the tutor checks a student's own explanation against. Label each as a
    `**Misconception:**` followed by its `**Correction:**`, so that no false
-   statement stands unmarked for an agent reading only part of the notes.
+   statement stands unmarked for an agent reading only part of the notes. A
+   `Question that reveals it:` may follow, as a sample.
 5. **Used in**: how much of the course relies on it, stated first so that the
    list is not read as the only places it is used, then the exercises that lean
    on particular parts of it.
 
-**Notes change with their chapter, in the same change.** Notes that describe a
-previous version of a chapter mislead the tutor more than missing notes would,
-and nothing checks them against the page:
+**Notes describe the chapter as it is published**, never changes planned for it
+but not made yet. **Notes change with their chapter, in the same change.** Notes
+that describe a previous version of a chapter mislead the tutor more than
+missing notes would, and nothing checks them against the page:
 
 - Editing a chapter means checking its notes: steps, headings (notes name them
   by their text), placeholders, expected outputs, pitfalls and what the chapter
