@@ -47,6 +47,14 @@ fill: #fff;
 fill-rule: evenodd;
 stroke: none;
 }
+/* Waiting for an answer: a still clock, where the cog turns while working. */
+svg.diagram .process .clock :is(circle, path) {
+fill: none;
+stroke: #fff;
+stroke-width: 1.5;
+stroke-linecap: round;
+stroke-linejoin: round;
+}
 /* Travelling data exists only while it travels. */
 svg.diagram .overlay:not(.visible) {
 display: none;
@@ -55,6 +63,15 @@ display: none;
 drawn, such as a command that has finished by the end of the story. */
 svg.diagram .transient:not(.visible) {
 display: none;
+}
+/* A detail: shown while the diagram is explained, in a page stepping through it
+or in a deck, but left out of the fully drawn diagram, at rest and in print,
+since students are not expected to draw it. */
+svg.diagram .detail {
+display: none;
+}
+.diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .detail {
+display: inline;
 }
 /* A short-lived process, and the control edge that started it, only while
 their step is the current one. */
@@ -234,6 +251,9 @@ animation-duration: 2.7s;
 svg.diagram .packet.heavy.visible .leg.visible {
 animation-duration: 4.8s;
 }
+svg.diagram .packet.heavy.whole.visible .leg:not(.visible) {
+animation-duration: 6s;
+}
 /* A short-lived process works once started, then exits after a moment to
 read it: its box and its edge fade out. No transition into its step:
 Firefox would hold the box at the start of the transition, transparent,
@@ -261,6 +281,10 @@ svg.diagram .edge.passing.current-fragment {
 animation:
 diagram-fade-in 0.4s ease-out var(--delay, 0s) both,
 diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+/* A process starts waiting as its request sets off. */
+svg.diagram .clock.visible {
+animation: diagram-fade-in 0.4s ease-out 0.2s both;
 }
 /* Shown once the data that brings it has arrived. */
 svg.diagram .arrives.visible {
@@ -573,5 +597,5 @@ break-inside: avoid;
 </g>
 <g class="overlay packet fragment whole" data-fragment-index="9"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 0%; --to: 100%"><path d="M-15,-12 H5 L15,0 L5,12 H-15 Z"/><text x="-5" y="5">l</text></g></g><g class="overlay packet fragment whole" data-fragment-index="10"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 0%; --to: 100%"><path d="M-15,-12 H5 L15,0 L5,12 H-15 Z"/><text x="-5" y="5">s</text></g></g><g class="overlay packet fragment whole" data-fragment-index="11"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 0%; --to: 100%"><path d="M-15,-12 H5 L15,0 L5,12 H-15 Z"/><text x="-5" y="5">⏎</text></g></g><g class="overlay packet fragment whole" data-fragment-index="13"><g class="leg" style="offset-path: path('M490,209 H560 C640,209 640,209 760,209'); --from: 100%; --to: 0%"><path d="M-35,-12 H25 L35,0 L25,12 H-35 Z" transform="scale(-1,1)"/><text x="5" y="5">output</text></g></g></svg>
 </div>
-<template class="diagram-captions"><p data-caption="rest">Your terminal’s shell started the SSH client, which is connected to <code>example.com</code> on port 22. There, the SSH session started a shell, which runs your commands on the server.</p><p data-caption="0">Your computer.</p><p data-caption="1">You open a terminal, which starts a shell: Bash or Zsh.</p><p data-caption="2">You run a command, <code>ls</code> or any other: the shell starts it, and it runs on your computer.</p><p data-caption="3"><code>ls</code> works: it lists the files of the current directory, and prints them to your terminal.</p><p data-caption="4">It has finished, and exits.</p><p data-caption="5">Across the Internet, a server runs an SSH server, waiting for connections on port 22.</p><p data-caption="6">You run <code>ssh jde@example.com</code>: your shell starts the SSH client, which connects to port 22 on <code>example.com</code>.</p><p data-caption="7">The SSH server accepts the connection, and starts a new SSH session to take care of it.</p><p data-caption="8">It hands the connection over to the session, then goes back to waiting for the next one.</p><p data-caption="9">The session starts a shell on the server.</p><p data-caption="10">You type <code>l</code>. Your terminal hands it to the SSH client, which sends it over the connection at once, encrypted. On the server, the session hands it to the shell.</p><p data-caption="11">You type <code>s</code>: it travels the same way.</p><p data-caption="12">You press Enter, which travels too. Once it has arrived, the server’s shell runs <code>ls</code>, on the server.</p><p data-caption="13"><code>ls</code> works, on the server: it lists the files of the current directory there.</p><p data-caption="14">Its output travels back over the connection, against the arrow, and your terminal displays it.</p></template>
+<template class="diagram-captions"><p data-caption="rest">Your terminal’s shell started the SSH client, which is connected to <code>example.com</code> on port 22. There, the SSH session started a shell, which runs your commands on the server.</p><p data-caption="0">Your computer.</p><p data-caption="1">You open a terminal, which starts a shell: Bash or Zsh.</p><p data-caption="2">You run a command, <code>ls</code> or any other: the shell starts it, and it runs on your computer.</p><p data-caption="3"><code>ls</code> works: it lists the files of the current directory, and prints them to your terminal.</p><p data-caption="4">It has finished, and exits.</p><p data-caption="5">Across the Internet, a server runs an SSH server, waiting for connections on port 22.</p><p data-caption="6">You run <code>ssh jde@example.com</code>: your shell starts the SSH client, which connects to port 22 on <code>example.com</code>.</p><p data-caption="7">The SSH server accepts the connection, and starts a new SSH session to take care of it.</p><p data-caption="8">It hands the connection over to the session, then goes back to waiting for the next one.</p><p data-caption="9">The session starts a shell on the server.</p><p data-caption="10">You type <code>l</code>. Your terminal hands it to the SSH client, which sends it over the connection at once, encrypted. On the server, the session hands it to the shell.</p><p data-caption="11">You type <code>s</code>: it travels the same way.</p><p data-caption="12">You press Enter, which travels too. Once it has arrived, the server’s shell runs <code>ls</code>, on the server.</p><p data-caption="13"><code>ls</code> works, on the server: it lists the files of the current directory there.</p><p data-caption="14">Its output travels back over the connection, and your terminal displays it.</p></template>
 </div>

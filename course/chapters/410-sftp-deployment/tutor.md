@@ -35,15 +35,27 @@ the password put in `schema.sql` and `server.js`, and how the application stops.
 Whether students commit the password, and whether they find out how to stop the
 application, is used later in the course.
 
+Three architecture diagrams follow the exercise's parts, each stepped through
+with captions: "What's running so far?" after the installation, "How did the
+files get there?" after the upload, and "Architecture" at the end. The only
+processes students are expected to be able to draw are three from the last one:
+the browser, Guess It and PostgreSQL. Nothing SSH-related is expected: the SSH
+processes are folded into two stacks, since 103 explained them.
+
 Not in the exercise: how NodeSource's script configures APT, PostgreSQL's
 authentication configuration, and percent-encoding passwords in a URL, which
-the random hexadecimal password avoids.
+the random hexadecimal password avoids. Unix sockets appear only in a "more"
+callout and while stepping through the diagrams, which leave PostgreSQL's out
+when fully drawn: students are not expected to draw or explain them.
 
 ## Where it leads
 
 Every later deployment chapter starts from this deployment and fixes one of its
 flaws:
 
+- "How a computer works" ends on this deployment's processes: students draw
+  them, then its architecture diagram is stepped through to say which program
+  runs where, and in which memory.
 - "How to improve our basic deployment" lists the flaws of this deployment,
   development mode and the upload of `node_modules` among them.
 - "Deploy a PHP application with Git" replaces the SFTP upload, and installs the
@@ -55,7 +67,7 @@ flaws:
 
 ## Key steps
 
-- **"Make sure your Guess It is up to date".** Which path applies depends on
+- **"Make sure you have your own up-to-date Guess It fork".** Which path applies depends on
   whose GitHub account owns the fork the student has. Afterwards: a fork under
   the student's own account, with the fixed queries, cloned on their computer.
   The fixed version is deployed because the application will be reachable from
@@ -67,18 +79,34 @@ flaws:
 - **"Install Node.js".** Afterwards: `node -v` prints `v26.x.y`. An older
   version is Ubuntu's own `nodejs` package, installed when a NodeSource command
   was skipped or failed.
-- **"Upload the application".** Afterwards: `ls ~/guessit` on the server shows
+- **"What's running so far?"**. Installing PostgreSQL started it; installing
+  Node.js only put files on the disk, and `node -v` ran and exited. What
+  started PostgreSQL is left open on purpose, for "Manage a PHP application
+  with systemd as a Process Manager": do not explain it.
+- **"Update the configuration".** Done in the copy on the student's computer,
+  before the upload, so that the files are deployed as they are. Afterwards: the
+  password in `DATABASE_URL` is the one in `schema.sql`, and the port is 5432.
+  Editing `server.js` on the server is only for fixing a mistake afterwards.
+- **"Upload the application".** Afterwards: `ls ~/guessit-ex` on the server shows
   `server.js`, `schema.sql` and `node_modules`. Node.js needs the JavaScript
   files and `node_modules`; nothing is built. Sample question: which files does
   Node.js need to run the application?
+- **"Optional: check that the files have arrived".** Checks the upload from the
+  terminal: the directory's contents, the `DATABASE_URL` in `server.js`, and the
+  number of packages in `node_modules`, the same on the server as on the
+  computer. A smaller number on the server means the upload was interrupted.
+- **"How did the files get there?"**. The SFTP application opens a second SSH
+  connection to port 22, handed to a session of its own that starts an SFTP
+  server rather than a shell, while the terminal's connection stays open.
+  Sample question: how many SSH connections to your server were open during
+  the upload?
 - **"Initialize the database".** The shell reads `schema.sql`, and `psql` runs
   as the `postgres` user. The output is `CREATE ROLE`, `CREATE DATABASE`, a
   `You are now connected` line, `CREATE TABLE` and `ALTER TABLE`. Sample
   question: who runs `psql`, and who reads `schema.sql`?
-- **"Update the configuration".** Afterwards: the password in `DATABASE_URL` on
-  the server is the one in the uploaded `schema.sql`, and the port is 5432.
 - **"Run the application".** Afterwards: the home page loads at the server's
-  public IP address, port 3000, with an empty leaderboard.
+  public IP address, port 3000, with an empty leaderboard and no warning that
+  it could not be loaded.
 - **"Optional: see who listens where".** `ss -tln` shows PostgreSQL on
   `127.0.0.1:5432` and `[::1]:5432`, and Guess It on `*:3000`. That is why a
   browser reaches Guess It but not PostgreSQL. Sample question: why can your

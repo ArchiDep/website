@@ -106,8 +106,8 @@ export default diagram({
       pulse('node-remote-command')
     ),
     step(
-      'Its output travels back over the connection, against the arrow, and ' +
-        'your terminal displays it.',
+      'Its output travels back over the connection, and your terminal ' +
+        'displays it.',
       data(CONNECTION, 'output', { reverse: true }).whole()
     )
   ]

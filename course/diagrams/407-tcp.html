@@ -47,6 +47,14 @@ fill: #fff;
 fill-rule: evenodd;
 stroke: none;
 }
+/* Waiting for an answer: a still clock, where the cog turns while working. */
+svg.diagram .process .clock :is(circle, path) {
+fill: none;
+stroke: #fff;
+stroke-width: 1.5;
+stroke-linecap: round;
+stroke-linejoin: round;
+}
 /* Travelling data exists only while it travels. */
 svg.diagram .overlay:not(.visible) {
 display: none;
@@ -55,6 +63,15 @@ display: none;
 drawn, such as a command that has finished by the end of the story. */
 svg.diagram .transient:not(.visible) {
 display: none;
+}
+/* A detail: shown while the diagram is explained, in a page stepping through it
+or in a deck, but left out of the fully drawn diagram, at rest and in print,
+since students are not expected to draw it. */
+svg.diagram .detail {
+display: none;
+}
+.diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .detail {
+display: inline;
 }
 /* A short-lived process, and the control edge that started it, only while
 their step is the current one. */
@@ -234,6 +251,9 @@ animation-duration: 2.7s;
 svg.diagram .packet.heavy.visible .leg.visible {
 animation-duration: 4.8s;
 }
+svg.diagram .packet.heavy.whole.visible .leg:not(.visible) {
+animation-duration: 6s;
+}
 /* A short-lived process works once started, then exits after a moment to
 read it: its box and its edge fade out. No transition into its step:
 Firefox would hold the box at the start of the transition, transparent,
@@ -261,6 +281,10 @@ svg.diagram .edge.passing.current-fragment {
 animation:
 diagram-fade-in 0.4s ease-out var(--delay, 0s) both,
 diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+/* A process starts waiting as its request sets off. */
+svg.diagram .clock.visible {
+animation: diagram-fade-in 0.4s ease-out 0.2s both;
 }
 /* Shown once the data that brings it has arrived. */
 svg.diagram .arrives.visible {
@@ -529,5 +553,5 @@ break-inside: avoid;
 </g>
 <g class="overlay packet fragment" data-fragment-index="2"><g class="leg fragment" style="offset-path: path('M357,154 H727'); --from: 100%; --to: 0%" data-fragment-index="3"><path d="M-31,-12 H21 L31,0 L21,12 H-31 Z" transform="scale(-1,1)"/><text x="5" y="5">Hello</text></g></g><g class="overlay packet fragment" data-fragment-index="4"><g class="leg fragment" style="offset-path: path('M357,154 H727'); --from: 0%; --to: 100%" data-fragment-index="5"><path d="M-31,-12 H21 L31,0 L21,12 H-31 Z"/><text x="-5" y="5">World</text></g></g></svg>
 </div>
-<template class="diagram-captions"><p data-caption="rest">Alice’s netcat is connected to Bob’s, which listens on port 3000. The arrow shows who opened the connection: Alice.</p><p data-caption="0">Two servers, separated by the Internet. Alice and Bob are each connected to their server over SSH, as in the first session; the diagram leaves that out to focus on the connection between the two netcats.</p><p data-caption="1">Bob runs <code>nc -l 3000</code>. His netcat starts and listens on port 3000, waiting for a connection.</p><p data-caption="2">Alice runs <code>nc W.X.Y.Z 3000</code>. Her netcat connects to port 3000 on Bob’s server. The arrow starts from the one who connected.</p><p data-caption="3">Bob types <code>Hello</code> and presses Enter. His netcat sends it over the connection…</p><p data-caption="4">…and Alice’s netcat prints it in her terminal. The data travelled against the arrow: once connected, either side can send.</p><p data-caption="5">Alice types <code>World</code> and presses Enter…</p><p data-caption="6">…and Bob’s netcat prints it. One connection, data in both directions.</p></template>
+<template class="diagram-captions"><p data-caption="rest">Alice’s netcat is connected to Bob’s, which listens on port 3000. The arrow shows who opened the connection: Alice.</p><p data-caption="0">Two servers, separated by the Internet. Alice and Bob are each connected to their server over SSH, as in the first session; the diagram leaves that out to focus on the connection between the two netcats.</p><p data-caption="1">Bob runs <code>nc -l 3000</code>. His netcat starts and listens on port 3000, waiting for a connection.</p><p data-caption="2">Alice runs <code>nc W.X.Y.Z 3000</code>. Her netcat connects to port 3000 on Bob’s server. The arrow starts from the one who connected.</p><p data-caption="3">Bob types <code>Hello</code> and presses Enter. His netcat sends it over the connection…</p><p data-caption="4">…and Alice’s netcat prints it in her terminal. Once connected, either side can send.</p><p data-caption="5">Alice types <code>World</code> and presses Enter…</p><p data-caption="6">…and Bob’s netcat prints it. One connection, data in both directions.</p></template>
 </div>

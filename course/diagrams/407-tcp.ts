@@ -43,8 +43,8 @@ export default diagram({
       hello.toMiddle()
     ),
     step(
-      '…and Alice’s netcat prints it in her terminal. The data travelled ' +
-        'against the arrow: once connected, either side can send.',
+      '…and Alice’s netcat prints it in her terminal. Once connected, either ' +
+        'side can send.',
       hello.onward()
     ),
     step('Alice types <code>World</code> and presses Enter…', world.toMiddle()),

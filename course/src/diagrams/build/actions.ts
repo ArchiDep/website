@@ -162,19 +162,22 @@ export function spawned(
 }
 
 /**
- * Typed into an application, without a prompt: an address into a browser, for
- * example. Clears on Enter.
+ * Typed into an application already shown, without a prompt: an address into a
+ * browser, for example. Clears on Enter. The line is a step of its own inside
+ * the process, since the process was revealed by an earlier step.
  */
 export function typedInto(node: string, text: string): Action {
   return (builder, index) => {
     const box = boxOf(builder.drawing, node);
-    const element = builder.element(node);
-    reveal(element, index, 'input');
-    setVariables(element, typingVariables(text, 0));
-    prepend(
-      element,
+    const input = create(builder.doc, 'g', {
+      class: 'fragment input',
+      'data-fragment-index': index
+    });
+    setVariables(input, typingVariables(text, 0));
+    input.appendChild(
       typedLine(builder.doc, box.x + 6, box.y + box.height + 18, text, false)
     );
+    builder.element(node).appendChild(input);
   };
 }
 
@@ -334,6 +337,65 @@ function workLayer(builder: Builder, node: string): void {
       })
     )
   );
+}
+
+/**
+ * A clock face centred on (cx, cy), in the corner where the cog turns: a
+ * process waits or works, never both.
+ */
+function clockFace(doc: Document, cx: number, cy: number): Element {
+  return create(
+    doc,
+    'g',
+    { class: 'clock' },
+    create(doc, 'circle', { cx, cy, r: 6.5 }),
+    create(doc, 'path', {
+      d: `M${cx},${cy - 4} V${cy} H${cx + 3}`
+    })
+  );
+}
+
+/**
+ * A process waiting for the answer to a request it sent, from the step the
+ * request leaves until the step the answer arrives. Not for a process waiting
+ * for connections, which its listening port already says.
+ */
+export interface Wait {
+  /**
+   * It starts waiting.
+   */
+  start(): Action;
+  /**
+   * It stops waiting, once the answer has arrived: with `after`, that long
+   * into the step.
+   */
+  stop(options?: { readonly after?: number }): Action;
+}
+
+export function waiting(node: string): Wait {
+  let clock: Element | null = null;
+  return {
+    start: () => (builder, index) => {
+      const box = boxOf(builder.drawing, node);
+      clock = clockFace(builder.doc, box.x + box.width - 13, box.y + 13);
+      addClasses(clock, 'transient');
+      reveal(clock, index);
+      builder.element(node).appendChild(clock);
+    },
+    stop:
+      ({ after = 0 } = {}) =>
+      (builder, index) => {
+        if (clock === null) {
+          throw new Error(`"${node}" stops waiting without having started`);
+        }
+
+        builder.mark('teardown', index);
+        clock.setAttribute('data-gone-from', String(index));
+        if (after) {
+          setVariables(clock, { 'gone-delay': seconds(after) });
+        }
+      }
+  };
 }
 
 /**

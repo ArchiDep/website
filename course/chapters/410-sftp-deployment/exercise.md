@@ -15,18 +15,21 @@ Connect to your cloud server with SSH for this exercise.
 
 <!-- more -->
 
-## :exclamation: Make sure your Guess It is up to date
+## :exclamation: Make sure you have your own up-to-date Guess It fork
 
-You will deploy [Guess It][guessit], with the three queries implemented and its
-vulnerabilities fixed.
+You will deploy [Guess It][guessit] on your own server, with the three queries
+implemented and its vulnerabilities fixed.
 
-The original Guess It repository, [`ArchiDep/guessit-ex`][ex-repo], has changed
-since you forked it. It now has the three queries, and the fixes for the
+The original Guess It repository, [`ArchiDep/guessit-ex`][ex-repo], has been
+updated since it was forked. It now has the three queries, and the fixes for the
 vulnerabilities we found during the [security analysis][security]. Your
-application will be on the Internet, where anyone can attack it, so you must
-deploy that fixed version.
+deployment will be accessible on the Internet, where anyone can attack it, so
+you must deploy that fixed version.
 
-- **If you have your own fork:** [Make sure your fork is up to
+Everyone deploys and makes changes individually in this and later exercises, so
+you need to make sure you have your own fork of the repository.
+
+- **If you already have your own fork:** [Make sure your fork is up to
   date](#make-sure-your-fork-is-up-to-date).
 - **If you do not have your own fork yet:** [Fork the
   repository](#fork-the-repository).
@@ -63,8 +66,8 @@ $> git merge upstream/main
 Git will probably report a conflict in `server.js`: your group and the original
 repository both implemented the same queries, and the original repository then
 rewrote them to fix the vulnerabilities. Resolve each conflict by keeping the
-original repository's version, the part between `=======` and
-`>>>>>>> upstream/main`. Then finish the merge and push it:
+original repository's version, the part between `=======` and `>>>>>>>
+upstream/main`. Then finish the merge and push it:
 
 ```bash
 # Mark the conflict as resolved
@@ -87,8 +90,8 @@ If Git reports no conflict, it has already finished the merge by itself: only
 ### :question: Fork the repository
 
 If you do not have a fork of your own yet, either fork your group's repository
-(**after** the owner has updated it), or fork the original
-[`ArchiDep/guessit-ex` repository][ex-repo], using the **Fork** button:
+**after** the owner has updated it, or fork the original [`ArchiDep/guessit-ex`
+repository][ex-repo], using the **Fork** button:
 
 ![Fork button](images/fork.png)
 
@@ -109,9 +112,10 @@ If `git clone` fails because `guessit-ex` already exists, see [:boom:
 
 ### :question: Fork again
 
-If you prefer to start again from the clean course repository, you can fork it
-again. The new fork will not have your group's commits, but it will have the
-working queries and the fixes of the vulnerabilities.
+If you already have a fork, but prefer to start again from the clean course
+repository, you can fork it again. The new fork will not have your group's
+commits, but it will have the working queries and the fixes of the
+vulnerabilities.
 
 You can delete your own fork on GitHub, in the **Danger Zone** at the bottom of
 the repository's **Settings**:
@@ -144,6 +148,7 @@ already done it. The XSS vulnerability was fixed by adding the `mustache`
 dependency to escape user input, so you need to install it.
 
 ```bash
+# Install dependencies (do this in the "guessit-ex" directory on your computer)
 $> npm ci
 ```
 
@@ -164,10 +169,10 @@ $> sudo apt update
 $> sudo apt install postgresql
 ```
 
-{% note type: tip %}
+{% note type: troubleshooting %}
 
-APT may prompt you to restart some services. See the troubleshooting section
-about [:boom: Daemons using outdated
+APT may open a purple full-screen dialog to prompt you to restart some services.
+See the troubleshooting section about [:boom: Daemons using outdated
 libraries](#daemons-using-outdated-libraries) if necessary.
 
 {% endnote %}
@@ -205,11 +210,44 @@ $> node -v
 v26.x.y
 ```
 
+## :classical_building: What's running so far?
+
+Installing PostgreSQL started it, while installing Node.js only put its files on
+the disk. This diagram represents the running processes after the initial steps
+of the exercise (assuming you still have your SSH connection open in the
+terminal).
+
+{% include diagrams/410-setup.html %}
+
+{% callout type: more, id: unix-sockets %}
+
+PostgreSQL has a second listening point which is not a network port. It is a
+[Unix domain socket][unix-socket]. A Unix socket is a special kind of file
+through which processes connect to each other, as they would to a TCP port, but
+only on the same machine: it is never reachable from the network. Listing it
+with `ls -l` shows the type `s`, for socket, where a regular file has `-` and a
+directory `d`.
+
+Since it is a file, it has an owner and permissions, like any other: the
+operating system checks them when a process connects. It also tells the server
+which user the connecting process runs as. That is how PostgreSQL knows that
+`sudo -u postgres psql`, which connects through this socket, runs as the
+`postgres` user of your server, and lets it connect as the PostgreSQL superuser
+without a password. Guess It connects to port 5432 instead, over TCP, with a
+password.
+
+Many other programs use Unix sockets to connect to each other on Unix systems,
+for example `systemctl`, the systemd command line tool, and Docker, both of
+which we'll use later in the course.
+
+{% endcallout %}
+
 ## :exclamation: Generate a password
 
-The `schema.sql` file creates a `guessit` user with the password
-`change-me-now`. Replace it with a random password. This command generates one,
-made of 32 random hexadecimal digits:
+The `schema.sql` file of the original repository creates a `guessit` user with
+the password `change-me-now`. If you have not changed it yet, replace it with a
+random password. This command generates one, made of 32 random hexadecimal
+digits:
 
 ```bash
 $> openssl rand -hex 16
@@ -217,9 +255,39 @@ cc46a7fcd8dd9c0ce9bc6f0aaf63eb3a
 ```
 
 A password made only of letters and digits can go into the connection URL of
-`server.js` as it is. Put yours in `schema.sql`, in your copy of the repository,
-in place of `change-me-now`. Keep it: you will need it again to configure the
-application.
+`server.js` as it is. Put it in `schema.sql`, in your copy of the repository, in
+place of `change-me-now`.
+
+## :exclamation: Update the configuration
+
+Still in your copy of the repository, on your computer, update the
+`DATABASE_URL` at the top of the `server.js` file with the password you put in
+`schema.sql`:
+
+```js
+const DATABASE_URL =
+  'postgresql://guessit:your-secret-password@localhost:5432/guessit';
+```
+
+- The password must be the same as the one in `schema.sql`.
+- The port must be 5432. If you ran PostgreSQL with Docker Desktop on your
+  computer, your copy of `server.js` may use port `5434`. On your server,
+  PostgreSQL listens on its default port, `5432`.
+
+Both files are now ready for your server: you will upload them as they are.
+
+{% note type: tip %}
+
+If your password contains special characters, you must URL-encode it before
+putting it in the connection URL of `server.js`. For example, if your password
+is `my$ecret`, you must replace the `$` with `%24`, so that the connection URL
+becomes
+
+```js
+const DATABASE_URL = 'postgresql://guessit:my%24ecret@localhost:5432/guessit';
+```
+
+{% endnote %}
 
 ## :exclamation: Upload the application
 
@@ -246,9 +314,10 @@ did when you first connected to your server with SSH.
 {% endnote %}
 
 Once you are connected to your server with your SFTP application, copy your
-`guessit-ex` directory to `/home/jde/guessit` (replacing `jde` with your Unix
-username). Copy the whole directory, including `node_modules`: the application
-cannot run without its dependencies.
+`guessit-ex` directory into your home directory on the server, `/home/jde`
+(replacing `jde` with your Unix username), so that it ends up in
+`/home/jde/guessit-ex`. Copy the whole directory, including `node_modules`: the
+application cannot run without its dependencies.
 
 On Windows, your copy of the repository is in the WSL. In WinSCP's local panel,
 type its path in the address bar, for example
@@ -258,14 +327,64 @@ username.
 **[Screenshot to add: WinSCP uploading the `guessit-ex` directory to the
 server.]**
 
-You can simply drag-and-drop the directory from your machine to the server. You
-can then rename it if necessary.
+You can simply drag-and-drop the directory from your machine to your home
+directory on the server. It keeps its name, `guessit-ex`.
 
 {% note type: tip %}
 
 `node_modules` holds hundreds of small files, so the upload takes a while.
 
 {% endnote %}
+
+### :question: Optional: check that the files have arrived
+
+Your SFTP application shows the files on the server, but you can also check from
+your terminal. If your terminal is still connected to your server through SSH,
+list the uploaded directory (connect first if necessary):
+
+```bash
+$> hostname
+jde.archidep.ch
+
+$> ls ~/guessit-ex
+README.md  node_modules  package-lock.json  package.json  schema.sql  server.js
+```
+
+Make sure the configuration you prepared on your computer made it too:
+
+```bash
+$> grep postgresql:// ~/guessit-ex/server.js
+```
+
+It prints the line of the `DATABASE_URL`: check that it has your password and
+port `5432`.
+
+`node_modules` is where an interrupted upload usually shows: some of its
+packages are missing. Count them on the server:
+
+```bash
+$> ls ~/guessit-ex/node_modules | wc -l
+```
+
+Then run `ls node_modules | wc -l` in your copy of the repository, on your
+computer. Both numbers should be the same.
+
+{% note type: more %}
+
+When its output goes into a [pipe][unix-pipe] rather than to your terminal,
+`ls` lists one name per line, and `wc -l` counts the lines: the number of
+packages.
+
+{% endnote %}
+
+## :classical_building: How did the files get there?
+
+Your SFTP application opened a second SSH connection to your server, next to
+your terminal's. This diagram shows the running processes and network
+connections between them during the SFTP upload, in parallel with the SSH
+connection open in your terminal.
+
+{% include diagrams/410-upload.html %}
 
 ## :exclamation: Initialize the database
 
@@ -275,7 +394,7 @@ can then rename it if necessary.
 $> hostname
 jde.archidep.ch
 
-$> cd ~/guessit
+$> cd ~/guessit-ex
 ```
 
 Run the project's SQL file as the PostgreSQL superuser, `postgres`, to create
@@ -344,35 +463,6 @@ the `schema.sql` file.
 
 You may exit `psql` with `\q`.
 
-## :exclamation: Update the configuration
-
-Update the `DATABASE_URL` at the top of the `server.js` file **on the server**,
-with the password you put in `schema.sql`:
-
-```js
-const DATABASE_URL =
-  'postgresql://guessit:your-secret-password@localhost:5432/guessit';
-```
-
-If you ran PostgreSQL with Docker Desktop on your computer, your copy of
-`server.js` uses port `5434`. On your server, PostgreSQL listens on its usual
-port, `5432`.
-
-{% note type: tip %}
-
-The `server.js` file **on the server** must be modified. There are several ways
-you can do this:
-
-- Edit the file locally, then copy it to the server again with your SFTP
-  application.
-- Edit the file directly on the server with `nano` or `vim`.
-- Your SFTP application can open a remote file in an editor. In WinSCP,
-  right-click the file and choose **Edit**. In Cyberduck, right-click the file
-  and choose **Edit With**, then your favorite editor. Make your changes and
-  save the file: the application uploads it again.
-
-{% endnote %}
-
 ## :exclamation: Run the application
 
 Also in the uploaded directory on the server, start the application, as you did
@@ -393,11 +483,23 @@ at your server's IP address and port 3000 (e.g. `http://W.X.Y.Z:3000`).
 **[Screenshot to add: Guess It's home page, opened at the server's IP address
 and port 3000.]**
 
+If you can play Guess It, congratulations! :tada: You have deployed a web
+application on a server, and made it accessible to anyone on the Internet.
+
+{% note type: troubleshooting %}
+
+If you see Guess It but also see the warning that the leaderbord could not be
+loaded from the database, you are not done. Check your terminal for errors. Most
+likely, the password in `server.js` does not match the one in `schema.sql`. See
+[:boom: `password authentication failed for user
+"guessit"`](#password-authentication-failed-for-user-guessit).
+
+{% endnote %}
+
 ### :question: Optional: see who listens where
 
-Despite what its message says, the application does not only listen on
-`localhost`. In another SSH connection to your server, list the processes
-listening for TCP connections with `ss`:
+In another SSH connection to your server, list the processes listening for TCP
+connections with `ss`:
 
 ```bash
 $> ss -tln
@@ -421,7 +523,8 @@ public IP address.
 
 Along the way, you:
 
-- Updated your fork with the fixes of the original repository.
+- Updated your fork with the fixes of the original repository (or made a new
+  fork).
 - Installed PostgreSQL and Node.js on your server.
 - Uploaded the application with SFTP, its dependencies included.
 - Created its database, configured it, and started it.
@@ -449,10 +552,9 @@ what makes it public.
 
 The application still has a user of its own in the database, as it had on your
 computer. The superuser created that user and is not used again. The password
-is random, because nobody has to remember it.
+is (ideally) random, because nobody has to remember it.
 
-The application runs in your terminal, as a program you started yourself. Close
-your SSH connection, and it stops.
+The application runs in your terminal, as a program you started yourself.
 
 Your deployment works, but it has flaws. We will discuss these flaws and improve
 this deployment, one flaw at a time.
@@ -462,16 +564,7 @@ this deployment, one flaw at a time.
 This is a simplified architecture of the main running processes and
 communication flow at the end of this exercise.
 
-![Diagram](./images/architecture.png)
-
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="SFTP Deployment Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="SFTP Deployment Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
+{% include diagrams/410-running.html %}
 
 ## :boom: Troubleshooting
 
@@ -529,6 +622,19 @@ restarting these services and applying the security upgrades.
 
 {% endcallout %}
 
+### :boom: My changes to `schema.sql` or `server.js` are not on the server
+
+If you notice a mistake in `schema.sql` or `server.js` later, once you've
+already uploaded them to your server, there are several ways to fix it:
+
+- Fix the file on your computer, then upload them again with your SFTP
+  application.
+- Your SFTP application can open a remote file in an editor. In WinSCP,
+  right-click the file and choose **Edit**. In Cyberduck, right-click the file
+  and choose **Edit With**, then your favorite editor. Make your changes and
+  save the file: the application uploads it again.
+- Edit the file directly on the server with `nano` or `vim`.
+
 ### :boom: `Cannot find module`
 
 The application stops as soon as it starts, with an error like this one:
@@ -538,7 +644,7 @@ $> npm run dev
 ...
 Error: Cannot find module 'mustache'
 Require stack:
-- /home/jde/guessit/server.js
+- /home/jde/guessit-ex/server.js
 ...
 Failed running 'server.js'. Waiting for file changes before restarting...
 ```
@@ -569,13 +675,26 @@ The application cannot connect to PostgreSQL as the `guessit` user:
 Could not load the leaderboard: error: password authentication failed for user "guessit"
 ```
 
-The password in the `DATABASE_URL` at the top of `server.js` **on the server**
-is not the one in the `schema.sql` file you ran. Put the same password in both.
+You may have missed the database initialization step. If you did, go back to
+[Initialize the database](#initialize-the-database) to create the Guess It
+database and user.
 
-If they are already the same, you may have run `schema.sql` more than once: see
-[`role "guessit" already exists`](#role-guessit-already-exists). Or you may not
-have run it at all: go back to [Initialize the
-database](#initialize-the-database).
+If you did initialize the database, check that the password in `schema.sql` is
+the same as the one in the `DATABASE_URL` at the top of `server.js`.
+
+If it is not, change the password in `server.js` to match the one in
+`schema.sql`, or change the password in PostgreSQL to match the one in
+`server.js`:
+
+```bash
+$> sudo -u postgres psql -c "ALTER USER guessit WITH PASSWORD 'the-correct-password';"
+ALTER ROLE
+```
+
+The password in `server.js` must match the one that was defined in PostgreSQL
+**at the time you ran `schema.sql`**. Changing the password in `schema.sql`
+after that does not change the password in PostgreSQL. This is what the `ALTER
+USER` query above does.
 
 ### :boom: `connect ECONNREFUSED`
 
@@ -666,5 +785,7 @@ On Ubuntu, the PostgreSQL superuser, `postgres`, can only connect from the
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
 
 [sysadmin-cheatsheet-apt]: {% link cheatsheets/sysadmin/cheatsheet.md %}#installing--upgrading
+[unix-pipe]: {% link chapters/408-unix-processes/subject.md %}#pipelines
 [unix-redirection]: {% link chapters/408-unix-processes/subject.md %}#stream-redirection
+[unix-socket]: https://en.wikipedia.org/wiki/Unix_domain_socket
 [winscp]: https://winscp.net

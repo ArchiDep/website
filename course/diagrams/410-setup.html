@@ -1,0 +1,607 @@
+<!-- Generated from diagrams/410-setup.svg and 410-setup.ts by "npm run diagrams": edit those instead. -->
+<div class="diagram-figure" data-diagram="410-setup">
+<div class="diagram-canvas">
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 1100 630" role="img" aria-labelledby="diagram-410-setup-title">
+<title id="diagram-410-setup-title">Installing PostgreSQL and Node.js on a server over SSH</title>
+<style id="diagram-410-setup-diagram-styles">
+svg.diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+svg.diagram .lane-heading { font-size: 24px; font-weight: 700; fill: #000; text-anchor: middle; }
+svg.diagram .boundary line { stroke: #000; stroke-width: 5; stroke-dasharray: 14 12; }
+svg.diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+svg.diagram .cloud text { font-size: 15px; fill: #666; text-anchor: middle; }
+svg.diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+svg.diagram .process text { fill: #fff; text-anchor: middle; }
+svg.diagram .process .label { font-size: 16px; font-weight: 700; }
+svg.diagram .process .subtitle { font-size: 12px; font-style: italic; }
+svg.diagram .process .command { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; font-weight: 700; }
+svg.diagram .edge path { fill: none; stroke: #000; stroke-width: 1.25; }
+svg.diagram .edge.control path { stroke-dasharray: 3 4; }
+svg.diagram .edge text { font-size: 14px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+svg.diagram .edge text.beside { text-anchor: end; }
+svg.diagram .socket path { fill: none; stroke: #000; stroke-width: 1.5; stroke-linecap: round; }
+svg.diagram .process .socket text, svg.diagram .socket text { font-size: 14px; fill: #000; text-anchor: end; }
+svg.diagram .marker-comm { fill: #000; }
+svg.diagram .marker-control { fill: #fff; stroke: #000; stroke-width: 1.25; }
+svg.diagram .legend .frame { fill: none; stroke: #999; stroke-dasharray: 2 2; }
+svg.diagram .legend .title { font-size: 18px; font-style: italic; text-anchor: middle; }
+svg.diagram .legend .entry { font-size: 12px; text-anchor: end; }
+</style><style class="diagram-motion">/* The steps of a diagram: what they hide, show and move, in a deck and in a
+page alike. The generator copies this file into every diagram it generates,
+after the diagram's own look, so that an included diagram needs no stylesheet
+of the site's. The motion script and the page stepper only change classes.
+A diagram is "fully drawn" when no step is reached: what was drawn in the
+file, without what only a step shows. That is the state a page opens with,
+the one a deck prints, and the one shown without JavaScript. */
+/* --- At rest ------------------------------------------------------------- */
+svg.diagram .prompt,
+svg.diagram .process .cog {
+display: none;
+}
+svg.diagram .process rect.glow {
+fill: #fff;
+stroke: none;
+opacity: 0;
+}
+svg.diagram .process .cog path {
+fill: #fff;
+fill-rule: evenodd;
+stroke: none;
+}
+/* Waiting for an answer: a still clock, where the cog turns while working. */
+svg.diagram .process .clock :is(circle, path) {
+fill: none;
+stroke: #fff;
+stroke-width: 1.5;
+stroke-linecap: round;
+stroke-linejoin: round;
+}
+/* Travelling data exists only while it travels. */
+svg.diagram .overlay:not(.visible) {
+display: none;
+}
+/* Transient: shown from its step until it is torn down, but not when fully
+drawn, such as a command that has finished by the end of the story. */
+svg.diagram .transient:not(.visible) {
+display: none;
+}
+/* A detail: shown while the diagram is explained, in a page stepping through it
+or in a deck, but left out of the fully drawn diagram, at rest and in print,
+since students are not expected to draw it. */
+svg.diagram .detail {
+display: none;
+}
+.diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .detail {
+display: inline;
+}
+/* A short-lived process, and the control edge that started it, only while
+their step is the current one. */
+svg.diagram .passing:not(.current-fragment) {
+opacity: 0;
+visibility: hidden;
+}
+/* --- Typing -------------------------------------------------------------- */
+/* The typed text and the cursor are placed after the prompt in characters of
+the monospace font, whichever one shows them. */
+svg.diagram .prompt text,
+svg.diagram .process .prompt text,
+svg.diagram .prompt-line text {
+font-family:
+ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+'Courier New', monospace;
+font-size: 12px;
+font-weight: 700;
+fill: #000;
+text-anchor: start;
+}
+svg.diagram .prompt .typed,
+svg.diagram .prompt .cursor {
+transform: translateX(calc(var(--at, 0) * 1ch));
+}
+svg.diagram .prompt .cursor {
+display: none;
+}
+/* --- Folding ------------------------------------------------------------- */
+/* Until the fold, each folded process shows its own label, and the edges
+between them are drawn; after it, the stack's label. The motion script moves
+the processes and sets `unfolded`. */
+svg.diagram .process .own {
+opacity: 0;
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .own {
+opacity: 1;
+}
+svg.diagram .process .stack-label {
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .stack-label {
+opacity: 0;
+}
+svg.diagram .folds-away path {
+opacity: 0;
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .folds-away path {
+opacity: 1;
+}
+/* --- Data ---------------------------------------------------------------- */
+/* A trip in two clicks: to the middle, where it waits, then the rest of the
+way. Along the edge from --from to --to, which run backwards when it travels
+against the arrow. */
+svg.diagram .packet path {
+fill: #1f6feb;
+stroke: #1f6feb;
+stroke-width: 3;
+stroke-linejoin: round;
+}
+svg.diagram .packet text {
+fill: #fff;
+font-size: 13px;
+font-weight: 700;
+text-anchor: middle;
+}
+svg.diagram .packet .leg {
+offset-rotate: 0deg;
+offset-distance: 50%;
+}
+/* The second click must not hide the data before it is reached. */
+svg.diagram .packet .leg.fragment {
+opacity: 1;
+visibility: inherit;
+}
+svg.diagram .packet .leg.fragment.visible {
+offset-distance: var(--to);
+opacity: 0;
+}
+/* In one click: gone once the next step is reached. */
+svg.diagram .packet.whole.visible:not(.current-fragment) .leg:not(.visible) {
+animation: none;
+opacity: 0;
+}
+/* Nor does the second half of a trip outlive its step, such as a slow one cut
+short by a click. */
+svg.diagram .packet .leg.fragment.visible:not(.current-fragment) {
+animation: none;
+opacity: 0;
+}
+/* --- Torn down ----------------------------------------------------------- */
+/* Gone from a step on, such as a session closing; the fully drawn diagram still
+shows it. The motion script sets `gone`. */
+svg.diagram .gone {
+/* Important: reveal.js's rules for visible fragments are more specific. */
+opacity: 0 !important;
+visibility: hidden !important;
+transition:
+opacity 0.6s,
+visibility 0s 0.6s !important;
+}
+/* --- Motion -------------------------------------------------------------- */
+@media screen and (prefers-reduced-motion: no-preference) {
+/* A connection draws itself from the side that opened it: the path's length
+is 1 (`pathLength`), whatever its shape. */
+svg.diagram .draw-on.visible path {
+stroke-dasharray: 1 1;
+animation: diagram-draw 0.7s ease-out var(--delay, 0s) both;
+}
+/* Its label arrives with the line, not before. */
+svg.diagram .draw-on.visible text {
+animation: diagram-fade-in 0.3s ease-out calc(var(--delay, 0s) + 0.5s) both;
+}
+/* A control edge appears, then the process it starts. */
+svg.diagram .fade-on.visible {
+animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) both;
+}
+/* The cursor types, then disappears on Enter. */
+svg.diagram :is(.spawn, .input).visible .prompt .cursor {
+display: inline;
+animation:
+diagram-cursor-move var(--type) steps(var(--chars), end) var(--t0) both,
+diagram-cursor-blink 0.5s step-end infinite,
+diagram-cursor-off 0.01s var(--enter) both;
+}
+/* Typed at a shell's prompt or into an application, which clears on Enter. */
+svg.diagram :is(.spawn, .input).visible .prompt {
+display: inline;
+animation: diagram-cursor-off 0.01s var(--enter) both;
+}
+svg.diagram :is(.spawn, .input).visible .prompt .typed {
+animation: diagram-type var(--type) steps(var(--chars), end) var(--t0) both;
+}
+/* The process starts: its box, its text, then its listening port. */
+svg.diagram :is(.spawn, .child).visible &gt; rect:not(.glow) {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-box-in 0.35s ease-out var(--launch) both;
+}
+svg.diagram :is(.spawn, .child).visible &gt; text {
+animation: diagram-fade-in 0.3s ease-out var(--launch) both;
+}
+svg.diagram :is(.spawn, .child).visible .socket {
+animation: diagram-fade-in 0.3s ease-out calc(var(--launch) + 0.4s) both;
+}
+/* A process working while its step is the current one: its box brightens
+three times while a cog turns in its top right corner, then both settle,
+the cog slowing to a stop as the last pulse ends. A still cog means
+settings, so it fades out as it stops. */
+svg.diagram .process:has(&gt; .pulse.current-fragment) &gt; .glow {
+animation: diagram-glow 0.8s ease-in-out 3;
+}
+svg.diagram .process:has(&gt; .pulse.current-fragment) .cog {
+display: inline;
+animation: diagram-fade-out 0.3s ease-in 2.3s both;
+}
+svg.diagram .process:has(&gt; .pulse.current-fragment) .cog path {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) both;
+}
+svg.diagram .packet.visible .leg:not(.visible) {
+animation: diagram-leg-1 0.9s ease-in-out both;
+}
+svg.diagram .packet.whole.visible .leg:not(.visible) {
+animation: diagram-trip 1.8s ease-in-out both;
+}
+svg.diagram .packet.visible .leg.visible {
+animation: diagram-leg-2 1.6s ease-in-out both;
+}
+/* Heavy data, such as the hundreds of files of node_modules, is slower. */
+svg.diagram .packet.heavy.visible .leg:not(.visible) {
+animation-duration: 2.7s;
+}
+svg.diagram .packet.heavy.visible .leg.visible {
+animation-duration: 4.8s;
+}
+svg.diagram .packet.heavy.whole.visible .leg:not(.visible) {
+animation-duration: 6s;
+}
+/* A short-lived process works once started, then exits after a moment to
+read it: its box and its edge fade out. No transition into its step:
+Firefox would hold the box at the start of the transition, transparent,
+while its exit animation waits to begin. */
+svg.diagram .process.passing.current-fragment,
+svg.diagram .edge.passing.current-fragment {
+transition: none;
+}
+svg.diagram .passing.current-fragment &gt; .glow {
+animation: diagram-glow 0.8s ease-in-out var(--work) 3;
+}
+svg.diagram .passing.current-fragment .cog {
+display: inline;
+animation: diagram-fade-out 0.3s ease-in calc(var(--work) + 2.3s) both;
+}
+svg.diagram .passing.current-fragment .cog path {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) var(--work) both;
+}
+svg.diagram .process.passing.current-fragment {
+animation: diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+svg.diagram .edge.passing.current-fragment {
+animation:
+diagram-fade-in 0.4s ease-out var(--delay, 0s) both,
+diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+/* A process starts waiting as its request sets off. */
+svg.diagram .clock.visible {
+animation: diagram-fade-in 0.4s ease-out 0.2s both;
+}
+/* Shown once the data that brings it has arrived. */
+svg.diagram .arrives.visible {
+animation: diagram-fade-in 0.2s ease-out 1.1s both;
+}
+}
+@keyframes diagram-draw {
+/* The arrowhead waits for the line to reach it. */
+from {
+stroke-dashoffset: 1;
+marker-end: none;
+}
+99% {
+marker-end: none;
+}
+to {
+stroke-dashoffset: 0;
+}
+}
+@keyframes diagram-leg-1 {
+from {
+offset-distance: var(--from);
+opacity: 0;
+}
+20% {
+opacity: 1;
+}
+to {
+offset-distance: 50%;
+opacity: 1;
+}
+}
+/* Delivered: it sits on the box a moment, then fades. */
+@keyframes diagram-leg-2 {
+from {
+offset-distance: 50%;
+opacity: 1;
+}
+55% {
+offset-distance: var(--to);
+opacity: 1;
+}
+80% {
+opacity: 1;
+}
+to {
+offset-distance: var(--to);
+opacity: 0;
+}
+}
+@keyframes diagram-trip {
+from {
+offset-distance: var(--from);
+opacity: 0;
+}
+10% {
+opacity: 1;
+}
+60% {
+offset-distance: var(--to);
+opacity: 1;
+}
+85% {
+opacity: 1;
+}
+to {
+offset-distance: var(--to);
+opacity: 0;
+}
+}
+@keyframes diagram-cursor-move {
+from {
+transform: translateX(calc(var(--at, 0) * 1ch));
+}
+to {
+transform: translateX(calc((var(--at, 0) + var(--chars)) * 1ch));
+}
+}
+@keyframes diagram-cursor-blink {
+50% {
+opacity: 0;
+}
+}
+@keyframes diagram-cursor-off {
+to {
+visibility: hidden;
+}
+}
+@keyframes diagram-type {
+from {
+clip-path: inset(0 100% 0 0);
+}
+to {
+clip-path: inset(0);
+}
+}
+@keyframes diagram-box-in {
+from {
+opacity: 0;
+transform: scale(0.8, 0.5);
+}
+to {
+opacity: 1;
+transform: none;
+}
+}
+@keyframes diagram-fade-in {
+from {
+opacity: 0;
+}
+}
+@keyframes diagram-glow {
+50% {
+opacity: 0.3;
+}
+}
+@keyframes diagram-spin {
+to {
+transform: rotate(1turn);
+}
+}
+@keyframes diagram-fade-out {
+to {
+opacity: 0;
+}
+}
+@keyframes diagram-exit {
+from {
+opacity: 1;
+}
+to {
+opacity: 0;
+}
+}
+/* --- Around the diagram -------------------------------------------------- */
+/* Drawn for a white background, in a dark page and on a slide alike. */
+.diagram-figure .diagram-canvas {
+background: #fff;
+border-radius: 8px;
+padding: 8px;
+}
+.diagram-figure svg.diagram {
+display: block;
+width: 100%;
+height: auto;
+}
+/* A deck hides the legend, the teacher being there to explain, except in
+print, which shows the diagram fully drawn. */
+.diagram-figure.in-deck:not(.printed) .legend {
+display: none;
+}
+.diagram-figure.in-deck svg.diagram {
+max-height: 520px;
+}
+/* A page stepping through the diagram does what reveal.js does in a deck:
+hides the steps not reached yet. The captions say what the legend would. */
+.diagram-figure.stepping svg.diagram .fragment {
+transition: opacity 0.2s;
+}
+.diagram-figure.stepping svg.diagram .fragment:not(.visible):not(.leg) {
+opacity: 0;
+visibility: hidden;
+}
+.diagram-figure.stepping .legend {
+display: none;
+}
+/* The page's controls, in whatever colours the page is in. */
+.diagram-figure .diagram-caption {
+margin: 0.5em 0.25em 0;
+}
+.diagram-figure .diagram-controls {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 0.5em;
+margin-top: 0.5em;
+}
+.diagram-figure .diagram-controls button {
+font: inherit;
+font-size: 0.9em;
+color: inherit;
+background: color-mix(in srgb, currentColor 8%, transparent);
+border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+border-radius: 6px;
+padding: 0.2em 0.75em;
+cursor: pointer;
+}
+.diagram-figure .diagram-controls button:disabled {
+opacity: 0.4;
+cursor: default;
+}
+.diagram-figure .diagram-controls button.primary {
+background: #1f6feb;
+border-color: #1f6feb;
+color: #fff;
+}
+.diagram-figure .diagram-controls .counter {
+min-width: 7em;
+text-align: center;
+font-size: 0.9em;
+opacity: 0.7;
+}
+/* Printed fully drawn, with the caption that goes with it. */
+@media print {
+.diagram-figure .diagram-controls {
+display: none;
+}
+.diagram-figure .diagram-canvas {
+break-inside: avoid;
+}
+}
+</style>
+<defs id="diagram-410-setup-diagram-defs">
+<marker id="diagram-410-setup-arrow-comm" viewBox="0 0 12 8" refX="12" refY="4" markerWidth="12" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+<path class="marker-comm" d="M0,0 L12,4 L0,8 z"/>
+</marker>
+<marker id="diagram-410-setup-arrow-control" viewBox="-1 -1 14 10" refX="12" refY="4" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+<path class="marker-control" d="M0,0 L12,4 L0,8 z"/>
+</marker>
+</defs>
+<g id="diagram-410-setup-lane-computer" class="lane"><text class="lane-heading" x="200" y="58">Your Computer</text></g>
+<g id="diagram-410-setup-lane-server" class="lane"><text class="lane-heading" x="820" y="58">Server</text></g>
+<g id="diagram-410-setup-boundary-internet" class="boundary">
+<line x1="400" y1="48" x2="400" y2="610"/>
+<line x1="540" y1="48" x2="540" y2="610"/>
+</g>
+<g id="diagram-410-setup-cloud-internet" class="cloud">
+<path d="M438,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+<text x="470" y="80">Internet</text>
+</g>
+<g id="diagram-410-setup-node-terminal" class="process">
+<rect x="92" y="182" width="250" height="46" rx="8"/>
+</g>
+<g id="diagram-410-setup-node-local-shell" class="process">
+<rect x="96" y="186" width="250" height="46" rx="8"/>
+</g>
+<g id="diagram-410-setup-node-ssh-client" class="process">
+<rect x="100" y="190" width="250" height="46" rx="8"/>
+<text class="label" x="225" y="218">Terminal, Shell &amp; SSH Client</text>
+</g>
+<g id="diagram-410-setup-node-sshd" class="process">
+<rect x="600" y="96" width="160" height="46" rx="8"/>
+<text class="label" x="680" y="124">SSH Server</text>
+<g id="diagram-410-setup-socket-sshd-22" class="socket">
+<path d="M600,112 L582,96 M600,126 L582,142"/>
+<text x="586" y="90">22</text>
+</g>
+</g>
+<g id="diagram-410-setup-node-ssh-session" class="process">
+<rect x="594" y="184" width="200" height="46" rx="8"/>
+</g>
+<g id="diagram-410-setup-node-remote-shell" class="process">
+<rect x="600" y="190" width="200" height="46" rx="8"/>
+<text class="label" x="700" y="218">SSH Session &amp; Shell</text>
+</g>
+<g id="diagram-410-setup-node-apt-postgresql" class="passing fragment spawn process" data-fragment-index="0" style="--work: 3.8s; --chars: 27; --t0: 0.3s; --type: 2s; --enter: 2.7s; --launch: 3.3s"><g class="prompt" style="--at: 3"><text class="sign" x="606" y="254">$&gt;</text><text class="typed" x="606" y="254">sudo apt install postgresql</text><text class="cursor" x="606" y="254">█</text></g>
+<rect x="600" y="320" width="230" height="46" rx="8"/><rect x="600" y="320" width="230" height="46" rx="8" class="glow"/><g class="cog"><path d="M822.35,331.72 L824.45,332.18 L824.45,333.82 L822.35,334.28 L821.69,335.87 L822.85,337.69 L821.69,338.85 L819.87,337.69 L818.28,338.35 L817.82,340.45 L816.18,340.45 L815.72,338.35 L814.13,337.69 L812.31,338.85 L811.15,337.69 L812.31,335.87 L811.65,334.28 L809.55,333.82 L809.55,332.18 L811.65,331.72 L812.31,330.13 L811.15,328.31 L812.31,327.15 L814.13,328.31 L815.72,327.65 L816.18,325.55 L817.82,325.55 L818.28,327.65 L819.87,328.31 L821.69,327.15 L822.85,328.31 L821.69,330.13 Z M819.3,333 A2.3,2.3 0 1 0 814.7,333 A2.3,2.3 0 1 0 819.3,333 Z"/></g>
+<text class="label" x="715" y="340">APT</text>
+<text class="command" x="715" y="356">sudo apt install postgresql</text>
+</g>
+<g id="diagram-410-setup-node-apt-nodejs" class="passing fragment spawn process" data-fragment-index="2" style="--work: 3.8s; --chars: 30; --t0: 0.3s; --type: 2s; --enter: 2.7s; --launch: 3.3s"><g class="prompt" style="--at: 3"><text class="sign" x="606" y="254">$&gt;</text><text class="typed" x="606" y="254">sudo apt-get install -y nodejs</text><text class="cursor" x="606" y="254">█</text></g>
+<rect x="600" y="320" width="250" height="46" rx="8"/><rect x="600" y="320" width="250" height="46" rx="8" class="glow"/><g class="cog"><path d="M842.35,331.72 L844.45,332.18 L844.45,333.82 L842.35,334.28 L841.69,335.87 L842.85,337.69 L841.69,338.85 L839.87,337.69 L838.28,338.35 L837.82,340.45 L836.18,340.45 L835.72,338.35 L834.13,337.69 L832.31,338.85 L831.15,337.69 L832.31,335.87 L831.65,334.28 L829.55,333.82 L829.55,332.18 L831.65,331.72 L832.31,330.13 L831.15,328.31 L832.31,327.15 L834.13,328.31 L835.72,327.65 L836.18,325.55 L837.82,325.55 L838.28,327.65 L839.87,328.31 L841.69,327.15 L842.85,328.31 L841.69,330.13 Z M839.3,333 A2.3,2.3 0 1 0 834.7,333 A2.3,2.3 0 1 0 839.3,333 Z"/></g>
+<text class="label" x="725" y="340">APT</text>
+<text class="command" x="725" y="356">sudo apt-get install -y nodejs</text>
+</g>
+<g id="diagram-410-setup-node-node-version" class="passing fragment spawn process" data-fragment-index="3" style="--work: 2.36s; --chars: 7; --t0: 0.3s; --type: 0.56s; --enter: 1.26s; --launch: 1.86s"><g class="prompt" style="--at: 3"><text class="sign" x="606" y="254">$&gt;</text><text class="typed" x="606" y="254">node -v</text><text class="cursor" x="606" y="254">█</text></g>
+<rect x="600" y="320" width="180" height="46" rx="8"/><rect x="600" y="320" width="180" height="46" rx="8" class="glow"/><g class="cog"><path d="M772.35,331.72 L774.45,332.18 L774.45,333.82 L772.35,334.28 L771.69,335.87 L772.85,337.69 L771.69,338.85 L769.87,337.69 L768.28,338.35 L767.82,340.45 L766.18,340.45 L765.72,338.35 L764.13,337.69 L762.31,338.85 L761.15,337.69 L762.31,335.87 L761.65,334.28 L759.55,333.82 L759.55,332.18 L761.65,331.72 L762.31,330.13 L761.15,328.31 L762.31,327.15 L764.13,328.31 L765.72,327.65 L766.18,325.55 L767.82,325.55 L768.28,327.65 L769.87,328.31 L771.69,327.15 L772.85,328.31 L771.69,330.13 Z M769.3,333 A2.3,2.3 0 1 0 764.7,333 A2.3,2.3 0 1 0 769.3,333 Z"/></g>
+<text class="label" x="690" y="340">Node.js</text>
+<text class="command" x="690" y="356">node -v</text>
+</g>
+<g id="diagram-410-setup-node-postgresql" class="fragment process" data-fragment-index="1">
+<rect x="880" y="480" width="180" height="46" rx="8"/>
+<text class="label" x="970" y="500">PostgreSQL</text>
+<text class="subtitle" x="970" y="516">Started automatically, somehow?</text>
+<g id="diagram-410-setup-socket-postgresql-5432" class="socket">
+<path d="M963,480 L947,462 M977,480 L993,462"/>
+<text x="942" y="466">5432</text>
+</g>
+<g id="diagram-410-setup-socket-postgresql-unix" class="socket detail">
+<path d="M880,496 L862,480 M880,510 L862,526"/>
+<text x="858" y="546">/var/run/postgresql/.s.PGSQL.5432</text>
+</g>
+</g>
+<g id="diagram-410-setup-edge-ssh-client-ssh-session" class="edge comm">
+<path d="M350,213 H480 C540,213 540,213 594,213" marker-end="url(#diagram-410-setup-arrow-comm)"/>
+<text x="440" y="218">W.X.Y.Z</text>
+</g>
+<g id="diagram-410-setup-edge-sshd-ssh-session" class="edge control">
+<path d="M680,142 V184" marker-end="url(#diagram-410-setup-arrow-control)"/>
+</g>
+<g id="diagram-410-setup-edge-remote-shell-apt-postgresql" class="passing fragment fade-on edge control" data-fragment-index="0" style="--work: 3.8s; --delay: 2.7s">
+<path d="M760,236 V320" marker-end="url(#diagram-410-setup-arrow-control)"/>
+</g>
+<g id="diagram-410-setup-edge-remote-shell-apt-nodejs" class="passing fragment fade-on edge control" data-fragment-index="2" style="--work: 3.8s; --delay: 2.7s">
+<path d="M760,236 V320" marker-end="url(#diagram-410-setup-arrow-control)"/>
+</g>
+<g id="diagram-410-setup-edge-remote-shell-node-version" class="passing fragment fade-on edge control" data-fragment-index="3" style="--work: 2.36s; --delay: 1.26s">
+<path d="M760,236 V320" marker-end="url(#diagram-410-setup-arrow-control)"/>
+</g>
+<g id="diagram-410-setup-legend" class="legend" transform="translate(0,128)">
+<rect class="frame" x="32" y="292" width="308" height="190"/>
+<text class="title" x="186" y="318">Legend</text>
+<g class="process">
+<rect x="94" y="337" width="182" height="31" rx="6"/>
+<text class="label" x="185" y="358">Process</text>
+</g>
+<text class="entry" x="147" y="397">Communication</text>
+<g class="edge comm"><path d="M157,393 H320" marker-end="url(#diagram-410-setup-arrow-comm)"/></g>
+<text class="entry" x="147" y="419">Control</text>
+<g class="edge control"><path d="M157,415 H320" marker-end="url(#diagram-410-setup-arrow-control)"/></g>
+<text class="entry" x="147" y="441">Network Boundary</text>
+<g class="boundary"><line x1="157" y1="437" x2="322" y2="437"/></g>
+<text class="entry" x="147" y="465">Listening Port</text>
+<g class="process"><rect x="304" y="452" width="22" height="18" rx="3"/></g>
+<g class="socket"><path d="M304,457 L291,448 M304,465 L291,474"/></g>
+</g>
+</svg>
+</div>
+<template class="diagram-captions"><p data-caption="rest">PostgreSQL is installed and running on your server, listening on port 5432. Node.js is installed, but nothing of it runs.</p><p data-caption="0">You start the exercise by connecting to your server over SSH. This diagram shows that connection already open. The following steps show what happens when you type commands on the server.</p><p data-caption="1">You run <code>sudo apt install postgresql</code>. APT downloads PostgreSQL, installs it, and exits.</p><p data-caption="2">Installing PostgreSQL also started it. It listens on port 5432, and on a Unix socket, a file through which programs on the same server can connect to it. Something started it automatically: more on that later in the course.</p><p data-caption="3">You install Node.js: you install <code>curl</code>, download and run NodeSource’s setup script with it, which adds their repository, then run <code>sudo apt-get install -y nodejs</code>. APT installs it, and exits. Nothing new stays running: installing a program only puts its files on the disk.</p><p data-caption="4">You run <code>node -v</code>. Installed, Node.js is only files on the disk: it runs only when you start it, and here, it stops as soon as it has printed its version.</p></template>
+</div>

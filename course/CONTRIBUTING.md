@@ -729,8 +729,8 @@ graph LR A[Client] --> B[Server]
 An architecture diagram draws the processes of a lesson and the connections
 between them, and is revealed one step at a time while it is explained: a
 process typed into being at a prompt, a connection drawing itself, data
-travelling along it, a process working. Include one by the partial generated for
-it:
+travelling along it, a process working or waiting for an answer. Include one by
+the partial generated for it:
 
 ```liquid
 {% include diagrams/407-tcp.html %}
@@ -783,8 +783,10 @@ to a few conventions:
   connection that is handed over, for the shape it first takes into the
   listening port; `data-unfolded` and `data-unfolded-d` for processes that fold
   into stacks; the `transient` class for what is shown from its step until it is
-  torn down, but not when fully drawn; `arrives` for what appears once the data
-  bringing it has arrived.
+  torn down, but not when fully drawn; the `detail` class for what is shown
+  while stepping through the diagram, in a page or a deck, but left out of the
+  fully drawn diagram, since students are not expected to draw it; `arrives`
+  for what appears once the data bringing it has arrived.
 
 The partial carries its own stylesheet, and the site's scripts do the stepping:
 [`src/diagrams/runtime`](./src/diagrams/runtime), from `course.ts` in a page and

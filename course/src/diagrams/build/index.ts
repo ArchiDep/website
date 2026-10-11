@@ -14,9 +14,10 @@ export {
   show,
   spawned,
   teardown,
-  typedInto
+  typedInto,
+  waiting
 } from './actions';
-export type { DataOptions, SpawnOptions, Trip } from './actions';
+export type { DataOptions, SpawnOptions, Trip, Wait } from './actions';
 export type { Action, DiagramDefinition, Step } from './builder';
 export { ARRIVED, launched, typing } from './timing';
 
