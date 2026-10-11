@@ -436,15 +436,16 @@ lines and still reported a failure, because it also met errors. Scripts and
 tools that run commands for you rely on the exit status, not on what is
 printed, to decide whether a command worked.
 
-A pipe connects the standard output stream of one process to the standard
-input stream of the next. Each command in a pipeline only knows how to do one
-job, and the pipeline does what none of them can do alone: count the uses of a
-word, or the users of each shell. The error messages are not part of the
+A pipe connects the standard output stream of one process to the standard input
+stream of the next. Each command in a pipeline only knows how to do one job, and
+the pipeline does what none of them can do alone, for example count the uses of
+a word, or the users of each shell. The error messages are not part of the
 pipeline: they still go to your terminal, so that you see them.
 
 This is the Unix philosophy: small programs that do one thing well, work
 together, and handle text streams. It works because every program speaks the
-same language, a stream of text in and a stream of text out.
+same language, a stream of text in and a stream of text out. The same principle
+also works with binary data when streaming audio or video.
 
 Later in the course, the applications you deploy will also write to their
 standard streams, and that is where you will look for their logs.
