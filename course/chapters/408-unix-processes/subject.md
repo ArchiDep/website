@@ -124,9 +124,9 @@ The `ps` (**p**rocess **s**tatus) command displays currently-running processes:
 
 ```bash
 $> ps
-  PID TTY          TIME CMD
-14926 pts/0    00:00:00 bash
-14939 pts/0    00:00:00 ps
+    PID TTY          TIME CMD
+   6654 pts/0    00:00:00 bash
+   6675 pts/0    00:00:00 ps
 ```
 
 {% note type: tip %}
@@ -140,9 +140,9 @@ You can obtain more information with the `-f` (**f**ull format) option:
 
 ```bash
 $> ps -f
-UID       PID  PPID  C STIME TTY          TIME CMD
-jde     15237 15158  1 17:48 pts/0    00:00:00 -bash
-jde     15251 15237  0 17:48 pts/0    00:00:00 ps -f
+UID          PID    PPID  C STIME TTY          TIME CMD
+jde         6654    6653  0 18:17 pts/0    00:00:00 -bash
+jde         6688    6654  0 18:18 pts/0    00:00:00 ps -f
 ```
 
 {% note type: tip %}
@@ -162,18 +162,22 @@ longer. This is an abbreviated example:
 
 ```bash
 $> ps -ef
-UID       PID  PPID  C STIME TTY          TIME CMD
-root        1     0  0 09:38 ?        00:00:30 /sbin/init
-root        2     0  0 09:38 ?        00:00:30 [kthread]
+UID          PID    PPID  C STIME TTY          TIME CMD
+root           1       0  0 17:30 ?        00:00:30 /sbin/init
+root           2       0  0 17:30 ?        00:00:00 [kthreadd]
 ...
-root      402     1  0 09:39 ?        00:00:00 /lib/systemd/systemd-journald
-syslog    912     1  0 09:39 ?        00:00:00 /usr/sbin/rsyslogd -n
-root     1006     1  0 09:39 ?        00:00:00 /usr/sbin/cron -f
+root         402       1  0 17:30 ?        00:00:00 /usr/lib/systemd/systemd-journald
+syslog       912       1  0 17:30 ?        00:00:00 /usr/sbin/rsyslogd -n
+root        1006       1  0 17:30 ?        00:00:00 /usr/sbin/cron -f
 ...
-root     1700     1  0 Sep11 ?        00:00:00 /usr/sbin/sshd -D
-jde      3350  1700  0 17:52 ?        00:00:00 sshd: jde@pts/0
-jde      3378  3350  0 15:32 pts/0    00:00:00 -bash
-jde      3567  3378  0 15:51 pts/0    00:00:00 ps -ef
+root         888       1  0 17:31 ?        00:00:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+root         952     888  0 17:31 ?        00:00:00 sshd-session: archidep [priv]
+archidep    1211     952  0 17:31 ?        00:00:00 sshd-session: archidep@notty
+...
+root        6596     888  0 18:17 ?        00:00:00 sshd-session: jde [priv]
+jde         6653    6596  0 18:17 ?        00:00:00 sshd-session: jde@pts/0
+jde         6654    6653  0 18:17 pts/0    00:00:00 -bash
+jde         6702    6654  0 18:19 pts/0    00:00:00 ps -ef
 ```
 
 {% note type: tip %}
@@ -192,23 +196,34 @@ their parent:
 
 ```bash
 $> ps -ef --forest
-UID       PID  PPID  C STIME TTY          TIME CMD
+UID          PID    PPID  C STIME TTY          TIME CMD
 ...
-root     1700     1  0 Sep11 ?        00:00:00 /usr/sbin/sshd -D
-jde      3350  1700  0 17:52 ?        00:00:00  \_ sshd: jde@pts/0
-jde      3378  3350  0 17:52 pts/0    00:00:00      \_ -bash
-jde      3567  3378  0 17:54 pts/0    00:00:00          \_ ps -ef --forest
+root         888       1  0 17:31 ?        00:00:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+root         952     888  0 17:31 ?        00:00:00  \_ sshd-session: archidep [priv]
+archidep    1211     952  0 17:31 ?        00:00:00  |   \_ sshd-session: archidep@notty
+root        6596     888  0 18:17 ?        00:00:00  \_ sshd-session: jde [priv]
+jde         6653    6596  0 18:17 ?        00:00:00      \_ sshd-session: jde@pts/0
+jde         6654    6653  0 18:17 pts/0    00:00:00          \_ -bash
+jde         6731    6654  0 18:20 pts/0    00:00:00              \_ ps -ef --forest
 ```
 
 You can clearly see that:
 
-- Process 1700, the SSH server (the `d` in `sshd` is for [daemon][daemon]), was
-  launched by the init process (PID 1) and is run by `root`.
-- Process 3350 was launched by the SSH server when you connected. It is your SSH
-  session and manages your terminal device, named `pts/0` here.
-- Process 3378 is a Bash login shell that was launched when you connected (as
+- Process 888, the SSH server (the `d` in `sshd` is for [daemon][daemon]), was
+  launched by the init process (PID 1) and is run by `root`. It waits for
+  connections.
+- Process 6596 was launched by the SSH server when you connected. It stays
+  `root`, for the few things your session needs `root` for, such as checking
+  your key (`priv` is for privileged).
+- Process 6653 was launched by process 6596 once you were logged in, and runs as
+  you. It is your SSH session and manages your terminal device, named `pts/0`
+  here.
+- Process 6654 is a Bash login shell that was launched when you connected (as
   configured in `/etc/passwd`) and is attached to terminal `pts/0`.
-- Process 3567 is the `ps` command you launched from the shell.
+- Process 6731 is the `ps` command you launched from the shell.
+- Processes 952 and 1211 are another SSH session, as `archidep`. That is the
+  course's website, which stays connected to your server to check on it.
+  `notty` means that this session has no terminal.
 
 ### Running more processes
 
@@ -217,18 +232,22 @@ Let's run some other processes and see if we can list them.
 Open a new terminal on your local machine and connect to the same server.
 
 If you go back to the first terminal and run the `ps` command again, you should
-see both virtual terminal processes corresponding to your two terminals, as well
-as the two bash shells running within them:
+see two SSH sessions of yours, one for each terminal, as well as the two Bash
+shells running within them:
 
 ```bash
 $> ps -ef --forest
 ...
-root     1700     1  0 Sep11 ?        00:00:00 /usr/sbin/sshd -D
-jde      3350  1700  0 17:52 ?        00:00:00  \_ sshd: jde@pts/0
-jde      3378  3350  0 17:52 pts/0    00:00:00  |   \_ -bash
-jde      3801  3378  0 18:22 pts/0    00:00:00  |       \_ ps -ef --forest
-jde      3789  1700  0 18:21 ?        00:00:00  \_ sshd: jde@pts/1
-jde      3791  3789  0 18:21 pts/1    00:00:00      \_ -bash
+root         888       1  0 17:31 ?        00:00:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+root         952     888  0 17:31 ?        00:00:00  \_ sshd-session: archidep [priv]
+archidep    1211     952  0 17:31 ?        00:00:00  |   \_ sshd-session: archidep@notty
+root        6596     888  0 18:17 ?        00:00:00  \_ sshd-session: jde [priv]
+jde         6653    6596  0 18:17 ?        00:00:00  |   \_ sshd-session: jde@pts/0
+jde         6654    6653  0 18:17 pts/0    00:00:00  |       \_ -bash
+jde         8747    6654  0 19:44 pts/0    00:00:00  |           \_ ps -ef --forest
+root        8063     888  0 19:18 ?        00:00:00  \_ sshd-session: jde [priv]
+jde         8203    8063  0 19:18 ?        00:00:00      \_ sshd-session: jde@pts/1
+jde         8204    8203  0 19:18 pts/1    00:00:00          \_ -bash
 ```
 
 #### Sleeping process
@@ -247,14 +266,14 @@ only processes belonging to your **u**ser:
 
 ```bash
 $> ps -f -u jde --forest
-UID       PID  PPID  C STIME TTY          TIME CMD
+UID          PID    PPID  C STIME TTY          TIME CMD
+jde         8203    8063  0 19:18 ?        00:00:00 sshd-session: jde@pts/1
+jde         8204    8203  0 19:18 pts/1    00:00:00  \_ -bash
+jde         8900    8204  0 19:48 pts/1    00:00:00      \_ sleep 1000
+jde         6653    6596  0 18:17 ?        00:00:00 sshd-session: jde@pts/0
+jde         6654    6653  0 18:17 pts/0    00:00:00  \_ -bash
+jde         8907    6654  0 19:48 pts/0    00:00:00      \_ ps -f -u jde --forest
 ...
-jde      3350  1700  0 17:52 ?        00:00:00 sshd: jde@pts/0
-jde      3378  3350  0 17:52 pts/0    00:00:00  \_ -bash
-jde      3823  3378  0 18:24 pts/0    00:00:00      \_ ps -f -u jde --forest
-jde      3789  1700  0 18:21 ?        00:00:00 sshd: jde@pts/1
-jde      3791  3789  0 18:21 pts/1    00:00:00  \_ -bash
-jde      3812  3791  0 18:23 pts/1    00:00:00      \_ sleep 1000
 ```
 
 You can indeed see the running process started with the `sleep` command. It ends
@@ -586,13 +605,15 @@ which only `root` may read:
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
-grep: /etc/ssh/ssh_host_rsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 Here, the lines starting with `/etc/ssh/` are the output data, while the lines
@@ -607,15 +628,17 @@ The following version redirects standard output to the file `found.txt`:
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh > found.txt
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 
 $> cat found.txt
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 As you can see, the lines that were found are no longer displayed since they
@@ -628,14 +651,16 @@ The following version redirects standard error to the file `errors.txt`:
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh 2> errors.txt
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 
 $> cat errors.txt
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 ```
 
@@ -650,15 +675,17 @@ You can **perform both redirections at once** in one command:
 $> grep -r PasswordAuthentication /etc/ssh 1> found.txt 2> errors.txt
 
 $> cat errors.txt
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 
 $> cat found.txt
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 #### Combine standard output and error streams (grep)
@@ -672,13 +699,15 @@ You can do that with the `&>` operator:
 $> grep -r PasswordAuthentication /etc/ssh &> all.txt
 
 $> cat all.txt
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 {% note type: tip %}
@@ -794,10 +823,12 @@ find the processes of the SSH server:
 
 ```bash
 $> ps -ef | grep sshd
-root        3824       1  0 11:07 ?        00:00:00 sshd: /usr/sbin/sshd [listener] 0 of 10-100 startups
-root        3840    3824  0 11:07 ?        00:00:00 sshd: jde [priv]
-jde         3851    3840  0 11:07 ?        00:00:00 sshd: jde@pts/0
-jde         3854    3852  0 11:07 pts/0    00:00:00 grep --color=auto sshd
+root         888       1  0 17:31 ?        00:00:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+root         952     888  0 17:31 ?        00:00:00 sshd-session: archidep [priv]
+archidep    1211     952  0 17:31 ?        00:00:00 sshd-session: archidep@notty
+root        6596     888  0 18:17 ?        00:00:00 sshd-session: jde [priv]
+jde         6653    6596  0 18:17 ?        00:00:00 sshd-session: jde@pts/0
+jde         7379    6654  0 18:47 pts/0    00:00:00 grep --color=auto sshd
 ```
 
 {% note type: tip %}
@@ -807,6 +838,9 @@ time, so `grep` was running while `ps` listed the processes, with `sshd` in its
 command line.
 
 {% endnote %}
+
+The other lines are the SSH server and its two sessions: yours, as `jde`, and the
+course's website's, as `archidep`.
 
 ### The Unix philosophy
 
@@ -918,8 +952,9 @@ null device**:
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh > /dev/null
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 ```
 
@@ -933,10 +968,11 @@ the lines that were found:
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh 2> /dev/null
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 Or you can redirect both output streams. In this case, all output and error

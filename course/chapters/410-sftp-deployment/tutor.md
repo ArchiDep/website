@@ -73,9 +73,6 @@ flaws:
   The fixed version is deployed because the application will be reachable from
   the Internet. Sample question: why deploy the fixed version rather than your
   own?
-- **"Install the dependencies".** `npm ci` has to run again after the update:
-  the fix of the cross-site scripting added the `mustache` dependency. Sample
-  question: why install the dependencies again?
 - **"Install Node.js".** Afterwards: `node -v` prints `v26.x.y`. An older
   version is Ubuntu's own `nodejs` package, installed when a NodeSource command
   was skipped or failed.
@@ -83,6 +80,10 @@ flaws:
   Node.js only put files on the disk, and `node -v` ran and exited. What
   started PostgreSQL is left open on purpose, for "Manage a PHP application
   with systemd as a Process Manager": do not explain it.
+- **"Install the dependencies".** Done on the student's computer, with the
+  Node.js already installed there, not on the server. `npm ci` has to run again
+  after the update: the fix of the cross-site scripting added the `mustache`
+  dependency. Sample question: why install the dependencies again?
 - **"Update the configuration".** Done in the copy on the student's computer,
   before the upload, so that the files are deployed as they are. Afterwards: the
   password in `DATABASE_URL` is the one in `schema.sql`, and the port is 5432.
@@ -107,9 +108,11 @@ flaws:
 - **"Run the application".** Afterwards: the home page loads at the server's
   public IP address, port 3000, with an empty leaderboard and no warning that
   it could not be loaded.
-- **"Optional: see who listens where".** `ss -tln` shows PostgreSQL on
-  `127.0.0.1:5432` and `[::1]:5432`, and Guess It on `*:3000`. That is one
-  reason a browser reaches Guess It but not PostgreSQL. The other is the Azure
+- **"Optional: see who listens where".** `sudo ss -tlpn` shows PostgreSQL on
+  `127.0.0.1:5432` only, and Guess It on `*:3000`, as `node-MainThread`. The
+  other lines are the SSH server on port 22, with `systemd` holding the same
+  port because it opened it for `sshd`, and the system's DNS resolver on port 53. Without `sudo`, the Process column is empty. Listening on `127.0.0.1` only
+  is one reason a browser reaches Guess It but not PostgreSQL. The other is the Azure
   firewall: the student opened port 3000 in 404, not 5432. Either alone would
   block PostgreSQL from the Internet. Sample question: why can your browser
   reach Guess It but not PostgreSQL?

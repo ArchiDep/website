@@ -5,13 +5,8 @@ excerpt_separator: <!-- more -->
 ---
 
 This guide describes how to deploy a [Node.js][node] application over
-[SFTP][sftp] on a server with Node.js and [PostgreSQL][postgres] installed.
-
-{% callout type: exercise %}
-
-Connect to your cloud server with SSH for this exercise.
-
-{% endcallout %}
+[SFTP][sftp] on a server, including installing what it needs to run, such as a
+[PostgreSQL][postgres] database server.
 
 <!-- more -->
 
@@ -28,6 +23,13 @@ you must deploy that fixed version.
 
 Everyone deploys and makes changes individually in this and later exercises, so
 you need to make sure you have your own fork of the repository.
+
+{% callout type: exercise %}
+
+This step happens on your local machine. Choose the option that applies to you,
+and follow the instructions.
+
+{% endcallout %}
 
 - **If you already have your own fork:** [Make sure your fork is up to
   date](#make-sure-your-fork-is-up-to-date).
@@ -141,25 +143,13 @@ If `git clone` fails because `guessit-ex` already exists, see [:boom:
 
 {% endnote %}
 
-## :exclamation: Install the dependencies
-
-Make sure to install the dependencies in your Guess It fork, even if you had
-already done it. The XSS vulnerability was fixed by adding the `mustache`
-dependency to escape user input, so you need to install it.
-
-```bash
-# Install dependencies (do this in the "guessit-ex" directory on your computer)
-$> npm ci
-```
-
-{% note type: more %}
-
-This reinstalls all dependencies, including the new `mustache` dependency, in
-the `node_modules` directory.
-
-{% endnote %}
-
 ## :exclamation: Install PostgreSQL
+
+{% callout type: exercise %}
+
+Connect to your cloud server with SSH for this part.
+
+{% endcallout %}
 
 Update your package lists and install the PostgreSQL database server:
 
@@ -242,6 +232,32 @@ which we'll use later in the course.
 
 {% endcallout %}
 
+## :exclamation: Install the dependencies
+
+{% callout type: exercise %}
+
+Go back to your local machine for this part. You can open a new local terminal
+while the other one stays connected to your server.
+
+{% endcallout %}
+
+Install the dependencies in your local copy of the repository, even if you had
+already done it. The XSS vulnerability was fixed by adding the `mustache`
+dependency to escape user input, so you need to install it.
+
+```bash
+# Install dependencies (do this in the "guessit-ex" directory on your computer)
+$> npm ci
+```
+
+{% note type: more %}
+
+This reinstalls all dependencies, including the new `mustache` dependency, in
+the `node_modules` directory. You will upload that directory with the
+application, so you do not need to install them again on the server.
+
+{% endnote %}
+
 ## :exclamation: Generate a password
 
 The `schema.sql` file of the original repository creates a `guessit` user with
@@ -296,15 +312,29 @@ SSH][hello-ssh-sftp] to upload the application to your server: [WinSCP][winscp]
 on Windows, or [Cyberduck][cyberduck] on macOS. Configure a new connection the
 same way, with two differences:
 
-- The **host** is your server's public IP address.
-- The **username** is your Unix username on your server.
+- The **host** is your server's public IP address (`W.X.Y.Z` in the screenshots
+  below).
+- The **username** is your Unix username on your server (`jde` in the
+  screenshots below).
 
 Your private key is the same. On Windows, use the converted
 `id_ed25519.ppk` key you saved for WinSCP, as described in [Give your key to
 WinSCP][hello-ssh-winscp].
 
-**[Screenshot to add: WinSCP's login window, configured for the student's
-server.]**
+On macOS, in Cyberduck's **Open Connection** window:
+
+![Cyberduck's connection window, configured for the server](images/cyberduck-connect.png)
+
+{% note type: warning %}
+
+When you connect for the first time, check the server's key fingerprint, as you
+did when you first connected to your server with SSH.
+
+{% endnote %}
+
+On Windows, in WinSCP's login window (the key is under **Advanced...**):
+
+![WinSCP's login window, configured for the server](images/winscp-connect.png)
 
 {% note type: warning %}
 
@@ -319,16 +349,21 @@ Once you are connected to your server with your SFTP application, copy your
 `/home/jde/guessit-ex`. Copy the whole directory, including `node_modules`: the
 application cannot run without its dependencies.
 
-On Windows, your copy of the repository is in the WSL. In WinSCP's local panel,
-type its path in the address bar, for example
-`\\wsl.localhost\Ubuntu\home\jde\guessit-ex`, replacing `jde` with your Linux
+On macOS, drag it from the Finder into Cyberduck's window:
+
+![Dragging guessit-ex from the Finder into Cyberduck](images/cyberduck-copy.png)
+
+On Windows, your copy of the repository is either in your Windows file system or
+in the WSL. If it's in Windows, open the directory containing `guessit-ex` in
+WinSCP's local panel. If it's in the WSL, you can type your WSL home path in the
+address bar of WinSCP's local panel, for example
+`\\wsl.localhost\Ubuntu\home\jde`, replacing `jde` with your local Linux
 username.
 
-**[Screenshot to add: WinSCP uploading the `guessit-ex` directory to the
-server.]**
+You can then simply drag-and-drop the directory from WinSCP's local panel (on
+the left) to your home directory on the server (on the right):
 
-You can simply drag-and-drop the directory from your machine to your home
-directory on the server. It keeps its name, `guessit-ex`.
+![WinSCP showing guessit-ex in the WSL, ready to be dragged to the server](images/winscp-copy.png)
 
 {% note type: tip %}
 
@@ -338,9 +373,15 @@ directory on the server. It keeps its name, `guessit-ex`.
 
 ### :question: Optional: check that the files have arrived
 
+{% callout type: exercise %}
+
+Go back to your terminal that is still connected to your cloud server over SSH
+for this part, or reconnect if necessary.
+
+{% endcallout %}
+
 Your SFTP application shows the files on the server, but you can also check from
-your terminal. If your terminal is still connected to your server through SSH,
-list the uploaded directory (connect first if necessary):
+your terminal. List the uploaded directory:
 
 ```bash
 # Make sure you're still connected to your server
@@ -389,12 +430,16 @@ connection open in your terminal.
 
 ## :exclamation: Initialize the database
 
-**Connect to your server** and go into the uploaded directory:
+{% callout type: exercise %}
+
+Go back to your terminal that is still connected to your cloud server over SSH
+for this part, or reconnect if necessary.
+
+{% endcallout %}
+
+Go into the uploaded directory:
 
 ```bash
-$> hostname
-jde.archidep.ch
-
 $> cd ~/guessit-ex
 ```
 
@@ -410,12 +455,12 @@ CREATE TABLE
 ALTER TABLE
 ```
 
-{% note type: more %}
-
 This uses the [redirection operator `<`][unix-redirection] to send the contents
 of the `schema.sql` file into the standard input stream of `psql`. When given
 SQL queries on its input stream, `psql` connects to the PostgreSQL server,
 executes them, then stops.
+
+{% note type: more %}
 
 `sudo -u postgres` runs `psql` as the `postgres` user of your server, which is
 allowed to connect to PostgreSQL as its superuser, also named `postgres`. That
@@ -424,28 +469,21 @@ itself: your shell opens it, and passes its content to `psql`.
 
 {% endnote %}
 
-{% callout type: more, id: database-users %}
-
-It is good practice to create a different user and password for each application
-that connects to a database server. That way, if one of the applications is
-compromised, it cannot access or modify the databases of the other applications.
+It is good practice to create a different database user and password for each
+application that connects to a database server. That way, if one of the
+applications is compromised, it cannot access or modify the databases of the
+other applications.
 
 Notably, you should never connect an application to its database as the
 superuser. On your server, only you, the system administrator, can become the
 PostgreSQL superuser, with `sudo`.
 
-{% endcallout %}
-
 ### :question: Optional: make sure it worked
 
-To make sure everything worked, you can check that the table was created. Connect
-to the `guessit` database as the superuser, and display the `game` table's
-schema with `\d`:
+To make sure everything worked, you can check that the table was created:
 
 ```bash
-$> sudo -u postgres psql guessit
-
-guessit=# \d game
+$> sudo -u postgres psql -c '\d game' guessit
                           Table "public.game"
    Column   |           Type           | Collation | Nullable | Default
 ------------+--------------------------+-----------+----------+---------
@@ -459,10 +497,16 @@ Indexes:
     "game_pkey" PRIMARY KEY, btree (id)
 ```
 
-Everything went well if the table was created, since that is the last step of
-the `schema.sql` file.
+If you see the table's schema, it means it was successfully created and
+everything went well, since that is the last step of the `schema.sql` file.
 
-You may exit `psql` with `\q`.
+{% note type: more %}
+
+The command above connects to the `guessit` database of the PostgreSQL server,
+executes `\d game`, then exits. `\d` is a PostgreSQL command that shows the
+schema of a table.
+
+{% endnote %}
 
 ## :exclamation: Run the application
 
@@ -481,8 +525,7 @@ Guess It is listening on http://localhost:3000
 You (and everybody else) should be able to access the application in a browser
 at your server's IP address and port 3000 (e.g. `http://W.X.Y.Z:3000`).
 
-**[Screenshot to add: Guess It's home page, opened at the server's IP address
-and port 3000.]**
+![Guess It's home page, at the server's IP address and port 3000](images/guessit.png)
 
 If you can play Guess It, congratulations! :tada: You have deployed a web
 application on a server, and made it accessible to anyone on the Internet.
@@ -503,18 +546,32 @@ In another SSH connection to your server, list the processes listening for TCP
 connections with `ss`:
 
 ```bash
-$> ss -tln
-State  Recv-Q Send-Q Local Address:Port Peer Address:Port
-LISTEN 0      200        127.0.0.1:5432      0.0.0.0:*
-LISTEN 0      511                *:3000            *:*
-LISTEN 0      200            [::1]:5432         [::]:*
-...
+$> sudo ss -tlpn
+State   …   Local Address:Port    …  Process
+LISTEN  …         0.0.0.0:22      …   users:(("sshd",…),("systemd",…))
+LISTEN  …      127.0.0.54:53      …   users:(("systemd-resolve",…))
+LISTEN  …       127.0.0.1:5432    …   users:(("postgres",…))
+LISTEN  …   127.0.0.53%lo:53      …   users:(("systemd-resolve",…))
+LISTEN  …            [::]:22      …   users:(("sshd",…),("systemd",…))
+LISTEN  …               *:3000    …   users:(("node-MainThread",…))
 ```
 
-PostgreSQL listens on port 5432 of the [loopback addresses][loopback],
-`127.0.0.1` and its IPv6 equivalent `::1`: only programs running on your server
-can connect to it. Guess It listens on port 3000 of `*`, all the addresses of
-your server: anyone who can reach your server can connect to it.
+PostgreSQL (`postgres`) listens on port 5432 of the [loopback
+address][loopback], `127.0.0.1`: only programs running on your server can
+connect to it. Guess It (`node-MainThread`, the name Node.js gives its main
+thread) listens on port 3000 of `*`, all the addresses of your server: anyone
+who can reach your server can connect to it.
+
+The other lines are the SSH server (`sshd`), on port 22 of all addresses, and
+your server's own DNS resolver (`systemd-resolve`), on port 53 of two loopback
+addresses.
+
+{% note type: more %}
+
+`ss` needs `sudo` to show the processes of other users, like `postgres`. Without
+it, the Process column stays empty for them.
+
+{% endnote %}
 
 ## :checkered_flag: What have I done?
 

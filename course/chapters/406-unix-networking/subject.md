@@ -88,7 +88,7 @@ endpoint. For a TCP connection in an IP network, it corresponds to a connection
 made on an IP address and port number.
 
 ```bash
-$> ss -tlpn
+$> sudo ss -tlpn
 State   Recv-Q  Send-Q  Local Address:Port  Peer Address:Port  Process
 LISTEN  0       80          127.0.0.1:3306       0.0.0.0:*     mysqld...
 LISTEN  0       128     127.0.0.53%lo:53         0.0.0.0:*     systemd-resolve...

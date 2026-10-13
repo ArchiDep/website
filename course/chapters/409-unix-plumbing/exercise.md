@@ -40,19 +40,22 @@ Which are which, and why are there errors?
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
+grep: /etc/ssh/ssh_host_rsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
-grep: /etc/ssh/ssh_host_rsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 The lines starting with `/etc/ssh/` are the lines `grep` found, its output data,
 on its standard output stream. The lines starting with `grep:` are error
-messages, on its standard error stream: the server's private SSH keys can only
-be read by `root`, and you are running `grep` as yourself.
+messages, on its standard error stream: the server's private SSH keys and one of
+its configuration files can only be read by `root`, and you are running `grep`
+as yourself.
 
 The lines on your server may differ slightly. What matters is which stream each
 one is on.
@@ -65,6 +68,8 @@ The `/etc/ssh` directory holds the configuration of SSH on your server:
 
 - `sshd_config` configures the SSH server, the program that accepts your
   connection when you run `ssh` from your computer.
+- The files in `sshd_config.d` add to the SSH server's configuration. Some of
+  them were written when your server was created.
 - `ssh_config` configures the SSH client, used when you run `ssh` from this
   server to connect to another machine.
 - The `ssh_host_..._key` files are the server's private keys, which prove its
@@ -75,7 +80,8 @@ The `/etc/ssh` directory holds the configuration of SSH on your server:
 `PasswordAuthentication` is the setting that decides whether the SSH server
 accepts passwords, or only keys like yours. A line starting with `#` is a
 comment, which the server ignores: these lines document the setting and its
-default value.
+default value. The line `PasswordAuthentication no`, in `sshd_config.d`, is the
+one that applies: your server refuses passwords.
 
 {% endcallout %}
 
@@ -92,27 +98,31 @@ file? Display the file with `cat` to see.
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh > found.txt
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 
 $> cat found.txt
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh 2> errors.txt
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 
 $> cat errors.txt
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 ```
 
@@ -120,13 +130,15 @@ grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
 $> grep -r PasswordAuthentication /etc/ssh &> all.txt
 
 $> cat all.txt
-grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
+grep: /etc/ssh/sshd_config.d/50-cloud-init.conf: Permission denied
 grep: /etc/ssh/ssh_host_rsa_key: Permission denied
+grep: /etc/ssh/ssh_host_ecdsa_key: Permission denied
 grep: /etc/ssh/ssh_host_ed25519_key: Permission denied
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 With `&>`, nothing is displayed, and the lines are not in the same order as in
@@ -365,8 +377,9 @@ song: its `-d` option gives the character that separates the fields (the
 ```bash
 $> cat /etc/passwd | cut -d : -f 7 | sort | uniq -c
       3 /bin/bash
+      1 /bin/false
       1 /bin/sync
-     21 /usr/sbin/nologin
+     28 /usr/sbin/nologin
 ```
 
 The numbers on your server will differ.
@@ -379,8 +392,8 @@ Most users have `/usr/sbin/nologin` as their login shell. Why?
 
 They are the system users you met in [Meet your server]({% link
 chapters/405-meet-your-server/exercise.md %}): users that run services rather
-than people. `nologin` refuses to log them in, so nobody can open a shell as one
-of them.
+than people. `/usr/sbin/nologin` or `/bin/false` refuses to log them in, so
+nobody can open a shell as one of them.
 
 {% endsolution %}
 
@@ -405,10 +418,11 @@ discards everything written to it:
 
 ```bash
 $> grep -r PasswordAuthentication /etc/ssh 2> /dev/null
-/etc/ssh/ssh_config:#   PasswordAuthentication yes
+/etc/ssh/sshd_config.d/60-cloudimg-settings.conf:PasswordAuthentication no
 /etc/ssh/sshd_config:#PasswordAuthentication yes
 /etc/ssh/sshd_config:# PasswordAuthentication.  Depending on your PAM configuration,
 /etc/ssh/sshd_config:# PAM authentication, then enable this but set PasswordAuthentication
+/etc/ssh/ssh_config:#   PasswordAuthentication yes
 ```
 
 {% endsolution %}

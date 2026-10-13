@@ -87,8 +87,9 @@ rainbow`.
 - **"Pipe your server's users"**.
   Question before: "What separates the fields of `/etc/passwd`, and which field
   is the login shell?"
-  Expected after: a few lines like `21 /usr/sbin/nologin`; the numbers differ
-  from server to server.
+  Expected after: a few lines like `28 /usr/sbin/nologin`; the numbers differ
+  from server to server. The one `/bin/false` is `dhcpcd`, the DHCP client
+  daemon, a system user like the `nologin` ones.
   Question after: "Why do most users have `nologin`?" (System users run
   services; nobody should log in as one.)
 - **"Discard the errors"** (optional). The page sends the student to the
