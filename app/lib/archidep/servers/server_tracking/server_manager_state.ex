@@ -39,6 +39,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias ArchiDep.Servers.SSH.SSHHostKey
   alias ArchiDep.Servers.Types
   alias ArchiDep.Servers.UseCases.DeleteServer
+  alias ArchiDep.Servers.UseCases.ResetServerSetup
   alias ArchiDep.Servers.UseCases.UpdateServer
   alias Ecto.UUID
   alias Phoenix.Token
@@ -1390,6 +1391,80 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
         with_reply(state, {:error, :server_busy})
     end
   end
+
+  @impl ServerManagerBehaviour
+  def reset_server_setup(state, auth) do
+    case state do
+      %__MODULE__{connection_state: connecting_state()} ->
+        with_reply(state, {:error, :server_busy})
+
+      %__MODULE__{connection_state: reconnecting_state()} ->
+        with_reply(state, {:error, :server_busy})
+
+      %__MODULE__{connection_state: connected_state(), tasks: tasks, ansible: ansible}
+      when tasks != %{} or ansible != nil ->
+        with_reply(state, {:error, :server_busy})
+
+      %__MODULE__{server: %Server{set_up_at: nil} = server} ->
+        Logger.info(
+          # coveralls-ignore-next-line
+          "Ignoring request to reset the setup of server #{server.id} because it has not been set up"
+        )
+
+        with_reply(state, :ok)
+
+      _any_other_state ->
+        do_reset_server_setup(state, auth)
+    end
+  end
+
+  defp do_reset_server_setup(state, auth) do
+    {:ok, updated_server, event} = ResetServerSetup.reset_server_setup(auth, state.server)
+
+    Logger.notice(
+      # coveralls-ignore-next-line
+      "Reset the setup of server #{updated_server.id}; it will be set up again as #{updated_server.username}"
+    )
+
+    state
+    |> set_updated_server(updated_server)
+    |> update_user_to_connect_as()
+    |> drop_connection_problems()
+    |> drop_connected_problems()
+    |> drop_problems([
+      :server_missing_sudo_access,
+      :server_reconnection_failed,
+      :server_sudo_access_check_failed
+    ])
+    |> reconnect_after_setup_reset(event)
+    |> with_reply(:ok)
+  end
+
+  # A server that is connected, or that failed or is waiting to retry
+  # connecting, connects again right away as its initial user, which sets it up
+  # again. In any other state, it will connect as its initial user the next time
+  # it connects.
+  defp reconnect_after_setup_reset(
+         %__MODULE__{connection_state: connected_state(connection_pid: connection_pid)} = state,
+         event
+       ),
+       do: state |> stop_measuring_load_average() |> connect(connection_pid, false, event)
+
+  defp reconnect_after_setup_reset(
+         %__MODULE__{connection_state: connection_failed_state(connection_pid: connection_pid)} =
+           state,
+         event
+       ),
+       do: connect(state, connection_pid, false, event)
+
+  defp reconnect_after_setup_reset(
+         %__MODULE__{connection_state: retry_connecting_state(connection_pid: connection_pid)} =
+           state,
+         event
+       ),
+       do: connect(state, connection_pid, false, event)
+
+  defp reconnect_after_setup_reset(state, _event), do: add_action(state, update_tracking_action())
 
   defp auto_activate_or_deactivate(
          %__MODULE__{connection_state: connection_state, server: server} = state,

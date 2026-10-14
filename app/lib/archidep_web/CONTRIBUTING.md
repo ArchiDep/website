@@ -420,9 +420,10 @@ steps.
   [`ServerTracker`](../archidep/servers/CONTRIBUTING.md#server-tracking).
 - **Dialogs** — [`NewServerDialogLive`](./servers/new_server_dialog_live.ex)
   (register, opened from [My Servers](#user-facing-pages)),
-  [`EditServerDialogLive`](./servers/edit_server_dialog_live.ex) and
-  [`DeleteServerDialogLive`](./servers/delete_server_dialog_live.ex) — wrap the
-  Servers context's [create/update/delete
+  [`EditServerDialogLive`](./servers/edit_server_dialog_live.ex),
+  [`DeleteServerDialogLive`](./servers/delete_server_dialog_live.ex) and
+  [`ResetServerSetupDialogLive`](./servers/reset_server_setup_dialog_live.ex) —
+  wrap the Servers context's [create/update/delete and reset-setup
   operations](../archidep/servers/CONTRIBUTING.md#use-cases).
 - **Forms** — [`ServerForm`](./servers/server_form.ex) and
   [`ServerPropertiesForm`](./servers/server_properties_form.ex) (with their form

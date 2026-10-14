@@ -11,6 +11,7 @@ defmodule ArchiDep.Servers.PubSub do
   alias ArchiDep.Servers.Events.ServerFactsGathered
   alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
+  alias ArchiDep.Servers.Events.ServerSetupReset
   alias ArchiDep.Servers.Events.ServerUpdated
 
   @pubsub ArchiDep.PubSub
@@ -53,6 +54,7 @@ defmodule ArchiDep.Servers.PubSub do
           ServerUpdated.t()
           | ServerFactsGathered.t()
           | ServerSetUp.t()
+          | ServerSetupReset.t()
           | ServerOpenPortsChecked.t(),
           EventReference.t()
         ) :: :ok

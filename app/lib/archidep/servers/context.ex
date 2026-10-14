@@ -130,6 +130,10 @@ defmodule ArchiDep.Servers.Context do
 
   @doc false
   @impl Behaviour
+  defdelegate reset_server_setup(auth, server_id), to: UseCases.ResetServerSetup
+
+  @doc false
+  @impl Behaviour
   defdelegate notify_server_up(server_id, token), to: UseCases.ServerCallbacks
 
   # Ansible

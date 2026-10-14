@@ -17,8 +17,10 @@ and automated agents interacting with this project.
   required for a specific feature, because changing them causes a recompilation
   of the entire project. Ask for confirmation if it proves necessary to change
   them.
-- When changing the public API of application contexts, update the relevant
-  documentation in the appropriate `CONTRIBUTING.md` file.
+- When changing the public API of application contexts, add or update the
+  operation's entry in the relevant `CONTRIBUTING.md` file: a one-line summary
+  and a link to its module. What it does and why belongs in the module's
+  documentation.
 - There should generally be no need to add a new bounded context without
   explicit instructions from a human. If you believe a new context is needed,
   explain why in your response and ask for confirmation.

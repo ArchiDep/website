@@ -1151,6 +1151,11 @@ projection honest:
   the shape of the assertion documents what matters. A bound wildcard in the
   middle of a tuple is a value silently going unchecked — the diff self-audit in
   [`AGENTS.md`](../../AGENTS.md) flags these.
+- **Fixed text is not state.** A dialog's explanation, a heading or the wording
+  of a warning does not change with the page's state, so project whether the
+  element is present and what state it is in, not its text. A value interpolated
+  into such text is asserted only if no other part of the projection already
+  covers it.
 - **Presence and absence are both assertions.** Assert that an affordance that
   _should_ render does, with the right label and state (the Delete button on a
   deletable session); and assert that one that should _not_ render is **absent**

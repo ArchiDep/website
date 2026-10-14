@@ -476,6 +476,37 @@ defmodule ArchiDep.Servers.Schemas.ServerTest do
     end
   end
 
+  describe "reset_setup/2" do
+    test "clears the setup and open-ports-checked timestamps under an optimistic lock" do
+      {owner, group} = persisted_owner_and_group()
+
+      server =
+        ServersTestHelpers.insert_server(owner.id, group.id,
+          set_up_at: @past,
+          open_ports_checked_at: @past
+        )
+
+      reloaded = Repo.reload!(server)
+
+      changeset = Server.reset_setup(reloaded, @now)
+
+      assert Changeset.apply_changes(changeset) == %{
+               reloaded
+               | set_up_at: nil,
+                 open_ports_checked_at: nil,
+                 updated_at: @now
+             }
+
+      assert changeset.filters == %{version: reloaded.version}
+    end
+
+    test "refuses a server that has not been set up" do
+      server = ServersFactory.build(:server, set_up_at: nil)
+
+      assert_raise FunctionClauseError, fn -> Server.reset_setup(server, @now) end
+    end
+  end
+
   describe "mark_open_ports_checked!/4" do
     test "records the checked ports and stores an open-ports-checked event" do
       {owner, group} = persisted_owner_and_group()

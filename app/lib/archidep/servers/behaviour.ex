@@ -220,6 +220,14 @@ defmodule ArchiDep.Servers.Behaviour do
               | {:error, :server_busy}
 
   @doc """
+  Forget that a server has been set up, so that the application connects to it
+  with its initial username and sets it up again. The operation will fail if the
+  server is busy.
+  """
+  @callback reset_server_setup(Authentication.t(), UUID.t()) ::
+              :ok | {:error, :server_busy} | {:error, :server_not_found}
+
+  @doc """
   Receive a notification that a server is up. This is used to automatically
   attempt to connect to a server as soon as it boots.
   """

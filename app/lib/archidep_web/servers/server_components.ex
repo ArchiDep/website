@@ -119,6 +119,11 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     default: nil
   )
 
+  attr(:on_reset_setup, JS,
+    doc: "JS command to execute when resetting the server's setup",
+    default: nil
+  )
+
   @spec server_card(map()) :: Rendered.t()
   def server_card(assigns) do
     server = assigns.server
@@ -179,6 +184,7 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
               connected={@connected}
               current_job={@state.current_job}
               on_retry_operation={@on_retry_operation}
+              on_reset_setup={@on_reset_setup}
             />
           </li>
         </ul>
@@ -526,6 +532,11 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
     default: nil
   )
 
+  attr(:on_reset_setup, JS,
+    doc: "JS command to execute when resetting the server's setup",
+    default: nil
+  )
+
   @spec server_problem(map()) :: Rendered.t()
 
   def server_problem(
@@ -640,6 +651,21 @@ defmodule ArchiDepWeb.Servers.ServerComponents do
           {gettext("Authentication failed")}
         <% end %>
       </span>
+      <%!-- The application user only fails to authenticate on a server that has
+      been set up, typically because its machine was replaced by a new one which
+      does not have that user, so this is where its setup is most likely to need
+      a reset. --%>
+      <button
+        :if={@on_reset_setup != nil and root?(@auth)}
+        type="button"
+        class="btn btn-xs btn-warning reset-server-setup"
+        phx-click={@on_reset_setup}
+      >
+        <span class="flex items-center gap-x-1">
+          <Heroicons.arrow_uturn_left class="size-4" />
+          <span>{gettext("Reset setup")}</span>
+        </span>
+      </button>
     </div>
     """
   end

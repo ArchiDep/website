@@ -15,7 +15,9 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
   alias ArchiDep.Servers.UseCases.ReadServers
   alias ArchiDep.Support.EventsFactory
   alias ArchiDep.Support.ServersFactory
+  alias ArchiDepWeb.Servers.ResetServerSetupDialogLive
   alias Ecto.Changeset
+  alias Phoenix.LiveView.JS
 
   # Real host public keys generated with ssh-keygen, and the page's projection
   # of their fingerprints: the output of `ssh-keygen -lf` and
@@ -53,6 +55,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       }
     ]
   ]
+  @set_up_at ~U[2026-06-01 10:00:00Z]
 
   describe "the server detail page as an admin" do
     setup :register_and_log_in_root
@@ -126,7 +129,10 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
                edit_button: :enabled,
                edit_dialog: true,
                delete_button: :absent,
-               delete_dialog: false
+               delete_dialog: false,
+               reset_setup_button: :absent,
+               reset_setup_shortcuts: [],
+               reset_setup_dialog: nil
              }
     end
 
@@ -394,6 +400,160 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
     end
   end
 
+  describe "the reset setup affordances as an admin" do
+    setup :register_and_log_in_root
+
+    test "offer to reset the setup of a set-up server, also from its application user's authentication failure",
+         %{conn: conn, auth: auth} do
+      server = build_server()
+      stub_server_page(auth, server, app_user_authentication_failed_state(server))
+
+      {:ok, _view, html} = live(conn, "/admin/servers/#{server.id}")
+
+      assert server_page(html, server) ==
+               expected_admin_page(%{
+                 reset_setup_shortcuts: [js_command(ResetServerSetupDialogLive.open(server))]
+               })
+    end
+
+    test "do not offer to reset the setup of a server that has not been set up", %{
+      conn: conn,
+      auth: auth
+    } do
+      server = build_server(set_up_at: nil)
+      stub_server_page(auth, server, app_user_authentication_failed_state(server))
+
+      {:ok, _view, html} = live(conn, "/admin/servers/#{server.id}")
+
+      assert server_page(html, server) ==
+               expected_admin_page(%{reset_setup_button: :absent})
+    end
+  end
+
+  describe "the reset setup affordances as the owner" do
+    setup :register_and_log_in_student
+
+    test "do not offer to reset the setup, even of a set-up server", %{
+      conn: conn,
+      auth: auth,
+      student: student
+    } do
+      server = build_server()
+      stub_server_page(auth, server, app_user_authentication_failed_state(server))
+
+      stub(Course.ContextMock, :fetch_authenticated_student, fn ^auth ->
+        {:ok, StudentView.from(student)}
+      end)
+
+      {:ok, _view, html} = live(conn, "/servers/#{server.id}")
+
+      assert server_page(html, server) == %{
+               heading: "web-01",
+               details: %{
+                 "IP address" => "192.168.1.10",
+                 "Username" => "deploy",
+                 "Domain" => "alice.archidep.ch",
+                 "SSH port" => "2222",
+                 "Active" => :active
+               },
+               ssh_host_key_fingerprints: @ssh_host_key_fingerprints,
+               edit_button: :enabled,
+               edit_dialog: true,
+               delete_button: :absent,
+               delete_dialog: false,
+               reset_setup_button: :absent,
+               reset_setup_shortcuts: [],
+               reset_setup_dialog: nil
+             }
+    end
+  end
+
+  describe "the reset server setup dialog" do
+    setup :register_and_log_in_root
+
+    test "reset the setup of the server", %{conn: conn, auth: auth} do
+      server = build_server()
+      stub_server_page(auth, server)
+      server_id = server.id
+
+      expect(Servers.ContextMock, :reset_server_setup, fn ^auth, ^server_id -> :ok end)
+
+      {:ok, view, _html} = live(conn, "/admin/servers/#{server.id}")
+
+      click_reset_setup(view, server)
+
+      expected_notifications = [
+        {:success, gettext("Reset the setup of server {server}", server: "web-01")}
+      ]
+
+      wait_for_socket_assigns!(
+        view,
+        &(flash_notifications(&1) == expected_notifications),
+        "setup reset notification"
+      )
+
+      assert flash_notifications(view) == expected_notifications
+
+      assert_push_event(view, "execute-action", payload)
+      assert payload == %{to: "#reset-server-setup-dialog-#{server.id}", action: "close"}
+    end
+
+    test "report that the server is busy", %{conn: conn, auth: auth} do
+      server = build_server()
+      stub_server_page(auth, server)
+      server_id = server.id
+
+      expect(Servers.ContextMock, :reset_server_setup, fn ^auth, ^server_id ->
+        {:error, :server_busy}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/servers/#{server.id}")
+
+      click_reset_setup(view, server)
+
+      expected_notifications = [
+        {:error,
+         gettext("Cannot reset the setup because the server is busy. Please try again later.")}
+      ]
+
+      wait_for_socket_assigns!(
+        view,
+        &(flash_notifications(&1) == expected_notifications),
+        "server busy notification"
+      )
+
+      assert flash_notifications(view) == expected_notifications
+      refute_push_event(view, "execute-action", %{action: "close"})
+    end
+
+    test "report that the server no longer exists", %{conn: conn, auth: auth} do
+      server = build_server()
+      stub_server_page(auth, server)
+      server_id = server.id
+
+      expect(Servers.ContextMock, :reset_server_setup, fn ^auth, ^server_id ->
+        {:error, :server_not_found}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/servers/#{server.id}")
+
+      click_reset_setup(view, server)
+
+      expected_notifications = [
+        {:error, gettext("Cannot reset the setup because the server no longer exists.")}
+      ]
+
+      wait_for_socket_assigns!(
+        view,
+        &(flash_notifications(&1) == expected_notifications),
+        "server not found notification"
+      )
+
+      assert flash_notifications(view) == expected_notifications
+      refute_push_event(view, "execute-action", %{action: "close"})
+    end
+  end
+
   describe "live updates" do
     setup :register_and_log_in_root
 
@@ -453,7 +613,7 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
                })
     end
 
-    test "disable the edit and delete actions when the tracker reports a busy server", %{
+    test "disable the edit, delete and reset actions when the tracker reports a busy server", %{
       conn: conn,
       auth: auth
     } do
@@ -478,7 +638,12 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       )
 
       assert server_page(render(view), server) ==
-               expected_admin_page(%{edit_button: :disabled, delete_button: :disabled})
+               expected_admin_page(%{
+                 edit_button: :disabled,
+                 delete_button: :disabled,
+                 reset_setup_button: :disabled,
+                 reset_setup_dialog: expected_reset_setup_dialog(:busy)
+               })
     end
 
     test "hide the host key fingerprints while the tracker reports a key exchange failure", %{
@@ -644,9 +809,11 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
           name: "web-01",
           ip_address: %Postgrex.INET{address: {192, 168, 1, 10}, netmask: nil},
           username: "deploy",
+          app_username: "archidep",
           ssh_port: 2222,
           active: true,
           ssh_host_keys: @ssh_host_keys,
+          set_up_at: @set_up_at,
           group: group,
           group_id: group.id,
           owner: owner,
@@ -661,14 +828,14 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
   # mounts, and the tracker client is reached once per mount (its `start_link`
   # only on the connected one), so these ambient reads fire a variable number of
   # times. They are stubbed so each test can `expect` only the mutation it
-  # asserts. The tracker returns no real-time state, which renders the page in
-  # its initial (no-connection) shape.
-  defp stub_server_page(auth, server) do
+  # asserts. The tracker returns the given real-time state, by default none,
+  # which renders the page in its initial (no-connection) shape.
+  defp stub_server_page(auth, server, state \\ nil) do
     view = ServerView.from(server)
     server_id = server.id
     stub(Servers.ContextMock, :fetch_server, fn ^auth, _id -> {:ok, view} end)
     stub(ServerTrackerClientMock, :start_link, fn ^view -> {:ok, self()} end)
-    stub(ServerTrackerClientMock, :get_current_server_state, fn ^server_id -> nil end)
+    stub(ServerTrackerClientMock, :get_current_server_state, fn ^server_id -> state end)
     # The live view keeps the server read-model current through the Servers
     # boundary; route those calls to the real read-model plumbing so a real
     # broadcast still drives the re-render.
@@ -690,6 +857,21 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       version: 1
     }
 
+  # The state of a server whose application user can no longer authenticate,
+  # as when its machine has been replaced.
+  defp app_user_authentication_failed_state(server),
+    do:
+      real_time_state(server,
+        connection_state: ServersFactory.random_connection_failed_state(),
+        problems: [{:server_authentication_failed, :app_username, server.app_username}]
+      )
+
+  defp click_reset_setup(view, server),
+    do:
+      view
+      |> element(~s(#reset-server-setup-dialog-#{server.id} button[phx-click="reset"]))
+      |> render_click()
+
   # The well-known shape of the admin-rendered page, with overrides for the facet
   # a test exercises (e.g. the action buttons becoming `:disabled` for a busy
   # server). Mirrors `build_server/1`'s default fixture.
@@ -703,10 +885,18 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
           edit_button: :enabled,
           edit_dialog: true,
           delete_button: :enabled,
-          delete_dialog: true
+          delete_dialog: true,
+          reset_setup_button: :enabled,
+          reset_setup_shortcuts: [],
+          reset_setup_dialog: expected_reset_setup_dialog(:idle)
         },
         overrides
       )
+
+  # The reset setup dialog's busy alert and Reset button follow the real-time
+  # state.
+  defp expected_reset_setup_dialog(:idle), do: %{busy_alert: false, reset_button: :enabled}
+  defp expected_reset_setup_dialog(:busy), do: %{busy_alert: true, reset_button: :disabled}
 
   defp expected_admin_details,
     do: %{
@@ -720,10 +910,14 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
     }
 
   # Projects the whole observable server page: the heading, the data-display
-  # rows, the host key fingerprints, and the edit/delete affordances. Each
-  # action button projects to `:enabled` / `:disabled` (its `disabled`
-  # attribute tracks the real-time server state) or `:absent` when the
-  # principal cannot see it; each dialog projects to its presence.
+  # rows, the host key fingerprints, and the edit/delete/reset-setup
+  # affordances. Each action button projects to `:enabled` / `:disabled` (its
+  # `disabled` attribute tracks the real-time server state) or `:absent` when
+  # the principal cannot see it; the edit and delete dialogs project to their
+  # presence. The reset setup shortcuts offered by the server card's problems
+  # project to the JS command each carries, and the reset setup dialog to
+  # whether it warns that the server is busy and the state of its Reset button,
+  # or `nil` when absent.
   defp server_page(html, server),
     do: %{
       heading: server_heading(html),
@@ -732,8 +926,34 @@ defmodule ArchiDepWeb.Servers.ServerLiveTest do
       edit_button: button_state(html, "#edit-server-button"),
       edit_dialog: present?(html, "#edit-server-dialog-#{server.id}"),
       delete_button: button_state(html, "#delete-server-button"),
-      delete_dialog: present?(html, "#delete-server-dialog-#{server.id}")
+      delete_dialog: present?(html, "#delete-server-dialog-#{server.id}"),
+      reset_setup_button: button_state(html, "#reset-server-setup-button"),
+      reset_setup_shortcuts:
+        html
+        |> find_html_elements(".card .reset-server-setup")
+        |> Enum.map(&js_command(html_element_attribute(&1, "phx-click"))),
+      reset_setup_dialog: reset_setup_dialog(html, server)
     }
+
+  defp reset_setup_dialog(html, server) do
+    dialog_id = "#reset-server-setup-dialog-#{server.id}"
+
+    case find_html_elements(html, dialog_id) do
+      [] ->
+        nil
+
+      [dialog] ->
+        %{
+          busy_alert: present?(dialog, "[role=alert]"),
+          reset_button: button_state(dialog, ~s(button[phx-click="reset"]))
+        }
+    end
+  end
+
+  # A rendered `phx-click` command and an expected `%JS{}` compare as the
+  # operations the client receives.
+  defp js_command(%JS{} = js), do: js |> Jason.encode!() |> Jason.decode!()
+  defp js_command(attribute) when is_binary(attribute), do: Jason.decode!(attribute)
 
   defp button_state(html, selector) do
     case find_html_elements(html, selector) do

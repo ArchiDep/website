@@ -494,6 +494,19 @@ defmodule ArchiDep.Servers.Schemas.Server do
     end
   end
 
+  @doc """
+  Forgets that a server has been set up, so that the application connects to it
+  with its initial username and runs the setup again, as for a new server. This
+  is needed when the machine was replaced by a new one under the same server
+  record, which does not have the application user yet.
+  """
+  @spec reset_setup(t(), DateTime.t()) :: Changeset.t(t())
+  def reset_setup(%__MODULE__{set_up_at: %DateTime{}} = server, now),
+    do:
+      server
+      |> change(set_up_at: nil, open_ports_checked_at: nil, updated_at: now)
+      |> optimistic_lock(:version)
+
   @spec mark_open_ports_checked!(t(), list(1..65_535), EventReference.t(), DateTime.t()) ::
           {t(), StoredEvent.t(map)}
   def mark_open_ports_checked!(

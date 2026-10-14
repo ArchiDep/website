@@ -882,6 +882,38 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerTest do
            end) == {:error, :server_busy}
   end
 
+  test "reset the setup of a server through its manager", %{
+    initialize: initialize,
+    server: server,
+    test_pid: test_pid
+  } do
+    auth = Factory.build(:authentication, root: true)
+
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
+             expect(ServerManagerMock, :reset_server_setup, fn state, ^auth ->
+               {done.(state), :ok}
+             end)
+
+             ServerManager.reset_server_setup(server, auth)
+           end) == :ok
+  end
+
+  test "fail to reset the setup of a server through its manager", %{
+    initialize: initialize,
+    server: server,
+    test_pid: test_pid
+  } do
+    auth = Factory.build(:authentication, root: true)
+
+    assert test_server_manager!(initialize, test_pid, fn done, _test_data ->
+             expect(ServerManagerMock, :reset_server_setup, fn state, ^auth ->
+               {done.(state), {:error, :server_busy}}
+             end)
+
+             ServerManager.reset_server_setup(server, auth)
+           end) == {:error, :server_busy}
+  end
+
   test "send a message to a server manager that it should retry connecting to its server", %{
     initialize: initialize,
     test_pid: test_pid

@@ -134,6 +134,9 @@ defmodule ArchiDep.Events.Store.EventSchemaVersionDriftTest do
     ArchiDep.Servers.Events.ServerSetUp =>
       {1,
        "%{group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_port: 1..65535 | nil, ssh_username: String.t(), username: String.t()}"},
+    ArchiDep.Servers.Events.ServerSetupReset =>
+      {1,
+       "%{app_username: String.t(), group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_port: 1..65535 | nil, username: String.t()}"},
     ArchiDep.Servers.Events.ServerUpdated =>
       {2,
        "%{active: boolean(), app_username: String.t() | nil, expected_properties: %{architecture: String.t() | nil, cores: non_neg_integer() | nil, cpus: non_neg_integer() | nil, distribution: String.t() | nil, distribution_release: String.t() | nil, distribution_version: String.t() | nil, hostname: String.t() | nil, machine_id: String.t() | nil, memory: non_neg_integer() | nil, os_family: String.t() | nil, swap: non_neg_integer() | nil, system: String.t() | nil, vcpus: non_neg_integer() | nil}, group: %{id: Ecto.UUID.t(), name: String.t()}, id: Ecto.UUID.t(), ip_address: String.t(), name: String.t() | nil, owner: %{id: Ecto.UUID.t(), name: String.t() | nil, root: boolean(), username: String.t() | nil}, ssh_host_keys: String.t() | nil, ssh_port: 1..65535 | nil, username: String.t()}"}

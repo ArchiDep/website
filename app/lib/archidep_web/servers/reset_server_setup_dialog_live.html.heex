@@ -1,0 +1,54 @@
+<dialog id={id(@server)} class="modal" phx-mounted={JS.ignore_attributes(["open"])}>
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">{gettext("Reset Server Setup")}</h3>
+    <p class="mt-4">
+      {gettext(
+        "The application will forget that this server has been set up. It will connect as {cs}{username}{ce} and run the setup again, as it would for a new server.",
+        username: @server.username |> html_escape() |> safe_to_string(),
+        cs: "<code>",
+        ce: "</code>"
+      )
+      |> raw()}
+    </p>
+    <p class="mt-2">
+      {gettext(
+        "Do this when the server's machine has been replaced by a new one, on which the application user {cs}{app_username}{ce} does not exist yet.",
+        app_username: @server.app_username |> html_escape() |> safe_to_string(),
+        cs: "<code>",
+        ce: "</code>"
+      )
+      |> raw()}
+    </p>
+    <div
+      :if={ServerRealTimeState.busy?(@state)}
+      role="alert"
+      class="mt-2 alert alert-error alert-soft"
+    >
+      <Heroicons.arrow_path class="size-4 animate-spin" />
+      <span>{gettext("The setup of this server cannot currently be reset because it is busy.")}</span>
+    </div>
+    <div class="mt-4 flex justify-end gap-x-2">
+      <button type="button" class="btn btn-secondary" phx-click={close(@server)}>
+        <span class="flex items-center gap-x-2">
+          <Heroicons.x_mark class="size-4" />
+          <span>{gettext("No")}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        class="btn btn-warning"
+        disabled={ServerRealTimeState.busy?(@state)}
+        phx-click="reset"
+        phx-target={@myself}
+      >
+        <span class="flex items-center gap-x-2">
+          <Heroicons.arrow_uturn_left class="size-4" />
+          <span>{gettext("Reset")}</span>
+        </span>
+      </button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
+    <button type="submit">{gettext("Close")}</button>
+  </form>
+</dialog>

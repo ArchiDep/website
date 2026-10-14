@@ -22,6 +22,7 @@ defmodule ArchiDep.Servers.ServerView do
   alias ArchiDep.Servers.Events.ServerFactsGathered
   alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
+  alias ArchiDep.Servers.Events.ServerSetupReset
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerGroup
@@ -86,7 +87,13 @@ defmodule ArchiDep.Servers.ServerView do
           set_up_at: DateTime.t() | nil
         }
 
-  @server_events [ServerUpdated, ServerFactsGathered, ServerSetUp, ServerOpenPortsChecked]
+  @server_events [
+    ServerUpdated,
+    ServerFactsGathered,
+    ServerSetUp,
+    ServerSetupReset,
+    ServerOpenPortsChecked
+  ]
   @class_events [ClassUpdated, ClassExpectedServerPropertiesUpdated]
   @student_events [StudentUpdated, StudentConfigured]
 
@@ -194,6 +201,7 @@ defmodule ArchiDep.Servers.ServerView do
           ServerUpdated.t()
           | ServerFactsGathered.t()
           | ServerSetUp.t()
+          | ServerSetupReset.t()
           | ServerOpenPortsChecked.t()
           | ClassUpdated.t()
           | ClassExpectedServerPropertiesUpdated.t()
@@ -307,6 +315,14 @@ defmodule ArchiDep.Servers.ServerView do
 
   defp merge_server(%__MODULE__{id: id} = view, %ServerSetUp{id: id}, version, set_up_at),
     do: %__MODULE__{view | set_up_at: set_up_at, version: version}
+
+  defp merge_server(
+         %__MODULE__{id: id} = view,
+         %ServerSetupReset{id: id},
+         version,
+         _occurred_at
+       ),
+       do: %__MODULE__{view | set_up_at: nil, version: version}
 
   defp merge_server(
          %__MODULE__{id: id} = view,

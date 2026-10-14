@@ -441,6 +441,27 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                )
     end
 
+    test "passes the reset setup action to its problems" do
+      on_reset_setup = JS.dispatch("open-dialog", detail: %{dialog: "reset-web-01"})
+
+      assert card(server(set_up_at: @now),
+               auth: auth(root: true),
+               state:
+                 rts(ServersFactory.random_connection_failed_state(),
+                   set_up_at: @now,
+                   problems: [{:server_authentication_failed, :app_username, "archidep"}]
+                 ),
+               on_reset_setup: on_reset_setup
+             ) ==
+               base_card(
+                 badge: "Connection failed",
+                 color: :error,
+                 body: "Could not connect to the server.",
+                 problems: [:error],
+                 reset_setup_shortcuts: [js_command(on_reset_setup)]
+               )
+    end
+
     test "offers a details link when a details path is given" do
       assert card(server(),
                state: rts(ServersFactory.random_connected_state()),
@@ -608,28 +629,84 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
   describe "server_problem/1 connection problems" do
     test "reports an authentication failure for the connection username" do
       assert problem({:server_authentication_failed, :username, "deployer"}) ==
-               %{severity: :error, text: "Authentication failed for user deployer", retry: nil}
+               %{
+                 severity: :error,
+                 text: "Authentication failed for user deployer",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
-    test "reports an application-user authentication failure to a root user" do
+    test "does not offer to reset the setup on the connection username's authentication failure" do
+      assert problem({:server_authentication_failed, :username, "ubuntu"},
+               auth: auth(root: true),
+               on_reset_setup: JS.push("reset-setup")
+             ) ==
+               %{
+                 severity: :error,
+                 text: "Authentication failed for user ubuntu",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
+    end
+
+    test "reports an application-user authentication failure to a root user, offering no reset without a reset action" do
       assert problem({:server_authentication_failed, :app_username, "archidep"},
                auth: auth(root: true)
              ) ==
                %{
                  severity: :error,
                  text: "Authentication failed for application user archidep",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
+    end
+
+    test "offers a root user to reset the setup on an application-user authentication failure" do
+      on_reset_setup = JS.dispatch("open-dialog", detail: %{dialog: "reset-dialog"})
+
+      assert problem({:server_authentication_failed, :app_username, "appuser"},
+               auth: auth(root: true),
+               on_reset_setup: on_reset_setup
+             ) ==
+               %{
+                 severity: :error,
+                 text: "Authentication failed for application user appuser",
+                 retry: nil,
+                 reset_setup_shortcut: js_command(on_reset_setup)
                }
     end
 
     test "hides the application user from a non-root user on authentication failure" do
       assert problem({:server_authentication_failed, :app_username, "archidep"}) ==
-               %{severity: :error, text: "Authentication failed", retry: nil}
+               %{
+                 severity: :error,
+                 text: "Authentication failed",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
+    end
+
+    test "does not offer a non-root user to reset the setup on an application-user authentication failure" do
+      assert problem({:server_authentication_failed, :app_username, "deployapp"},
+               on_reset_setup: JS.push("reset-setup")
+             ) ==
+               %{
+                 severity: :error,
+                 text: "Authentication failed",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports a refused connection on the default SSH port" do
       assert problem({:server_connection_refused, {1, 2, 3, 4}, 22, "deployer"}) ==
-               %{severity: :warning, text: "Connection refused to deployer@1.2.3.4", retry: nil}
+               %{
+                 severity: :warning,
+                 text: "Connection refused to deployer@1.2.3.4",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports a refused connection on a custom SSH port" do
@@ -637,7 +714,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Connection refused to deployer@1.2.3.4:2222",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -646,7 +724,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Timeout when connecting to deployer@1.2.3.4",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -655,7 +734,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Timeout when connecting to deployer@1.2.3.4:2222",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
   end
@@ -663,7 +743,12 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
   describe "server_problem/1 access problems" do
     test "reports missing sudo access, hiding stderr from a non-root user" do
       assert problem({:server_missing_sudo_access, "deployer", "no sudo for you"}) ==
-               %{severity: :error, text: "User deployer does not have sudo access", retry: nil}
+               %{
+                 severity: :error,
+                 text: "User deployer does not have sudo access",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports missing sudo access with stderr for a root user" do
@@ -673,7 +758,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "User deployer does not have sudo access \"no sudo for you\"",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -682,7 +768,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Could not check whether deployer has sudo access",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -693,7 +780,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Could not check whether deployer has sudo access :timeout",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -706,7 +794,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Could not check whether archidep has sudo access :timeout",
-                 retry: {:idle, "check-sudo-access"}
+                 retry: {:idle, "check-sudo-access"},
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -720,7 +809,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Could not check whether archidep has sudo access :closed",
-                 retry: {:retrying, "check-sudo-access"}
+                 retry: {:retrying, "check-sudo-access"},
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -732,7 +822,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Could not check whether student has sudo access",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -745,7 +836,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Could not check whether ops has sudo access :timeout",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
   end
@@ -753,7 +845,12 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
   describe "server_problem/1 operation problems" do
     test "reports a fact-gathering failure, hiding the reason from a non-root user" do
       assert problem({:server_fact_gathering_failed, "boom"}) ==
-               %{severity: :warning, text: "Could not gather facts from the server", retry: nil}
+               %{
+                 severity: :warning,
+                 text: "Could not gather facts from the server",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports a fact-gathering failure with the reason for a root user" do
@@ -761,13 +858,19 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Could not gather facts from the server \"boom\"",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
     test "reports a port-testing script failure, hiding the reason from a non-root user" do
       assert problem({:server_port_testing_script_failed, {:error, "boom"}}) ==
-               %{severity: :warning, text: "Could not check open ports on the server", retry: nil}
+               %{
+                 severity: :warning,
+                 text: "Could not check open ports on the server",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports a port-testing script failure with the reason for a root user" do
@@ -777,13 +880,19 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Could not check open ports on the server {:error, \"boom\"}",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
     test "reports a reconnection failure, hiding the reason from a non-root user" do
       assert problem({:server_reconnection_failed, :nxdomain}) ==
-               %{severity: :error, text: "Could not reconnect to server after setup", retry: nil}
+               %{
+                 severity: :error,
+                 text: "Could not reconnect to server after setup",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports a reconnection failure with the reason for a root user" do
@@ -791,13 +900,19 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Could not reconnect to server after setup :nxdomain",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
     test "reports an unexpected problem, hiding its detail from a non-root user" do
       assert problem({:something_unexpected, 42}) ==
-               %{severity: :error, text: "Oops, an unexpected problem occurred", retry: nil}
+               %{
+                 severity: :error,
+                 text: "Oops, an unexpected problem occurred",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports an unexpected problem with its detail for a root user" do
@@ -805,7 +920,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Oops, an unexpected problem occurred {:something_unexpected, 42}",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
   end
@@ -822,7 +938,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Ansible playbook setup failed with state :failed (2 tasks failed)",
-                 retry: {:idle, "ansible-playbook"}
+                 retry: {:idle, "ansible-playbook"},
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -836,7 +953,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                  severity: :error,
                  text:
                    "Ansible playbook setup failed with state :failed (1 task failed, host unreachable)",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -847,7 +965,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Ansible playbook setup failed with state :failed",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -863,7 +982,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :error,
                  text: "Ansible playbook setup failed with state :failed (2 tasks failed)",
-                 retry: {:retrying, "ansible-playbook"}
+                 retry: {:retrying, "ansible-playbook"},
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -871,7 +991,12 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
       problem = {:server_ansible_playbook_failed, "setup", :failed, ansible_stats(failures: 2)}
 
       assert problem(problem, connected: true, on_retry_operation: JS.push("retry")) ==
-               %{severity: :error, text: "setup provisioning task failed", retry: nil}
+               %{
+                 severity: :error,
+                 text: "setup provisioning task failed",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
   end
 
@@ -894,7 +1019,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                  severity: :warning,
                  text:
                    "The following ports might not be open: Port 8,080: connection refused Port 9,090: connection timeout Port 7,070: error :boom",
-                 retry: {:idle, "check-open-ports"}
+                 retry: {:idle, "check-open-ports"},
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -905,7 +1031,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "The following ports might not be open: Port 7,070: error",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
   end
@@ -916,13 +1043,19 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server hostname is db when it should be web",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
     test "reports a CPU count mismatch" do
       assert mismatch(:cpus, 4, 2) ==
-               %{severity: :warning, text: "Server has 2 CPUs when it should have 4", retry: nil}
+               %{
+                 severity: :warning,
+                 text: "Server has 2 CPUs when it should have 4",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports a CPU core mismatch in the singular" do
@@ -930,13 +1063,19 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server has 1 CPU core when it should have 4",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
     test "reports a vCPU mismatch" do
       assert mismatch(:vcpus, 4, 2) ==
-               %{severity: :warning, text: "Server has 2 vCPUs when it should have 4", retry: nil}
+               %{
+                 severity: :warning,
+                 text: "Server has 2 vCPUs when it should have 4",
+                 retry: nil,
+                 reset_setup_shortcut: nil
+               }
     end
 
     test "reports a memory mismatch" do
@@ -944,7 +1083,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server has 1,024 MB of RAM when it should have 2,048",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -953,7 +1093,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server has 0 MB of swap when it should have 1,024",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -962,7 +1103,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server is running a system of type windows when it should be linux",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -971,7 +1113,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server is running on architecture arm64 when it should be x86_64",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -981,7 +1124,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                  severity: :warning,
                  text:
                    "Server is running an operating system of the RedHat family when it should be Debian",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -990,7 +1134,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server is running the Fedora Linux distribution when it should be Ubuntu",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -999,7 +1144,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server is running distribution release focal when it should be jammy",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -1008,7 +1154,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server is running distribution version 20.04 when it should be 22.04",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
 
@@ -1017,7 +1164,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                %{
                  severity: :warning,
                  text: "Server property kernel has value 5.4 when it should be 6.1",
-                 retry: nil
+                 retry: nil,
+                 reset_setup_shortcut: nil
                }
     end
   end
@@ -1038,7 +1186,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                severity: :error,
                text:
                  "SSH key exchange failed The host key fingerprint provided by the server is: SHA256:m8HPD1dZ8lHmxBEY0nWUQakBAGBsHLkmfbq9fGl7a2I (RSA) The fingerprints of the host public keys registered for this server are: SHA256:V0jnGyjc86bi1R3vTmyML4bwnqc/WVEK+Y0M09I3rWY (ED25519) SHA256:67a0K6R9a0AJjhwKRj30hOTW3oRQLowG02WBwkOtJDQ (ECDSA)",
-               retry: nil
+               retry: nil,
+               reset_setup_shortcut: nil
              }
     end
 
@@ -1051,7 +1200,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                severity: :error,
                text:
                  "SSH key exchange failed The host key fingerprint provided by the server is: SHA256:0aZTeJEc/ke5sI65fcpc70c8hNQiqsSJ7Aukqo9xe2Y (ECDSA) No host public keys were registered",
-               retry: nil
+               retry: nil,
+               reset_setup_shortcut: nil
              }
     end
 
@@ -1062,7 +1212,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
                severity: :error,
                text:
                  "SSH key exchange failed Server host key fingerprint is unknown No host public keys were registered",
-               retry: nil
+               retry: nil,
+               reset_setup_shortcut: nil
              }
     end
   end
@@ -1176,7 +1327,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
         edit_enabled: Keyword.get(opts, :edit_enabled, false),
         on_edit: Keyword.get(opts, :on_edit),
         on_retry_connection: Keyword.get(opts, :on_retry_connection),
-        on_retry_operation: Keyword.get(opts, :on_retry_operation)
+        on_retry_operation: Keyword.get(opts, :on_retry_operation),
+        on_reset_setup: Keyword.get(opts, :on_reset_setup)
       )
 
     [card] = find_html_elements(html, ".card")
@@ -1190,6 +1342,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
       busy?: find_html_elements(card, "svg.animate-spin") != [],
       body: body_row |> find_html_elements("span") |> List.first() |> normalized_text(),
       problems: card |> find_html_elements("[role=alert]") |> Enum.map(&severity/1),
+      reset_setup_shortcuts: reset_setup_shortcuts(card),
       retry: card |> find_html_elements(".card-actions .btn-secondary") |> retry_text(),
       edit?: find_html_elements(card, ".card-actions .btn-primary") != [],
       details?: find_html_elements(card, ".card-actions a.btn-info") != []
@@ -1204,6 +1357,7 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
       busy?: Keyword.get(opts, :busy?, false),
       body: Keyword.fetch!(opts, :body),
       problems: Keyword.get(opts, :problems, []),
+      reset_setup_shortcuts: Keyword.get(opts, :reset_setup_shortcuts, []),
       retry: Keyword.get(opts, :retry),
       edit?: Keyword.get(opts, :edit?, false),
       details?: Keyword.get(opts, :details?, false)
@@ -1249,7 +1403,8 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
         problem: problem,
         connected: Keyword.get(opts, :connected, false),
         current_job: Keyword.get(opts, :current_job),
-        on_retry_operation: Keyword.get(opts, :on_retry_operation)
+        on_retry_operation: Keyword.get(opts, :on_retry_operation),
+        on_reset_setup: Keyword.get(opts, :on_reset_setup)
       )
 
     [alert] = find_html_elements(html, "[role=alert]")
@@ -1257,12 +1412,28 @@ defmodule ArchiDepWeb.Servers.ServerComponentsTest do
     %{
       severity: severity(alert),
       text: text_excluding(alert, "button"),
-      retry: retry_state(alert)
+      retry: retry_state(alert),
+      reset_setup_shortcut:
+        case reset_setup_shortcuts(alert) do
+          [] -> nil
+          [shortcut] -> shortcut
+        end
     }
   end
 
+  # The JS command carried by each reset setup shortcut, decoded into the
+  # operations the client receives so it compares with `js_command/1` of the
+  # expected command.
+  defp reset_setup_shortcuts(element),
+    do:
+      element
+      |> find_html_elements(".reset-server-setup")
+      |> Enum.map(&Jason.decode!(html_element_attribute(&1, "phx-click")))
+
+  defp js_command(%JS{} = js), do: js |> Jason.encode!() |> Jason.decode!()
+
   defp retry_state(alert) do
-    case find_html_elements(alert, "button") do
+    case find_html_elements(alert, "button[phx-value-operation]") do
       [] ->
         nil
 

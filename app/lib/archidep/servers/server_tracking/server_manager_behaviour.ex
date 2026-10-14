@@ -39,6 +39,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerBehaviour do
                {:ok, Server.t(), EventReference.t()}
                | {:error, Changeset.t()}
                | {:error, :server_busy}}
+  @callback reset_server_setup(state(), Authentication.t()) ::
+              {state(), :ok | {:error, :server_busy}}
   @callback delete_server(state(), Authentication.t()) :: {state(), :ok | {:error, :server_busy}}
   @callback on_message(state(), term()) :: state()
 end

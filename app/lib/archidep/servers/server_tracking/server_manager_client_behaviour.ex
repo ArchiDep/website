@@ -47,6 +47,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerClientBehaviour do
               | {:error, Changeset.t()}
               | {:error, :server_busy}
 
+  @callback reset_server_setup(Server.t(), Authentication.t()) :: :ok | {:error, :server_busy}
+
   @callback delete_server(Server.t(), Authentication.t()) :: :ok | {:error, :server_busy}
 
   @callback notify_server_up(UUID.t(), EventReference.t()) :: :ok

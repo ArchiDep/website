@@ -253,6 +253,15 @@ defmodule ArchiDep.Servers do
   defdelegate retry_checking_sudo_access(auth, server_id), to: @implementation
 
   @doc """
+  Forget that a server has been set up, so that the application connects to it
+  with its initial username and sets it up again. The operation will fail if the
+  server is busy.
+  """
+  @spec reset_server_setup(Authentication.t(), UUID.t()) ::
+          :ok | {:error, :server_busy} | {:error, :server_not_found}
+  defdelegate reset_server_setup(auth, server_id), to: @implementation
+
+  @doc """
   Receive a notification that a server is up. This is used to automatically
   attempt to connect to a server as soon as it boots.
   """

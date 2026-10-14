@@ -114,6 +114,11 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   def delete_server(server, auth), do: GenServer.call(name(server), {:delete_server, auth})
 
   @impl ServerManagerClientBehaviour
+  @spec reset_server_setup(Server.t(), Authentication.t()) :: :ok | {:error, :server_busy}
+  def reset_server_setup(server, auth),
+    do: GenServer.call(name(server), {:reset_server_setup, auth})
+
+  @impl ServerManagerClientBehaviour
   @spec notify_server_up(UUID.t(), EventReference.t()) :: :ok
   def notify_server_up(server_id, event),
     do: GenServer.cast(name(server_id), {:retry_connecting, event})
@@ -242,6 +247,15 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
         {state_module, state}
       ) do
     {new_state, result} = state_module.update_server(state, auth, data)
+
+    new_state
+    |> execute_actions()
+    |> pair(state_module)
+    |> reply_with(result)
+  end
+
+  def handle_call({:reset_server_setup, auth}, _from, {state_module, state}) do
+    {new_state, result} = state_module.reset_server_setup(state, auth)
 
     new_state
     |> execute_actions()

@@ -264,6 +264,8 @@ exceptions are marked **root-only**.
   `retry_checking_open_ports/2` (owner), and `retry_ansible_playbook/3` and
   `retry_checking_sudo_access/2` (**root-only**): retry a failed step. Hands off
   to the [server-tracking](./server_tracking) manager.
+- [`ResetServerSetup`](./use_cases/reset_server_setup.ex) —
+  `reset_server_setup/2`: set a server up again, as a new one. **Root-only.**
 - [`ServerCallbacks`](./use_cases/server_callbacks.ex) — `notify_server_up/2`:
   a callback the **server itself** makes when it comes online, authenticated by
   the server's `secret_key` ([`Phoenix.Token`](./use_cases/server_callbacks.ex),
@@ -306,6 +308,7 @@ subsystems as setup progresses.
   [`ServerRetriedConnecting`](./events/server_retried_connecting.ex),
   [`ServerNotifiedUp`](./events/server_notified_up.ex).
 - **Setup & checks:** [`ServerSetUp`](./events/server_set_up.ex),
+  [`ServerSetupReset`](./events/server_setup_reset.ex),
   [`ServerFactsGathered`](./events/server_facts_gathered.ex),
   [`ServerOpenPortsChecked`](./events/server_open_ports_checked.ex),
   [`ServerRetriedCheckingOpenPorts`](./events/server_retried_checking_open_ports.ex),
@@ -333,9 +336,9 @@ otherwise:
   (still subject to the confirmed/enabled checks for updates).
 - Any authenticated user may `list_my_servers` and
   `fetch_authenticated_server_group_member`.
-- **Root-only:** `delete_server`, `retry_ansible_playbook`,
-  `retry_checking_sudo_access`, all the server-group and Ansible read
-  operations, and `list_all_servers_in_group`.
+- **Root-only:** `delete_server`, `reset_server_setup`,
+  `retry_ansible_playbook`, `retry_checking_sudo_access`, all the server-group
+  and Ansible read operations, and `list_all_servers_in_group`.
 - `notify_server_up` is not user-authorized at all — it is authenticated by the
   server's `secret_key`.
 

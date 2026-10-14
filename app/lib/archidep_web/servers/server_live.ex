@@ -14,6 +14,7 @@ defmodule ArchiDepWeb.Servers.ServerLive do
   alias ArchiDepWeb.LiveRefresh
   alias ArchiDepWeb.Servers.DeleteServerDialogLive
   alias ArchiDepWeb.Servers.EditServerDialogLive
+  alias ArchiDepWeb.Servers.ResetServerSetupDialogLive
 
   @impl LiveView
   def mount(%{"id" => id}, _session, socket) do

@@ -6,6 +6,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
   alias ArchiDep.Servers.Events.ServerFactsGathered
   alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
+  alias ArchiDep.Servers.Events.ServerSetupReset
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerRealTimeState
   alias ArchiDep.Servers.ServerTracking.ServerTracker
@@ -222,6 +223,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServerTrackerTest do
       # nor crash the tracker.
       for event <- [
             ServerSetUp.new(server),
+            ServerSetupReset.new(server),
             ServerFactsGathered.new(server),
             ServerOpenPortsChecked.new(server, [80, 443])
           ] do

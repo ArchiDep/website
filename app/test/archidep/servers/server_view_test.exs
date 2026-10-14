@@ -4,6 +4,7 @@ defmodule ArchiDep.Servers.ServerViewTest do
   alias ArchiDep.Servers.Events.ServerFactsGathered
   alias ArchiDep.Servers.Events.ServerOpenPortsChecked
   alias ArchiDep.Servers.Events.ServerSetUp
+  alias ArchiDep.Servers.Events.ServerSetupReset
   alias ArchiDep.Servers.Events.ServerUpdated
   alias ArchiDep.Servers.Schemas.Server
   alias ArchiDep.Servers.Schemas.ServerProperties
@@ -143,6 +144,23 @@ defmodule ArchiDep.Servers.ServerViewTest do
       assert ServerView.refresh!(view, event, reference) == %{
                view
                | set_up_at: @later,
+                 version: view.version + 1
+             }
+    end
+
+    test "clears set_up_at for a ServerSetupReset event" do
+      %{owner: owner, class: class} = ServersTestHelpers.register_group_member(@now)
+      server = ServersTestHelpers.insert_server(owner.id, class.id, set_up_at: @now)
+      view = ServerView.from(server)
+
+      event = ServerSetupReset.new(server)
+
+      reference =
+        EventsFactory.build(:event_reference, version: view.version + 1, occurred_at: @later)
+
+      assert ServerView.refresh!(view, event, reference) == %{
+               view
+               | set_up_at: nil,
                  version: view.version + 1
              }
     end
