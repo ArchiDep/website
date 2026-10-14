@@ -27,13 +27,13 @@ information:
 
 ```bash
 $> ip address
-1: `lo`: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue ...
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue ...
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
     inet `127.0.0.1`/8 scope host lo
        valid_lft forever preferred_lft forever
     inet6 `::1`/128 scope host
        valid_lft forever preferred_lft forever
-2: `eth0`: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 ...
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 ...
     link/ether 06:5f:44:85:36:92 brd ff:ff:ff:ff:ff:ff
     inet `172.31.39.219`/20 brd 172.31.47.255 scope global dynamic eth0
        valid_lft 2665sec preferred_lft 2665sec
@@ -61,8 +61,8 @@ It uses the [**I**nternet **C**ontrol **M**essage **P**rotocol (ICMP)][icmp], a
 
 ```bash
 $> ping -c 1 google.com
-PING `google.com` (`172.217.21.238`) 56(84) bytes of data.
-64 bytes from 172.217.21.238: icmp_seq=1 ttl=53 time=`1.12 ms`
+PING google.com (172.217.21.238) 56(84) bytes of data.
+64 bytes from 172.217.21.238: icmp_seq=1 ttl=53 time=1.12 ms
 
 --- google.com ping statistics ---
 1 packets transmitted, 1 received, 0% packet loss, time 0ms

@@ -33,6 +33,14 @@ in the US, the UK and Norway in 1977.
 
 ---
 
+## ARPANET circa 1977
+
+<!-- .element: class="hidden" -->
+
+<img src='./images/arpanet-logical-map.png' class='w-4/5' />
+
+---
+
 ## OSI model
 
 <!-- .element: class="hidden" -->
@@ -46,34 +54,6 @@ communications between computing systems, allowing interoperability with
 standard protocols.
 
 A layer serves the layer above it and is served by the layer below it.
-
----
-
-### OSI vs. TCP/IP model
-
-![OSI vs. TCP/IP model](./images/osi-vs-tcp-ip.jpg)
-
-**Notes:**
-
-The [Internet protocol suite][tcp-ip] is the conceptual model used on the
-Internet and on similar computer networks. It is commonly known as TCP/IP since
-the **T**ransmission **C**ontrol **P**rotocol (TCP) and the **I**nternet
-**P**rotocol (IP) are its foundational protocols.
-
-It was originally developed for [ARPANET][arpanet].
-
-The OSI and TCP/IP models describe the same technologies, but categorize them a
-little differently. The OSI model is used more as a theoretical construct to
-reason about networking systems, while the TCP/IP model is more in line with how
-Internet protocols are designed and used in practice.
-
----
-
-## ARPANET circa 1977
-
-<!-- .element: class="hidden" -->
-
-<img src='./images/arpanet-logical-map.png' class='w-4/5' />
 
 ---
 
@@ -560,10 +540,17 @@ the same way as any other network call.
 
 ### Not an IP address
 
-<table class="!mt-8">
+<table class="mt-8!">
   <tbody>
     <tr>
-      <td class="!text-center font-mono">0.0.0.0</td>
+      <td class="text-center!">
+        <span class="font-mono">0.0.0.0</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="text-center!">
+        (or <span class="font-mono">*</span>)
+      </td>
     </tr>
   </tbody>
 </table>
