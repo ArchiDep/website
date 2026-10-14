@@ -143,7 +143,7 @@ window.addEventListener('phx:execute-action', event => {
   document.querySelectorAll(to).forEach(element => {
     const action =
       element.getAttribute(`data-action-${actionName}`) ?? undefined;
-    if (!actionName) {
+    if (!action) {
       console.warn(
         `No data-action-${actionName} attribute found on element ${element} for "phx:execute-action" event`
       );
