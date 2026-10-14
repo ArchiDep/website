@@ -304,7 +304,7 @@ or to **improve security**.
 
 ---
 
-### Netmasks and CIDRs
+### CIDRs
 
 <table class="!mt-8 font-mono text-3xl">
   <tbody>
@@ -329,26 +329,6 @@ or to **improve security**.
       <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">00000001</td>
     </tr>
     <tr>
-      <th>Netmask</th>
-      <td class="!px-2 !text-center bg-blue-500/10 text-blue-500">255</td>
-      <td class="!p-0 bg-blue-500/10">.</td>
-      <td class="!px-2 !text-center bg-blue-500/10 text-blue-500">255</td>
-      <td class="!p-0">.</td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">0</td>
-      <td class="!p-0 bg-yellow-500/10">.</td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">0</td>
-    </tr>
-    <tr>
-      <th></th>
-      <td class="!px-2 !text-center bg-blue-500/10 text-blue-500">11111111</td>
-      <td class="!p-0 bg-blue-500/10"><span class="opacity-0">.</span></td>
-      <td class="!px-2 !text-center bg-blue-500/10 text-blue-500">11111111</td>
-      <td class="!p-0"><span class="opacity-0">.</span></td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">00000000</td>
-      <td class="!p-0 bg-yellow-500/10"><span class="opacity-0">.</span></td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">00000000</td>
-    </tr>
-    <tr>
       <th>CIDR</th>
       <td class="bg-blue-500/10 text-blue-500" colspan="3">/16</td>
     </tr>
@@ -357,24 +337,22 @@ or to **improve security**.
 
 **Notes:**
 
-A [netmask][subnet] is a notation to define an IPv4 network. Let's take the
-example of a random address `172.16.254.1` in the third private address range
-with the netmask `255.255.0.0`.
+[CIDR][cidr] is a notation to define an IPv4 network. Let's take the example of
+a random address `172.16.254.1` in the second private address range. Writing
+`172.16.254.1/16` means that the first 16 bits of the address are used as the
+network prefix, and the remaining 16 bits as the host identifier. Similarly,
+`10.0.0.0/8` means that the first 8 bits are the network prefix.
 
-Look at the netmask in binary form. The leading `1`s indicate the bits used for
-the network prefix and the trailing `0`s indicate the bits used for the host
-identifier. A netmask is always a sequence of `1`s followed by a sequence of
-`0`s.
-
-[CIDR][cidr] is another more compact notation that expresses the same thing.
-Writing `172.16.254.1/16` means that the first 16 bits of the address are used
-as the network prefix. It is therefore equivalent to `172.16.254.1` with the
-netmask of `255.255.0.0`. Similarly, `10.0.0.0/8` is equivalent to `10.0.0.0`
-with a netmask of `255.0.0.0` (i.e. the first 8 bits are the network prefix).
+A [netmask][subnet] is an older notation that expresses the same thing. It is
+written like an IP address. In binary form, its leading `1`s indicate the bits
+used for the network prefix and its trailing `0`s indicate the bits used for the
+host identifier. A netmask is always a sequence of `1`s followed by a sequence
+of `0`s. `/16` is therefore equivalent to the netmask `255.255.0.0`, or
+`11111111.11111111.00000000.00000000` in binary.
 
 ---
 
-### More netmasks and CIDRs
+### More CIDRs
 
 <table class="!mt-8 font-mono text-3xl">
   <tbody>
@@ -399,42 +377,29 @@ with a netmask of `255.0.0.0` (i.e. the first 8 bits are the network prefix).
       <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">00000001</td>
     </tr>
     <tr>
-      <th>Netmask</th>
-      <td class="!px-2 !text-center bg-blue-500/10 text-blue-500">255</td>
-      <td class="!p-0">.</td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">0</td>
-      <td class="!p-0 bg-yellow-500/10">.</td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">0</td>
-      <td class="!p-0 bg-yellow-500/10">.</td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">0</td>
-    </tr>
-    <tr>
-      <th></th>
-      <td class="!px-2 !text-center bg-blue-500/10 text-blue-500">11111111</td>
-      <td class="!p-0 opacity-0">.</td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">00000000</td>
-      <td class="!p-0 bg-yellow-500/10"><span class="opacity-0">.</span></td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">00000000</td>
-      <td class="!p-0 bg-yellow-500/10"><span class="opacity-0">.</span></td>
-      <td class="!px-2 !text-center bg-yellow-500/10 text-yellow-500">00000000</td>
-    </tr>
-    <tr>
       <th>CIDR</th>
       <td class="bg-blue-500/10 text-blue-500">/8</td>
     </tr>
   </tbody>
 </table>
 
+**Notes:**
+
+With `/8`, only the first 8 bits of the same address are the network prefix,
+leaving 24 bits for the host identifier: a much larger network.
+
+`/8` is equivalent to the netmask `255.0.0.0`, or
+`11111111.00000000.00000000.00000000` in binary.
+
 ---
 
 ### Reserved addresses for private networks
 
-<table class="text-2xl">
+<table class="text-3xl">
   <thead>
     <tr>
       <th>First address</th>
       <th>Last address</th>
-      <th>Netmask</th>
       <th>CIDR</th>
       <th>Addresses</th>
     </tr>
@@ -443,21 +408,18 @@ with a netmask of `255.0.0.0` (i.e. the first 8 bits are the network prefix).
     <tr>
       <td class="font-mono">10.0.0.0</td>
       <td class="font-mono">10.255.255.255</td>
-      <td class="font-mono">255.0.0.0</td>
       <td class="font-mono">/8</td>
       <td>2<sup>24</sup><br />~16 million</td>
     </tr>
     <tr>
       <td class="font-mono">172.16.0.0</td>
       <td class="font-mono">172.31.255.255</td>
-      <td class="font-mono">255.240.0.0</td>
       <td class="font-mono">/12</td>
       <td>2<sup>20</sup><br />~1 million</td>
     </tr>
     <tr>
       <td class="font-mono">192.168.0.0</td>
       <td class="font-mono">192.168.255.255</td>
-      <td class="font-mono">255.255.0.0</td>
       <td class="font-mono">/16</td>
       <td>2<sup>16</sup><br />65,536</td>
     </tr>
@@ -481,7 +443,6 @@ There are three reserved private ranges in the IPv4 address space.
     <tr>
       <th>First address</th>
       <th>Last address</th>
-      <th>Netmask</th>
       <th>CIDR</th>
       <th>Addresses</th>
     </tr>
@@ -490,7 +451,6 @@ There are three reserved private ranges in the IPv4 address space.
     <tr>
       <td class="font-mono">127.0.0.0</td>
       <td class="font-mono">127.255.255.255</td>
-      <td class="font-mono">255.0.0.0</td>
       <td class="font-mono">/8</td>
       <td>2<sup>24</sup><br />~16 million</td>
     </tr>
