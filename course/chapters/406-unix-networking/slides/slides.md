@@ -576,7 +576,7 @@ that means "**all IP addresses on the local machine**". The IPv6 equivalent is
 
 ### Network address translation (NAT)
 
-<img class='w-9/12' src='./images/nat.jpg' />
+<img class='w-9/12' src='./images/nat.svg' />
 
 **Notes:**
 
