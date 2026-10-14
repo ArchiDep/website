@@ -109,7 +109,7 @@ defmodule ArchiDep.Servers.Ansible.Tracker do
 
             {:failed, failed_run}
 
-          :epipe ->
+          _abnormal_exit ->
             {:ok, %{run: failed_run}} =
               Multi.new()
               |> Multi.update(:run, AnsiblePlaybookRun.fail(run, nil, Clock.now()))

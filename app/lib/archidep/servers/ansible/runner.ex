@@ -159,6 +159,13 @@ defmodule ArchiDep.Servers.Ansible.Runner do
         {:exit, reason}, acc ->
           {to_ansible_playbook_events([acc || ""]) ++ [{:exit, reason}], ""}
 
+        # ExCmd ends the stream with `{:error, reason}` (e.g. `:epipe` or
+        # `:killed`) when the process does not exit normally, although its
+        # documentation describes `{:exit, :epipe}`. It is reported as an exit
+        # like any other so that consumers handle a single shape.
+        {:error, reason}, acc ->
+          {to_ansible_playbook_events([acc || ""]) ++ [{:exit, reason}], ""}
+
         line, acc when is_binary(line) ->
           case String.split(line, "\n") do
             [""] ->

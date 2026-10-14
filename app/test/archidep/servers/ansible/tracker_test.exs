@@ -232,30 +232,35 @@ defmodule ArchiDep.Servers.Ansible.TrackerTest do
       assert_row_count_diff(previous_counts, %{StoredEvent => 1})
     end
 
-    test "fails the run with no exit code on an epipe", %{server: server} do
-      {run, started_cause} = running_run(server)
-      existing = fetch_new_stored_events()
-      previous_counts = count_rows(@affected_tables)
+    for reason <- [:epipe, :killed, :port_abnormal_exit] do
+      test "fails the run with no exit code on an abnormal #{reason} exit", %{server: server} do
+        {run, started_cause} = running_run(server)
+        existing = fetch_new_stored_events()
+        previous_counts = count_rows(@affected_tables)
 
-      assert {:failed, finished} =
-               Tracker.track_playbook_event({:exit, :epipe}, run, started_cause, started_cause)
+        finished = %{run | state: :failed, exit_code: nil, finished_at: @now, updated_at: @now}
 
-      assert finished ==
-               %{run | state: :failed, exit_code: nil, finished_at: @now, updated_at: @now}
+        assert Tracker.track_playbook_event(
+                 {:exit, unquote(reason)},
+                 run,
+                 started_cause,
+                 started_cause
+               ) == {:failed, finished}
 
-      assert Repo.get!(AnsiblePlaybookRun, run.id) ==
-               %{
-                 run
-                 | server: not_loaded(:server, AnsiblePlaybookRun),
-                   state: :failed,
-                   exit_code: nil,
-                   finished_at: @now,
-                   updated_at: @now
-               }
+        assert Repo.get!(AnsiblePlaybookRun, run.id) ==
+                 %{
+                   run
+                   | server: not_loaded(:server, AnsiblePlaybookRun),
+                     state: :failed,
+                     exit_code: nil,
+                     finished_at: @now,
+                     updated_at: @now
+                 }
 
-      assert_run_finished_event(finished, server, started_cause, existing)
+        assert_run_finished_event(finished, server, started_cause, existing)
 
-      assert_row_count_diff(previous_counts, %{StoredEvent => 1})
+        assert_row_count_diff(previous_counts, %{StoredEvent => 1})
+      end
     end
   end
 

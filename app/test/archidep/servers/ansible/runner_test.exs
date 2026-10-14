@@ -346,10 +346,20 @@ defmodule ArchiDep.Servers.Ansible.RunnerTest do
       assert run_playbook() == [{:event, event}, {:exit, {:status, 2}}]
     end
 
-    test "passes an epipe exit through" do
-      expect(Cmd.Mock, :stream, fn _command, _opts -> [{:exit, :epipe}] end)
+    test "reports an epipe error as an exit" do
+      expect(Cmd.Mock, :stream, fn _command, _opts -> [{:error, :epipe}] end)
 
       assert run_playbook() == [{:exit, :epipe}]
+    end
+
+    test "flushes a trailing line before reporting an error as an exit" do
+      event = %{"event" => "v2_runner_on_start", "host" => "archidep"}
+
+      expect(Cmd.Mock, :stream, fn _command, _opts ->
+        [JSON.encode!(event), {:error, :killed}]
+      end)
+
+      assert run_playbook() == [{:event, event}, {:exit, :killed}]
     end
   end
 
