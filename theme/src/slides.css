@@ -32,6 +32,64 @@ body {
   @apply bg-gray-200/50 px-1 rounded-xl border border-gray-600;
 }
 
+/* A truth table takes the slide's background rather than the diagram's white,
+   which clashes with the theme. A host's rule on the element beats the
+   library's own `:host` rule that sets the token. */
+.reveal truth-table {
+  --cg-background: transparent;
+}
+
+/* A slide whose title sits in a small box in a top left corner rather than
+   above its content, so that a diagram gets the space; as a fragment, the
+   title can wait until the diagram's behaviour has been worked out.
+
+   Presented, the box is in the window's corner, drawn by `slides.ts`, and the
+   title in the slide is not displayed, though it still paces the fragments. In
+   a PDF or a scrolled deck, it is in the slide's corner, and the slide is kept
+   at the top rather than centred vertically, so that the corner is the slide's
+   and not its content's: such a diagram fills the slide's height anyway. */
+.reveal:not(.corner-title-in-window) .slides section:has(> h3.corner-title) {
+  top: 0 !important;
+}
+
+.reveal.corner-title-in-window .slides section > h3.corner-title {
+  display: none;
+}
+
+.reveal .slides section > h3.corner-title,
+.corner-title-window {
+  margin: 0;
+  padding: 0.3em 0.6em;
+  border: solid #ccc;
+  border-width: 0 1px 1px 0;
+  border-bottom-right-radius: 0.4em;
+  background: rgb(255 255 255 / 85%);
+  color: #333;
+  font-family: var(--r-main-font);
+  line-height: 1.3;
+}
+
+.reveal .slides section > h3.corner-title {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 40px;
+}
+
+.corner-title-window {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  max-width: 14em;
+  /* Follows the window's width, so that it stays readable on a projector. */
+  font-size: clamp(28px, 2.5vw, 56px);
+}
+
+.corner-title-window[hidden] {
+  display: none;
+}
+
 /* A slide showing nothing but a large Git diagram (see "Interactive Git
    Diagrams" in `course/CONTRIBUTING.md`): the diagram takes the whole window,
    gaps around the slide included, except a strip at the bottom for the logos

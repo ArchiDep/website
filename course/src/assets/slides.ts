@@ -1,4 +1,8 @@
-import { defineLogicDiagramElement, RevealLogicDiagrams } from 'companion-gate';
+import {
+  defineLogicDiagramElement,
+  defineTruthTableElement,
+  RevealLogicDiagrams
+} from 'companion-gate';
 import 'iconify-icon';
 import Reveal from 'reveal.js';
 import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
@@ -17,6 +21,7 @@ import { defineStoryElement } from './simgit';
 
 defineStoryElement();
 defineLogicDiagramElement();
+defineTruthTableElement();
 
 const urlSearch = new URLSearchParams(window.location.search);
 const printPdfMode = urlSearch.has('print-pdf');
@@ -43,6 +48,48 @@ const titleSlide = () => ({
   }
 });
 
+// A slide's corner title (an `h3` with the `corner-title` class) is drawn in
+// the slide's own corner by the stylesheet, which is what a PDF or a scrolled
+// deck shows. Presented, it moves to the window's corner instead, outside the
+// scaled slide, so that the slide's content gets the space: reveal scales the
+// slides with a transform, which a fixed element inside them cannot escape, so
+// the window's box is a separate element that mirrors the current slide's
+// title, shown only once the title's fragment is.
+const cornerTitle = () => ({
+  id: 'archidep-corner-title',
+  init: (reveal: Reveal.Api) => {
+    const box = document.createElement('div');
+    box.className = 'corner-title-window';
+    box.setAttribute('aria-live', 'polite');
+    box.hidden = true;
+    document.body.append(box);
+    reveal.getRevealElement()?.classList.add('corner-title-in-window');
+
+    const update = () => {
+      const title = reveal
+        .getCurrentSlide()
+        ?.querySelector(':scope > h3.corner-title');
+      const shown =
+        title !== null &&
+        title !== undefined &&
+        (!title.classList.contains('fragment') ||
+          title.classList.contains('visible'));
+
+      box.textContent = shown ? title.textContent : '';
+      box.hidden = !shown;
+    };
+
+    for (const event of [
+      'ready',
+      'slidechanged',
+      'fragmentshown',
+      'fragmenthidden'
+    ]) {
+      reveal.on(event, update);
+    }
+  }
+});
+
 const deck = new Reveal({
   hash: true,
   // A deck's fragments pace an explanation as it is given, which a reader of
@@ -65,6 +112,7 @@ const deck = new Reveal({
     // Resets the logic diagrams of the current slide on R, so that their embeds
     // can do without a control bar and use its height to be larger.
     RevealLogicDiagrams,
+    ...(printPdfMode || scrollMode ? [] : [cornerTitle]),
     Notes,
     Search
   ],

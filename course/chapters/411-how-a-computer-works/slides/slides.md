@@ -13,7 +13,163 @@ what the processes of a deployment actually are.
 
 ---
 
-## A closed circuit
+## Binary
+
+---
+
+### The main components of a computer
+
+<!-- TODO: diagram of the components; the room names them first. -->
+
+- Processor (CPU)
+- Memory (RAM)
+- Storage
+- Input and output
+- The bus that connects them
+
+**Notes:**
+
+TODO.
+
+---
+
+### Eight bits
+
+<p class="text-center font-mono text-6xl">0100 0001</p>
+
+**Notes:**
+
+TODO: eight bits, each 0 or 1, and nothing in them says what they mean.
+
+---
+
+### Eight bits, read three ways
+
+<!-- TODO: lay the three readings out around the number. -->
+
+<div class="grid grid-cols-3 items-center justify-items-center gap-8">
+  <div class="text-5xl">65</div>
+  <div class="text-center font-mono text-5xl">0100 0001</div>
+  <div class="text-5xl">A</div>
+  <div></div>
+  <div class="h-24 w-24" style="background: rgb(73, 0, 85)"></div>
+  <div></div>
+</div>
+
+**Notes:**
+
+TODO: the same eight bits as an integer (65), as a letter in the ASCII and
+UTF-8 tables (`A`), and as an 8-bit color (3 bits of red, 3 of green, 2 of
+blue: `010`, `000`, `01`). "An instruction" is not one of the readings yet.
+
+---
+
+### An image is numbers
+
+<!-- TODO: a small image, then zoomed in until its pixels show, then a few of
+     its pixels as numbers. -->
+
+**Notes:**
+
+TODO: an image is a grid of pixels, and each pixel's color is a number.
+
+---
+
+### The ASCII table
+
+<!-- .element: class="hidden" -->
+
+<table class="mx-auto table-fixed font-mono text-sm">
+  <tr>
+    <td></td><td></td>
+    <td colspan="3">
+      <svg viewBox="0 0 300 40" class="w-full" aria-label="Plus 32">
+        <path d="M50 36 V14 H250 V36" fill="none" stroke="#d9480f" stroke-width="3" />
+        <path d="M243 28 L250 37 L257 28" fill="none" stroke="#d9480f" stroke-width="3" />
+        <text x="150" y="10" text-anchor="middle" font-size="14" fill="#d9480f">+32</text>
+      </svg>
+    </td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>SP <span class="opacity-50">32</span></td><td>0 <span class="opacity-50">48</span></td><td>&#64; <span class="opacity-50">64</span></td><td>P <span class="opacity-50">80</span></td><td>&#96; <span class="opacity-50">96</span></td><td>p <span class="opacity-50">112</span></td>
+  </tr>
+  <tr>
+    <td>&#33; <span class="opacity-50">33</span></td><td>1 <span class="opacity-50">49</span></td><td class="bg-yellow-200 font-bold">A <span class="opacity-50">65</span></td><td>Q <span class="opacity-50">81</span></td><td class="bg-yellow-200 font-bold">a <span class="opacity-50">97</span></td><td>q <span class="opacity-50">113</span></td>
+  </tr>
+  <tr>
+    <td>&#34; <span class="opacity-50">34</span></td><td>2 <span class="opacity-50">50</span></td><td>B <span class="opacity-50">66</span></td><td>R <span class="opacity-50">82</span></td><td>b <span class="opacity-50">98</span></td><td>r <span class="opacity-50">114</span></td>
+  </tr>
+  <tr>
+    <td>&#35; <span class="opacity-50">35</span></td><td>3 <span class="opacity-50">51</span></td><td>C <span class="opacity-50">67</span></td><td>S <span class="opacity-50">83</span></td><td>c <span class="opacity-50">99</span></td><td>s <span class="opacity-50">115</span></td>
+  </tr>
+  <tr>
+    <td>&#36; <span class="opacity-50">36</span></td><td>4 <span class="opacity-50">52</span></td><td>D <span class="opacity-50">68</span></td><td>T <span class="opacity-50">84</span></td><td>d <span class="opacity-50">100</span></td><td>t <span class="opacity-50">116</span></td>
+  </tr>
+  <tr>
+    <td>&#37; <span class="opacity-50">37</span></td><td>5 <span class="opacity-50">53</span></td><td>E <span class="opacity-50">69</span></td><td>U <span class="opacity-50">85</span></td><td>e <span class="opacity-50">101</span></td><td>u <span class="opacity-50">117</span></td>
+  </tr>
+  <tr>
+    <td>&#38; <span class="opacity-50">38</span></td><td>6 <span class="opacity-50">54</span></td><td>F <span class="opacity-50">70</span></td><td>V <span class="opacity-50">86</span></td><td>f <span class="opacity-50">102</span></td><td>v <span class="opacity-50">118</span></td>
+  </tr>
+  <tr>
+    <td>&#39; <span class="opacity-50">39</span></td><td>7 <span class="opacity-50">55</span></td><td>G <span class="opacity-50">71</span></td><td>W <span class="opacity-50">87</span></td><td>g <span class="opacity-50">103</span></td><td>w <span class="opacity-50">119</span></td>
+  </tr>
+  <tr>
+    <td>&#40; <span class="opacity-50">40</span></td><td>8 <span class="opacity-50">56</span></td><td>H <span class="opacity-50">72</span></td><td>X <span class="opacity-50">88</span></td><td>h <span class="opacity-50">104</span></td><td>x <span class="opacity-50">120</span></td>
+  </tr>
+  <tr>
+    <td>&#41; <span class="opacity-50">41</span></td><td>9 <span class="opacity-50">57</span></td><td>I <span class="opacity-50">73</span></td><td>Y <span class="opacity-50">89</span></td><td>i <span class="opacity-50">105</span></td><td>y <span class="opacity-50">121</span></td>
+  </tr>
+  <tr>
+    <td>&#42; <span class="opacity-50">42</span></td><td>&#58; <span class="opacity-50">58</span></td><td>J <span class="opacity-50">74</span></td><td>Z <span class="opacity-50">90</span></td><td>j <span class="opacity-50">106</span></td><td>z <span class="opacity-50">122</span></td>
+  </tr>
+  <tr>
+    <td>&#43; <span class="opacity-50">43</span></td><td>&#59; <span class="opacity-50">59</span></td><td>K <span class="opacity-50">75</span></td><td>&#91; <span class="opacity-50">91</span></td><td>k <span class="opacity-50">107</span></td><td>&#123; <span class="opacity-50">123</span></td>
+  </tr>
+  <tr>
+    <td>&#44; <span class="opacity-50">44</span></td><td>&#60; <span class="opacity-50">60</span></td><td>L <span class="opacity-50">76</span></td><td>&#92; <span class="opacity-50">92</span></td><td>l <span class="opacity-50">108</span></td><td>&#124; <span class="opacity-50">124</span></td>
+  </tr>
+  <tr>
+    <td>&#45; <span class="opacity-50">45</span></td><td>&#61; <span class="opacity-50">61</span></td><td>M <span class="opacity-50">77</span></td><td>&#93; <span class="opacity-50">93</span></td><td>m <span class="opacity-50">109</span></td><td>&#125; <span class="opacity-50">125</span></td>
+  </tr>
+  <tr>
+    <td>&#46; <span class="opacity-50">46</span></td><td>&#62; <span class="opacity-50">62</span></td><td>N <span class="opacity-50">78</span></td><td>&#94; <span class="opacity-50">94</span></td><td>n <span class="opacity-50">110</span></td><td>&#126; <span class="opacity-50">126</span></td>
+  </tr>
+  <tr>
+    <td>&#47; <span class="opacity-50">47</span></td><td>&#63; <span class="opacity-50">63</span></td><td>O <span class="opacity-50">79</span></td><td>&#95; <span class="opacity-50">95</span></td><td>o <span class="opacity-50">111</span></td><td>DEL <span class="opacity-50">127</span></td>
+  </tr>
+</table>
+
+**Notes:**
+
+TODO: every letter has a code. The lowercase letters come 32 after the
+uppercase ones: `A` is 65 and `a` is 97.
+
+---
+
+### Changing case is arithmetic
+
+<!-- TODO: lay out side by side, with bit 5 highlighted. -->
+
+| Letter | Integer |   Binary    |
+| :----: | :-----: | :---------: |
+|  `A`   |   65    | `0100 0001` |
+|  `a`   |   97    | `0110 0001` |
+
+**Notes:**
+
+TODO: `a` is `A` plus 32, and 32 is the value of one bit, bit 5 counting
+from 0. Changing case is adding or subtracting 32, which is flipping that
+single bit. If we can manipulate numbers, we can manipulate any data.
+
+---
+
+## Electricity
+
+---
+
+### A closed circuit
 
 <logic-diagram name="closed-circuit" controls="none" theme="light" style="width: 640px; margin: 0 auto">
 </logic-diagram>
@@ -26,3 +182,461 @@ the switch and the lamp, and comes back to the battery's `-` end.
 When the switch is open, the loop is broken and no current flows anywhere in
 it, so the lamp stays dark. When the switch is closed, the loop is complete,
 current flows and the lamp lights up.
+
+---
+
+### The earth as ground
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="earth-as-ground" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: the earth completes the circuit, which saves one of two long wires.
+
+---
+
+### The telegraph
+
+<logic-diagram name="telegraph" controls="none" theme="light" style="width: 800px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: a circuit with a purpose. The sounder is an electromagnet pulling a bar
+that clicks. It works over about 30 km.
+
+---
+
+### The telegraph repeater
+
+<logic-diagram name="telegraph-repeater" controls="none" theme="light" style="width: 800px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: the relay is a sounder that closes a contact instead of clicking, so a
+weak current switches on a fresh one from a local battery, and the line goes
+further.
+
+---
+
+### The ground symbol
+
+<logic-diagram name="ground-symbol" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: shorthand for a stake in the earth.
+
+---
+
+### The source symbol
+
+<logic-diagram name="source-symbol" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: a battery's `+` end alone, since its other end is in the ground anyway.
+
+---
+
+### The relay
+
+<logic-diagram name="relay-single" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: a switch controlled by current.
+
+---
+
+## Logic
+
+---
+
+### A relay
+
+<!-- .element: class="corner-title" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="relay-single" name="relay-single" controls="none" theme="light" style="width: 600px">
+  </logic-diagram>
+  <truth-table for="relay-single" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: the simplest truth table: 0 in gives 0 out, 1 in gives 1 out.
+
+---
+
+### NOT
+
+<!-- .element: class="corner-title fragment" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="relay-not" name="relay-not" controls="none" theme="light" style="width: 600px">
+  </logic-diagram>
+  <truth-table for="relay-not" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: a relay whose contact is closed at rest.
+
+---
+
+### AND
+
+<!-- .element: class="corner-title fragment" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="relay-and" name="relay-and" controls="none" theme="light" style="width: 600px">
+  </logic-diagram>
+  <truth-table for="relay-and" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: two relays in series. The room gives the truth table before the demo
+fills it.
+
+---
+
+### OR
+
+<!-- .element: class="corner-title fragment" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="relay-or" name="relay-or" controls="none" theme="light" style="width: 600px">
+  </logic-diagram>
+  <truth-table for="relay-or" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: two relays in parallel.
+
+---
+
+### Logic gates
+
+<!-- .element: class="hidden" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="gate-gallery" name="gate-gallery" controls="none" theme="light" style="width: 480px">
+  </logic-diagram>
+  <div class="flex flex-col gap-4">
+    <truth-table for="gate-gallery" columns="A,B,AND,NAND" theme="light"></truth-table>
+    <truth-table for="gate-gallery" columns="A,B,OR,NOR,XOR" theme="light"></truth-table>
+    <truth-table for="gate-gallery" columns="A,NOT" theme="light"></truth-table>
+  </div>
+</div>
+
+**Notes:**
+
+TODO: the symbols that stand for the relay circuits from now on.
+
+---
+
+## Computing
+
+---
+
+### Adding in binary
+
+<!-- TODO: worked through on the board with the room; the slide holds the
+     result. -->
+
+**Notes:**
+
+TODO: the sum and carry of two bits, then of two binary numbers.
+
+---
+
+### The half adder
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram id="half-adder" name="half-adder" names="true" controls="none" theme="light" style="width: 700px; margin: 0 auto">
+</logic-diagram>
+<truth-table for="half-adder" theme="light"></truth-table>
+
+**Notes:**
+
+TODO: the sum bit is XOR and the carry bit is AND.
+
+---
+
+### The full adder
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram id="full-adder" name="full-adder" names="true" controls="none" theme="light" style="width: 960px; margin: 0 auto">
+</logic-diagram>
+<truth-table for="full-adder" split="2" theme="light"></truth-table>
+
+**Notes:**
+
+TODO: two half adders and an OR, to add a carry in.
+
+---
+
+### The full adder as a block
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="full-adder-block" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO.
+
+---
+
+### A 4-bit ripple-carry adder
+
+<!-- .element: class="hidden" -->
+
+<!-- TODO: the design lists this one as supplementary material, not shown in
+     the session. -->
+
+<logic-diagram name="four-bit-adder" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: four full adders, the carry rippling from right to left.
+
+---
+
+## Remembering
+
+---
+
+### Feedback: the SR latch
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="sr-latch" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: memory from feedback, an output wired back into an input.
+
+---
+
+### The D latch
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="d-latch" names="true" controls="none" theme="light" style="width: 800px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: storing a data bit on demand.
+
+---
+
+### The D latch as a block
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="d-latch-block" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO.
+
+---
+
+### The selector
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="selector" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: choosing which input reaches the output.
+
+---
+
+### The decoder
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="decoder-2-to-4" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: routing a signal to the addressed output.
+
+---
+
+### The decoder as a block
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="decoder-block" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO.
+
+---
+
+### The 4-to-1 selector
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="selector-4-to-1" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: the same idea with more inputs.
+
+---
+
+### The selector as a block
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="selector-block" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO.
+
+---
+
+### Addressable memory
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="addressable-memory" names="true" controls="none" theme="light" style="width: 530px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: writing and reading a cell by its address. Two address bits give four
+cells of one bit each.
+
+---
+
+### A 4-bit address gives a 16-byte memory
+
+<!-- TODO: the cells' contents, if any, for the trace. -->
+
+<div class="grid grid-cols-4 gap-2 font-mono">
+  <div class="border p-2">0000</div>
+  <div class="border p-2">0001</div>
+  <div class="border p-2">0010</div>
+  <div class="border p-2">0011</div>
+  <div class="border p-2">0100</div>
+  <div class="border p-2">0101</div>
+  <div class="border p-2">0110</div>
+  <div class="border p-2">0111</div>
+  <div class="border p-2">1000</div>
+  <div class="border p-2">1001</div>
+  <div class="border p-2">1010</div>
+  <div class="border p-2">1011</div>
+  <div class="border p-2">1100</div>
+  <div class="border p-2">1101</div>
+  <div class="border p-2">1110</div>
+  <div class="border p-2">1111</div>
+</div>
+
+**Notes:**
+
+TODO: 4 address bits give 2⁴ = 16 addresses, and each addressed cell holds 8
+bits.
+
+---
+
+## Ticking
+
+---
+
+### The buzzer
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="relay-buzzer" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: a relay feeding its own coil. Where a clock comes from.
+
+---
+
+### The edge-triggered D flip-flop
+
+<!-- .element: class="hidden" -->
+
+<!-- TODO: shown as a frequency divider, but no diagram wires Q̅ back to D yet:
+     d-flip-flop-manual has D as a toggle. -->
+
+<logic-diagram name="d-flip-flop-manual" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: Q only changes when the clock rises. With Q̅ fed back into D, it changes
+on every other tick: half the clock's frequency.
+
+---
+
+### The counter
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="counter" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: frequency dividers in a chain count in binary. This is the program
+counter.
+
+---
+
+## Instructions
+
+---
+
+### The instruction set
+
+<!-- TODO: only LOAD = 0001 is fixed (LOAD 14 is 0001 1110); the other
+     encodings are placeholders to decide. -->
+
+| Operation | Code   | Effect                |
+| --------- | ------ | --------------------- |
+| `LOAD x`  | `0001` | acc ← memory[x]       |
+| `STORE x` | `????` | memory[x] ← acc       |
+| `ADD x`   | `????` | acc ← acc + memory[x] |
+| `SUB x`   | `????` | acc ← acc − memory[x] |
+| `JUMP x`  | `????` | go to x               |
+| `JUMPZ x` | `????` | if acc = 0, go to x   |
+| `HALT`    | `????` | stop                  |
+
+**Notes:**
+
+TODO: an instruction is 4 bits of operation and 4 bits of address: eight bits,
+read one more way.
