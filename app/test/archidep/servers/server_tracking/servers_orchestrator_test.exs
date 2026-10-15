@@ -53,8 +53,8 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
 
     start_orchestrator!(name, collaborators, track_on_boot: true)
 
-    assert_receive {:started, first}
-    assert_receive {:started, second}
+    assert_receive {:started, first}, 1000
+    assert_receive {:started, second}, 1000
     assert [first, second] == [server1.id, server2.id]
   end
 
@@ -95,7 +95,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
         EventsFactory.build(:event_reference)
       )
 
-    assert_receive {:started, ^server_id}
+    assert_receive {:started, ^server_id}, 1000
   end
 
   test "starts nothing when a created server is not active", %{
@@ -124,7 +124,7 @@ defmodule ArchiDep.Servers.ServerTracking.ServersOrchestratorTest do
 
     # The fetch runs first in `handle_info`; once it has, a `:not_tracked` result
     # means no supervisor is ever started.
-    assert_receive {:fetched, ^server_id}
+    assert_receive {:fetched, ^server_id}, 1000
     refute_received {:started, _server_id}
   end
 
