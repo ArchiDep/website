@@ -1,4 +1,4 @@
-import { defineLogicDiagramElement } from 'companion-gate';
+import { defineLogicDiagramElement, RevealLogicDiagrams } from 'companion-gate';
 import 'iconify-icon';
 import Reveal from 'reveal.js';
 import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
@@ -62,6 +62,9 @@ const deck = new Reveal({
     Highlight,
     titleSlide,
     diagramsPlugin({ print: printPdfMode }),
+    // Resets the logic diagrams of the current slide on R, so that their embeds
+    // can do without a control bar and use its height to be larger.
+    RevealLogicDiagrams,
     Notes,
     Search
   ],

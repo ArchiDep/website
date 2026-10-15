@@ -187,6 +187,12 @@
       "slug": "how-a-computer-works"
     },
     {
+      "path": "/course/411-how-a-computer-works/slides/",
+      "kind": "chapter_slides",
+      "num": 411,
+      "slug": "how-a-computer-works"
+    },
+    {
       "path": "/course/412-watch-your-processes/",
       "kind": "chapter",
       "num": 412,
