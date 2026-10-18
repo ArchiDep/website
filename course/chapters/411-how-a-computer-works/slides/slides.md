@@ -430,14 +430,104 @@ TODO: the symbols that stand for the relay circuits from now on.
 
 ---
 
-### Adding in binary
+### Adding in decimal
 
-<!-- TODO: worked through on the board with the room; the slide holds the
-     result. -->
+<table class="font-mono text-5xl">
+  <tbody>
+    <tr class="text-3xl text-red-500">
+      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="2">1</span></td>
+      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!border-b-0 !px-2 !text-center"></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="!border-b-0 !px-2 !text-center">5</td>
+      <td class="!border-b-0 !px-2 !text-center">8</td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !px-2 !text-center">+</td>
+      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="!border-b-0 !px-2 !text-center">6</td>
+      <td class="!border-b-0 !px-2 !text-center">7</td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"></td>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="3">1</span></td>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="2">2</span></td>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="1">5</span></td>
+    </tr>
+  </tbody>
+</table>
 
 **Notes:**
 
-TODO: the sum and carry of two bits, then of two binary numbers.
+Add column by column, from the right:
+
+- Add the digits of the rightmost column: 8 + 7 = 15, which does not fit in one
+  digit. Write the 5 and carry the 1 into the next column, the tens.
+- The next column adds three digits, 5 + 6 and the carry, which makes 12: write
+  the 2 and carry the 1 again.
+- Nothing is left to add in the hundreds column but the carry, so it becomes the
+  third digit. The final sum is 125.
+
+This is classic **addition with carry**, the technique taught in school when you
+learn to add multi-digit numbers.
+
+---
+
+### Adding in binary
+
+<table class="font-mono text-5xl">
+  <tbody>
+    <tr class="text-3xl text-red-500">
+      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="3">1</span></td>
+      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="2">1</span></td>
+      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!border-b-0 !px-2 !text-center"></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="!border-b-0 !px-2 !text-center">0</td>
+      <td class="!border-b-0 !px-2 !text-center">1</td>
+      <td class="!border-b-0 !px-2 !text-center">1</td>
+      <td class="!border-b-0 !px-2 !text-center relative">1<span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">7</span></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !px-2 !text-center">+</td>
+      <td class="!border-b-0 !px-2 !text-center">0</td>
+      <td class="!border-b-0 !px-2 !text-center">0</td>
+      <td class="!border-b-0 !px-2 !text-center">1</td>
+      <td class="!border-b-0 !px-2 !text-center relative">1<span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">3</span></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"></td>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid] relative"><span class="fragment" data-fragment-index="4">1</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>3</sup><br />8</span></td>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid] relative"><span class="fragment" data-fragment-index="3">0</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>2</sup><br />4</span></td>
+      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid] relative"><span class="fragment" data-fragment-index="2">1</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>1</sup><br />2</span></td>
+      <td class="!border-b-0 !px-2 !text-center relative !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="1">0</span><span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">10</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>0</sup><br />1</span></td>
+    </tr>
+  </tbody>
+</table>
+
+**Notes:**
+
+The same method, in binary instead of decimal, to add `0111` (7 in decimal) and
+`0011` (3 in decimal):
+
+- In the rightmost column, `1` + `1` = `10` in binary (2 in decimal): write the
+  0 and carry the 1, as 8 + 7 = 15 does in decimal.
+- In the next column adds three bits, 1 + 1 and the carry, which makes `11` in
+  binary (3 in decimal): write a 1 and carry a 1.
+- In the next column, 0 + 1 and the carry makes `10` in binary (2 in decimal):
+  write a 0 and carry a 1.
+- The carry goes into the final column. 0 + 0 and the carry makes `1` in binary
+  (1 in decimal). The final sum is `1010` (10 in decimal).
+
+Every column does the same thing: it adds two bits and the carry from the column
+on its right, and gives a sum bit and a carry for the column on its left.
 
 ---
 
