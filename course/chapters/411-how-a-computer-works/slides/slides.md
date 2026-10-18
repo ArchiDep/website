@@ -1337,6 +1337,30 @@ read one more way.
 
 ---
 
+### The machine
+
+<!-- .element: class="hidden" -->
+
+<!-- TODO: first draft, static. Animating it with CSS from fragments needs the
+     SVG inline in the slide (or loaded into it), since a page's CSS cannot
+     reach inside an <img>. -->
+
+<img src="images/machine.svg" alt="The machine: a processor with a clock, a program counter, a control unit, an ALU and an accumulator, connected to a memory of 16 cells by a data bus and an address bus" class="mx-auto" style="width: 940px">
+
+**Notes:**
+
+TODO: the components built in the first half, connected. The counter is the
+program counter, the adder is in the ALU, the flip-flops hold the accumulator,
+the instruction register and the memory cells, the decoder picks a memory cell
+from its address, and the selector chooses whether the program counter or the
+instruction gives the address.
+
+Every value, instructions included, travels on the shared **data bus**. Only one
+component writes on it at a time, and the control unit says which one, and
+which reads. Addresses travel on the **address bus**, to the memory.
+
+---
+
 <!-- TODO: draft ideas, to place and rework once the end of the CPU part and
      the OS part are written. The first slide probably closes the CPU part, and
      the second belongs in the OS part, next to switching between programs. -->

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-label="The machine: a processor with a clock, a program counter, a control unit, an ALU and an accumulator, connected to a memory of 16 cells by a data bus and an address bus">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1d1d1f" />
+    </marker>
+  </defs>
+
+  <style>
+    .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
+    .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
+    .label { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+    .small { font-family: Helvetica, Arial, sans-serif; font-size: 16px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+    .link { fill: none; stroke: #1d1d1f; stroke-width: 3; }
+    .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
+    .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    .address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
+    .value { font-family: Menlo, Consolas, monospace; font-size: 17px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+  </style>
+
+  <!-- The processor -->
+  <rect class="frame" x="10" y="10" width="710" height="580" rx="16" />
+  <text class="small" x="70" y="34">Processor</text>
+
+  <!-- Address bus: from the selector to memory -->
+  <g id="address-bus">
+    <rect x="330" y="86" width="432" height="24" fill="#e8590c" />
+    <text class="bus-label" x="545" y="99">Address bus</text>
+  </g>
+
+  <!-- Data bus: shared by every component -->
+  <g id="data-bus">
+    <rect x="30" y="440" width="732" height="28" fill="#1971c2" />
+    <text class="bus-label" x="270" y="455">Data bus</text>
+  </g>
+
+  <!-- Links between the components and the buses -->
+  <path id="link-pc-selector" class="link" d="M120 160 V84 H268" marker-end="url(#arrow)" />
+  <path id="link-ir-selector" class="link" d="M260 280 H225 V112 H268" marker-end="url(#arrow)" />
+  <path id="link-pc-bus" class="link" d="M120 240 V440" />
+  <path id="link-ir-bus" class="link" d="M350 310 V440" />
+  <path id="link-acc-alu" class="link" d="M545 290 V243" marker-end="url(#arrow)" />
+  <path id="link-alu-acc" class="link" d="M615 240 V287" marker-end="url(#arrow)" />
+  <path id="link-bus-alu" class="link" d="M690 440 V200 H663" marker-end="url(#arrow)" />
+  <path id="link-acc-bus" class="link" d="M580 370 V440" />
+  <path id="link-alu-zero" class="link" d="M500 200 H463" marker-end="url(#arrow)" />
+  <text class="small" x="481" y="186">zero</text>
+
+  <!-- Selector: chooses which address goes on the address bus -->
+  <g id="selector">
+    <polygon class="box" points="270,70 330,86 330,110 270,126" />
+    <text class="small" x="300" y="56">Selector</text>
+  </g>
+
+  <!-- Program counter -->
+  <g id="program-counter">
+    <rect class="box" x="40" y="160" width="160" height="80" rx="8" />
+    <text class="label" x="120" y="188">Program</text>
+    <text class="label" x="120" y="214">counter</text>
+  </g>
+
+  <!-- Control unit, holding the instruction register -->
+  <g id="control-unit">
+    <rect class="box" x="240" y="160" width="220" height="170" rx="8" />
+    <text class="label" x="350" y="200">Control unit</text>
+  </g>
+  <g id="instruction-register">
+    <rect class="box" x="260" y="250" width="180" height="60" rx="6" />
+    <text class="small" x="350" y="280">Instruction register</text>
+  </g>
+
+  <!-- ALU -->
+  <g id="alu">
+    <rect class="box" x="500" y="160" width="160" height="80" rx="8" />
+    <text class="label" x="580" y="200">ALU</text>
+  </g>
+
+  <!-- Accumulator -->
+  <g id="accumulator">
+    <rect class="box" x="500" y="290" width="160" height="80" rx="8" />
+    <text class="label" x="580" y="330">Accumulator</text>
+  </g>
+
+  <!-- Clock: drives every component, which is narrated rather than drawn -->
+  <g id="clock">
+    <rect class="box" x="40" y="500" width="160" height="70" rx="8" />
+    <text class="label" x="120" y="522">Clock</text>
+    <path d="M64 558 H82 V538 H104 V558 H126 V538 H148 V558 H170 V538 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5" />
+  </g>
+
+  <!-- Memory: the program of the trace, then its data -->
+  <!-- TODO: show the instructions as binary once the encodings are decided;
+       only LOAD = 0001 is fixed so far. -->
+  <g id="memory">
+    <rect class="box" x="762" y="20" width="218" height="566" rx="8" />
+    <text class="label" x="871" y="44">Memory</text>
+  </g>
+  <g id="cells">
+    <g id="cell-0"><text class="address" x="800" y="80">0</text><rect class="cell" x="810" y="66" width="156" height="28" /><text class="value" x="888" y="80">LOAD 14</text></g>
+    <g id="cell-1"><text class="address" x="800" y="112">1</text><rect class="cell" x="810" y="98" width="156" height="28" /><text class="value" x="888" y="112">ADD 12</text></g>
+    <g id="cell-2"><text class="address" x="800" y="144">2</text><rect class="cell" x="810" y="130" width="156" height="28" /><text class="value" x="888" y="144">STORE 14</text></g>
+    <g id="cell-3"><text class="address" x="800" y="176">3</text><rect class="cell" x="810" y="162" width="156" height="28" /><text class="value" x="888" y="176">LOAD 13</text></g>
+    <g id="cell-4"><text class="address" x="800" y="208">4</text><rect class="cell" x="810" y="194" width="156" height="28" /><text class="value" x="888" y="208">SUB 15</text></g>
+    <g id="cell-5"><text class="address" x="800" y="240">5</text><rect class="cell" x="810" y="226" width="156" height="28" /><text class="value" x="888" y="240">STORE 13</text></g>
+    <g id="cell-6"><text class="address" x="800" y="272">6</text><rect class="cell" x="810" y="258" width="156" height="28" /><text class="value" x="888" y="272">JUMPZ 8</text></g>
+    <g id="cell-7"><text class="address" x="800" y="304">7</text><rect class="cell" x="810" y="290" width="156" height="28" /><text class="value" x="888" y="304">JUMP 0</text></g>
+    <g id="cell-8"><text class="address" x="800" y="336">8</text><rect class="cell" x="810" y="322" width="156" height="28" /><text class="value" x="888" y="336">HALT</text></g>
+    <g id="cell-9"><text class="address" x="800" y="368">9</text><rect class="cell" x="810" y="354" width="156" height="28" /></g>
+    <g id="cell-10"><text class="address" x="800" y="400">10</text><rect class="cell" x="810" y="386" width="156" height="28" /></g>
+    <g id="cell-11"><text class="address" x="800" y="432">11</text><rect class="cell" x="810" y="418" width="156" height="28" /></g>
+    <g id="cell-12"><text class="address" x="800" y="464">12</text><rect class="cell" x="810" y="450" width="156" height="28" /><text class="value" x="888" y="464">00000011</text></g>
+    <g id="cell-13"><text class="address" x="800" y="496">13</text><rect class="cell" x="810" y="482" width="156" height="28" /><text class="value" x="888" y="496">00000010</text></g>
+    <g id="cell-14"><text class="address" x="800" y="528">14</text><rect class="cell" x="810" y="514" width="156" height="28" /><text class="value" x="888" y="528">00000000</text></g>
+    <g id="cell-15"><text class="address" x="800" y="560">15</text><rect class="cell" x="810" y="546" width="156" height="28" /><text class="value" x="888" y="560">00000001</text></g>
+  </g>
+</svg>
