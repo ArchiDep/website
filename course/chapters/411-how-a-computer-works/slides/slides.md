@@ -1376,18 +1376,38 @@ only takes the new value on the clock's tick, then holds it.
 <!-- .element: class="hidden" -->
 
 <!-- TODO: second version of the machine, to compare with the first, for the
-     booting slide in the OS part. Possibly the same SVG later, with two
-     states. -->
+     booting slide in the OS part. It keeps the first one's layout on purpose,
+     so that the differences stand out. -->
 
-<img src="images/machine-boot.svg" alt="The machine at boot: a processor connected to a firmware chip, memory and storage by a data bus and an address bus" class="mx-auto" style="width: 940px">
+<img src="images/machine-boot.svg" alt="The machine at boot: a 64-bit processor with sixteen registers, connected to a firmware chip, memory and storage by a 64-bit data bus and a 64-bit address bus" class="mx-auto" style="width: 940px">
 
 **Notes:**
 
-TODO: the same machine with the firmware chip and storage on the same buses as
-the memory. At power-on, the processor starts at an address that leads to the
-firmware. The firmware copies the bootloader from the storage into the memory
-and jumps to it, and the bootloader does the same with the kernel. A program is
-only bytes copied into memory, then jumped to.
+TODO: a modern machine, drawn like the toy one. Its numbers are those of an
+x86-64 processor, the kind your cloud server runs on. Its firmware chip and its
+storage sit on the same buses as the memory. At power-on, the processor starts
+at an address that leads to the firmware. The firmware copies the bootloader
+from the storage into the memory and jumps to it, and the bootloader does the
+same with the kernel. A program is only bytes copied into memory, then jumped
+to.
+
+The toy machine could never do this: with 4-bit addresses, its memory has 16
+bytes. A modern processor works with 64 bits at a time, and its addresses are 64
+bits too, enough to address far more memory than any computer has.
+
+It also has more than one register to compute with: an x86-64 processor has 16
+general-purpose registers, and the ALU can take its operands from any of them
+and write its result into any of them. Values from memory are loaded into a
+register before the ALU uses them, and stored back afterwards.
+
+Its instructions are not all the same size, as the toy machine's were: an
+x86-64 instruction is 1 to 15 bytes long, and there is no fixed split between
+operation and address.
+
+A modern computer no longer has a single shared bus, as drawn here. The
+processor reaches the memory, the firmware and the devices through separate,
+faster connections. What the drawing shows still holds: everything has an
+address, and data travels between the processor and what it addresses.
 
 ---
 

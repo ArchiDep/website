@@ -79,7 +79,8 @@
   <g id="program-counter">
     <rect class="box" x="30" y="36" width="190" height="86" rx="8" />
     <text class="label" x="125" y="58">Program counter</text>
-<rect class="bit" x="69" y="76" width="28" height="34" /><rect class="bit" x="97" y="76" width="28" height="34" /><rect class="bit" x="125" y="76" width="28" height="34" /><rect class="bit" x="153" y="76" width="28" height="34" />  </g>
+    <rect class="bit" x="69" y="76" width="28" height="34" /><rect class="bit" x="97" y="76" width="28" height="34" /><rect class="bit" x="125" y="76" width="28" height="34" /><rect class="bit" x="153" y="76" width="28" height="34" />
+  </g>
 
   <!-- Instruction register: 4 bits of operation, 4 bits of address -->
   <g id="instruction-register"><rect class="bit" x="80" y="210" width="28" height="34" /><rect class="bit" x="108" y="210" width="28" height="34" /><rect class="bit" x="136" y="210" width="28" height="34" /><rect class="bit" x="164" y="210" width="28" height="34" /><rect class="bit" x="192" y="210" width="28" height="34" /><rect class="bit" x="220" y="210" width="28" height="34" /><rect class="bit" x="248" y="210" width="28" height="34" /><rect class="bit" x="276" y="210" width="28" height="34" /><line x1="192" y1="206" x2="192" y2="248" stroke="#1d1d1f" stroke-width="4" /></g>

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-label="The machine at boot: the same processor connected to a firmware chip, memory and storage by the data bus and the address bus">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-label="The machine at boot: a 64-bit processor with sixteen registers, connected to a firmware chip, memory and storage by a 64-bit data bus and a 64-bit address bus">
   <defs>
     <!-- Block arrowheads, sized relative to the path's width: a path ending
          in one stops 35 units short of its target. -->
@@ -48,10 +48,10 @@
     <path id="path-ir-selector" class="address-path" d="M282 214 V95 H435" marker-end="url(#address-arrow)" />
     <path id="path-ir-pc" class="address-path" d="M293 95 H255" marker-end="url(#address-arrow)" />
     <path id="path-bus-ir" class="data-path" d="M100 484 V279" marker-end="url(#data-arrow)" />
-    <path id="path-acc-bus" class="data-path" d="M190 365 V484" />
-    <path id="path-alu-acc" class="data-path" d="M444 352 H409" marker-end="url(#data-arrow)" />
-    <path id="path-bus-alu" class="data-path" d="M631 321 H555" marker-end="url(#data-arrow)" />
-    <path id="path-acc-alu" class="data-path" d="M330 365 V430 H560 V385 H555" marker-end="url(#data-arrow)" />
+    <path id="path-registers-bus" class="data-path" d="M170 390 V484" />
+    <path id="path-registers-alu-a" class="data-path" d="M336 334 H365" marker-end="url(#data-arrow)" />
+    <path id="path-registers-alu-b" class="data-path" d="M336 380 H365" marker-end="url(#data-arrow)" />
+    <path id="path-alu-registers" class="data-path" d="M476 356 H550 V452 H290 V427" marker-end="url(#data-arrow)" />
   </g>
 
   <!-- Buses -->
@@ -62,7 +62,7 @@
   <g id="data-bus">
     <rect class="data-bus" x="620" y="20" width="22" height="568" />
     <rect class="data-bus" x="80" y="480" width="562" height="22" />
-    <text class="bus-label" x="330" y="492">Data bus · 8 bits</text>
+    <text class="bus-label" x="330" y="492">Data bus · 64 bits</text>
   </g>
   <g id="address-bus">
     <rect class="address-bus" x="658" y="20" width="22" height="568" />
@@ -70,7 +70,7 @@
   <path id="path-address-bus-firmware" class="address-path" d="M669 75 H705" marker-end="url(#address-arrow)" />
   <path id="path-address-bus-memory" class="address-path" d="M669 250 H705" marker-end="url(#address-arrow)" />
   <path id="path-address-bus-storage" class="address-path" d="M669 470 H705" marker-end="url(#address-arrow)" />
-  <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 4 bits</text>
+  <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 64 bits</text>
 
   <!-- Selector: chooses whether the program counter or the instruction gives
        the address -->
@@ -83,27 +83,31 @@
   <g id="program-counter">
     <rect class="box" x="30" y="36" width="190" height="86" rx="8" />
     <text class="label" x="125" y="58">Program counter</text>
-<rect class="bit" x="69" y="76" width="28" height="34" /><rect class="bit" x="97" y="76" width="28" height="34" /><rect class="bit" x="125" y="76" width="28" height="34" /><rect class="bit" x="153" y="76" width="28" height="34" />  </g>
+    <rect class="bit" x="69" y="76" width="112" height="34" /><text class="tiny" x="125" y="93">64 bits</text>
+  </g>
 
-  <!-- Instruction register: 4 bits of operation, 4 bits of address -->
-  <g id="instruction-register"><rect class="bit" x="80" y="210" width="28" height="34" /><rect class="bit" x="108" y="210" width="28" height="34" /><rect class="bit" x="136" y="210" width="28" height="34" /><rect class="bit" x="164" y="210" width="28" height="34" /><rect class="bit" x="192" y="210" width="28" height="34" /><rect class="bit" x="220" y="210" width="28" height="34" /><rect class="bit" x="248" y="210" width="28" height="34" /><rect class="bit" x="276" y="210" width="28" height="34" /><line x1="192" y1="206" x2="192" y2="248" stroke="#1d1d1f" stroke-width="4" /></g>
-  <text class="tiny" x="136" y="197">operation</text>
-  <text class="tiny" x="230" y="197">address</text>
-  <text class="small" x="192" y="262">Instruction register</text>
+  <!-- Instruction register: an x86-64 instruction is 1 to 15 bytes long,
+       with no fixed split -->
+  <g id="instruction-register"><rect class="bit" x="80" y="210" width="224" height="34" /><text class="tiny" x="192" y="227">1 to 15 bytes</text></g>
+  <text class="small" x="192" y="262">Instruction</text>
 
-  <!-- Accumulator: the same kind of register -->
-  <g id="accumulator"><rect class="bit" x="150" y="335" width="28" height="34" /><rect class="bit" x="178" y="335" width="28" height="34" /><rect class="bit" x="206" y="335" width="28" height="34" /><rect class="bit" x="234" y="335" width="28" height="34" /><rect class="bit" x="262" y="335" width="28" height="34" /><rect class="bit" x="290" y="335" width="28" height="34" /><rect class="bit" x="318" y="335" width="28" height="34" /><rect class="bit" x="346" y="335" width="28" height="34" /></g>
-  <text class="label" x="262" y="318">Accumulator</text>
+  <!-- Registers: x86-64 has 16 general-purpose registers of 64 bits -->
+  <g id="registers">
+    <rect class="box" x="120" y="296" width="220" height="96" rx="8" />
+    <text class="small" x="230" y="312">Registers · 16 × 64 bits</text>
+    <rect class="bit" x="136" y="326" width="188" height="16" /><rect class="bit" x="136" y="348" width="188" height="16" />
+    <text class="label" x="230" y="374">…</text>
+  </g>
 
-  <!-- ALU: two operands in on the right, the result out on the left -->
+  <!-- ALU: two operands in on the left, the result out on the right -->
   <g id="alu">
-    <polygon class="box" points="520,300 520,338 506,352 520,366 520,405 440,375 440,330" />
-    <text class="label" x="478" y="353">ALU</text>
+    <polygon class="box" points="400,316 400,342 414,356 400,370 400,396 480,372 480,340" />
+    <text class="label" x="443" y="357">ALU</text>
   </g>
 
   <!-- The zero flag: a single wire -->
-  <path id="wire-zero" class="wire" d="M480 314 V290" marker-end="url(#wire-arrow)" />
-  <text class="small" x="467" y="300" style="text-anchor: end">zero</text>
+  <path id="wire-zero" class="wire" d="M440 329 V290" marker-end="url(#wire-arrow)" />
+  <text class="small" x="428" y="304" style="text-anchor: end">zero</text>
 
   <!-- Clock: drives every component, which is narrated rather than drawn -->
   <g id="clock">
