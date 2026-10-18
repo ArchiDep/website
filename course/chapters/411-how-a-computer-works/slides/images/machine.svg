@@ -28,6 +28,7 @@
     .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
     .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
     .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
+    .step { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
     .cell-address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
     .value { font-family: Menlo, Consolas, monospace; font-size: 17px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
   </style>
@@ -38,7 +39,7 @@
 
   <g id="control-unit">
     <rect class="box" x="40" y="145" width="460" height="140" rx="8" />
-    <text class="label" x="410" y="215">Control unit</text>
+    <text class="label" x="410" y="168">Control unit</text>
   </g>
 
   <!-- Paths, drawn under the boxes and buses they connect. Arrowheads mark the
@@ -87,6 +88,14 @@
   <text class="tiny" x="136" y="197">operation</text>
   <text class="tiny" x="230" y="197">address</text>
   <text class="small" x="192" y="262">Instruction register</text>
+
+  <!-- The control unit's cycle, one step lit at a time by the animation -->
+  <g id="steps">
+    <g id="step-fetch"><rect class="step" x="355" y="184" width="110" height="24" rx="12" /><text class="tiny" x="410" y="196">Fetch</text></g>
+    <g id="step-decode"><rect class="step" x="355" y="216" width="110" height="24" rx="12" /><text class="tiny" x="410" y="228">Decode</text></g>
+    <g id="step-execute"><rect class="step" x="355" y="248" width="110" height="24" rx="12" /><text class="tiny" x="410" y="260">Execute</text></g>
+    <path id="wire-step-loop" class="wire" d="M465 260 H484 V196 H469" style="stroke-width: 2" marker-end="url(#wire-arrow)" />
+  </g>
 
   <!-- Accumulator: the same kind of register -->
   <g id="accumulator"><rect class="bit" x="150" y="335" width="28" height="34" /><rect class="bit" x="178" y="335" width="28" height="34" /><rect class="bit" x="206" y="335" width="28" height="34" /><rect class="bit" x="234" y="335" width="28" height="34" /><rect class="bit" x="262" y="335" width="28" height="34" /><rect class="bit" x="290" y="335" width="28" height="34" /><rect class="bit" x="318" y="335" width="28" height="34" /><rect class="bit" x="346" y="335" width="28" height="34" /></g>

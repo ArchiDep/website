@@ -1365,6 +1365,18 @@ its 4 bits of address then leave in orange, to the selector, or to the program
 counter for a jump. The only single wire drawn is the ALU's zero flag, which
 `JUMPZ` reads.
 
+The control unit repeats the same cycle for every instruction:
+
+1. **Fetch**: the program counter's address goes to the memory, the
+   instruction at that address comes back into the instruction register, and
+   the program counter adds 1.
+2. **Decode**: the control unit reads the instruction's 4 bits of operation to
+   know what to do.
+3. **Execute**: it tells the other components what to put on the buses and
+   what to take from them. `LOAD`, `STORE`, `ADD` and `SUB` use the memory
+   again, at the instruction's address; `JUMP` only changes the program
+   counter.
+
 The accumulator feeds the ALU, and the ALU's result goes back into the
 accumulator. That loop works because the accumulator is a clocked register: it
 only takes the new value on the clock's tick, then holds it.
