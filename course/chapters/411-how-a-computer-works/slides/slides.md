@@ -862,6 +862,42 @@ TODO: a relay feeding its own coil. Where a clock comes from.
 
 ---
 
+### The oscillator
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="not-oscillator" names="true" controls="none" theme="light" style="width: 560px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+The buzzer, drawn with a gate. A relay feeding its own coil through its normally
+closed contact is a NOT gate whose output goes back to its input. Its output
+never agrees with its input, so it keeps flipping, as fast as the gate can
+switch. A circuit whose output keeps switching back and forth on its own is an
+oscillator.
+
+---
+
+### The clock
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="clock-lamp" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+An oscillator that switches at a steady pace is a computer's clock, drawn from
+now on as this symbol. Every tick of the clock moves the computer on by one
+step.
+
+A real computer's clock does not use a NOT gate, whose pace drifts with
+temperature and voltage: it uses a quartz crystal, which vibrates at a very
+stable frequency, billions of ticks per second in a modern processor.
+
+---
+
 ## Counting
 
 ---
