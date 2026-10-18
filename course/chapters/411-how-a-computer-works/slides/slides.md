@@ -336,6 +336,76 @@ TODO: two relays in parallel.
 
 ---
 
+### XOR
+
+<!-- .element: class="corner-title fragment" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="relay-xor" name="relay-xor" controls="none" theme="light" style="width: 600px">
+  </logic-diagram>
+  <truth-table for="relay-xor" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: both contacts of each relay, wired like the two switches of a staircase
+light: the lamp is lit when exactly one input is on. Left for students to play
+with.
+
+---
+
+### The buffer and NOT symbols
+
+<!-- .element: class="corner-title" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="buffer-and-not" name="buffer-and-not" controls="none" theme="light" style="width: 520px">
+  </logic-diagram>
+  <truth-table for="buffer-and-not" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: a triangle stands for a relay. The buffer's lamp follows A, like the
+single relay's; the NOT's does the opposite. The only difference between the
+two symbols is the circle at the tip.
+
+---
+
+### The AND symbol
+
+<!-- .element: class="corner-title" -->
+
+<div class="flex items-center justify-center gap-8">
+  <logic-diagram id="and-gate" name="and-gate" controls="none" theme="light" style="width: 520px">
+  </logic-diagram>
+  <truth-table for="and-gate" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: the two relays in series, drawn as one symbol.
+
+---
+
+### The inversion bubble
+
+<!-- .element: class="corner-title" -->
+
+<div class="flex flex-col items-center justify-center gap-8">
+  <logic-diagram id="inversion-bubble" name="inversion-bubble" controls="none" theme="light" style="width: 600px">
+  </logic-diagram>
+  <truth-table for="inversion-bubble" theme="light"></truth-table>
+</div>
+
+**Notes:**
+
+TODO: an AND, the same AND followed by a NOT, and a NAND. NAND is the second
+row with the NOT's triangle left out and its circle kept: the circle alone means
+inversion. The last two lamps always agree.
+
+---
+
 ### Logic gates
 
 <!-- .element: class="hidden" -->
@@ -344,9 +414,9 @@ TODO: two relays in parallel.
   <logic-diagram id="gate-gallery" name="gate-gallery" controls="none" theme="light" style="width: 480px">
   </logic-diagram>
   <div class="flex flex-col gap-4">
+    <truth-table for="gate-gallery" columns="A,BUFFER,NOT" theme="light"></truth-table>
     <truth-table for="gate-gallery" columns="A,B,AND,NAND" theme="light"></truth-table>
     <truth-table for="gate-gallery" columns="A,B,OR,NOR,XOR" theme="light"></truth-table>
-    <truth-table for="gate-gallery" columns="A,NOT" theme="light"></truth-table>
   </div>
 </div>
 
