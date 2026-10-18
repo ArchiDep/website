@@ -408,7 +408,7 @@ inversion. The last two lamps always agree.
 
 ### Logic gates
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <div class="flex items-center justify-center gap-8">
   <logic-diagram id="gate-gallery" name="gate-gallery" controls="none" theme="light" style="width: 480px">
@@ -540,7 +540,7 @@ on its right, and gives a sum bit and a carry for the column on its left.
         <tr>
           <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">A</th>
           <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">B</th>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f]">Sum</th>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f]">SUM</th>
         </tr>
       </thead>
       <tbody>
@@ -574,7 +574,7 @@ on its right, and gives a sum bit and a carry for the column on its left.
         <tr>
           <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">A</th>
           <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">B</th>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f]">Carry</th>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f] whitespace-nowrap">C<span class="opacity-50">arry</span> out</th>
         </tr>
       </thead>
       <tbody>
@@ -626,7 +626,7 @@ the truth tables of XOR and AND.
 **Notes:**
 
 The binary sum and carry truth tables, built with logic gates: A and B go into
-both an XOR and an AND. The XOR gives the sum bit, `S`, and the AND gives the
+both an XOR and an AND. The XOR gives the sum bit, `SUM`, and the AND gives the
 carry bit, `Cout` ("carry out"), which goes out to the next column on the left.
 
 It is only half an adder because it adds two bits and nothing else. That is
@@ -650,7 +650,7 @@ its right. It is two half adders and an OR gate:
 
 - The first half adder, on the left, adds A and B, as in the previous circuit.
 - The second half adder, in the middle, adds the carry in to the first sum bit.
-  Its sum is the full adder's sum bit, `S`.
+  Its sum is the full adder's sum bit, `SUM`.
 - Each half adder can produce a carry, and the OR combines them: the carry out,
   `Cout`, is 1 when either one carries. The first carries when A and B are both
   1, the second when exactly one of them is 1 and so is the carry in. Put
@@ -659,7 +659,7 @@ its right. It is two half adders and an OR gate:
 The two half adders never carry at the same time: when A and B are both 1, their
 sum bit is 0, so the second half adder has nothing to carry. That is why a plain
 OR is enough to combine them. When all three inputs are 1, the first half adder
-carries and the second one's sum is 1: `S` and `Cout` are both 1, which is
+carries and the second one's sum is 1: `SUM` and `Cout` are both 1, which is
 `11` in binary, 3.
 
 ---
@@ -677,9 +677,9 @@ TODO.
 
 ---
 
-### A 4-bit ripple-carry adder
+### 4-bit ripple-carry adder
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <!-- TODO: the design lists this one as supplementary material, not shown in
      the session. -->
@@ -697,9 +697,9 @@ TODO: four full adders, the carry rippling from right to left.
 
 ---
 
-### Feedback: the SR latch
+### SR latch
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram name="sr-latch" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
 </logic-diagram>
@@ -710,9 +710,9 @@ TODO: memory from feedback, an output wired back into an input.
 
 ---
 
-### The D latch
+### D latch
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram name="d-latch" names="true" controls="none" theme="light" style="width: 800px; margin: 0 auto">
 </logic-diagram>
@@ -736,29 +736,55 @@ TODO.
 
 ---
 
-### The selector
+### Selector
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
-<logic-diagram name="selector" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+<logic-diagram name="selector" names="true" highlight="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO: choosing which input reaches the output.
+A selector chooses which of its data inputs reaches its output. SELECT picks
+one: while it is 0, `D0` reaches the output `Y`, and while it is 1, `D1` does.
+
+Each data input goes through an AND. SELECT opens one AND directly and the
+other through a NOT, so exactly one AND is open at a time: the one whose data
+input gets through. The OR then passes on whatever comes out of the open AND.
+
+Its usual name is a **multiplexer**, or MUX: several inputs share a single
+output, one at a time.
 
 ---
 
-### The decoder
+### 2-to-4 decoder
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
-<logic-diagram name="decoder-2-to-4" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+<logic-diagram name="decoder-2-to-4" names="true" highlight="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO: routing a signal to the addressed output.
+The selector's mirror image: one input, DATA, sent to one of four outputs. The
+address, `A1` and `A0`, read as a two-bit binary number, picks which output:
+`Y0` for `00`, `Y1` for `01`, `Y2` for `10`, `Y3` for `11`. The other outputs
+stay at 0.
+
+The ANDs have three inputs instead of two, and work the same way: the output is
+1 only when all three inputs are 1. Each AND gets DATA and one line of each
+address bit, which runs down two lines, as it is and inverted by a NOT. Each AND
+taps a different pair of lines, so that for a given address only one AND has
+both its address inputs at 1. That AND lets DATA through.
+
+It is called **2-to-4** because a decoder is counted by its address bits: 2 bits
+can say 2² = 4 different numbers, so they choose among 4 outputs. A 3-bit
+address gives a 3-to-8 decoder, and so on.
+
+A decoder with a data input like this one is also called a **demultiplexer**, or
+DEMUX, the multiplexer's mirror image, and a demultiplexer is counted by its
+data instead: one data input to four outputs is a **1-to-4** demultiplexer. Both
+names are right for this circuit.
 
 ---
 
@@ -766,25 +792,39 @@ TODO: routing a signal to the addressed output.
 
 <!-- .element: class="hidden" -->
 
-<logic-diagram name="decoder-block" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+<logic-diagram name="decoder-block" names="true" highlight="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO.
+The same decoder drawn as a box: the address picks which of the four outputs
+DATA reaches. The circuit inside does not change; the box hides it so that the
+diagrams that use it stay readable.
 
 ---
 
-### The 4-to-1 selector
+### 4-to-1 selector
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
-<logic-diagram name="selector-4-to-1" names="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+<logic-diagram name="selector-4-to-1" names="true" highlight="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO: the same idea with more inputs.
+The selector again, with four data inputs, `D0` to `D3`. One SELECT input can
+only choose between two, so it takes two select bits, `S1` and `S0`, read as a
+binary number: `00` lets `D0` through, `01` for `D1`, `10` for `D2` and `11` for
+`D3`.
+
+The select bits are wired like the decoder's address bits, each one as it is and
+inverted, so that only one AND is open at a time. The OR has four inputs instead
+of two, and works the same way: its output is 1 when any of its inputs is 1, so
+it passes on whatever comes out of the open AND.
+
+It is named **4-to-1** because a multiplexer is counted by its data: four inputs
+to one output. Its two select bits are the same as the decoder's two address
+bits, which is why it is called 4-to-1 while the decoder is called 2-to-4.
 
 ---
 
@@ -792,20 +832,21 @@ TODO: the same idea with more inputs.
 
 <!-- .element: class="hidden" -->
 
-<logic-diagram name="selector-block" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+<logic-diagram name="selector-block" names="true" highlight="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO.
+The same 4-to-1 selector drawn as a box: the select bits pick which of the four
+data inputs reaches the output.
 
 ---
 
 ### Addressable memory
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
-<logic-diagram name="addressable-memory" names="true" controls="none" theme="light" style="width: 530px; margin: 0 auto">
+<logic-diagram name="addressable-memory" names="true" highlight="true" controls="none" theme="light" style="width: 530px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
@@ -849,9 +890,9 @@ bits.
 
 ---
 
-### The buzzer
+### Buzzer
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram name="relay-buzzer" controls="none" theme="light" style="width: 640px; margin: 0 auto">
 </logic-diagram>
@@ -862,9 +903,9 @@ TODO: a relay feeding its own coil. Where a clock comes from.
 
 ---
 
-### The oscillator
+### Oscillator
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram name="not-oscillator" names="true" controls="none" theme="light" style="width: 560px; margin: 0 auto">
 </logic-diagram>
@@ -879,9 +920,9 @@ oscillator.
 
 ---
 
-### The clock
+### Clock
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram name="clock-lamp" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
 </logic-diagram>
@@ -902,12 +943,9 @@ stable frequency, billions of ticks per second in a modern processor.
 
 ---
 
-### The edge-triggered D flip-flop
+### Edge-triggered D-type flip-flop
 
-<!-- .element: class="hidden" -->
-
-<!-- TODO: shown as a frequency divider, but no diagram wires Q̅ back to D yet:
-     d-flip-flop-manual has D as a toggle. -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram name="d-flip-flop-manual" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
 </logic-diagram>
@@ -929,12 +967,12 @@ on every other tick: half the clock's frequency.
 **Notes:**
 
 The edge-triggered D flip-flop is two D latches in a row, and a NOT gate. The
-first latch gets D, and the clock through the NOT: it is open, following D,
+first latch gets DATA, and the clock through the NOT: it is open, following DATA,
 while the clock is low. The second latch gets the first one's Q, and the clock
 directly: it is open while the clock is high, and copies the first latch.
 
-The two latches are never open together, so D never runs straight through to Q.
-When the clock rises, the first latch closes on the value D had just before, and
+The two latches are never open together, so DATA never runs straight through to Q.
+When the clock rises, the first latch closes on the value DATA had just before, and
 the second one opens and passes that value on to Q. Q only changes when the
 clock rises.
 
@@ -950,13 +988,13 @@ clock rises.
 **Notes:**
 
 The same flip-flop drawn as a box, as the counter will use it. The wedge on the
-clock input marks it as edge-triggered: Q only takes D's value when CLK rises.
+clock input marks it as edge-triggered: Q only takes DATA's value when CLK rises.
 
 ---
 
-### Dividing the frequency
+### Frequency divider
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram name="frequency-divider" names="true" controls="none" theme="light" style="width: 400px; margin: 0 auto">
 </logic-diagram>
@@ -994,8 +1032,8 @@ clock input marks it as edge-triggered: Q only takes D's value when CLK rises.
 **Notes:**
 
 A D flip-flop feeding its Q̅ back into its D: on every rising edge of the clock,
-it stores the opposite of what it holds, so Q flips. Q therefore goes through one
-full cycle, off then on, for every two cycles of the clock: half the clock's
+it stores the opposite of what it holds, so Q flips. Q therefore goes through
+one full cycle, off then on, for every two cycles of the clock: half the clock's
 frequency.
 
 The timing diagram underneath shows it, with time running from left to right.
@@ -1008,9 +1046,9 @@ gives the next digit.
 
 ---
 
-### The counter
+### Program counter
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title fragment" data-fragment-index="2" -->
 
 <logic-diagram name="counter" names="true" controls="none" theme="light" style="width: 760px; margin: 0 auto">
 </logic-diagram>
