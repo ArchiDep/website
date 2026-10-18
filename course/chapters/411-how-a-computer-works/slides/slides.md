@@ -13,23 +13,21 @@ what the processes of a deployment actually are.
 
 ---
 
-## Binary
-
----
-
 ### The main components of a computer
 
-<!-- TODO: diagram of the components; the room names them first. -->
-
-- Processor (CPU)
-- Memory (RAM)
+- Processor (**CPU**: **c**entral **p**rocessing **u**nit)
+- Memory (**RAM**: **r**andom **a**ccess **m**emory)
 - Storage
-- Input and output
+- Input and output (**I/O**)
 - The bus that connects them
 
 **Notes:**
 
 TODO.
+
+---
+
+## Binary
 
 ---
 
