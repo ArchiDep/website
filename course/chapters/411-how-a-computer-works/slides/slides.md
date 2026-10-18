@@ -862,6 +862,10 @@ TODO: a relay feeding its own coil. Where a clock comes from.
 
 ---
 
+## Counting
+
+---
+
 ### The edge-triggered D flip-flop
 
 <!-- .element: class="hidden" -->
@@ -876,6 +880,41 @@ TODO: a relay feeding its own coil. Where a clock comes from.
 
 TODO: Q only changes when the clock rises. With Q̅ fed back into D, it changes
 on every other tick: half the clock's frequency.
+
+---
+
+### Two latches make a flip-flop
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="d-flip-flop-latches" names="true" controls="none" theme="light" style="width: 720px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+The edge-triggered D flip-flop is two D latches in a row, and a NOT gate. The
+first latch gets D, and the clock through the NOT: it is open, following D,
+while the clock is low. The second latch gets the first one's Q, and the clock
+directly: it is open while the clock is high, and copies the first latch.
+
+The two latches are never open together, so D never runs straight through to Q.
+When the clock rises, the first latch closes on the value D had just before, and
+the second one opens and passes that value on to Q. Q only changes when the
+clock rises.
+
+---
+
+### The D flip-flop as a block
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="d-flip-flop-block-manual" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+The same flip-flop drawn as a box, as the counter will use it. The wedge on the
+clock input marks it as edge-triggered: Q only takes D's value when CLK rises.
 
 ---
 
