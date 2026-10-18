@@ -435,28 +435,28 @@ TODO: the symbols that stand for the relay circuits from now on.
 <table class="font-mono text-5xl">
   <tbody>
     <tr class="text-3xl text-red-500">
-      <td class="!border-b-0 !px-2 !text-center"></td>
-      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="2">1</span></td>
-      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="border-b-0! px-2! text-center!"></td>
+      <td class="border-b-0! px-2! text-center!"><span class="fragment" data-fragment-index="2">1</span></td>
+      <td class="border-b-0! px-2! text-center!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="border-b-0! px-2! text-center!"></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !px-2 !text-center"></td>
-      <td class="!border-b-0 !px-2 !text-center"></td>
-      <td class="!border-b-0 !px-2 !text-center">5</td>
-      <td class="!border-b-0 !px-2 !text-center">8</td>
+      <td class="border-b-0! px-2! text-center!"></td>
+      <td class="border-b-0! px-2! text-center!"></td>
+      <td class="border-b-0! px-2! text-center!">5</td>
+      <td class="border-b-0! px-2! text-center!">8</td>
     </tr>
     <tr>
-      <td class="!border-b-0 !px-2 !text-center">+</td>
-      <td class="!border-b-0 !px-2 !text-center"></td>
-      <td class="!border-b-0 !px-2 !text-center">6</td>
-      <td class="!border-b-0 !px-2 !text-center">7</td>
+      <td class="border-b-0! px-2! text-center!">+</td>
+      <td class="border-b-0! px-2! text-center!"></td>
+      <td class="border-b-0! px-2! text-center!">6</td>
+      <td class="border-b-0! px-2! text-center!">7</td>
     </tr>
     <tr>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"></td>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="3">1</span></td>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="2">2</span></td>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="1">5</span></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]!"></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]!"><span class="fragment" data-fragment-index="3">1</span></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]!"><span class="fragment" data-fragment-index="2">2</span></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]!"><span class="fragment" data-fragment-index="1">5</span></td>
     </tr>
   </tbody>
 </table>
@@ -482,32 +482,32 @@ learn to add multi-digit numbers.
 <table class="font-mono text-5xl">
   <tbody>
     <tr class="text-3xl text-red-500">
-      <td class="!border-b-0 !px-2 !text-center"></td>
-      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="3">1</span></td>
-      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="2">1</span></td>
-      <td class="!border-b-0 !px-2 !text-center"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!border-b-0 !px-2 !text-center"></td>
+      <td class="border-b-0! px-2! text-center!"></td>
+      <td class="border-b-0! px-2! text-center!"><span class="fragment" data-fragment-index="3">1</span></td>
+      <td class="border-b-0! px-2! text-center!"><span class="fragment" data-fragment-index="2">1</span></td>
+      <td class="border-b-0! px-2! text-center!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="border-b-0! px-2! text-center!"></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !px-2 !text-center"></td>
-      <td class="!border-b-0 !px-2 !text-center">0</td>
-      <td class="!border-b-0 !px-2 !text-center">1</td>
-      <td class="!border-b-0 !px-2 !text-center">1</td>
-      <td class="!border-b-0 !px-2 !text-center relative">1<span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">7</span></td>
+      <td class="border-b-0! px-2! text-center!"></td>
+      <td class="border-b-0! px-2! text-center!">0</td>
+      <td class="border-b-0! px-2! text-center!">1</td>
+      <td class="border-b-0! px-2! text-center!">1</td>
+      <td class="border-b-0! px-2! text-center! relative">1<span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">7</span></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !px-2 !text-center">+</td>
-      <td class="!border-b-0 !px-2 !text-center">0</td>
-      <td class="!border-b-0 !px-2 !text-center">0</td>
-      <td class="!border-b-0 !px-2 !text-center">1</td>
-      <td class="!border-b-0 !px-2 !text-center relative">1<span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">3</span></td>
+      <td class="border-b-0! px-2! text-center!">+</td>
+      <td class="border-b-0! px-2! text-center!">0</td>
+      <td class="border-b-0! px-2! text-center!">0</td>
+      <td class="border-b-0! px-2! text-center!">1</td>
+      <td class="border-b-0! px-2! text-center! relative">1<span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">3</span></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid]"></td>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid] relative"><span class="fragment" data-fragment-index="4">1</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>3</sup><br />8</span></td>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid] relative"><span class="fragment" data-fragment-index="3">0</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>2</sup><br />4</span></td>
-      <td class="!border-b-0 !px-2 !text-center !border-t-4 ![border-top-style:solid] relative"><span class="fragment" data-fragment-index="2">1</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>1</sup><br />2</span></td>
-      <td class="!border-b-0 !px-2 !text-center relative !border-t-4 ![border-top-style:solid]"><span class="fragment" data-fragment-index="1">0</span><span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">10</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>0</sup><br />1</span></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]!"></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]! relative"><span class="fragment" data-fragment-index="4">1</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>3</sup><br />8</span></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]! relative"><span class="fragment" data-fragment-index="3">0</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>2</sup><br />4</span></td>
+      <td class="border-b-0! px-2! text-center! border-t-4! [border-top-style:solid]! relative"><span class="fragment" data-fragment-index="2">1</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>1</sup><br />2</span></td>
+      <td class="border-b-0! px-2! text-center! relative border-t-4! [border-top-style:solid]!"><span class="fragment" data-fragment-index="1">0</span><span class="fragment absolute left-full ml-16 w-[2ch] text-right text-blue-500" data-fragment-index="5">10</span><span class="fragment absolute top-full left-0 mt-2 w-full text-center text-2xl text-blue-500" data-fragment-index="5">2<sup>0</sup><br />1</span></td>
     </tr>
   </tbody>
 </table>
@@ -535,72 +535,72 @@ on its right, and gives a sum bit and a carry for the column on its left.
 
 <div class="flex items-start justify-center gap-28">
   <div class="flex flex-col items-center gap-6">
-    <table class="fragment !m-0 font-mono text-4xl font-bold text-[#1d1d1f]" data-fragment-index="1">
+    <table class="fragment m-0! font-mono text-4xl font-bold text-[#1d1d1f]" data-fragment-index="1">
       <thead>
         <tr>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">A</th>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">B</th>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f]">SUM</th>
+          <th class="px-[0.5em]! py-[0.2em]! text-center! font-sans font-semibold [border-bottom:2px_solid_#1d1d1f]!">A</th>
+          <th class="px-[0.5em]! py-[0.2em]! text-center! font-sans font-semibold [border-bottom:2px_solid_#1d1d1f]!">B</th>
+          <th class="px-[0.5em]! py-[0.2em]! text-center! font-sans font-semibold [border-bottom:2px_solid_#1d1d1f]! [border-left:3px_solid_#1d1d1f]!">SUM</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
         </tr>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
         </tr>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
         </tr>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
         </tr>
       </tbody>
     </table>
-    <p class="fragment !m-0 text-4xl font-bold text-blue-500" data-fragment-index="3">XOR</p>
+    <p class="fragment m-0! text-4xl font-bold text-blue-500" data-fragment-index="3">XOR</p>
   </div>
   <div class="flex flex-col items-center gap-6">
-    <table class="fragment !m-0 font-mono text-4xl font-bold text-[#1d1d1f]" data-fragment-index="2">
+    <table class="fragment m-0! font-mono text-4xl font-bold text-[#1d1d1f]" data-fragment-index="2">
       <thead>
         <tr>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">A</th>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">B</th>
-          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f] whitespace-nowrap">C<span class="opacity-50">arry</span> out</th>
+          <th class="px-[0.5em]! py-[0.2em]! text-center! font-sans font-semibold [border-bottom:2px_solid_#1d1d1f]!">A</th>
+          <th class="px-[0.5em]! py-[0.2em]! text-center! font-sans font-semibold [border-bottom:2px_solid_#1d1d1f]!">B</th>
+          <th class="px-[0.5em]! py-[0.2em]! text-center! font-sans font-semibold [border-bottom:2px_solid_#1d1d1f]! [border-left:3px_solid_#1d1d1f]! whitespace-nowrap">C<span class="opacity-50">arry</span> out</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
         </tr>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
         </tr>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">0</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
         </tr>
         <tr>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
-          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]!">1</td>
+          <td class="px-[0.5em]! py-[0.15em]! text-center! [border-bottom:1px_solid_#a3a3a8]! [border-left:3px_solid_#1d1d1f]!"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
         </tr>
       </tbody>
     </table>
-    <p class="fragment !m-0 text-4xl font-bold text-blue-500" data-fragment-index="4">AND</p>
+    <p class="fragment m-0! text-4xl font-bold text-blue-500" data-fragment-index="4">AND</p>
   </div>
 </div>
 
@@ -1002,29 +1002,29 @@ clock input marks it as edge-triggered: Q only takes DATA's value when CLK rises
 <table class="mt-8 text-[#1d1d1f]">
   <tbody>
     <tr>
-      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-3xl">CLK</th>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <th class="border-b-0! py-0! pr-6! text-right! align-middle font-sans text-3xl">CLK</th>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !p-0 h-6" colspan="9"></td>
+      <td class="border-b-0! p-0! h-6" colspan="9"></td>
     </tr>
     <tr>
-      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-3xl">Q</th>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <th class="border-b-0! py-0! pr-6! text-right! align-middle font-sans text-3xl">Q</th>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-14 h-12 text-center! align-middle font-mono text-3xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
     </tr>
   </tbody>
 </table>
@@ -1056,111 +1056,111 @@ gives the next digit.
 <table class="mt-8 text-[#1d1d1f]">
   <tbody>
     <tr>
-      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">CLK</th>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <th class="border-b-0! py-0! pr-6! text-right! align-middle font-sans text-2xl">CLK</th>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+      <td class="border-b-0! p-0! h-6" colspan="17"></td>
     </tr>
     <tr>
-      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">Q0</th>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <th class="border-b-0! py-0! pr-6! text-right! align-middle font-sans text-2xl">Q0</th>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+      <td class="border-b-0! p-0! h-6" colspan="17"></td>
     </tr>
     <tr>
-      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">Q1</th>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <th class="border-b-0! py-0! pr-6! text-right! align-middle font-sans text-2xl">Q1</th>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+      <td class="border-b-0! p-0! h-6" colspan="17"></td>
     </tr>
     <tr>
-      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">Q2</th>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
-      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <th class="border-b-0! py-0! pr-6! text-right! align-middle font-sans text-2xl">Q2</th>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl border-b-0! [border-top:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="p-0! w-8 h-10 text-center! align-middle font-mono text-2xl [border-bottom:4px_solid_currentColor]! [border-left:4px_solid_currentColor]!"><span class="fragment" data-fragment-index="1">0</span></td>
     </tr>
     <tr>
-      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+      <td class="border-b-0! p-0! h-6" colspan="17"></td>
     </tr>
     <tr>
-      <th class="!border-b-0 !py-0 !pr-6"></th>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">1</span></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">2</span></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">3</span></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">4</span></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">5</span></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">6</span></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">7</span></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
-      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">0</span></td>
+      <th class="border-b-0! py-0! pr-6!"></th>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">1</span></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">2</span></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">3</span></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">4</span></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">5</span></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">6</span></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">7</span></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="border-b-0! p-0! w-8 h-10 text-center! align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">0</span></td>
     </tr>
   </tbody>
 </table>
