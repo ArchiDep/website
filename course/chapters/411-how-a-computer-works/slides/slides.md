@@ -954,17 +954,189 @@ clock input marks it as edge-triggered: Q only takes D's value when CLK rises.
 
 ---
 
+### Dividing the frequency
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="frequency-divider" names="true" controls="none" theme="light" style="width: 400px; margin: 0 auto">
+</logic-diagram>
+
+<table class="mt-8 text-[#1d1d1f]">
+  <tbody>
+    <tr>
+      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-3xl">CLK</th>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !p-0 h-6" colspan="9"></td>
+    </tr>
+    <tr>
+      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-3xl">Q</th>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-14 h-12 !text-center align-middle font-mono text-3xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+    </tr>
+  </tbody>
+</table>
+
+**Notes:**
+
+A D flip-flop feeding its Q̅ back into its D: on every rising edge of the clock,
+it stores the opposite of what it holds, so Q flips. Q therefore goes through one
+full cycle, off then on, for every two cycles of the clock: half the clock's
+frequency.
+
+The timing diagram underneath shows it, with time running from left to right.
+Each time CLK steps up, Q steps, up or down. A real flip-flop takes a moment to
+respond, which the drawing leaves out.
+
+Q goes 0, 1, 0, 1, one step per cycle of the clock: it counts, but with a single
+binary digit. To count higher, halve the frequency again: a second flip-flop
+gives the next digit.
+
+---
+
 ### The counter
 
 <!-- .element: class="hidden" -->
 
-<logic-diagram name="counter" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
+<logic-diagram name="counter" names="true" controls="none" theme="light" style="width: 760px; margin: 0 auto">
 </logic-diagram>
+
+<table class="mt-8 text-[#1d1d1f]">
+  <tbody>
+    <tr>
+      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">CLK</th>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+    </tr>
+    <tr>
+      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">Q0</th>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+    </tr>
+    <tr>
+      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">Q1</th>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+    </tr>
+    <tr>
+      <th class="!border-b-0 !py-0 !pr-6 !text-right align-middle font-sans text-2xl">Q2</th>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl !border-b-0 ![border-top:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">1</span></td>
+      <td class="!p-0 w-8 h-10 !text-center align-middle font-mono text-2xl ![border-bottom:4px_solid_currentColor] ![border-left:4px_solid_currentColor]"><span class="fragment" data-fragment-index="1">0</span></td>
+    </tr>
+    <tr>
+      <td class="!border-b-0 !p-0 h-6" colspan="17"></td>
+    </tr>
+    <tr>
+      <th class="!border-b-0 !py-0 !pr-6"></th>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">1</span></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">2</span></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">3</span></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">4</span></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">5</span></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">6</span></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">7</span></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"></td>
+      <td class="!border-b-0 !p-0 w-8 h-10 !text-center align-middle font-mono text-2xl text-blue-500"><span class="fragment" data-fragment-index="2">0</span></td>
+    </tr>
+  </tbody>
+</table>
 
 **Notes:**
 
-TODO: frequency dividers in a chain count in binary. This is the program
-counter.
+Three frequency dividers in a chain. The first is clocked by the clock, and each
+next one by the Q̅ of the one before, so each flips when the one before goes
+back to 0, and runs at half its frequency.
+
+Read each column of the timing diagram from the bottom up, Q2 then Q1 then Q0,
+as a binary number: `000`, `001`, `010`, `011` … up to `111`, then `000` again.
+The counter adds 1 on every clock cycle. A computer's program counter works the
+same way, with more digits.
 
 ---
 
