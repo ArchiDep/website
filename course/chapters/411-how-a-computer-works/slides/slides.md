@@ -185,28 +185,39 @@ current flows and the lamp lights up.
 
 ---
 
-### The earth as ground
+### The electromagnet
 
-<!-- .element: class="hidden" -->
-
-<logic-diagram name="earth-as-ground" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+<logic-diagram name="sounder-circuit" controls="none" theme="light" style="width: 640px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO: the earth completes the circuit, which saves one of two long wires.
+TODO: the same circuit with a sounder in place of the lamp. Current through a
+coil makes an electromagnet, which pulls down an iron bar that clicks.
 
 ---
 
 ### The telegraph
+
+<logic-diagram name="telegraph-two-wires" controls="none" theme="light" style="width: 800px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+TODO: a circuit with a purpose: the same loop stretched between two towns, with
+a key in place of the switch. It works over about 30 km, and needs a line there
+and back.
+
+---
+
+### The earth as ground
 
 <logic-diagram name="telegraph" controls="none" theme="light" style="width: 800px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO: a circuit with a purpose. The sounder is an electromagnet pulling a bar
-that clicks. It works over about 30 km.
+TODO: the earth completes the circuit, which saves one of the two long wires.
 
 ---
 
@@ -225,7 +236,7 @@ further.
 
 ### The ground symbol
 
-<logic-diagram name="ground-symbol" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+<logic-diagram name="telegraph-repeater-grounds" controls="none" theme="light" style="width: 800px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
@@ -236,7 +247,7 @@ TODO: shorthand for a stake in the earth.
 
 ### The source symbol
 
-<logic-diagram name="source-symbol" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+<logic-diagram name="telegraph-repeater-sources" controls="none" theme="light" style="width: 800px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
