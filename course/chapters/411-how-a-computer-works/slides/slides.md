@@ -1334,3 +1334,263 @@ same way, with more digits.
 
 TODO: an instruction is 4 bits of operation and 4 bits of address: eight bits,
 read one more way.
+
+---
+
+<!-- TODO: draft ideas, to place and rework once the end of the CPU part and
+     the OS part are written. The first slide probably closes the CPU part, and
+     the second belongs in the OS part, next to switching between programs. -->
+
+### Since the 8080
+
+<div class="grid grid-cols-2 gap-16 text-left">
+  <div>
+    <p class="text-3xl font-bold text-blue-500">Faster</p>
+    <ul>
+      <li>Higher clock speeds</li>
+      <li>Caches</li>
+      <li>Pipelining</li>
+      <li>Branch prediction</li>
+      <li>Out-of-order execution</li>
+      <li>Floating-point unit (FPU)</li>
+      <li>Vector instructions (SIMD)</li>
+      <li>Several cores</li>
+    </ul>
+  </div>
+  <div>
+    <p class="text-3xl font-bold text-blue-500">Isolated</p>
+    <ul>
+      <li>Kernel and user modes</li>
+      <li>Virtual memory</li>
+      <li>Non-executable memory</li>
+      <li>Hardware virtualization</li>
+    </ul>
+  </div>
+</div>
+
+<p class="text-2xl opacity-75">Also: 64 bits for more memory · lower power use ·
+more on one chip · specialized units</p>
+
+**Notes:**
+
+TODO: the machine of the trace is still how a modern processor works: it reads
+instructions from memory and executes them, one after the other. Almost
+everything that changed since the Intel 8080 (1974) makes it faster or keeps
+programs apart, without changing that model.
+
+Most of the speed improvements are invisible to the program:
+
+- **Caches** keep recently used memory close to the processor, which reads it
+  much faster than RAM.
+- **Pipelining** starts the next instruction before the current one has
+  finished, as on an assembly line.
+- **Branch prediction** guesses which way a jump will go, so the pipeline does
+  not have to wait.
+- **Out-of-order execution** runs instructions in a different order when the
+  result is the same, and puts the results back in program order.
+- The **FPU** computes with fractional numbers, such as 3.14, in hardware, and
+  **SIMD** applies
+  one instruction to several numbers at once.
+
+The processor still behaves as if it ran one instruction after the other. The
+exception is **several cores**: several processors on one chip, really running
+at the same time. The next slide is about that one.
+
+The isolation improvements are what lets an operating system keep processes
+apart:
+
+- In **user mode**, the processor refuses instructions that only the operating
+  system may use, such as talking to devices directly. The operating system
+  runs in **kernel mode**.
+- **Virtual memory** gives each process its own addresses, so it cannot read or
+  write another process's memory.
+- **Non-executable memory** stops data from being run as instructions.
+- **Hardware virtualization** lets one machine run several virtual machines,
+  such as your server.
+
+The 8080 had none of these: any program could do anything. They existed on
+1960s mainframes, and came to microprocessors in the 1980s, with the Motorola
+68000 and the Intel 80286 and 80386.
+
+Other changes do not fit either column: 64-bit processors can address far more
+memory than the 8080's 64 KB, power use matters as much as speed in phones and
+data centers, components that were separate chips are now on the processor
+(memory controller, graphics), and some units only do one job, such as
+encryption or neural networks.
+
+---
+
+<!-- TODO: draft notes for the OS part, to split into several slides. Ideas
+     for the 15 to 20 minutes, most of the time on the first four:
+     - Program and process: two SSH sessions are two bash processes running
+       the same program. Everything on the deployment diagram is a process.
+     - Sharing the processor, then several cores (the next slide).
+     - Isolation, and channels as its consequence: files (session 3), pipes
+       (session 4), sockets (networking). The arrows on the diagram are these
+       channels. The most time goes here.
+     - The kernel and system calls: how isolation is enforced, and the shell
+       is a program, not the operating system.
+     - Everything else on one "it also does" slide, a line each.
+     - Not in the session: paging, scheduling algorithms, interrupts and
+       drivers in any detail. -->
+
+### The operating system
+
+- Runs programs as processes
+- Shares the processor between them
+- Gives each its own memory
+- Hides the hardware
+- Organizes the disk into files
+- Handles the network
+- Decides who may do what
+- Connects processes
+- Through system calls only
+
+**Notes:**
+
+TODO: the operating system is the program that manages the computer for all the
+others. Its responsibilities:
+
+1. **It runs programs.** It loads a program from the disk into memory and
+   starts it. A running program is a **process**. The same program can run as
+   several processes at once: two SSH sessions to your server are two `bash`
+   processes running the same program.
+2. **It shares the processor.** It switches each core from one process to the
+   next many times per second, so that they all make progress.
+3. **It gives each process its own memory.** A process cannot read or write
+   another process's memory: they are **isolated**. The processor itself
+   enforces this, with virtual memory.
+4. **It hides the hardware.** Programs ask to read a file or to send bytes over
+   the network. They never move a disk's head or talk to a specific model of
+   network card: **drivers**, parts of the operating system, do that for them.
+5. **It organizes the disk.** Without it, a disk is billions of bytes. The
+   operating system organizes them into **files** with names, in
+   **directories**. A file is only a sequence of bytes: as with the eight bits
+   at the start, its meaning comes from the program that reads it.
+6. **It handles the network.** It implements TCP/IP, and gives programs
+   **sockets** to send and receive data.
+7. **It decides who may do what**, with users, groups and permissions.
+8. **It connects processes.** Since processes are isolated, they can only
+   communicate through channels the operating system provides:
+   - **files**, which one process writes and another reads;
+   - **pipes**, which send one process's output to another's input;
+   - **sockets**, the same channels as over the network, on the same machine
+     or between machines;
+   - **shared memory**, a region that two processes both ask the operating
+     system for, which both then see. It is the fastest channel, since nothing
+     is copied, but also the hardest to use correctly: the processes must take
+     turns, or they change the same data at the same time. PostgreSQL's
+     processes, one per connection, share their cached data this way.
+9. **It is the only way in.** Programs ask the operating system for all of this
+   with **system calls**. The processor runs programs in **user mode**, where
+   the instructions that control the hardware are refused, and the operating
+   system in **kernel mode**.
+
+The core of the operating system, which runs in kernel mode, is the
+**kernel**. On your server, it is the Linux kernel. Programs such as the shell,
+`ls` or `ssh` are not the operating system: they are ordinary programs that
+make system calls, like the programs you write.
+
+---
+
+### Several cores
+
+<div class="grid grid-cols-2 gap-16 text-left">
+  <div>
+    <p class="text-3xl font-bold text-blue-500">One core</p>
+    <p>Programs take turns: <strong>concurrent</strong></p>
+  </div>
+  <div>
+    <p class="text-3xl font-bold text-blue-500">Several cores</p>
+    <p>Programs run at the same time: <strong>parallel</strong></p>
+  </div>
+</div>
+
+<p class="text-2xl">Processes and threads are the units the operating system
+puts on a core</p>
+
+**Notes:**
+
+TODO: a modern processor has several **cores**, each a complete processor that
+executes its own instructions. A laptop typically has between 4 and 16.
+
+With a single core, the operating system switches the processor between
+programs so fast that they seem to run at once. They are **concurrent**: they
+take turns. With several cores, several programs really run at the same
+moment. They are **parallel**.
+
+A program cannot choose a core itself. It asks the operating system for more
+processes or **threads** (several flows of instructions inside one process,
+sharing its memory), and the operating system decides which core runs each one
+and when.
+
+For a web developer, this means:
+
+- A single thread runs on only one core at a time, however many the machine
+  has. Node.js runs all your JavaScript on a single thread. It can still handle
+  many requests at once, because waiting for the network does not need a core:
+  the operating system tells it when data has arrived. But the JavaScript code
+  for all those requests takes turns on one core. Node.js does use a few
+  threads of its own, for example to read files, but not to run your code,
+  unless you create worker threads yourself.
+- For most web applications, one Node.js process is enough: they spend most of
+  their time waiting for the database or the network. Running several copies
+  only helps when the JavaScript itself does heavy work, such as rendering
+  pages on the server, or so that one copy keeps serving while another
+  restarts.
+- nginx works like Node.js: one worker handles thousands of connections. It
+  starts one worker per core, so that it can use them all.
+- PHP works the other way: a PHP process waits, doing nothing else, while the
+  database answers. PHP-FPM keeps a pool of PHP processes, often more than
+  there are cores, so that one can run while the others wait.
+- The Erlang virtual machine, which runs Elixir, starts one scheduler per core
+  and spreads its own lightweight processes across them.
+- Threads that share memory can change the same data at the same time, which
+  causes bugs that only appear sometimes. Processes cannot, because they are
+  isolated.
+
+<!-- TODO: call back when the improved deployments run Guess It as a Node.js
+     process, and in a PHP-FPM deployment if one is kept as an additional
+     exercise. -->
+
+---
+
+<!-- TODO: draft, to place in the OS part. The callback worth making is to the
+     trace: the program counter starts at 0, and a real processor also starts
+     at a fixed address. -->
+
+### Booting
+
+1. Power on: the processor runs the **firmware** (UEFI), from a chip on the
+   motherboard
+2. The firmware loads the **bootloader** (GRUB) from the disk
+3. The bootloader loads the **kernel** (Linux) into memory
+4. The kernel starts the **first process** (systemd)
+5. systemd starts **everything else**: SSH, nginx, your application
+
+**Notes:**
+
+TODO: when a computer is switched on, its memory is empty: there is no program
+in it to run yet. Starting it, called **booting**, is a chain of programs, each
+loading the next one into memory and handing over to it.
+
+1. When the power comes on, the processor starts at a fixed address, as the
+   program counter of the trace starts at 0. That address does not lead to the
+   memory but to a chip on the motherboard, which holds the **firmware**. It
+   checks and prepares the hardware, the memory included, then looks for a
+   disk to start from. The modern firmware is **UEFI**, which replaced the
+   older **BIOS**.
+2. The firmware loads the **bootloader** from the disk and runs it. On Linux,
+   it is usually GRUB. Its job is to find the operating system on the disk.
+3. The bootloader loads the **kernel** into memory and runs it. The kernel
+   prepares everything it manages: the drivers, the memory, the other cores,
+   and the disk's file system.
+4. The kernel starts a single program: the **first process**, with process ID
+   1. On your Ubuntu server, it is **systemd**.
+5. systemd starts everything else the machine has to run, such as the SSH
+   server you connect to and the web server of your deployments. Every other
+   process on the machine was started by systemd, or by a process that systemd
+   started.
+
+Your server is a virtual machine, so its firmware is not on a real chip: the
+cloud provider's hypervisor provides it. The chain is otherwise the same.
