@@ -1359,6 +1359,16 @@ Every value, instructions included, travels on the shared **data bus**. Only one
 component writes on it at a time, and the control unit says which one, and
 which reads. Addresses travel on the **address bus**, to the memory.
 
+Blue paths carry data, 8 bits at once, and orange paths carry addresses, 4 bits
+at once. An instruction arrives in the instruction register as 8 bits of data;
+its 4 bits of address then leave in orange, to the selector, or to the program
+counter for a jump. The only single wire drawn is the ALU's zero flag, which
+`JUMPZ` reads.
+
+The accumulator feeds the ALU, and the ALU's result goes back into the
+accumulator. That loop works because the accumulator is a clocked register: it
+only takes the new value on the clock's tick, then holds it.
+
 ---
 
 ### The machine at boot
