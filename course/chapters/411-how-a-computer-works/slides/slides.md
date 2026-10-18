@@ -531,9 +531,93 @@ on its right, and gives a sum bit and a carry for the column on its left.
 
 ---
 
+### The sum and carry of two bits
+
+<div class="flex items-start justify-center gap-28">
+  <div class="flex flex-col items-center gap-6">
+    <table class="fragment !m-0 font-mono text-4xl font-bold text-[#1d1d1f]" data-fragment-index="1">
+      <thead>
+        <tr>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">A</th>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">B</th>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f]">Sum</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+        </tr>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
+        </tr>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
+        </tr>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="fragment !m-0 text-4xl font-bold text-blue-500" data-fragment-index="3">XOR</p>
+  </div>
+  <div class="flex flex-col items-center gap-6">
+    <table class="fragment !m-0 font-mono text-4xl font-bold text-[#1d1d1f]" data-fragment-index="2">
+      <thead>
+        <tr>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">A</th>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f]">B</th>
+          <th class="!px-[0.5em] !py-[0.2em] !text-center font-sans font-semibold ![border-bottom:2px_solid_#1d1d1f] ![border-left:3px_solid_#1d1d1f]">Carry</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+        </tr>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+        </tr>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">0</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em]">0</span></td>
+        </tr>
+        <tr>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8]">1</td>
+          <td class="!px-[0.5em] !py-[0.15em] !text-center ![border-bottom:1px_solid_#a3a3a8] ![border-left:3px_solid_#1d1d1f]"><span class="inline-block min-w-[1.4em] rounded-[0.3em] bg-[#fff3bf]">1</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="fragment !m-0 text-4xl font-bold text-blue-500" data-fragment-index="4">AND</p>
+  </div>
+</div>
+
+**Notes:**
+
+Adding two bits, as in the rightmost column of a binary addition, gives two
+bits: a sum and a carry. The sum is 1 when exactly one of the two bits is 1.
+The carry is 1 only when both are, since 1 + 1 = `10` in binary.
+
+As you may or may not have noticed, it just so happens that these are exactly
+the truth tables of XOR and AND.
+
+---
+
 ### The half adder
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram id="half-adder" name="half-adder" names="true" controls="none" theme="light" style="width: 700px; margin: 0 auto">
 </logic-diagram>
@@ -541,13 +625,19 @@ on its right, and gives a sum bit and a carry for the column on its left.
 
 **Notes:**
 
-TODO: the sum bit is XOR and the carry bit is AND.
+The binary sum and carry truth tables, built with logic gates: A and B go into
+both an XOR and an AND. The XOR gives the sum bit, `S`, and the AND gives the
+carry bit, `Cout` ("carry out"), which goes out to the next column on the left.
+
+It is only half an adder because it adds two bits and nothing else. That is
+enough for the rightmost column of an addition, but every other column also has
+to add the carry coming in from the column on its right.
 
 ---
 
 ### The full adder
 
-<!-- .element: class="hidden" -->
+<!-- .element: class="corner-title" -->
 
 <logic-diagram id="full-adder" name="full-adder" names="true" controls="none" theme="light" style="width: 960px; margin: 0 auto">
 </logic-diagram>
@@ -555,7 +645,22 @@ TODO: the sum bit is XOR and the carry bit is AND.
 
 **Notes:**
 
-TODO: two half adders and an OR, to add a carry in.
+A full adder adds three bits: A, B and the carry in, `Cin`, from the column on
+its right. It is two half adders and an OR gate:
+
+- The first half adder, on the left, adds A and B, as in the previous circuit.
+- The second half adder, in the middle, adds the carry in to the first sum bit.
+  Its sum is the full adder's sum bit, `S`.
+- Each half adder can produce a carry, and the OR combines them: the carry out,
+  `Cout`, is 1 when either one carries. The first carries when A and B are both
+  1, the second when exactly one of them is 1 and so is the carry in. Put
+  simply, the carry out is 1 when at least two of the three inputs are 1.
+
+The two half adders never carry at the same time: when A and B are both 1, their
+sum bit is 0, so the second half adder has nothing to carry. That is why a plain
+OR is enough to combine them. When all three inputs are 1, the first half adder
+carries and the second one's sum is 1: `S` and `Cout` are both 1, which is
+`11` in binary, 3.
 
 ---
 
