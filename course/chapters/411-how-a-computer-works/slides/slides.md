@@ -1361,6 +1361,26 @@ which reads. Addresses travel on the **address bus**, to the memory.
 
 ---
 
+### The machine at boot
+
+<!-- .element: class="hidden" -->
+
+<!-- TODO: second version of the machine, to compare with the first, for the
+     booting slide in the OS part. Possibly the same SVG later, with two
+     states. -->
+
+<img src="images/machine-boot.svg" alt="The machine at boot: a processor connected to a firmware chip, memory and storage by a data bus and an address bus" class="mx-auto" style="width: 940px">
+
+**Notes:**
+
+TODO: the same machine with the firmware chip and storage on the same buses as
+the memory. At power-on, the processor starts at an address that leads to the
+firmware. The firmware copies the bootloader from the storage into the memory
+and jumps to it, and the bootloader does the same with the kernel. A program is
+only bytes copied into memory, then jumped to.
+
+---
+
 <!-- TODO: draft ideas, to place and rework once the end of the CPU part and
      the OS part are written. The first slide probably closes the CPU part, and
      the second belongs in the OS part, next to switching between programs. -->

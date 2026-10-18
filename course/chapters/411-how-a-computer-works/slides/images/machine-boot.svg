@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-label="The machine at boot: a processor connected to a firmware chip, memory and storage by a data bus and an address bus">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1d1d1f" />
+    </marker>
+  </defs>
+
+  <style>
+    .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
+    .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
+    .label { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+    .small { font-family: Helvetica, Arial, sans-serif; font-size: 16px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+    .link { fill: none; stroke: #1d1d1f; stroke-width: 3; }
+    .data { fill: #1971c2; }
+    .address { fill: #e8590c; }
+    .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
+    .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    .cell-address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
+    .value { font-family: Menlo, Consolas, monospace; font-size: 17px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+  </style>
+
+  <!-- The processor -->
+  <rect class="frame" x="10" y="10" width="590" height="580" rx="16" />
+  <text class="small" x="62" y="32">Processor</text>
+
+  <!-- Buses. Drawing order makes each bus pass behind the other where they
+       cross: the selector's address link, then the data bus, then the rest of
+       the address bus. -->
+  <rect id="address-bus-selector" class="address" x="560" y="56" width="110" height="24" />
+  <g id="data-bus">
+    <rect class="data" x="616" y="20" width="28" height="568" />
+    <rect class="data" x="30" y="460" width="614" height="28" />
+    <text class="bus-label" x="300" y="475">Data bus</text>
+  </g>
+  <rect id="data-bus-firmware" class="data" x="644" y="110" width="76" height="28" />
+  <rect id="data-bus-memory" class="data" x="644" y="320" width="76" height="28" />
+  <rect id="data-bus-storage" class="data" x="644" y="530" width="76" height="28" />
+  <g id="address-bus">
+    <rect class="address" x="668" y="20" width="24" height="568" />
+    <text class="bus-label" x="680" y="300" transform="rotate(-90 680 300)">Address bus</text>
+  </g>
+  <rect id="address-bus-firmware" class="address" x="692" y="56" width="28" height="24" />
+  <rect id="address-bus-memory" class="address" x="692" y="236" width="28" height="24" />
+  <rect id="address-bus-storage" class="address" x="692" y="460" width="28" height="24" />
+
+  <!-- Selector: chooses which address goes on the address bus -->
+  <g id="selector">
+    <polygon class="box" points="500,40 560,56 560,80 500,96" />
+    <text class="small" x="530" y="26">Selector</text>
+  </g>
+
+  <!-- Program counter -->
+  <g id="program-counter">
+    <rect class="box" x="40" y="120" width="160" height="80" rx="8" />
+    <text class="label" x="120" y="148">Program</text>
+    <text class="label" x="120" y="174">counter</text>
+  </g>
+
+  <!-- Control unit, holding the instruction register -->
+  <g id="control-unit">
+    <rect class="box" x="240" y="120" width="320" height="180" rx="8" />
+    <text class="label" x="360" y="155">Control unit</text>
+  </g>
+  <g id="instruction-register">
+    <rect class="box" x="270" y="200" width="220" height="70" rx="6" />
+    <text class="small" x="380" y="235">Instruction register</text>
+  </g>
+
+  <!-- Accumulator and ALU -->
+  <g id="accumulator">
+    <rect class="box" x="330" y="340" width="120" height="80" rx="8" />
+    <text class="label" x="390" y="380">Acc.</text>
+  </g>
+  <g id="alu">
+    <rect class="box" x="480" y="340" width="110" height="80" rx="8" />
+    <text class="label" x="535" y="380">ALU</text>
+  </g>
+
+  <!-- Clock: drives every component, which is narrated rather than drawn -->
+  <g id="clock">
+    <rect class="box" x="40" y="505" width="160" height="70" rx="8" />
+    <text class="label" x="120" y="527">Clock</text>
+    <path d="M64 563 H82 V543 H104 V563 H126 V543 H148 V563 H170 V543 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5" />
+  </g>
+
+  <!-- Links between the components and the buses, drawn over the boxes so that
+       the instruction register's can be seen leaving the control unit -->
+  <path id="link-pc-selector" class="link" d="M120 120 V56 H497" marker-end="url(#arrow)" />
+  <path id="link-ir-selector" class="link" d="M460 200 V84 H497" marker-end="url(#arrow)" />
+  <path id="link-pc-bus" class="link" d="M120 200 V460" />
+  <path id="link-ir-bus" class="link" d="M300 270 V460" />
+  <path id="link-acc-bus" class="link" d="M390 420 V460" />
+  <path id="link-bus-alu" class="link" d="M535 460 V423" marker-end="url(#arrow)" />
+  <path id="link-acc-alu" class="link" d="M450 365 H477" marker-end="url(#arrow)" />
+  <path id="link-alu-acc" class="link" d="M480 395 H453" marker-end="url(#arrow)" />
+  <path id="link-alu-zero" class="link" d="M510 340 V303" marker-end="url(#arrow)" />
+  <text class="small" x="540" y="322">zero</text>
+
+  <!-- Firmware: where the processor starts -->
+  <g id="firmware">
+    <rect class="box" x="720" y="20" width="268" height="150" rx="8" />
+    <text class="label" x="854" y="75">Firmware</text>
+    <text class="small" x="854" y="108">ROM chip: UEFI</text>
+  </g>
+
+  <!-- Memory: empty at power-on -->
+  <g id="memory">
+    <rect class="box" x="720" y="200" width="268" height="200" rx="8" />
+    <text class="label" x="854" y="285">Memory</text>
+    <text class="small" x="854" y="318">RAM: empty at power-on</text>
+  </g>
+
+  <!-- Storage: holds the bootloader, the kernel and every other program -->
+  <g id="storage">
+    <rect class="box" x="720" y="430" width="268" height="156" rx="8" />
+    <text class="label" x="854" y="488">Storage</text>
+    <text class="small" x="854" y="521">Disk: bootloader, kernel,</text>
+    <text class="small" x="854" y="543">programs, files</text>
+  </g>
+</svg>
