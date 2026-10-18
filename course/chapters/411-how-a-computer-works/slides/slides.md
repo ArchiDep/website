@@ -33,133 +33,268 @@ TODO.
 
 ### Eight bits
 
-<p class="text-center font-mono text-6xl">0100 0001</p>
+<p class="text-center font-mono text-6xl">01000001</p>
 
 **Notes:**
 
-TODO: eight bits, each 0 or 1, and nothing in them says what they mean.
+A **bit** is a single binary digit: 0 or 1. Eight bits make a **byte**, the
+unit a computer's memory is counted in.
+
+Eight bits can be set in 2⁸ = 256 different ways, from `00000000` to
+`11111111`.
+
+Nothing in the bits themselves says what they mean. They can be a number, but
+also a shade of gray, a color or a letter, as the next slides show. The meaning
+comes from the program that reads them, not from the bits.
 
 ---
 
-### Eight bits, read three ways
+### Numbers as binary
 
-<!-- TODO: lay the three readings out around the number. -->
+| Binary digit   | <span class="font-mono">0</span>                        | <span class="font-mono">1</span>                                     | <span class="font-mono">0</span>                       | <span class="font-mono">0</span>                       | <span class="font-mono">0</span>                      | <span class="font-mono">0</span>                      | <span class="font-mono">0</span>                      | <span class="font-mono">1</span>                                    |
+| :------------- | :------------------------------------------------------ | :------------------------------------------------------------------- | :----------------------------------------------------- | :----------------------------------------------------- | :---------------------------------------------------- | :---------------------------------------------------- | :---------------------------------------------------- | :------------------------------------------------------------------ |
+| Position value | 2<sup>7</sup>                                           | 2<sup>6</sup>                                                        | 2<sup>5</sup>                                          | 2<sup>4</sup>                                          | 2<sup>3</sup>                                         | 2<sup>2</sup>                                         | 2<sup>1</sup>                                         | 2<sup>0</sup>                                                       |
+| Value          | <span class="text-2xl whitespace-nowrap">0 × 128</span> | <span class="text-2xl whitespace-nowrap text-blue-500">1 × 64</span> | <span class="text-2xl whitespace-nowrap">0 × 32</span> | <span class="text-2xl whitespace-nowrap">0 × 16</span> | <span class="text-2xl whitespace-nowrap">0 × 8</span> | <span class="text-2xl whitespace-nowrap">0 × 4</span> | <span class="text-2xl whitespace-nowrap">0 × 2</span> | <span class="text-2xl whitespace-nowrap text-blue-500">1 × 1</span> |
 
-<div class="grid grid-cols-3 items-center justify-items-center gap-8">
-  <div class="text-5xl">65</div>
-  <div class="text-center font-mono text-5xl">0100 0001</div>
-  <div class="text-5xl">A</div>
-  <div></div>
-  <div class="h-24 w-24" style="background: rgb(73, 0, 85)"></div>
-  <div></div>
-</div>
+<p class="text-center text-4xl">01000001<sub>2</sub> = 64<sub>10</sub> + 1<sub>10</sub> = 65<sub>10</sub></p>
 
 **Notes:**
 
-TODO: the same eight bits as an integer (65), as a letter in the ASCII and
-UTF-8 tables (`A`), and as an 8-bit color (3 bits of red, 3 of green, 2 of
-blue: `010`, `000`, `01`). "An instruction" is not one of the readings yet.
+Read as a number written in base 2 (binary), each position is worth twice the
+position to its right, as each position of a decimal number is worth ten times
+the position to its right. The rightmost position is worth 2<sup>0</sup> = 1,
+and the leftmost 2<sup>7</sup> = 128.
+
+`01000001` has a 1 in only two positions, worth 64 and 1, so it is the decimal
+number 64 + 1 = **65**. The small number after each number says which base it is
+written in: 01000001<sub>2</sub> is in base 2, and 65<sub>10</sub> in base 10.
+
+A byte read this way holds any whole number from 0 (`00000000`) to 255
+(`11111111`): 256 numbers, one for each way of setting its eight bits.
 
 ---
 
-### An image is numbers
+### Gray levels as binary
 
-<!-- TODO: a small image, then zoomed in until its pixels show, then a few of
-     its pixels as numbers. -->
+<img src="images/gray-levels.svg" alt="The 256 gray levels of a byte, from black to white" class="mx-auto h-110">
+
+<p class="text-center text-3xl"><code>01000001</code> = 65 of 255: about 75% black</p>
 
 **Notes:**
 
-TODO: an image is a grid of pixels, and each pixel's color is a number.
+One way to use a byte is as a shade of gray: 0 is black, 255 is white, and the
+254 integers in between are increasingly lighter grays. The grid shows all 256
+of them, in order, 16 per row: 0 at the top left, 255 at the bottom right.
+
+The highlighted cell is 65, in the fifth row (64 to 79), second column. It is
+65 / 255 ≈ 25% of the way from black to white, so it is a dark gray, about 75%
+black.
+
+An image stored with one byte per pixel this way is an 8-bit grayscale image.
 
 ---
 
-### The ASCII table
+### Colors as binary
 
-<!-- .element: class="hidden" -->
+<img src="images/colors.svg" alt="The 256 colors of a byte with 3 bits of red, 3 of green and 2 of blue" class="mx-auto h-110">
 
-<table class="mx-auto table-fixed font-mono text-sm">
+<p class="text-center text-3xl"><code class="text-4xl"><span class="text-red-600">010</span><span class="text-green-600">000</span><span class="text-blue-600">01</span></code> = about 29% red, 0% green, 33% blue</p>
+
+**Notes:**
+
+The same byte can also be a color. A screen makes every color it shows by
+mixing red, green and blue light, so a color can be stored as three numbers:
+how much red, how much green and how much blue. This is called **RGB**.
+
+Eight bits do not divide by three, so one common scheme, **8-bit color**, gives
+3 bits to red, 3 to green and 2 to blue. Blue gets fewer bits because the human
+eye is least sensitive to it. Red and green each have 2³ = 8 levels, from 0 to
+7, and blue has 2² = 4 levels, from 0 to 3.
+
+Read that way, `01000001` is:
+
+- red `010`, 2 of 7, about 29%: a little red;
+- green `000`, 0 of 7, 0%: no green at all;
+- blue `01`, 1 of 3, about 33%: a little blue.
+
+A little red and a little blue make a dark purple. The grid shows all 256
+colors in the same order as the gray levels, and the highlighted cell is in the
+same place: it is the same byte, 65, read differently.
+
+---
+
+### Images as binary
+
+<img src="images/mario.svg" alt="Mario, 12 pixels by 16" class="mx-auto h-110">
+
+<p class="text-center text-3xl"><code class="text-4xl"><span class="text-red-600">101</span><span class="text-green-600">001</span><span class="text-blue-600">00</span></code> = red 5, green 1, blue 0</p>
+
+**Notes:**
+
+An image is a grid of **pixels**, short for "picture elements", and each pixel
+is one color. With the 8-bit colors of the previous slide, each pixel is one
+byte, so the whole image is a list of numbers, one per pixel, row by row.
+
+This is Mario, the character of _Super Mario Bros._, released by Nintendo in
+1985 for the NES (Nintendo Entertainment System), a game console of the 8-bit
+era. He is 12 pixels wide and 16 high: 192 pixels, so 192 bytes. He is redrawn
+here with the 8-bit colors of the previous slide.
+
+The highlighted pixel, in his cap, is the byte `10100100`: red 5 of 7, green 1
+of 7 and blue 0 of 3, a strong red.
+
+Today's images and screens use more bits per pixel: one byte for each of red,
+green and blue, 24 bits per pixel, which gives 256 levels each and over 16
+million colors. It is the `rgb()` notation of CSS: the red of Mario's cap is
+`rgb(182, 36, 0)` (5/7, 1/7 and 0/3 of 255), or `#b62400` in hexadecimal. A
+photo from a modern camera is the same grid of numbers at a much larger scale:
+a 1920 × 1080 image has over 2 million pixels, and at 3 bytes per pixel, it
+takes about 6 MB before it is compressed.
+
+---
+
+### Videos as binary
+
+<img src="images/mario-walking.svg" alt="Mario walking, 3 images of 16 by 16 pixels shown one after the other" class="mx-auto h-110">
+
+<p class="text-center text-3xl"><code class="text-3xl"><span class="text-red-600">010</span><span class="text-green-600">100</span><span class="text-blue-600">11</span></code> → <code class="text-3xl"><span class="text-red-600">110</span><span class="text-green-600">100</span><span class="text-blue-600">00</span></code> → <code class="text-3xl"><span class="text-red-600">101</span><span class="text-green-600">001</span><span class="text-blue-600">00</span></code></p>
+
+**Notes:**
+
+A video is a sequence of images, called **frames**, shown one after the other
+fast enough for the eye to see movement instead of separate pictures. Since each
+image is a list of numbers, a video is a longer list of numbers: one image after
+the other.
+
+This Mario walks with 3 frames of 16 × 16 pixels, each shown for an eighth of a
+second: 8 frames per second. At one byte per pixel, each frame is 256 bytes, and
+the whole animation is 3 × 256 = 768 bytes, played over and over.
+
+The highlighted pixel stays in the same place, but its byte changes from one
+frame to the next: `01010011`, the blue of the sky, then `11010000`, the skin
+of his hand, then `10100100`, the red of his overalls. Nothing moves on a
+screen: each pixel only changes color.
+
+A modern video works the same way at a much larger scale. A 1920 × 1080 frame
+at 3 bytes per pixel is about 6 MB, as on the previous slide, and a video
+usually shows 30 frames per second: about 187 MB for every second of video.
+That is why videos are always compressed, for example by storing only what
+changes from one frame to the next.
+
+---
+
+### Text as binary
+
+<table class="mx-auto font-mono text-sm [&_td]:px-[0.5ch]!">
   <tr>
     <td></td><td></td>
     <td colspan="3">
-      <svg viewBox="0 0 300 40" class="w-full" aria-label="Plus 32">
-        <path d="M50 36 V14 H250 V36" fill="none" stroke="#d9480f" stroke-width="3" />
-        <path d="M243 28 L250 37 L257 28" fill="none" stroke="#d9480f" stroke-width="3" />
-        <text x="150" y="10" text-anchor="middle" font-size="14" fill="#d9480f">+32</text>
-      </svg>
+      <div class="fragment relative aspect-230/56">
+        <svg viewBox="0 0 230 56" class="absolute inset-0 h-full w-full" aria-label="Plus 32">
+          <path d="M20 52 V30 H180 V52" fill="none" stroke="#d9480f" stroke-width="3" />
+          <path d="M173 44 L180 53 L187 44" fill="none" stroke="#d9480f" stroke-width="3" />
+          <text x="100" y="22" text-anchor="middle" font-size="22" fill="#d9480f">+32</text>
+        </svg>
+      </div>
     </td>
     <td></td>
   </tr>
   <tr>
-    <td>SP <span class="opacity-50">32</span></td><td>0 <span class="opacity-50">48</span></td><td>&#64; <span class="opacity-50">64</span></td><td>P <span class="opacity-50">80</span></td><td>&#96; <span class="opacity-50">96</span></td><td>p <span class="opacity-50">112</span></td>
+    <td><span class="inline-block w-[4ch] text-center">SP</span><span class="inline-block w-[3ch] text-right opacity-50">32</span></td><td><span class="inline-block w-[4ch] text-center">0</span><span class="inline-block w-[3ch] text-right opacity-50">48</span></td><td><span class="inline-block w-[4ch] text-center">&#64;</span><span class="inline-block w-[3ch] text-right opacity-50">64</span></td><td><span class="inline-block w-[4ch] text-center">P</span><span class="inline-block w-[3ch] text-right opacity-50">80</span></td><td><span class="inline-block w-[4ch] text-center">&#96;</span><span class="inline-block w-[3ch] text-right opacity-50">96</span></td><td><span class="inline-block w-[4ch] text-center">p</span><span class="inline-block w-[3ch] text-right opacity-50">112</span></td>
   </tr>
   <tr>
-    <td>&#33; <span class="opacity-50">33</span></td><td>1 <span class="opacity-50">49</span></td><td class="bg-yellow-200 font-bold">A <span class="opacity-50">65</span></td><td>Q <span class="opacity-50">81</span></td><td class="bg-yellow-200 font-bold">a <span class="opacity-50">97</span></td><td>q <span class="opacity-50">113</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#33;</span><span class="inline-block w-[3ch] text-right opacity-50">33</span></td><td><span class="inline-block w-[4ch] text-center">1</span><span class="inline-block w-[3ch] text-right opacity-50">49</span></td><td class="bg-yellow-200 font-bold"><span class="inline-block w-[4ch] text-center">A</span><span class="inline-block w-[3ch] text-right opacity-50">65</span></td><td><span class="inline-block w-[4ch] text-center">Q</span><span class="inline-block w-[3ch] text-right opacity-50">81</span></td><td class="bg-yellow-200 font-bold"><span class="inline-block w-[4ch] text-center">a</span><span class="inline-block w-[3ch] text-right opacity-50">97</span></td><td><span class="inline-block w-[4ch] text-center">q</span><span class="inline-block w-[3ch] text-right opacity-50">113</span></td>
   </tr>
   <tr>
-    <td>&#34; <span class="opacity-50">34</span></td><td>2 <span class="opacity-50">50</span></td><td>B <span class="opacity-50">66</span></td><td>R <span class="opacity-50">82</span></td><td>b <span class="opacity-50">98</span></td><td>r <span class="opacity-50">114</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#34;</span><span class="inline-block w-[3ch] text-right opacity-50">34</span></td><td><span class="inline-block w-[4ch] text-center">2</span><span class="inline-block w-[3ch] text-right opacity-50">50</span></td><td><span class="inline-block w-[4ch] text-center">B</span><span class="inline-block w-[3ch] text-right opacity-50">66</span></td><td><span class="inline-block w-[4ch] text-center">R</span><span class="inline-block w-[3ch] text-right opacity-50">82</span></td><td><span class="inline-block w-[4ch] text-center">b</span><span class="inline-block w-[3ch] text-right opacity-50">98</span></td><td><span class="inline-block w-[4ch] text-center">r</span><span class="inline-block w-[3ch] text-right opacity-50">114</span></td>
   </tr>
   <tr>
-    <td>&#35; <span class="opacity-50">35</span></td><td>3 <span class="opacity-50">51</span></td><td>C <span class="opacity-50">67</span></td><td>S <span class="opacity-50">83</span></td><td>c <span class="opacity-50">99</span></td><td>s <span class="opacity-50">115</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#35;</span><span class="inline-block w-[3ch] text-right opacity-50">35</span></td><td><span class="inline-block w-[4ch] text-center">3</span><span class="inline-block w-[3ch] text-right opacity-50">51</span></td><td><span class="inline-block w-[4ch] text-center">C</span><span class="inline-block w-[3ch] text-right opacity-50">67</span></td><td><span class="inline-block w-[4ch] text-center">S</span><span class="inline-block w-[3ch] text-right opacity-50">83</span></td><td><span class="inline-block w-[4ch] text-center">c</span><span class="inline-block w-[3ch] text-right opacity-50">99</span></td><td><span class="inline-block w-[4ch] text-center">s</span><span class="inline-block w-[3ch] text-right opacity-50">115</span></td>
   </tr>
   <tr>
-    <td>&#36; <span class="opacity-50">36</span></td><td>4 <span class="opacity-50">52</span></td><td>D <span class="opacity-50">68</span></td><td>T <span class="opacity-50">84</span></td><td>d <span class="opacity-50">100</span></td><td>t <span class="opacity-50">116</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#36;</span><span class="inline-block w-[3ch] text-right opacity-50">36</span></td><td><span class="inline-block w-[4ch] text-center">4</span><span class="inline-block w-[3ch] text-right opacity-50">52</span></td><td><span class="inline-block w-[4ch] text-center">D</span><span class="inline-block w-[3ch] text-right opacity-50">68</span></td><td><span class="inline-block w-[4ch] text-center">T</span><span class="inline-block w-[3ch] text-right opacity-50">84</span></td><td><span class="inline-block w-[4ch] text-center">d</span><span class="inline-block w-[3ch] text-right opacity-50">100</span></td><td><span class="inline-block w-[4ch] text-center">t</span><span class="inline-block w-[3ch] text-right opacity-50">116</span></td>
   </tr>
   <tr>
-    <td>&#37; <span class="opacity-50">37</span></td><td>5 <span class="opacity-50">53</span></td><td>E <span class="opacity-50">69</span></td><td>U <span class="opacity-50">85</span></td><td>e <span class="opacity-50">101</span></td><td>u <span class="opacity-50">117</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#37;</span><span class="inline-block w-[3ch] text-right opacity-50">37</span></td><td><span class="inline-block w-[4ch] text-center">5</span><span class="inline-block w-[3ch] text-right opacity-50">53</span></td><td><span class="inline-block w-[4ch] text-center">E</span><span class="inline-block w-[3ch] text-right opacity-50">69</span></td><td><span class="inline-block w-[4ch] text-center">U</span><span class="inline-block w-[3ch] text-right opacity-50">85</span></td><td><span class="inline-block w-[4ch] text-center">e</span><span class="inline-block w-[3ch] text-right opacity-50">101</span></td><td><span class="inline-block w-[4ch] text-center">u</span><span class="inline-block w-[3ch] text-right opacity-50">117</span></td>
   </tr>
   <tr>
-    <td>&#38; <span class="opacity-50">38</span></td><td>6 <span class="opacity-50">54</span></td><td>F <span class="opacity-50">70</span></td><td>V <span class="opacity-50">86</span></td><td>f <span class="opacity-50">102</span></td><td>v <span class="opacity-50">118</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#38;</span><span class="inline-block w-[3ch] text-right opacity-50">38</span></td><td><span class="inline-block w-[4ch] text-center">6</span><span class="inline-block w-[3ch] text-right opacity-50">54</span></td><td><span class="inline-block w-[4ch] text-center">F</span><span class="inline-block w-[3ch] text-right opacity-50">70</span></td><td><span class="inline-block w-[4ch] text-center">V</span><span class="inline-block w-[3ch] text-right opacity-50">86</span></td><td><span class="inline-block w-[4ch] text-center">f</span><span class="inline-block w-[3ch] text-right opacity-50">102</span></td><td><span class="inline-block w-[4ch] text-center">v</span><span class="inline-block w-[3ch] text-right opacity-50">118</span></td>
   </tr>
   <tr>
-    <td>&#39; <span class="opacity-50">39</span></td><td>7 <span class="opacity-50">55</span></td><td>G <span class="opacity-50">71</span></td><td>W <span class="opacity-50">87</span></td><td>g <span class="opacity-50">103</span></td><td>w <span class="opacity-50">119</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#39;</span><span class="inline-block w-[3ch] text-right opacity-50">39</span></td><td><span class="inline-block w-[4ch] text-center">7</span><span class="inline-block w-[3ch] text-right opacity-50">55</span></td><td><span class="inline-block w-[4ch] text-center">G</span><span class="inline-block w-[3ch] text-right opacity-50">71</span></td><td><span class="inline-block w-[4ch] text-center">W</span><span class="inline-block w-[3ch] text-right opacity-50">87</span></td><td><span class="inline-block w-[4ch] text-center">g</span><span class="inline-block w-[3ch] text-right opacity-50">103</span></td><td><span class="inline-block w-[4ch] text-center">w</span><span class="inline-block w-[3ch] text-right opacity-50">119</span></td>
   </tr>
   <tr>
-    <td>&#40; <span class="opacity-50">40</span></td><td>8 <span class="opacity-50">56</span></td><td>H <span class="opacity-50">72</span></td><td>X <span class="opacity-50">88</span></td><td>h <span class="opacity-50">104</span></td><td>x <span class="opacity-50">120</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#40;</span><span class="inline-block w-[3ch] text-right opacity-50">40</span></td><td><span class="inline-block w-[4ch] text-center">8</span><span class="inline-block w-[3ch] text-right opacity-50">56</span></td><td><span class="inline-block w-[4ch] text-center">H</span><span class="inline-block w-[3ch] text-right opacity-50">72</span></td><td><span class="inline-block w-[4ch] text-center">X</span><span class="inline-block w-[3ch] text-right opacity-50">88</span></td><td><span class="inline-block w-[4ch] text-center">h</span><span class="inline-block w-[3ch] text-right opacity-50">104</span></td><td><span class="inline-block w-[4ch] text-center">x</span><span class="inline-block w-[3ch] text-right opacity-50">120</span></td>
   </tr>
   <tr>
-    <td>&#41; <span class="opacity-50">41</span></td><td>9 <span class="opacity-50">57</span></td><td>I <span class="opacity-50">73</span></td><td>Y <span class="opacity-50">89</span></td><td>i <span class="opacity-50">105</span></td><td>y <span class="opacity-50">121</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#41;</span><span class="inline-block w-[3ch] text-right opacity-50">41</span></td><td><span class="inline-block w-[4ch] text-center">9</span><span class="inline-block w-[3ch] text-right opacity-50">57</span></td><td><span class="inline-block w-[4ch] text-center">I</span><span class="inline-block w-[3ch] text-right opacity-50">73</span></td><td><span class="inline-block w-[4ch] text-center">Y</span><span class="inline-block w-[3ch] text-right opacity-50">89</span></td><td><span class="inline-block w-[4ch] text-center">i</span><span class="inline-block w-[3ch] text-right opacity-50">105</span></td><td><span class="inline-block w-[4ch] text-center">y</span><span class="inline-block w-[3ch] text-right opacity-50">121</span></td>
   </tr>
   <tr>
-    <td>&#42; <span class="opacity-50">42</span></td><td>&#58; <span class="opacity-50">58</span></td><td>J <span class="opacity-50">74</span></td><td>Z <span class="opacity-50">90</span></td><td>j <span class="opacity-50">106</span></td><td>z <span class="opacity-50">122</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#42;</span><span class="inline-block w-[3ch] text-right opacity-50">42</span></td><td><span class="inline-block w-[4ch] text-center">&#58;</span><span class="inline-block w-[3ch] text-right opacity-50">58</span></td><td><span class="inline-block w-[4ch] text-center">J</span><span class="inline-block w-[3ch] text-right opacity-50">74</span></td><td><span class="inline-block w-[4ch] text-center">Z</span><span class="inline-block w-[3ch] text-right opacity-50">90</span></td><td><span class="inline-block w-[4ch] text-center">j</span><span class="inline-block w-[3ch] text-right opacity-50">106</span></td><td><span class="inline-block w-[4ch] text-center">z</span><span class="inline-block w-[3ch] text-right opacity-50">122</span></td>
   </tr>
   <tr>
-    <td>&#43; <span class="opacity-50">43</span></td><td>&#59; <span class="opacity-50">59</span></td><td>K <span class="opacity-50">75</span></td><td>&#91; <span class="opacity-50">91</span></td><td>k <span class="opacity-50">107</span></td><td>&#123; <span class="opacity-50">123</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#43;</span><span class="inline-block w-[3ch] text-right opacity-50">43</span></td><td><span class="inline-block w-[4ch] text-center">&#59;</span><span class="inline-block w-[3ch] text-right opacity-50">59</span></td><td><span class="inline-block w-[4ch] text-center">K</span><span class="inline-block w-[3ch] text-right opacity-50">75</span></td><td><span class="inline-block w-[4ch] text-center">&#91;</span><span class="inline-block w-[3ch] text-right opacity-50">91</span></td><td><span class="inline-block w-[4ch] text-center">k</span><span class="inline-block w-[3ch] text-right opacity-50">107</span></td><td><span class="inline-block w-[4ch] text-center">&#123;</span><span class="inline-block w-[3ch] text-right opacity-50">123</span></td>
   </tr>
   <tr>
-    <td>&#44; <span class="opacity-50">44</span></td><td>&#60; <span class="opacity-50">60</span></td><td>L <span class="opacity-50">76</span></td><td>&#92; <span class="opacity-50">92</span></td><td>l <span class="opacity-50">108</span></td><td>&#124; <span class="opacity-50">124</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#44;</span><span class="inline-block w-[3ch] text-right opacity-50">44</span></td><td><span class="inline-block w-[4ch] text-center">&#60;</span><span class="inline-block w-[3ch] text-right opacity-50">60</span></td><td><span class="inline-block w-[4ch] text-center">L</span><span class="inline-block w-[3ch] text-right opacity-50">76</span></td><td><span class="inline-block w-[4ch] text-center">&#92;</span><span class="inline-block w-[3ch] text-right opacity-50">92</span></td><td><span class="inline-block w-[4ch] text-center">l</span><span class="inline-block w-[3ch] text-right opacity-50">108</span></td><td><span class="inline-block w-[4ch] text-center">&#124;</span><span class="inline-block w-[3ch] text-right opacity-50">124</span></td>
   </tr>
   <tr>
-    <td>&#45; <span class="opacity-50">45</span></td><td>&#61; <span class="opacity-50">61</span></td><td>M <span class="opacity-50">77</span></td><td>&#93; <span class="opacity-50">93</span></td><td>m <span class="opacity-50">109</span></td><td>&#125; <span class="opacity-50">125</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#45;</span><span class="inline-block w-[3ch] text-right opacity-50">45</span></td><td><span class="inline-block w-[4ch] text-center">&#61;</span><span class="inline-block w-[3ch] text-right opacity-50">61</span></td><td><span class="inline-block w-[4ch] text-center">M</span><span class="inline-block w-[3ch] text-right opacity-50">77</span></td><td><span class="inline-block w-[4ch] text-center">&#93;</span><span class="inline-block w-[3ch] text-right opacity-50">93</span></td><td><span class="inline-block w-[4ch] text-center">m</span><span class="inline-block w-[3ch] text-right opacity-50">109</span></td><td><span class="inline-block w-[4ch] text-center">&#125;</span><span class="inline-block w-[3ch] text-right opacity-50">125</span></td>
   </tr>
   <tr>
-    <td>&#46; <span class="opacity-50">46</span></td><td>&#62; <span class="opacity-50">62</span></td><td>N <span class="opacity-50">78</span></td><td>&#94; <span class="opacity-50">94</span></td><td>n <span class="opacity-50">110</span></td><td>&#126; <span class="opacity-50">126</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#46;</span><span class="inline-block w-[3ch] text-right opacity-50">46</span></td><td><span class="inline-block w-[4ch] text-center">&#62;</span><span class="inline-block w-[3ch] text-right opacity-50">62</span></td><td><span class="inline-block w-[4ch] text-center">N</span><span class="inline-block w-[3ch] text-right opacity-50">78</span></td><td><span class="inline-block w-[4ch] text-center">&#94;</span><span class="inline-block w-[3ch] text-right opacity-50">94</span></td><td><span class="inline-block w-[4ch] text-center">n</span><span class="inline-block w-[3ch] text-right opacity-50">110</span></td><td><span class="inline-block w-[4ch] text-center">&#126;</span><span class="inline-block w-[3ch] text-right opacity-50">126</span></td>
   </tr>
   <tr>
-    <td>&#47; <span class="opacity-50">47</span></td><td>&#63; <span class="opacity-50">63</span></td><td>O <span class="opacity-50">79</span></td><td>&#95; <span class="opacity-50">95</span></td><td>o <span class="opacity-50">111</span></td><td>DEL <span class="opacity-50">127</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#47;</span><span class="inline-block w-[3ch] text-right opacity-50">47</span></td><td><span class="inline-block w-[4ch] text-center">&#63;</span><span class="inline-block w-[3ch] text-right opacity-50">63</span></td><td><span class="inline-block w-[4ch] text-center">O</span><span class="inline-block w-[3ch] text-right opacity-50">79</span></td><td><span class="inline-block w-[4ch] text-center">&#95;</span><span class="inline-block w-[3ch] text-right opacity-50">95</span></td><td><span class="inline-block w-[4ch] text-center">o</span><span class="inline-block w-[3ch] text-right opacity-50">111</span></td><td><span class="inline-block w-[4ch] text-center">DEL</span><span class="inline-block w-[3ch] text-right opacity-50">127</span></td>
   </tr>
 </table>
 
 **Notes:**
 
-TODO: every letter has a code. The lowercase letters come 32 after the
-uppercase ones: `A` is 65 and `a` is 97.
+Text is numbers too: a character table gives every character a number, its
+**code point**. The table that most others build on is **ASCII** (American
+Standard Code for Information Interchange), from 1963. It has 128 characters,
+numbered 0 to 127.
+
+The slide shows codes 32 to 127, in columns of 16. Codes 0 to 31 are control
+characters, such as the line feed (10) that ends a line, which are not printed.
+`SP` (32) is the space, and `DEL` (127) is another control character.
+
+Some things worth noticing:
+
+- The digits are characters like any other: the character `0` is code point 48,
+  not code point 0.
+- The uppercase letters start at 65, with `A`, and the lowercase ones at 97,
+  with `a`: the lowercase letters come exactly 32 after the uppercase ones.
+
+**UTF-8**, the encoding of almost all text on the web today, can store over a
+million characters, from every writing system and emoji. Its first 128 code
+points are the ASCII table, and UTF-8 stores each of them as a single byte, the
+same as in ASCII. `A` is 65 and `a` is 97 in both, so text written only in
+ASCII characters is also valid UTF-8.
 
 ---
 
-### Changing case is arithmetic
+### Transforming data is arithmetic
 
-<!-- TODO: lay out side by side, with bit 5 highlighted. -->
-
-| Letter | Integer |   Binary    |
-| :----: | :-----: | :---------: |
-|  `A`   |   65    | `0100 0001` |
-|  `a`   |   97    | `0110 0001` |
+| Letter | Code point |                         Binary                          |
+| :----: | :--------: | :-----------------------------------------------------: |
+|  `A`   |     65     | <code>01<span class="text-red-600">0</span>00001</code> |
+|  `a`   |     97     | <code>01<span class="text-red-600">1</span>00001</code> |
 
 **Notes:**
 
-TODO: `a` is `A` plus 32, and 32 is the value of one bit, bit 5 counting
-from 0. Changing case is adding or subtracting 32, which is flipping that
-single bit. If we can manipulate numbers, we can manipulate any data.
+`a` is `A` plus 32. In binary, 32 is the value of a single bit, the sixth from
+the right (bit 5, counting from 0), and that is the only bit that differs
+between the two letters. The same is true of every other letter of the table:
+`B` (66) and `b` (98), all the way to `Z` (90) and `z` (122).
+
+So changing the case of a letter is adding or subtracting 32, which is the same
+as flipping that single bit.
+
+A computer does not know what letters are. It only manipulates numbers, but
+since letters, colors and images are all stored as numbers, manipulating
+numbers is enough to manipulate any data.
 
 ---
 
