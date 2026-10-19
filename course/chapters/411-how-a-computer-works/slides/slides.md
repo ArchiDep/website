@@ -1312,7 +1312,7 @@ it to, and a jump can set it to a new value.
 
 ---
 
-## Instructions
+## Running a program
 
 ---
 

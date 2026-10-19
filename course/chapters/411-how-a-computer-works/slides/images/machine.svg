@@ -29,6 +29,16 @@
     .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
     .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
     .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    /* The cell being read or written, lit like a lamp */
+    .current-cell { fill: #fff3bf; stroke: #f59f00; stroke-width: 3; }
+    /* A connection the control signals open between two components, drawn
+       like a live wire in the circuits, its white casing keeping it apart
+       from the paths it crosses */
+    .live-casing { fill: none; stroke: #ffffff; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+    .live-wire { fill: none; stroke: #d9480f; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .live-current { fill: none; stroke: #ffd43b; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 11; }
+    /* Shown only by the steps of the animation */
+    .step-only { display: none; }
     .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
     .step { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
     .cell-address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
@@ -165,11 +175,17 @@
     <g id="cell-11"><text class="cell-address" x="796" y="432">11</text><rect class="cell" x="806" y="418" width="170" height="28" /><text class="bits unused" x="813" y="432">0000 0000</text></g>
     <g id="cell-12"><text class="cell-address" x="796" y="464">12</text><rect class="cell" x="806" y="450" width="170" height="28" /><text class="bits" x="813" y="464">0000 0011</text><text class="annotation" x="969" y="464">3</text></g>
     <g id="cell-13"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28" /><text class="bits" x="813" y="496">0000 0010</text><text class="annotation" x="969" y="496">2</text></g>
-    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28" /><text class="bits" x="813" y="528">0000 0000</text><text class="annotation" x="969" y="528">0</text></g>
+    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28" /><rect class="current-cell step-only" x="806" y="514" width="170" height="28" /><text class="bits" x="813" y="528">0000 0000</text><text class="annotation" x="969" y="528">0</text></g>
     <g id="cell-15"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28" /><text class="bits" x="813" y="560">0000 0001</text><text class="annotation" x="969" y="560">1</text></g>
   </g>
   <!-- The memory's read/write control signal, arriving from somewhere not
        drawn -->
   <g id="wire-read-write"><path class="wire-dots" d="M712 538 V552.5" /><path class="wire" d="M712 559 V576 H737" marker-end="url(#wire-arrow)" /></g>
   <text class="tiny" x="747" y="576" style="font-size: 11px; text-anchor: start">R/W</text>
+  <!-- The connection LOAD 14 opens, from cell 14 to the accumulator -->
+  <g id="live-memory-accumulator" class="step-only">
+    <path class="live-casing" d="M806 528 H801 V480 H750 V491 H190 V389" />
+    <path class="live-wire" d="M806 528 H801 V480 H750 V491 H190 V389" />
+    <path class="live-current" d="M806 528 H801 V480 H750 V491 H190 V389" />
+  </g>
 </svg>
