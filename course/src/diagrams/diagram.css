@@ -49,6 +49,11 @@ svg.diagram .detail {
 .diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .detail {
   display: inline;
 }
+/* The other way round: only in the fully drawn diagram, and hidden while
+   stepping through it, such as what no step of the story shows. */
+.diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .at-rest {
+  display: none;
+}
 /* A short-lived process, and the control edge that started it, only while
    their step is the current one. */
 svg.diagram .passing:not(.current-fragment) {

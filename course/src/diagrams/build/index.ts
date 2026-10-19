@@ -5,7 +5,17 @@
 // `course/CONTRIBUTING.md`.
 import type { Action, DiagramDefinition, Step } from './builder';
 
-export { goneFrom, reveal, show, teardown } from './actions';
+export {
+  copyOf,
+  during,
+  goneFrom,
+  reveal,
+  runs,
+  show,
+  teardown
+} from './actions';
+export type { Run } from './actions';
+export { START } from './builder';
 export type { Action, Builder, DiagramDefinition, Step } from './builder';
 
 /**

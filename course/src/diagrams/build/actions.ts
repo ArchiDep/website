@@ -5,8 +5,8 @@
 // as custom properties. A family's own actions are built on these.
 import type { Element } from '@xmldom/xmldom';
 
-import type { Action } from './builder';
-import { addClasses, setVariables } from './svg';
+import { START, type Action, type Builder } from './builder';
+import { addClasses, descendants, removeClasses, setVariables } from './svg';
 import { seconds } from './timing';
 
 /**
@@ -59,4 +59,79 @@ export function goneFrom(element: Element, index: number, after = 0): void {
   if (after) {
     setVariables(element, { 'gone-delay': seconds(after) });
   }
+}
+
+/**
+ * A stretch of consecutive steps: from the step at `from` until the step at
+ * `to`, which it is no longer shown at, or to the end without one.
+ */
+export interface Run {
+  readonly from: number;
+  readonly to?: number;
+}
+
+/**
+ * The stretches of consecutive steps among the indices of steps, in order: the
+ * steps at 1, 2 and 5 are one stretch from 1 until 3, and another from 5 until
+ * 6. A stretch reaching the last step goes on to the end.
+ */
+export function runs(indices: Iterable<number>, steps: number): Run[] {
+  const sorted = [...new Set(indices)].sort((a, b) => a - b);
+  const found: Run[] = [];
+  let from: number | undefined;
+  sorted.forEach((index, i) => {
+    from ??= index;
+    const next = sorted[i + 1];
+    if (next !== index + 1) {
+      found.push(index + 1 < steps ? { from, to: index + 1 } : { from });
+      from = undefined;
+    }
+  });
+
+  return found;
+}
+
+const TEARDOWNS = Symbol('teardowns');
+
+/**
+ * Shows an element only during a stretch of steps: from the step at `from`, or
+ * from the start of stepping if it is `START`, until the step at `to`, or to
+ * the end without one. The fully drawn diagram leaves it out. Each time an
+ * element of the drawing is shown again, it is a copy of it shown.
+ */
+export function during(
+  builder: Builder,
+  element: Element,
+  { from, to }: Run
+): void {
+  if (from === START) {
+    // Shown before any step is reached, which a transient element is not.
+    removeClasses(element, 'transient');
+    addClasses(element, 'detail');
+  } else {
+    reveal(element, from, 'transient');
+  }
+
+  if (to !== undefined) {
+    const marked = builder.state(TEARDOWNS, () => new Set<number>());
+    if (!marked.has(to)) {
+      marked.add(to);
+      builder.mark('teardown', to);
+    }
+
+    goneFrom(element, to);
+  }
+}
+
+/**
+ * A copy of an element of the drawing, without the ids that would make it a
+ * second element of the same name.
+ */
+export function copyOf(element: Element): Element {
+  const copy = element.cloneNode(true) as Element;
+  for (const each of [copy, ...descendants(copy)]) {
+    each.removeAttribute('id');
+  }
+
+  return copy;
 }

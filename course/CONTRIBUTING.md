@@ -776,8 +776,11 @@ A diagram is three files in [`diagrams/`](./diagrams), all named after it:
   it, which is the caption a page shows. It imports the actions a step is made
   of from its family's vocabulary,
   [`src/diagrams/build/processes`](./src/diagrams/build/processes) for an
-  architecture diagram, which adds its own to those of the core in
-  [`src/diagrams/build/index.ts`](./src/diagrams/build/index.ts).
+  architecture diagram and
+  [`src/diagrams/build/machine`](./src/diagrams/build/machine) for a machine,
+  which add their own to those of the core in
+  [`src/diagrams/build/index.ts`](./src/diagrams/build/index.ts). What a
+  vocabulary's actions need of the drawing, they say themselves.
 - **`407-tcp.html`**, generated from the other two: never edit it.
 
 After changing a diagram, its steps, [`shared.svg`](./diagrams/shared.svg) or
@@ -825,8 +828,9 @@ to a few conventions:
   into stacks; the `transient` class for what is shown from its step until it is
   torn down, but not when fully drawn; the `detail` class for what is shown
   while stepping through the diagram, in a page or a deck, but left out of the
-  fully drawn diagram, since students are not expected to draw it; `arrives`
-  for what appears once the data bringing it has arrived.
+  fully drawn diagram, since students are not expected to draw it; the `at-rest`
+  class for the other way round, what only the fully drawn diagram shows;
+  `arrives` for what appears once the data bringing it has arrived.
 
 The partial carries its own stylesheet, and the site's scripts do the stepping:
 [`src/diagrams/runtime`](./src/diagrams/runtime), from `course.ts` in a page and

@@ -468,7 +468,7 @@ export function data(
       const trip = packet(builder, index, edge, text, options, true);
       builder.overlays.push(trip.element);
       pendingLeg = trip.leg;
-      builder.check(() => {
+      builder.whenBuilt(() => {
         if (pendingLeg !== null) {
           throw new Error(
             `${builder.name}.svg: data set off for the middle of an edge, and never went onward`

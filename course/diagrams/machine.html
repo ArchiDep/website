@@ -29,8 +29,6 @@ svg.diagram[data-family='machine'] .wire.thin { stroke-width: 2; }
 svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
 svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
 svg.diagram[data-family='machine'] .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
-/* The cell being read or written, lit like a lamp */
-svg.diagram[data-family='machine'] .current-cell { fill: #fff3bf; stroke: #f59f00; stroke-width: 3; }
 /* A connection the control signals open between two components, drawn
 like a live wire in the circuits, its white casing keeping it apart
 from the paths it crosses */
@@ -46,6 +44,55 @@ svg.diagram[data-family='machine'] .annotation { font-family: Menlo, Consolas, m
 svg.diagram[data-family='machine'] .marker-data { fill: #1971c2; }
 svg.diagram[data-family='machine'] .marker-address { fill: #e8590c; }
 svg.diagram[data-family='machine'] .marker-wire { fill: #1d1d1f; }
+/* --- What the steps show ------------------------------------------- */
+/* A pill of the cycle, or the cell being read or written, lit like a lamp */
+svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
+svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
+/* A control signal the control unit gives, in red */
+svg.diagram[data-family='machine'] .wire.lit { stroke: #e03131; }
+svg.diagram[data-family='machine'] .wire.lit[marker-end] { marker-end: url(#diagram-machine-wire-arrow-lit); }
+svg.diagram[data-family='machine'] .marker-wire.lit-marker { fill: #e03131; }
+/* R or W of the memory's controls, in red, the other letters paled, all
+drawn over the controls with a halo hiding them */
+svg.diagram[data-family='machine'] .read-write.lit { fill: #e03131; stroke: #ffffff; stroke-width: 3; stroke-linejoin: round; paint-order: stroke; }
+svg.diagram[data-family='machine'] .read-write.lit .unlit { fill: #c7c7cc; }
+/* A register's value, one binary digit in each of its boxes */
+svg.diagram[data-family='machine'] .bit-value { font-family: Menlo, Consolas, monospace; font-size: 18px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+/* What the room says aloud: a register's value in decimal, the decoded
+instruction over the captions it replaces */
+svg.diagram[data-family='machine'] :is(.decimal, .decoded) { font-family: Helvetica, Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1971c2; text-anchor: middle; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .decoded { font-family: Menlo, Consolas, monospace; }
+svg.diagram[data-family='machine'] .mask { fill: #ffffff; }
+/* --- Focus --------------------------------------------------------- */
+/* A part the current step is not about is drawn paler, rather than made
+transparent, which would show the paths drawn under the boxes. Values
+stay as they are, the room following them from step to step. */
+svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #c7c7cc; }
+svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #dcdce0; }
+svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #b8b8bd; }
+svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
+svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #b4d0ee; }
+svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #f7cbb0; }
+svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #b4d0ee; }
+svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #f7cbb0; }
+svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #c7c7cc; }
+/* An arrowhead takes its colour from its marker, not from its path */
+svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path)[marker-end] { marker-end: url(#diagram-machine-data-arrow-faded); }
+svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path)[marker-end] { marker-end: url(#diagram-machine-address-arrow-faded); }
+svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire)[marker-end] { marker-end: url(#diagram-machine-wire-arrow-faded); }
+svg.diagram[data-family='machine'] .marker-data.faded-marker { fill: #b4d0ee; }
+svg.diagram[data-family='machine'] .marker-address.faded-marker { fill: #f7cbb0; }
+svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #c7c7cc; }
+@media screen and (prefers-reduced-motion: no-preference) {
+/* Current running along a live wire */
+svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
+/* Focus changes in a moment rather than at once */
+svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+}
+@keyframes machine-current {
+to { stroke-dashoffset: -12; }
+}
 </style><style class="diagram-motion">/* The steps of a diagram: what they hide, show and move, in a deck and in a
 page alike. The generator copies this file into every diagram it generates,
 after the diagram's own look, so that an included diagram needs no stylesheet
@@ -93,6 +140,11 @@ display: none;
 }
 .diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .detail {
 display: inline;
+}
+/* The other way round: only in the fully drawn diagram, and hidden while
+stepping through it, such as what no step of the story shows. */
+.diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .at-rest {
+display: none;
 }
 /* A short-lived process, and the control edge that started it, only while
 their step is the current one. */
@@ -546,7 +598,19 @@ break-inside: avoid;
 <marker id="diagram-machine-wire-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
 <path class="marker-wire" d="M0 0 L10 5 L0 10 z"/>
 </marker>
-</defs>
+<marker id="diagram-machine-wire-arrow-lit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+<path class="marker-wire lit-marker" d="M0 0 L10 5 L0 10 z"/>
+</marker>
+<marker id="diagram-machine-data-arrow-faded" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+<path class="marker-data faded-marker" d="M0 0 L8 5 L0 10 z"/>
+</marker>
+<marker id="diagram-machine-address-arrow-faded" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+<path class="marker-address faded-marker" d="M0 0 L8 5 L0 10 z"/>
+</marker>
+<marker id="diagram-machine-wire-arrow-faded" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+<path class="marker-wire faded-marker" d="M0 0 L10 5 L0 10 z"/>
+</marker>
+</defs><g class="fragment teardown" data-fragment-index="6"/><g class="fragment teardown" data-fragment-index="3"/><g class="fragment teardown" data-fragment-index="8"/><g class="fragment teardown" data-fragment-index="2"/><g class="fragment teardown" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="8"/><g class="fragment focus" data-fragment-index="7"/><g class="fragment focus" data-fragment-index="6"/><g class="fragment focus" data-fragment-index="5"/><g class="fragment focus" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="2"/><g class="fragment focus" data-fragment-index="1"/><g class="fragment focus" data-fragment-index="0"/>
 <path class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H486 V572 A16 16 0 0 1 502 556 Z"/>
 <rect class="frame" x="10" y="10" width="590" height="580" rx="16"/>
 <path class="frame" d="M600 556 H502 A16 16 0 0 0 486 572 V590"/>
@@ -556,57 +620,68 @@ break-inside: avoid;
 <text class="label" x="410" y="168">Control unit</text>
 </g>
 <g id="diagram-machine-paths">
-<path id="diagram-machine-path-pc-selector" class="address-path" d="M216 55 H435" marker-end="url(#diagram-machine-address-arrow)"/>
-<path id="diagram-machine-path-ir-selector" class="address-path" d="M293 214 V95 H435" marker-end="url(#diagram-machine-address-arrow)"/>
-<path id="diagram-machine-path-ir-pc" class="address-path" d="M205 214 V157" marker-end="url(#diagram-machine-address-arrow)"/>
-<path id="diagram-machine-path-bus-ir" class="data-path" d="M100 484 V279" marker-end="url(#diagram-machine-data-arrow)"/>
-<path id="diagram-machine-path-acc-bus" class="data-path" d="M190 385 V484"/>
-<path id="diagram-machine-path-alu-acc" class="data-path" d="M444 372 H409" marker-end="url(#diagram-machine-data-arrow)"/>
-<path id="diagram-machine-path-bus-alu" class="data-path" d="M631 341 H555" marker-end="url(#diagram-machine-data-arrow)"/>
-<path id="diagram-machine-path-acc-alu" class="data-path" d="M330 385 V450 H560 V405 H555" marker-end="url(#diagram-machine-data-arrow)"/>
+<path id="diagram-machine-path-pc-selector" class="address-path" d="M216 55 H435" marker-end="url(#diagram-machine-address-arrow)" data-faded-at="0 2 3 4 5 6 7 8"/>
+<path id="diagram-machine-path-ir-selector" class="address-path" d="M293 214 V95 H435" marker-end="url(#diagram-machine-address-arrow)" data-faded-at="0 1 2 3 4 5 6 8"/>
+<path id="diagram-machine-path-ir-pc" class="address-path" d="M205 214 V157" marker-end="url(#diagram-machine-address-arrow)" data-faded-at="0 1 2 3 4 5 6 7 8"/>
+<path id="diagram-machine-path-bus-ir" class="data-path" d="M100 484 V279" marker-end="url(#diagram-machine-data-arrow)" data-faded-at="0 1 3 4 5 6 7 8"/>
+<path id="diagram-machine-path-acc-bus" class="data-path" d="M190 385 V484" data-faded-at="0 1 2 3 4 5 6 7"/>
+<path id="diagram-machine-path-alu-acc" class="data-path" d="M444 372 H409" marker-end="url(#diagram-machine-data-arrow)" data-faded-at="0 1 2 3 4 5 6 7 8"/>
+<path id="diagram-machine-path-bus-alu" class="data-path" d="M631 341 H555" marker-end="url(#diagram-machine-data-arrow)" data-faded-at="0 1 2 3 4 5 6 7 8"/>
+<path id="diagram-machine-path-acc-alu" class="data-path" d="M330 385 V450 H560 V405 H555" marker-end="url(#diagram-machine-data-arrow)" data-faded-at="0 1 2 3 4 5 6 7 8"/>
 </g>
-<path id="diagram-machine-path-selector-address-bus" class="address-path" d="M526 75 H669"/>
-<path id="diagram-machine-path-data-bus-memory" class="data-path" d="M631 491 H742"/>
-<g id="diagram-machine-data-bus">
+<path id="diagram-machine-path-selector-address-bus" class="address-path" d="M526 75 H669" data-faded-at="0 2 3 4 5 6 8"/>
+<path id="diagram-machine-path-data-bus-memory" class="data-path" d="M631 491 H742" data-faded-at="0 1 3 4 5 6 7"/>
+<g id="diagram-machine-data-bus" data-faded-at="0 1 3 4 5 6 7">
 <rect class="data-bus" x="620" y="20" width="22" height="568"/>
 <rect class="data-bus" x="80" y="480" width="562" height="22"/>
 <text class="bus-label" x="330" y="492">Data bus · 8 bits</text>
 </g>
-<g id="diagram-machine-address-bus">
+<g id="diagram-machine-address-bus" data-faded-at="0 2 3 4 5 6 8">
 <rect class="address-bus" x="658" y="20" width="22" height="568"/>
-</g>
-<path id="diagram-machine-path-address-bus-memory" class="address-path" d="M669 75 H705" marker-end="url(#diagram-machine-address-arrow)"/>
 <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 4 bits</text>
-<g id="diagram-machine-selector">
+</g>
+<path id="diagram-machine-path-address-bus-memory" class="address-path" d="M669 75 H705" marker-end="url(#diagram-machine-address-arrow)" data-faded-at="0 2 3 4 5 6 8"/>
+<g id="diagram-machine-selector" data-faded-at="0 2 3 4 5 6 8">
 <polygon class="box" points="470,30 530,50 530,100 470,120"/>
 <text class="small" x="500" y="22">Selector</text>
 </g>
-<path id="diagram-machine-wire-select" class="wire" d="M490 145 V117" marker-end="url(#diagram-machine-wire-arrow)"/>
-<g id="diagram-machine-program-counter">
+<path id="diagram-machine-wire-select" class="wire" d="M490 145 V117" marker-end="url(#diagram-machine-wire-arrow)" data-faded-at="0 2 3 4 5 6 8"/><path class="fragment transient lit wire" d="M490 145 V117" marker-end="url(#diagram-machine-wire-arrow)" data-fragment-index="7" data-gone-from="8"/><path class="fragment transient lit wire" d="M490 145 V117" marker-end="url(#diagram-machine-wire-arrow)" data-fragment-index="1" data-gone-from="2"/>
+<path id="diagram-machine-wire-count" class="wire" d="M125 145 V127" marker-end="url(#diagram-machine-wire-arrow)" data-faded-at="0 1 2 4 5 6 7 8"/><path class="fragment transient lit wire" d="M125 145 V127" marker-end="url(#diagram-machine-wire-arrow)" data-fragment-index="3" data-gone-from="4"/>
+<g id="diagram-machine-program-counter" data-faded-at="0 2 4 5 6 7 8">
 <rect class="box" x="30" y="36" width="190" height="86" rx="8"/>
 <text class="label" x="125" y="58">Program counter</text>
 <rect class="bit" x="69" y="76" width="28" height="34"/><rect class="bit" x="97" y="76" width="28" height="34"/><rect class="bit" x="125" y="76" width="28" height="34"/><rect class="bit" x="153" y="76" width="28" height="34"/>
-</g>
-<g id="diagram-machine-instruction-register"><rect class="bit" x="80" y="210" width="28" height="34"/><rect class="bit" x="108" y="210" width="28" height="34"/><rect class="bit" x="136" y="210" width="28" height="34"/><rect class="bit" x="164" y="210" width="28" height="34"/><rect class="bit" x="192" y="210" width="28" height="34"/><rect class="bit" x="220" y="210" width="28" height="34"/><rect class="bit" x="248" y="210" width="28" height="34"/><rect class="bit" x="276" y="210" width="28" height="34"/><line x1="192" y1="206" x2="192" y2="248" stroke="#1d1d1f" stroke-width="4"/></g>
+</g><g class="fragment transient register-value" data-fragment-index="3"><text class="bit-value" x="83" y="93">0</text><text class="bit-value" x="111" y="93">0</text><text class="bit-value" x="139" y="93">0</text><text class="bit-value" x="167" y="93">1</text></g><g class="detail register-value" data-gone-from="3"><text class="bit-value" x="83" y="93">0</text><text class="bit-value" x="111" y="93">0</text><text class="bit-value" x="139" y="93">0</text><text class="bit-value" x="167" y="93">0</text></g>
+<text id="diagram-machine-decimal-program-counter" class="decimal transient" x="201" y="94">0</text><text class="fragment decimal transient" x="201" y="94" data-fragment-index="3">1</text><text class="detail decimal" x="201" y="94" data-gone-from="3">0</text>
+<g id="diagram-machine-instruction-register" data-faded-at="0 1 3 6 8"><rect class="bit" x="80" y="210" width="28" height="34"/><rect class="bit" x="108" y="210" width="28" height="34"/><rect class="bit" x="136" y="210" width="28" height="34"/><rect class="bit" x="164" y="210" width="28" height="34"/><rect class="bit" x="192" y="210" width="28" height="34"/><rect class="bit" x="220" y="210" width="28" height="34"/><rect class="bit" x="248" y="210" width="28" height="34"/><rect class="bit" x="276" y="210" width="28" height="34"/><line x1="192" y1="206" x2="192" y2="248" stroke="#1d1d1f" stroke-width="4"/>
 <text class="tiny" x="136" y="197">operation</text>
 <text class="tiny" x="248" y="197">address</text>
 <text class="small" x="192" y="262">Instruction register</text>
+</g><g class="fragment transient register-value" data-fragment-index="2"><text class="bit-value" x="94" y="227">0</text><text class="bit-value" x="122" y="227">0</text><text class="bit-value" x="150" y="227">0</text><text class="bit-value" x="178" y="227">1</text><text class="bit-value" x="206" y="227">1</text><text class="bit-value" x="234" y="227">1</text><text class="bit-value" x="262" y="227">1</text><text class="bit-value" x="290" y="227">0</text></g>
+<g id="diagram-machine-decoded-operation" class="transient"><rect class="mask" x="84" y="185" width="104" height="22"/><text class="decoded" x="136" y="197">LOAD</text></g><g class="fragment transient" data-fragment-index="5"><rect class="mask" x="84" y="185" width="104" height="22"/><text class="decoded" x="136" y="197">LOAD</text></g>
+<g id="diagram-machine-decoded-address" class="transient"><rect class="mask" x="220" y="185" width="56" height="22"/><text class="decoded" x="248" y="197">14</text></g><g class="fragment transient" data-fragment-index="5"><rect class="mask" x="220" y="185" width="56" height="22"/><text class="decoded" x="248" y="197">14</text></g>
 <g id="diagram-machine-steps">
-<g id="diagram-machine-step-fetch"><rect class="step" x="355" y="184" width="110" height="24" rx="12"/><text class="tiny" x="410" y="196">Fetch</text></g>
-<g id="diagram-machine-step-decode"><rect class="step" x="355" y="216" width="110" height="24" rx="12"/><text class="tiny" x="410" y="228">Decode</text></g>
-<g id="diagram-machine-step-execute"><rect class="step" x="355" y="248" width="110" height="24" rx="12"/><text class="tiny" x="410" y="260">Execute</text></g>
+<g id="diagram-machine-step-fetch"><rect class="step" x="355" y="184" width="110" height="24" rx="12"/><rect class="fragment transient lit step" x="355" y="184" width="110" height="24" rx="12" data-fragment-index="0" data-gone-from="4"/><text class="tiny" x="410" y="196">Fetch</text></g>
+<g id="diagram-machine-step-decode"><rect class="step" x="355" y="216" width="110" height="24" rx="12"/><rect class="fragment transient lit step" x="355" y="216" width="110" height="24" rx="12" data-fragment-index="4" data-gone-from="6"/><text class="tiny" x="410" y="228">Decode</text></g>
+<g id="diagram-machine-step-execute"><rect class="step" x="355" y="248" width="110" height="24" rx="12"/><rect class="fragment transient lit step" x="355" y="248" width="110" height="24" rx="12" data-fragment-index="6"/><text class="tiny" x="410" y="260">Execute</text></g>
 <path id="diagram-machine-wire-step-loop" class="wire thin" d="M465 260 H484 V196 H469" marker-end="url(#diagram-machine-wire-arrow)"/>
 </g>
-<g id="diagram-machine-accumulator"><rect class="bit" x="150" y="355" width="28" height="34"/><rect class="bit" x="178" y="355" width="28" height="34"/><rect class="bit" x="206" y="355" width="28" height="34"/><rect class="bit" x="234" y="355" width="28" height="34"/><rect class="bit" x="262" y="355" width="28" height="34"/><rect class="bit" x="290" y="355" width="28" height="34"/><rect class="bit" x="318" y="355" width="28" height="34"/><rect class="bit" x="346" y="355" width="28" height="34"/></g>
+<g id="diagram-machine-accumulator" data-faded-at="0 1 2 3 4 5 6 7"><rect class="bit" x="150" y="355" width="28" height="34"/><rect class="bit" x="178" y="355" width="28" height="34"/><rect class="bit" x="206" y="355" width="28" height="34"/><rect class="bit" x="234" y="355" width="28" height="34"/><rect class="bit" x="262" y="355" width="28" height="34"/><rect class="bit" x="290" y="355" width="28" height="34"/><rect class="bit" x="318" y="355" width="28" height="34"/><rect class="bit" x="346" y="355" width="28" height="34"/>
 <text class="label" x="262" y="338">Accumulator</text>
-<g id="diagram-machine-alu">
+</g><g class="fragment transient register-value" data-fragment-index="8"><text class="bit-value" x="164" y="372">0</text><text class="bit-value" x="192" y="372">0</text><text class="bit-value" x="220" y="372">0</text><text class="bit-value" x="248" y="372">0</text><text class="bit-value" x="276" y="372">0</text><text class="bit-value" x="304" y="372">0</text><text class="bit-value" x="332" y="372">0</text><text class="bit-value" x="360" y="372">0</text></g>
+<text id="diagram-machine-decimal-accumulator" class="decimal end transient" x="142" y="373">0</text><text class="fragment decimal end transient" x="142" y="373" data-fragment-index="8">0</text>
+<g id="diagram-machine-alu" data-faded-at="0 1 2 3 4 5 6 7 8">
 <polygon class="box" points="520,320 520,358 506,372 520,386 520,425 440,395 440,350"/>
 <text class="label" x="478" y="373">ALU</text>
 </g>
-<path id="diagram-machine-wire-zero" class="wire" d="M490 330 V290" marker-end="url(#diagram-machine-wire-arrow)"/>
+<g id="diagram-machine-wire-zero" data-faded-at="0 1 2 3 4 5 6 7 8">
+<path class="wire" d="M490 330 V290" marker-end="url(#diagram-machine-wire-arrow)"/>
 <text class="small start" x="503" y="305">zero</text>
-<path id="diagram-machine-wire-subtract" class="wire" d="M450 285 V343" marker-end="url(#diagram-machine-wire-arrow)"/>
+</g>
+<g id="diagram-machine-wire-subtract" data-faded-at="0 1 2 3 4 5 6 7 8">
+<path class="wire" d="M450 285 V343" marker-end="url(#diagram-machine-wire-arrow)"/>
 <text class="small end" x="441" y="305">subtract</text>
+</g>
 <g id="diagram-machine-control-signals">
 <path class="wire" d="M500 205 H528"/><path class="wire-dots" d="M535 205 H556"/>
 <path class="wire" d="M500 230 H528"/><path class="wire-dots" d="M535 230 H556"/>
@@ -618,38 +693,38 @@ break-inside: avoid;
 <text class="label" x="120" y="540">Clock</text>
 <path d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5"/>
 </g>
-<g id="diagram-machine-wire-clock"><path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/></g>
+<g id="diagram-machine-wire-clock">
+<path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/>
 <text class="tiny signal start" x="207" y="536">to every register</text>
-<g id="diagram-machine-memory">
+</g>
+<g id="diagram-machine-memory" data-faded-at="0 3 4 5 6">
 <rect class="box" x="740" y="20" width="248" height="566" rx="8"/>
 <text class="label" x="864" y="44">Memory</text>
 </g>
 <g id="diagram-machine-cells">
-<g id="diagram-machine-cell-0"><text class="cell-address" x="796" y="80">0</text><rect class="cell" x="806" y="66" width="170" height="28"/><text class="bits" x="813" y="80">0001 1110</text><text class="annotation" x="969" y="80">LOAD 14</text></g>
-<g id="diagram-machine-cell-1"><text class="cell-address" x="796" y="112">1</text><rect class="cell" x="806" y="98" width="170" height="28"/><text class="bits" x="813" y="112">0010 1100</text><text class="annotation" x="969" y="112">ADD 12</text></g>
-<g id="diagram-machine-cell-2"><text class="cell-address" x="796" y="144">2</text><rect class="cell" x="806" y="130" width="170" height="28"/><text class="bits" x="813" y="144">0100 1110</text><text class="annotation" x="969" y="144">STORE 14</text></g>
-<g id="diagram-machine-cell-3"><text class="cell-address" x="796" y="176">3</text><rect class="cell" x="806" y="162" width="170" height="28"/><text class="bits" x="813" y="176">0001 1101</text><text class="annotation" x="969" y="176">LOAD 13</text></g>
-<g id="diagram-machine-cell-4"><text class="cell-address" x="796" y="208">4</text><rect class="cell" x="806" y="194" width="170" height="28"/><text class="bits" x="813" y="208">0011 1111</text><text class="annotation" x="969" y="208">SUB 15</text></g>
-<g id="diagram-machine-cell-5"><text class="cell-address" x="796" y="240">5</text><rect class="cell" x="806" y="226" width="170" height="28"/><text class="bits" x="813" y="240">0100 1101</text><text class="annotation" x="969" y="240">STORE 13</text></g>
-<g id="diagram-machine-cell-6"><text class="cell-address" x="796" y="272">6</text><rect class="cell" x="806" y="258" width="170" height="28"/><text class="bits" x="813" y="272">1000 1000</text><text class="annotation" x="969" y="272">JUMPZ 8</text></g>
-<g id="diagram-machine-cell-7"><text class="cell-address" x="796" y="304">7</text><rect class="cell" x="806" y="290" width="170" height="28"/><text class="bits" x="813" y="304">0110 0000</text><text class="annotation" x="969" y="304">JUMP 0</text></g>
-<g id="diagram-machine-cell-8"><text class="cell-address" x="796" y="336">8</text><rect class="cell" x="806" y="322" width="170" height="28"/><text class="bits" x="813" y="336">1111 0000</text><text class="annotation" x="969" y="336">HALT</text></g>
-<g id="diagram-machine-cell-9"><text class="cell-address" x="796" y="368">9</text><rect class="cell" x="806" y="354" width="170" height="28"/><text class="bits unused" x="813" y="368">0000 0000</text></g>
-<g id="diagram-machine-cell-10"><text class="cell-address" x="796" y="400">10</text><rect class="cell" x="806" y="386" width="170" height="28"/><text class="bits unused" x="813" y="400">0000 0000</text></g>
-<g id="diagram-machine-cell-11"><text class="cell-address" x="796" y="432">11</text><rect class="cell" x="806" y="418" width="170" height="28"/><text class="bits unused" x="813" y="432">0000 0000</text></g>
-<g id="diagram-machine-cell-12"><text class="cell-address" x="796" y="464">12</text><rect class="cell" x="806" y="450" width="170" height="28"/><text class="bits" x="813" y="464">0000 0011</text><text class="annotation" x="969" y="464">3</text></g>
-<g id="diagram-machine-cell-13"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28"/><text class="bits" x="813" y="496">0000 0010</text><text class="annotation" x="969" y="496">2</text></g>
-<g id="diagram-machine-cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><rect class="current-cell transient" x="806" y="514" width="170" height="28"/><text class="bits" x="813" y="528">0000 0000</text><text class="annotation" x="969" y="528">0</text></g>
-<g id="diagram-machine-cell-15"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28"/><text class="bits" x="813" y="560">0000 0001</text><text class="annotation" x="969" y="560">1</text></g>
+<g id="diagram-machine-cell-0" data-faded-at="0 3 4 6 7 8"><text class="cell-address" x="796" y="80">0</text><rect class="cell" x="806" y="66" width="170" height="28"/><rect class="fragment transient lit cell" x="806" y="66" width="170" height="28" data-fragment-index="1" data-gone-from="3"/><text class="bits" x="813" y="80">0001 1110</text><text class="fragment annotation" x="969" y="80" data-fragment-index="5">LOAD 14</text></g>
+<g id="diagram-machine-cell-1" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="112">1</text><rect class="cell" x="806" y="98" width="170" height="28"/><text class="bits" x="813" y="112">0010 1100</text><text class="at-rest annotation" x="969" y="112">ADD 12</text></g>
+<g id="diagram-machine-cell-2" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="144">2</text><rect class="cell" x="806" y="130" width="170" height="28"/><text class="bits" x="813" y="144">0100 1110</text><text class="at-rest annotation" x="969" y="144">STORE 14</text></g>
+<g id="diagram-machine-cell-3" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="176">3</text><rect class="cell" x="806" y="162" width="170" height="28"/><text class="bits" x="813" y="176">0001 1101</text><text class="at-rest annotation" x="969" y="176">LOAD 13</text></g>
+<g id="diagram-machine-cell-4" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="208">4</text><rect class="cell" x="806" y="194" width="170" height="28"/><text class="bits" x="813" y="208">0011 1111</text><text class="at-rest annotation" x="969" y="208">SUB 15</text></g>
+<g id="diagram-machine-cell-5" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="240">5</text><rect class="cell" x="806" y="226" width="170" height="28"/><text class="bits" x="813" y="240">0100 1101</text><text class="at-rest annotation" x="969" y="240">STORE 13</text></g>
+<g id="diagram-machine-cell-6" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="272">6</text><rect class="cell" x="806" y="258" width="170" height="28"/><text class="bits" x="813" y="272">1000 1000</text><text class="at-rest annotation" x="969" y="272">JUMPZ 8</text></g>
+<g id="diagram-machine-cell-7" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="304">7</text><rect class="cell" x="806" y="290" width="170" height="28"/><text class="bits" x="813" y="304">0110 0000</text><text class="at-rest annotation" x="969" y="304">JUMP 0</text></g>
+<g id="diagram-machine-cell-8" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="336">8</text><rect class="cell" x="806" y="322" width="170" height="28"/><text class="bits" x="813" y="336">1111 0000</text><text class="at-rest annotation" x="969" y="336">HALT</text></g>
+<g id="diagram-machine-cell-9" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="368">9</text><rect class="cell" x="806" y="354" width="170" height="28"/><text class="bits unused" x="813" y="368">0000 0000</text></g>
+<g id="diagram-machine-cell-10" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="400">10</text><rect class="cell" x="806" y="386" width="170" height="28"/><text class="bits unused" x="813" y="400">0000 0000</text></g>
+<g id="diagram-machine-cell-11" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="432">11</text><rect class="cell" x="806" y="418" width="170" height="28"/><text class="bits unused" x="813" y="432">0000 0000</text></g>
+<g id="diagram-machine-cell-12" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="464">12</text><rect class="cell" x="806" y="450" width="170" height="28"/><text class="bits" x="813" y="464">0000 0011</text><text class="at-rest annotation" x="969" y="464">3</text></g>
+<g id="diagram-machine-cell-13" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28"/><text class="bits" x="813" y="496">0000 0010</text><text class="at-rest annotation" x="969" y="496">2</text></g>
+<g id="diagram-machine-cell-14" data-faded-at="0 1 2 3 4 5 6"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><rect class="fragment transient lit cell" x="806" y="514" width="170" height="28" data-fragment-index="7"/><text class="bits" x="813" y="528">0000 0000</text><text class="fragment annotation" x="969" y="528" data-fragment-index="8">0</text></g>
+<g id="diagram-machine-cell-15" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28"/><text class="bits" x="813" y="560">0000 0001</text><text class="at-rest annotation" x="969" y="560">1</text></g>
 </g>
-<g id="diagram-machine-wire-read-write"><path class="wire-dots" d="M712 538 V552.5"/><path class="wire" d="M712 559 V576 H737" marker-end="url(#diagram-machine-wire-arrow)"/></g>
-<text class="tiny read-write start" x="747" y="576">R/W</text>
-<g id="diagram-machine-live-memory-accumulator" class="transient">
-<path class="live-casing" d="M806 528 H801 V480 H750 V491 H190 V389"/>
-<path class="live-wire" d="M806 528 H801 V480 H750 V491 H190 V389"/>
-<path class="live-current" d="M806 528 H801 V480 H750 V491 H190 V389"/>
+<g id="diagram-machine-wire-read-write" data-faded-at="0 3 4 5 6">
+<path class="wire-dots" d="M712 538 V552.5"/><path class="wire" d="M712 559 V576 H737" marker-end="url(#diagram-machine-wire-arrow)"/>
+<text id="diagram-machine-read-write" class="tiny read-write start" x="747" y="576">R/W</text><text class="fragment transient lit tiny read-write start" x="747" y="576" data-fragment-index="7">R<tspan class="unlit">/W</tspan></text><text class="fragment transient lit tiny read-write start" x="747" y="576" data-fragment-index="1" data-gone-from="3">R<tspan class="unlit">/W</tspan></text>
 </g>
+<g id="diagram-machine-live-wires"><g class="fragment transient live" data-fragment-index="1" data-gone-from="2"><path class="live-casing" d="M216 55 H476 L524 75 H738"/><path class="live-wire" d="M216 55 H476 L524 75 H738"/><path class="live-current" d="M216 55 H476 L524 75 H738"/></g><g class="fragment transient live" data-fragment-index="2" data-gone-from="3"><path class="live-casing" d="M806 80 H801 V96 H750 V491 H100 V244"/><path class="live-wire" d="M806 80 H801 V96 H750 V491 H100 V244"/><path class="live-current" d="M806 80 H801 V96 H750 V491 H100 V244"/></g><g class="fragment transient live" data-fragment-index="7" data-gone-from="8"><path class="live-casing" d="M293 210 V95 H476 L524 75 H738"/><path class="live-wire" d="M293 210 V95 H476 L524 75 H738"/><path class="live-current" d="M293 210 V95 H476 L524 75 H738"/></g><g class="fragment transient live" data-fragment-index="8"><path class="live-casing" d="M806 528 H801 V512 H750 V491 H190 V389"/><path class="live-wire" d="M806 528 H801 V512 H750 V491 H190 V389"/><path class="live-current" d="M806 528 H801 V512 H750 V491 H190 V389"/></g></g>
 </svg>
 </div>
-<template class="diagram-captions"><p data-caption="rest">A processor and a memory of sixteen cells, connected by a data bus and an address bus. The memory holds a program that multiplies 3 by 2 by adding 3 twice.</p><p data-caption="0">The program is in memory, and the program counter is at 0.</p></template>
+<template class="diagram-captions"><p data-caption="rest">A processor and a memory of sixteen cells, connected by a data bus and an address bus. The memory holds a program that multiplies 3 by 2 by adding 3 twice.</p><p data-caption="0">The program is in memory, and the program counter is at 0.</p><p data-caption="1">Fetch: the control unit fetches the next instruction from memory.</p><p data-caption="2">The control unit tells the selector to let the program counter’s address through, and the memory to read the cell at that address, 0.</p><p data-caption="3">The control unit tells the memory to put the bits of cell 0 on the data bus, and the instruction register to take them.</p><p data-caption="4">The control unit tells the program counter to add 1, ready for the next instruction.</p><p data-caption="5">Decode: the control unit decodes the instruction in the instruction register, to know what to do.</p><p data-caption="6">The instruction’s 4 bits of operation are LOAD, and its 4 bits of address 14: the bits of cell 0 were an instruction.</p><p data-caption="7">Execute: the control unit carries out the instruction.</p><p data-caption="8">The control unit tells the selector to let the instruction’s address through, and the memory to read the cell at that address, 14.</p><p data-caption="9">The control unit tells the memory to put the bits of cell 14 on the data bus, and the accumulator to take them: the accumulator holds 0.</p></template>
 </div>

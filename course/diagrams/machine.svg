@@ -26,8 +26,6 @@
     svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
     svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
     svg.diagram[data-family='machine'] .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
-    /* The cell being read or written, lit like a lamp */
-    svg.diagram[data-family='machine'] .current-cell { fill: #fff3bf; stroke: #f59f00; stroke-width: 3; }
     /* A connection the control signals open between two components, drawn
        like a live wire in the circuits, its white casing keeping it apart
        from the paths it crosses */
@@ -43,6 +41,60 @@
     svg.diagram[data-family='machine'] .marker-data { fill: #1971c2; }
     svg.diagram[data-family='machine'] .marker-address { fill: #e8590c; }
     svg.diagram[data-family='machine'] .marker-wire { fill: #1d1d1f; }
+
+    /* --- What the steps show ------------------------------------------- */
+
+    /* A pill of the cycle, or the cell being read or written, lit like a lamp */
+    svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+    svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
+    svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
+    /* A control signal the control unit gives, in red */
+    svg.diagram[data-family='machine'] .wire.lit { stroke: #e03131; }
+    svg.diagram[data-family='machine'] .wire.lit[marker-end] { marker-end: url(#wire-arrow-lit); }
+    svg.diagram[data-family='machine'] .marker-wire.lit-marker { fill: #e03131; }
+    /* R or W of the memory's controls, in red, the other letters paled, all
+       drawn over the controls with a halo hiding them */
+    svg.diagram[data-family='machine'] .read-write.lit { fill: #e03131; stroke: #ffffff; stroke-width: 3; stroke-linejoin: round; paint-order: stroke; }
+    svg.diagram[data-family='machine'] .read-write.lit .unlit { fill: #c7c7cc; }
+    /* A register's value, one binary digit in each of its boxes */
+    svg.diagram[data-family='machine'] .bit-value { font-family: Menlo, Consolas, monospace; font-size: 18px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+    /* What the room says aloud: a register's value in decimal, the decoded
+       instruction over the captions it replaces */
+    svg.diagram[data-family='machine'] :is(.decimal, .decoded) { font-family: Helvetica, Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1971c2; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .decoded { font-family: Menlo, Consolas, monospace; }
+    svg.diagram[data-family='machine'] .mask { fill: #ffffff; }
+
+    /* --- Focus --------------------------------------------------------- */
+
+    /* A part the current step is not about is drawn paler, rather than made
+       transparent, which would show the paths drawn under the boxes. Values
+       stay as they are, the room following them from step to step. */
+    svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #c7c7cc; }
+    svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #dcdce0; }
+    svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #b8b8bd; }
+    svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
+    svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #b4d0ee; }
+    svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #f7cbb0; }
+    svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #b4d0ee; }
+    svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #f7cbb0; }
+    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #c7c7cc; }
+    /* An arrowhead takes its colour from its marker, not from its path */
+    svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path)[marker-end] { marker-end: url(#data-arrow-faded); }
+    svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path)[marker-end] { marker-end: url(#address-arrow-faded); }
+    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire)[marker-end] { marker-end: url(#wire-arrow-faded); }
+    svg.diagram[data-family='machine'] .marker-data.faded-marker { fill: #b4d0ee; }
+    svg.diagram[data-family='machine'] .marker-address.faded-marker { fill: #f7cbb0; }
+    svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #c7c7cc; }
+
+    @media screen and (prefers-reduced-motion: no-preference) {
+      /* Current running along a live wire */
+      svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
+      /* Focus changes in a moment rather than at once */
+      svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+    }
+    @keyframes machine-current {
+      to { stroke-dashoffset: -12; }
+    }
   </style>
   <defs id="diagram-defs">
     <!-- Block arrowheads, sized relative to the path's width: a path ending
@@ -56,6 +108,20 @@
     <!-- Thin arrowhead, for a single wire -->
     <marker id="wire-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
       <path class="marker-wire" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+    <!-- The same, for a control signal given -->
+    <marker id="wire-arrow-lit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path class="marker-wire lit-marker" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+    <!-- The same, for a part out of focus -->
+    <marker id="data-arrow-faded" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-data faded-marker" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <marker id="address-arrow-faded" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-address faded-marker" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <marker id="wire-arrow-faded" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path class="marker-wire faded-marker" d="M0 0 L10 5 L0 10 z"/>
     </marker>
   </defs>
 
@@ -93,9 +159,9 @@
   </g>
   <g id="address-bus">
     <rect class="address-bus" x="658" y="20" width="22" height="568"/>
+    <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 4 bits</text>
   </g>
   <path id="path-address-bus-memory" class="address-path" d="M669 75 H705" marker-end="url(#address-arrow)"/>
-  <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 4 bits</text>
 
   <!-- Selector: chooses whether the program counter or the instruction gives
        the address -->
@@ -107,18 +173,27 @@
   <!-- The control signal that picks the selector's input -->
   <path id="wire-select" class="wire" d="M490 145 V117" marker-end="url(#wire-arrow)"/>
 
+  <!-- The control signal that makes the program counter count -->
+  <path id="wire-count" class="wire" d="M125 145 V127" marker-end="url(#wire-arrow)"/>
+
   <!-- Program counter: a counter, not a plain register -->
   <g id="program-counter">
     <rect class="box" x="30" y="36" width="190" height="86" rx="8"/>
     <text class="label" x="125" y="58">Program counter</text>
     <rect class="bit" x="69" y="76" width="28" height="34"/><rect class="bit" x="97" y="76" width="28" height="34"/><rect class="bit" x="125" y="76" width="28" height="34"/><rect class="bit" x="153" y="76" width="28" height="34"/>
   </g>
+  <!-- Where the steps show the program counter's value in decimal -->
+  <text id="decimal-program-counter" class="decimal transient" x="201" y="94">0</text>
 
   <!-- Instruction register: 4 bits of operation, 4 bits of address -->
-  <g id="instruction-register"><rect class="bit" x="80" y="210" width="28" height="34"/><rect class="bit" x="108" y="210" width="28" height="34"/><rect class="bit" x="136" y="210" width="28" height="34"/><rect class="bit" x="164" y="210" width="28" height="34"/><rect class="bit" x="192" y="210" width="28" height="34"/><rect class="bit" x="220" y="210" width="28" height="34"/><rect class="bit" x="248" y="210" width="28" height="34"/><rect class="bit" x="276" y="210" width="28" height="34"/><line x1="192" y1="206" x2="192" y2="248" stroke="#1d1d1f" stroke-width="4"/></g>
-  <text class="tiny" x="136" y="197">operation</text>
-  <text class="tiny" x="248" y="197">address</text>
-  <text class="small" x="192" y="262">Instruction register</text>
+  <g id="instruction-register"><rect class="bit" x="80" y="210" width="28" height="34"/><rect class="bit" x="108" y="210" width="28" height="34"/><rect class="bit" x="136" y="210" width="28" height="34"/><rect class="bit" x="164" y="210" width="28" height="34"/><rect class="bit" x="192" y="210" width="28" height="34"/><rect class="bit" x="220" y="210" width="28" height="34"/><rect class="bit" x="248" y="210" width="28" height="34"/><rect class="bit" x="276" y="210" width="28" height="34"/><line x1="192" y1="206" x2="192" y2="248" stroke="#1d1d1f" stroke-width="4"/>
+    <text class="tiny" x="136" y="197">operation</text>
+    <text class="tiny" x="248" y="197">address</text>
+    <text class="small" x="192" y="262">Instruction register</text>
+  </g>
+  <!-- Where the steps show the decoded instruction, over the captions -->
+  <g id="decoded-operation" class="transient"><rect class="mask" x="84" y="185" width="104" height="22"/><text class="decoded" x="136" y="197">LOAD</text></g>
+  <g id="decoded-address" class="transient"><rect class="mask" x="220" y="185" width="56" height="22"/><text class="decoded" x="248" y="197">14</text></g>
 
   <!-- The control unit's cycle, one step lit at a time by the animation -->
   <g id="steps">
@@ -129,8 +204,11 @@
   </g>
 
   <!-- Accumulator: the same kind of register -->
-  <g id="accumulator"><rect class="bit" x="150" y="355" width="28" height="34"/><rect class="bit" x="178" y="355" width="28" height="34"/><rect class="bit" x="206" y="355" width="28" height="34"/><rect class="bit" x="234" y="355" width="28" height="34"/><rect class="bit" x="262" y="355" width="28" height="34"/><rect class="bit" x="290" y="355" width="28" height="34"/><rect class="bit" x="318" y="355" width="28" height="34"/><rect class="bit" x="346" y="355" width="28" height="34"/></g>
-  <text class="label" x="262" y="338">Accumulator</text>
+  <g id="accumulator"><rect class="bit" x="150" y="355" width="28" height="34"/><rect class="bit" x="178" y="355" width="28" height="34"/><rect class="bit" x="206" y="355" width="28" height="34"/><rect class="bit" x="234" y="355" width="28" height="34"/><rect class="bit" x="262" y="355" width="28" height="34"/><rect class="bit" x="290" y="355" width="28" height="34"/><rect class="bit" x="318" y="355" width="28" height="34"/><rect class="bit" x="346" y="355" width="28" height="34"/>
+    <text class="label" x="262" y="338">Accumulator</text>
+  </g>
+  <!-- Where the steps show the accumulator's value in decimal -->
+  <text id="decimal-accumulator" class="decimal end transient" x="142" y="373">0</text>
 
   <!-- ALU: two operands in on the right, the result out on the left -->
   <g id="alu">
@@ -139,13 +217,17 @@
   </g>
 
   <!-- The zero flag: a single wire -->
-  <path id="wire-zero" class="wire" d="M490 330 V290" marker-end="url(#wire-arrow)"/>
-  <text class="small start" x="503" y="305">zero</text>
+  <g id="wire-zero">
+    <path class="wire" d="M490 330 V290" marker-end="url(#wire-arrow)"/>
+    <text class="small start" x="503" y="305">zero</text>
+  </g>
 
   <!-- The one control signal drawn in full: it tells the ALU to subtract
        instead of add -->
-  <path id="wire-subtract" class="wire" d="M450 285 V343" marker-end="url(#wire-arrow)"/>
-  <text class="small end" x="441" y="305">subtract</text>
+  <g id="wire-subtract">
+    <path class="wire" d="M450 285 V343" marker-end="url(#wire-arrow)"/>
+    <text class="small end" x="441" y="305">subtract</text>
+  </g>
 
   <!-- The control unit's other signals, which only start -->
   <g id="control-signals">
@@ -162,8 +244,10 @@
     <text class="label" x="120" y="540">Clock</text>
     <path d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5"/>
   </g>
-  <g id="wire-clock"><path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/></g>
-  <text class="tiny signal start" x="207" y="536">to every register</text>
+  <g id="wire-clock">
+    <path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/>
+    <text class="tiny signal start" x="207" y="536">to every register</text>
+  </g>
 
   <!-- Memory: the program of the trace, then its data -->
   <!-- Each cell holds its bits; the annotation on its right is how the
@@ -187,17 +271,16 @@
     <g id="cell-11"><text class="cell-address" x="796" y="432">11</text><rect class="cell" x="806" y="418" width="170" height="28"/><text class="bits unused" x="813" y="432">0000 0000</text></g>
     <g id="cell-12"><text class="cell-address" x="796" y="464">12</text><rect class="cell" x="806" y="450" width="170" height="28"/><text class="bits" x="813" y="464">0000 0011</text><text class="annotation" x="969" y="464">3</text></g>
     <g id="cell-13"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28"/><text class="bits" x="813" y="496">0000 0010</text><text class="annotation" x="969" y="496">2</text></g>
-    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><rect class="current-cell transient" x="806" y="514" width="170" height="28"/><text class="bits" x="813" y="528">0000 0000</text><text class="annotation" x="969" y="528">0</text></g>
+    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><text class="bits" x="813" y="528">0000 0000</text><text class="annotation" x="969" y="528">0</text></g>
     <g id="cell-15"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28"/><text class="bits" x="813" y="560">0000 0001</text><text class="annotation" x="969" y="560">1</text></g>
   </g>
   <!-- The memory's read/write control signal, arriving from somewhere not
        drawn -->
-  <g id="wire-read-write"><path class="wire-dots" d="M712 538 V552.5"/><path class="wire" d="M712 559 V576 H737" marker-end="url(#wire-arrow)"/></g>
-  <text class="tiny read-write start" x="747" y="576">R/W</text>
-  <!-- The connection LOAD 14 opens, from cell 14 to the accumulator -->
-  <g id="live-memory-accumulator" class="transient">
-    <path class="live-casing" d="M806 528 H801 V480 H750 V491 H190 V389"/>
-    <path class="live-wire" d="M806 528 H801 V480 H750 V491 H190 V389"/>
-    <path class="live-current" d="M806 528 H801 V480 H750 V491 H190 V389"/>
+  <g id="wire-read-write">
+    <path class="wire-dots" d="M712 538 V552.5"/><path class="wire" d="M712 559 V576 H737" marker-end="url(#wire-arrow)"/>
+    <text id="read-write" class="tiny read-write start" x="747" y="576">R/W</text>
   </g>
+  <!-- The connections the control signals open, which the steps draw here,
+       over everything else -->
+  <g id="live-wires"/>
 </svg>

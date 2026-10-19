@@ -104,6 +104,15 @@ export function addClasses(element: Element, ...classes: string[]): void {
   element.setAttribute('class', [...added, ...existing].join(' '));
 }
 
+export function removeClasses(element: Element, ...classes: string[]): void {
+  element.setAttribute(
+    'class',
+    classesOf(element)
+      .filter(c => !classes.includes(c))
+      .join(' ')
+  );
+}
+
 export function number(element: Element, attribute: string): number {
   const value = Number(element.getAttribute(attribute));
   if (!Number.isFinite(value)) {

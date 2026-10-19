@@ -2,7 +2,7 @@
 // watches the classes reveal.js, or the page stepper, puts on the steps, so it
 // works the same under both and needs neither.
 //
-// The file draws a diagram as it ends up. Three kinds of step change it on the
+// The file draws a diagram as it ends up. Four kinds of step change it on the
 // way:
 //
 // - A hand-over: a connection is drawn to a listening port first
@@ -14,10 +14,15 @@
 //   reached; edges kept by the fold have their shape before it in
 //   `data-unfolded-d`. The diagram has the `unfolded` class until then.
 // - A teardown: an element with `data-gone-from` disappears once a step at that
-//   index or later is reached, after its `--gone-delay` when it is its own step.
+//   index or later is reached, after its `--gone-delay` when it is its own
+//   step.
+// - A change of focus: a part with `data-faded-at` is faded, given the `faded`
+//   class, while a step at one of those indices is the last one reached.
 //
 // Safari cannot set or animate a path's shape from CSS (the `d` property), so
 // shapes are rewritten here, and positions set as transform attributes.
+
+import { fadedAt, reachedIndex } from './steps';
 
 const MOVE_MS = 900;
 // Points a shape is sampled at, when the two shapes it moves between are not
@@ -64,6 +69,7 @@ export function animate(svg: SVGSVGElement): void {
   svg.dataset['animated'] = '';
   followShapes(svg);
   followTeardowns(svg);
+  followFocus(svg);
 }
 
 function observeSteps(svg: SVGSVGElement, update: () => void): void {
@@ -270,6 +276,18 @@ function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/**
+ * The index of the last step reached, or -1 if none is.
+ */
+function reachedOf(fragments: readonly Element[]): number {
+  return reachedIndex(
+    fragments.map(f => ({
+      index: Number(f.getAttribute('data-fragment-index')),
+      visible: f.classList.contains('visible')
+    }))
+  );
+}
+
 function followTeardowns(svg: SVGSVGElement): void {
   const leaving = [...svg.querySelectorAll('[data-gone-from]')];
   if (leaving.length === 0) {
@@ -280,16 +298,11 @@ function followTeardowns(svg: SVGSVGElement): void {
   const timers = new Map<Element, number>();
 
   observeSteps(svg, () => {
-    const reachedIndex = Math.max(
-      -1,
-      ...fragments
-        .filter(f => f.classList.contains('visible'))
-        .map(f => Number(f.getAttribute('data-fragment-index')))
-    );
+    const reached = reachedOf(fragments);
 
     for (const element of leaving) {
       const from = Number(element.getAttribute('data-gone-from'));
-      if (reachedIndex < from) {
+      if (reached < from) {
         window.clearTimeout(timers.get(element));
         timers.delete(element);
         // Only if there: removing a class that is not there still rewrites the
@@ -310,7 +323,7 @@ function followTeardowns(svg: SVGSVGElement): void {
         parseFloat(
           getComputedStyle(element).getPropertyValue('--gone-delay')
         ) || 0;
-      if (reachedIndex === from && delay) {
+      if (reached === from && delay) {
         timers.set(
           element,
           window.setTimeout(() => {
@@ -320,6 +333,31 @@ function followTeardowns(svg: SVGSVGElement): void {
         );
       } else {
         element.classList.add('gone');
+      }
+    }
+  });
+}
+
+/**
+ * A part faded while the step reached is not about it (`data-faded-at`), which
+ * its stylesheet draws paler. Nothing is faded in the fully drawn diagram, where
+ * no step is reached.
+ */
+function followFocus(svg: SVGSVGElement): void {
+  const parts = [...svg.querySelectorAll('[data-faded-at]')];
+  if (parts.length === 0) {
+    return;
+  }
+
+  const fragments = [...svg.querySelectorAll('.fragment')];
+  observeSteps(svg, () => {
+    const reached = reachedOf(fragments);
+    for (const part of parts) {
+      const faded = fadedAt(part.getAttribute('data-faded-at') ?? '', reached);
+      // Only if it changes: rewriting the class of a part that is also a step
+      // is observed, and would run this again without end.
+      if (part.classList.contains('faded') !== faded) {
+        part.classList.toggle('faded', faded);
       }
     }
   });

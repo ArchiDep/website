@@ -27,8 +27,18 @@ export interface DiagramDefinition {
      */
     readonly start: string;
   };
+  /**
+   * What is shown from the start of stepping, before the first step: actions
+   * given `START` as their index.
+   */
+  readonly start?: readonly Action[];
   readonly steps: readonly Step[];
 }
+
+/**
+ * The index the actions of `start` are given: before the first step.
+ */
+export const START = -1;
 
 /**
  * A diagram being turned into the steps that reveal it. The steps change a copy
@@ -43,13 +53,17 @@ export class Builder {
    * last, so that nothing in the drawing hides it.
    */
   readonly overlays: Element[] = [];
-  readonly #checks: (() => void)[] = [];
+  readonly #whenBuilt: (() => void)[] = [];
   readonly #states = new Map<symbol, unknown>();
 
   constructor(
     readonly name: string,
     readonly drawing: Document,
-    readonly doc: Document
+    readonly doc: Document,
+    /**
+     * How many steps the diagram has.
+     */
+    readonly steps: number
   ) {}
 
   element(id: string): Element {
@@ -82,19 +96,20 @@ export class Builder {
   }
 
   /**
-   * Something to check once every step is built, such as a trip in two clicks
-   * having been given its second.
+   * Something to do once every step is built: a check, such as a trip in two
+   * clicks having been given its second, or what can only be drawn once every
+   * step is known, such as how long something stays lit.
    */
-  check(check: () => void): void {
-    this.#checks.push(check);
+  whenBuilt(callback: () => void): void {
+    this.#whenBuilt.push(callback);
   }
 
   /**
-   * Runs the checks, once every step is built.
+   * Does what was left for when every step is built, in the order it was asked.
    */
   finish(): void {
-    for (const check of this.#checks) {
-      check();
+    for (const callback of this.#whenBuilt) {
+      callback();
     }
   }
 }

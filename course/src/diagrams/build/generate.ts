@@ -1,6 +1,6 @@
 import type { Element } from '@xmldom/xmldom';
 
-import { Builder, type DiagramDefinition } from './builder';
+import { Builder, START, type DiagramDefinition } from './builder';
 import {
   byId,
   childElements,
@@ -93,7 +93,11 @@ export function generate({ name, svg, definition, motion }: Partial): string {
   const file = `${name}.svg`;
   const drawing = parseSvg(svg, file);
   const doc = parseSvg(svg, file);
-  const builder = new Builder(name, drawing, doc);
+  const builder = new Builder(name, drawing, doc, definition.steps.length);
+
+  for (const action of definition.start ?? []) {
+    action(builder, START);
+  }
 
   definition.steps.forEach((step, index) => {
     for (const action of step.actions) {
@@ -172,23 +176,35 @@ function prefixIds(root: Element, prefix: string): void {
     elements.map(e => e.getAttribute('id')).filter((id): id is string => !!id)
   );
 
+  const prefixUrls = (value: string): string =>
+    value.replace(/url\(#([^)]+)\)/gu, (match, ref: string) =>
+      ids.has(ref) ? `url(#${prefix}${ref})` : match
+    );
+
   for (const element of elements) {
     const id = element.getAttribute('id');
     if (id) {
       element.setAttribute('id', `${prefix}${id}`);
     }
 
+    // A stylesheet can refer to the drawing's definitions too, such as a
+    // marker a rule swaps in.
+    if (element.localName === 'style' && element.textContent) {
+      const css = prefixUrls(element.textContent);
+      if (css !== element.textContent) {
+        element.textContent = css;
+      }
+    }
+
     for (const attribute of Array.from(element.attributes)) {
       const value = attribute.value;
-      const prefixed = value
-        .replace(/url\(#([^)]+)\)/gu, (match, ref: string) =>
-          ids.has(ref) ? `url(#${prefix}${ref})` : match
-        )
-        .replace(/^#(.+)$/u, (match, ref: string) =>
+      const prefixed = prefixUrls(value).replace(
+        /^#(.+)$/u,
+        (match, ref: string) =>
           attribute.localName === 'href' && ids.has(ref)
             ? `#${prefix}${ref}`
             : match
-        );
+      );
       if (prefixed !== value) {
         element.setAttribute(attribute.name, prefixed);
       }
