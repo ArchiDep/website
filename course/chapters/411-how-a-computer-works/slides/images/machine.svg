@@ -46,8 +46,8 @@
        paths data only ever takes one way; flat ends are two-way. -->
   <g id="paths">
     <path id="path-pc-selector" class="address-path" d="M216 55 H435" marker-end="url(#address-arrow)" />
-    <path id="path-ir-selector" class="address-path" d="M282 214 V95 H435" marker-end="url(#address-arrow)" />
-    <path id="path-ir-pc" class="address-path" d="M293 95 H255" marker-end="url(#address-arrow)" />
+    <path id="path-ir-selector" class="address-path" d="M293 214 V95 H435" marker-end="url(#address-arrow)" />
+    <path id="path-ir-pc" class="address-path" d="M205 214 V157" marker-end="url(#address-arrow)" />
     <path id="path-bus-ir" class="data-path" d="M100 484 V279" marker-end="url(#data-arrow)" />
     <path id="path-acc-bus" class="data-path" d="M190 365 V484" />
     <path id="path-alu-acc" class="data-path" d="M444 352 H409" marker-end="url(#data-arrow)" />
@@ -86,7 +86,7 @@
   <!-- Instruction register: 4 bits of operation, 4 bits of address -->
   <g id="instruction-register"><rect class="bit" x="80" y="210" width="28" height="34" /><rect class="bit" x="108" y="210" width="28" height="34" /><rect class="bit" x="136" y="210" width="28" height="34" /><rect class="bit" x="164" y="210" width="28" height="34" /><rect class="bit" x="192" y="210" width="28" height="34" /><rect class="bit" x="220" y="210" width="28" height="34" /><rect class="bit" x="248" y="210" width="28" height="34" /><rect class="bit" x="276" y="210" width="28" height="34" /><line x1="192" y1="206" x2="192" y2="248" stroke="#1d1d1f" stroke-width="4" /></g>
   <text class="tiny" x="136" y="197">operation</text>
-  <text class="tiny" x="230" y="197">address</text>
+  <text class="tiny" x="248" y="197">address</text>
   <text class="small" x="192" y="262">Instruction register</text>
 
   <!-- The control unit's cycle, one step lit at a time by the animation -->
@@ -111,7 +111,8 @@
   <path id="wire-zero" class="wire" d="M480 314 V290" marker-end="url(#wire-arrow)" />
   <text class="small" x="467" y="300" style="text-anchor: end">zero</text>
 
-  <!-- Clock: drives every component, which is narrated rather than drawn -->
+  <!-- Clock: drives every component that holds a value, which is narrated
+       rather than drawn -->
   <g id="clock">
     <rect class="box" x="40" y="520" width="160" height="62" rx="8" />
     <text class="label" x="120" y="540">Clock</text>

@@ -1306,8 +1306,9 @@ back to 0, and runs at half its frequency.
 
 Read each column of the timing diagram from the bottom up, Q2 then Q1 then Q0,
 as a binary number: `000`, `001`, `010`, `011` … up to `111`, then `000` again.
-The counter adds 1 on every clock cycle. A computer's program counter works the
-same way, with more digits.
+The counter adds 1 on every clock cycle. A computer's program counter is built
+the same way, with more digits, but it only counts when the control unit tells
+it to, and a jump can set it to a new value.
 
 ---
 
@@ -1355,9 +1356,12 @@ the instruction register and the memory cells, the decoder picks a memory cell
 from its address, and the selector chooses whether the program counter or the
 instruction gives the address.
 
-Every value, instructions included, travels on the shared **data bus**. Only one
-component writes on it at a time, and the control unit says which one, and
-which reads. Addresses travel on the **address bus**, to the memory.
+Every value, instructions included, travels on the shared **data bus**, and
+addresses travel on the **address bus**, to the memory. The control unit directs
+everything with control signals, which are not drawn: which component, the
+memory included, puts its value on the data bus, which one takes it in on the
+next tick, what the ALU computes, and which address the selector lets through.
+Only one component puts a value on the bus at a time.
 
 Blue paths carry data, 8 bits at once, and orange paths carry addresses, 4 bits
 at once. An instruction arrives in the instruction register as 8 bits of data;
@@ -1374,12 +1378,20 @@ The control unit repeats the same cycle for every instruction:
    know what to do.
 3. **Execute**: it tells the other components what to put on the buses and
    what to take from them. `LOAD`, `STORE`, `ADD` and `SUB` use the memory
-   again, at the instruction's address; `JUMP` only changes the program
-   counter.
+   again, at the instruction's address, which the selector lets through instead
+   of the program counter's; `JUMP` only changes the program counter.
 
-The accumulator feeds the ALU, and the ALU's result goes back into the
-accumulator. That loop works because the accumulator is a clocked register: it
-only takes the new value on the clock's tick, then holds it.
+The clock, whose wires are not drawn either, is connected to every component
+that holds a value: the registers, the program counter and the control unit. On
+each tick they all take their new values at once, so each step's result is
+ready, and stays put, before the next step uses it. The ALU and the selector
+hold nothing: their output follows their inputs. That is why the accumulator can
+feed the ALU and take its result back: it only takes the new value on the tick,
+then holds it.
+
+To learn more: this machine is close to the SAP-1 ("Simple-As-Possible")
+teaching computer, which Ben Eater builds on breadboards, control signals
+included, in his [8-bit computer](https://eater.net/8bit) video series.
 
 ---
 
@@ -1391,26 +1403,31 @@ only takes the new value on the clock's tick, then holds it.
      booting slide in the OS part. It keeps the first one's layout on purpose,
      so that the differences stand out. -->
 
-<img src="images/machine-boot.svg" alt="The machine at boot: a 64-bit processor with sixteen registers, connected to a firmware chip, memory and storage by a 64-bit data bus and a 64-bit address bus" class="mx-auto" style="width: 940px">
+<img src="images/machine-boot.svg" alt="The machine at boot: a 64-bit processor with sixteen registers, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller" class="mx-auto" style="width: 940px">
 
 **Notes:**
 
 TODO: a modern machine, drawn like the toy one. Its numbers are those of an
 x86-64 processor, the kind your cloud server runs on. Its firmware chip and its
-storage sit on the same buses as the memory. At power-on, the processor starts
-at an address that leads to the firmware. The firmware copies the bootloader
-from the storage into the memory and jumps to it, and the bootloader does the
-same with the kernel. A program is only bytes copied into memory, then jumped
-to.
+disk controller sit on the same buses as the memory. The storage does not: the
+processor cannot address the bytes on the disk, only the disk controller, which
+it asks to copy them into memory. At power-on, the processor starts at an
+address that leads to the firmware, which is read but never written. The
+firmware has the bootloader copied from the storage into the memory and jumps to
+it, and the bootloader does the same with the kernel. A program is only bytes
+copied into memory, then jumped to.
 
 The toy machine could never do this: with 4-bit addresses, its memory has 16
 bytes. A modern processor works with 64 bits at a time, and its addresses are 64
-bits too, enough to address far more memory than any computer has.
+bits too, enough to address far more memory than any computer has. Today's
+processors only use 48 to 57 of those bits, which is still plenty.
 
 It also has more than one register to compute with: an x86-64 processor has 16
 general-purpose registers, and the ALU can take its operands from any of them
 and write its result into any of them. Values from memory are loaded into a
-register before the ALU uses them, and stored back afterwards.
+register before the ALU uses them, and stored back afterwards. A register can
+also hold an address: that is how a program walks through memory, one address
+after the other, without a separate instruction for each one.
 
 Its instructions are not all the same size, as the toy machine's were: an
 x86-64 instruction is 1 to 15 bytes long, and there is no fixed split between
