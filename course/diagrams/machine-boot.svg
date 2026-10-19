@@ -69,22 +69,22 @@
     /* A part the current step is not about is drawn paler, rather than made
        transparent, which would show the paths drawn under the boxes. Values
        stay as they are, the room following them from step to step. */
-    svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #c7c7cc; }
-    svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #dcdce0; }
-    svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #b8b8bd; }
+    svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #dcdce0; }
+    svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #ebebee; }
+    svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #cfcfd4; }
     svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
-    svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #b4d0ee; }
-    svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #f7cbb0; }
-    svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #b4d0ee; }
-    svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #f7cbb0; }
-    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #c7c7cc; }
+    svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
+    svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
+    svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
+    svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #fbe5d7; }
+    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #dcdce0; }
     /* An arrowhead takes its colour from its marker, not from its path */
     svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path)[marker-end] { marker-end: url(#data-arrow-faded); }
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path)[marker-end] { marker-end: url(#address-arrow-faded); }
     svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire)[marker-end] { marker-end: url(#wire-arrow-faded); }
-    svg.diagram[data-family='machine'] .marker-data.faded-marker { fill: #b4d0ee; }
-    svg.diagram[data-family='machine'] .marker-address.faded-marker { fill: #f7cbb0; }
-    svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #c7c7cc; }
+    svg.diagram[data-family='machine'] .marker-data.faded-marker { fill: #dbe8f7; }
+    svg.diagram[data-family='machine'] .marker-address.faded-marker { fill: #fbe5d7; }
+    svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #dcdce0; }
 
     @media screen and (prefers-reduced-motion: no-preference) {
       /* Current running along a live wire */

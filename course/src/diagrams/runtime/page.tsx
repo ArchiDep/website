@@ -97,7 +97,7 @@ function Stepper({ figure, svg }: StepperProps) {
       'Architecture diagram, which can be stepped through with the arrow keys'
     );
     const onKey = (event: KeyboardEvent): void => {
-      if (event.target !== figure) {
+      if (event.target !== figure || count === 0) {
         return;
       }
 
@@ -133,14 +133,21 @@ function Stepper({ figure, svg }: StepperProps) {
   }, []);
 
   // The caption is under the controls, so that a caption of one line or of two
-  // does not move the buttons being clicked.
+  // does not move the buttons being clicked. A diagram without steps has
+  // nothing to step through, only its caption.
   return (
     <>
       <div className="diagram-controls">
         {step === null ? (
-          <button type="button" className="primary" onClick={() => setStep(0)}>
-            Step through it →
-          </button>
+          count > 0 && (
+            <button
+              type="button"
+              className="primary"
+              onClick={() => setStep(0)}
+            >
+              Step through it →
+            </button>
+          )
         ) : (
           <>
             <button type="button" onClick={() => setStep(0)} title="Restart">

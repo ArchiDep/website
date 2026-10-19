@@ -131,8 +131,10 @@ export default diagram({
       lit('step-decode'),
       value('decoded-operation', 'LOAD'),
       value('decoded-address', '14'),
+      // The annotation in memory is an aside: the step is about the control
+      // unit decoding the instruction register, not the cell.
       annotate('cell-0'),
-      focus('instruction-register', 'cell-0')
+      focus('instruction-register')
     ),
     step(
       'Execute: the control unit carries out the instruction.',

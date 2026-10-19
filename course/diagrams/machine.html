@@ -68,22 +68,22 @@ svg.diagram[data-family='machine'] .mask { fill: #ffffff; }
 /* A part the current step is not about is drawn paler, rather than made
 transparent, which would show the paths drawn under the boxes. Values
 stay as they are, the room following them from step to step. */
-svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #c7c7cc; }
-svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #dcdce0; }
-svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #b8b8bd; }
+svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #dcdce0; }
+svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #ebebee; }
+svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #cfcfd4; }
 svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
-svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #b4d0ee; }
-svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #f7cbb0; }
-svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #b4d0ee; }
-svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #f7cbb0; }
-svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #c7c7cc; }
+svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
+svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
+svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
+svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #fbe5d7; }
+svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #dcdce0; }
 /* An arrowhead takes its colour from its marker, not from its path */
 svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path)[marker-end] { marker-end: url(#diagram-machine-data-arrow-faded); }
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path)[marker-end] { marker-end: url(#diagram-machine-address-arrow-faded); }
 svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire)[marker-end] { marker-end: url(#diagram-machine-wire-arrow-faded); }
-svg.diagram[data-family='machine'] .marker-data.faded-marker { fill: #b4d0ee; }
-svg.diagram[data-family='machine'] .marker-address.faded-marker { fill: #f7cbb0; }
-svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #c7c7cc; }
+svg.diagram[data-family='machine'] .marker-data.faded-marker { fill: #dbe8f7; }
+svg.diagram[data-family='machine'] .marker-address.faded-marker { fill: #fbe5d7; }
+svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #dcdce0; }
 @media screen and (prefers-reduced-motion: no-preference) {
 /* Current running along a live wire */
 svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
@@ -702,7 +702,7 @@ break-inside: avoid;
 <text class="label" x="864" y="44">Memory</text>
 </g>
 <g id="diagram-machine-cells">
-<g id="diagram-machine-cell-0" data-faded-at="0 3 4 6 7 8"><text class="cell-address" x="796" y="80">0</text><rect class="cell" x="806" y="66" width="170" height="28"/><rect class="fragment transient lit cell" x="806" y="66" width="170" height="28" data-fragment-index="1" data-gone-from="3"/><text class="bits" x="813" y="80">0001 1110</text><text class="fragment annotation" x="969" y="80" data-fragment-index="5">LOAD 14</text></g>
+<g id="diagram-machine-cell-0" data-faded-at="0 3 4 5 6 7 8"><text class="cell-address" x="796" y="80">0</text><rect class="cell" x="806" y="66" width="170" height="28"/><rect class="fragment transient lit cell" x="806" y="66" width="170" height="28" data-fragment-index="1" data-gone-from="3"/><text class="bits" x="813" y="80">0001 1110</text><text class="fragment annotation" x="969" y="80" data-fragment-index="5">LOAD 14</text></g>
 <g id="diagram-machine-cell-1" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="112">1</text><rect class="cell" x="806" y="98" width="170" height="28"/><text class="bits" x="813" y="112">0010 1100</text><text class="at-rest annotation" x="969" y="112">ADD 12</text></g>
 <g id="diagram-machine-cell-2" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="144">2</text><rect class="cell" x="806" y="130" width="170" height="28"/><text class="bits" x="813" y="144">0100 1110</text><text class="at-rest annotation" x="969" y="144">STORE 14</text></g>
 <g id="diagram-machine-cell-3" data-faded-at="0 1 2 3 4 5 6 7 8"><text class="cell-address" x="796" y="176">3</text><rect class="cell" x="806" y="162" width="170" height="28"/><text class="bits" x="813" y="176">0001 1101</text><text class="at-rest annotation" x="969" y="176">LOAD 13</text></g>
