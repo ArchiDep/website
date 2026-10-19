@@ -1318,20 +1318,32 @@ it to, and a jump can set it to a new value.
 
 ### The instruction set
 
-<!-- TODO: only LOAD = 0001 is fixed (LOAD 14 is 0001 1110); the other
-     encodings are placeholders to decide. -->
-
-| Operation | Code   | Effect                |
-| --------- | ------ | --------------------- |
-| `LOAD x`  | `0001` | acc ← memory[x]       |
-| `STORE x` | `????` | memory[x] ← acc       |
-| `ADD x`   | `????` | acc ← acc + memory[x] |
-| `SUB x`   | `????` | acc ← acc − memory[x] |
-| `JUMP x`  | `????` | go to x               |
-| `JUMPZ x` | `????` | if acc = 0, go to x   |
-| `HALT`    | `????` | stop                  |
+<!-- The code and the address sit close together, to read as the instruction's
+     8 bits. -->
+<table style="font-size: 0.85em">
+  <thead>
+    <tr>
+      <th>Operation</th>
+      <th class="text-right! pr-1!">Code</th>
+      <th class="pl-1!">Address</th>
+      <th>Effect</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><code>LOAD x</code></td><td class="text-right! pr-1!"><code>0001</code></td><td class="pl-1!"><code>xxxx</code></td><td>acc ← memory[x]</td></tr>
+    <tr><td><code>STORE x</code></td><td class="text-right! pr-1!"><code>0100</code></td><td class="pl-1!"><code>xxxx</code></td><td>memory[x] ← acc</td></tr>
+    <tr><td><code>ADD x</code></td><td class="text-right! pr-1!"><code>0010</code></td><td class="pl-1!"><code>xxxx</code></td><td>acc ← acc + memory[x]</td></tr>
+    <tr><td><code>SUB x</code></td><td class="text-right! pr-1!"><code>0011</code></td><td class="pl-1!"><code>xxxx</code></td><td>acc ← acc − memory[x]</td></tr>
+    <tr><td><code>JUMP x</code></td><td class="text-right! pr-1!"><code>0110</code></td><td class="pl-1!"><code>xxxx</code></td><td>go to instruction x</td></tr>
+    <tr><td><code>JUMPZ x</code></td><td class="text-right! pr-1!"><code>1000</code></td><td class="pl-1!"><code>xxxx</code></td><td>if acc = 0, go to instruction x</td></tr>
+    <tr><td><code>HALT</code></td><td class="text-right! pr-1!"><code>1111</code></td><td class="pl-1!"></td><td>stop</td></tr>
+  </tbody>
+</table>
 
 **Notes:**
+
+The codes are those of Ben Eater's 8-bit computer, linked from the next slide,
+so the instructions read the same there.
 
 TODO: an instruction is 4 bits of operation and 4 bits of address: eight bits,
 read one more way.

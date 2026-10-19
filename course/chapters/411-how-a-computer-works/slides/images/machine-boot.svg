@@ -32,7 +32,6 @@
     .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
     .step { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
     .cell-address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
-    .value { font-family: Menlo, Consolas, monospace; font-size: 17px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
   </style>
 
   <!-- The processor, titled by a pill in its bottom-right corner -->
