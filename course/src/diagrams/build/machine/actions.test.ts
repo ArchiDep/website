@@ -10,6 +10,7 @@ import {
   live,
   reads,
   step,
+  tick,
   value,
   writes,
   type Action
@@ -143,6 +144,29 @@ describe('lit', () => {
         '<g class="fragment teardown" data-fragment-index="1"/>' +
           '<path id="diagram-m-signal" class="wire" d="M0 9 V1" marker-end="url(#tip)"/>' +
           '<path class="fragment transient lit wire" d="M0 9 V1" marker-end="url(#tip)" data-fragment-index="0" data-gone-from="1"/>',
+        2
+      )
+    );
+  });
+});
+
+describe('tick', () => {
+  it('lights the clock and its wire for each step it ticks at, each on its own, flashing as many times as it ticks', () => {
+    assert.equal(
+      generated(
+        '<path id="clock-wave" class="clock-wave" d="M0 5 H5"/>' +
+          '<g id="wire-clock"><path class="wire" d="M5 5 H9"/><text>to every register</text></g>',
+        [[tick()], [tick(3)]]
+      ),
+      partial(
+        '<g class="fragment teardown" data-fragment-index="1"/>' +
+          '<path id="diagram-m-clock-wave" class="clock-wave" d="M0 5 H5"/>' +
+          '<path class="fragment transient lit tick clock-wave" d="M0 5 H5" style="--ticks: 3" data-fragment-index="1"/>' +
+          '<path class="fragment transient lit tick clock-wave" d="M0 5 H5" style="--ticks: 1" data-fragment-index="0" data-gone-from="1"/>' +
+          '<g id="diagram-m-wire-clock"><path class="wire" d="M5 5 H9"/>' +
+          '<path class="fragment transient lit tick wire" d="M5 5 H9" style="--ticks: 3" data-fragment-index="1"/>' +
+          '<path class="fragment transient lit tick wire" d="M5 5 H9" style="--ticks: 1" data-fragment-index="0" data-gone-from="1"/>' +
+          '<text>to every register</text></g>',
         2
       )
     );

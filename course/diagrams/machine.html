@@ -25,6 +25,8 @@ svg.diagram[data-family='machine'] .data-bus { fill: #1971c2; }
 svg.diagram[data-family='machine'] .address-bus { fill: #e8590c; }
 svg.diagram[data-family='machine'] .wire { fill: none; stroke: #1d1d1f; stroke-width: 3; }
 svg.diagram[data-family='machine'] .wire.thin { stroke-width: 2; }
+/* The clock's square wave */
+svg.diagram[data-family='machine'] .clock-wave { fill: none; stroke: #1d1d1f; stroke-width: 2.5; }
 /* A wire that goes on somewhere not drawn */
 svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
 svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
@@ -53,6 +55,9 @@ svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
 svg.diagram[data-family='machine'] .wire.lit { stroke: #e03131; }
 svg.diagram[data-family='machine'] .wire.lit[marker-end] { marker-end: url(#diagram-machine-wire-arrow-lit); }
 svg.diagram[data-family='machine'] .marker-wire.lit-marker { fill: #e03131; }
+/* The clock's tick: its wave and its wire in red, flashing as the step
+starts, as many times as it ticks */
+svg.diagram[data-family='machine'] .clock-wave.lit { stroke: #e03131; }
 /* R or W of the memory's controls, in red, the other letters paled, all
 drawn over the controls with a halo hiding them */
 svg.diagram[data-family='machine'] .read-write.lit { fill: #e03131; stroke: #ffffff; stroke-width: 3; stroke-linejoin: round; paint-order: stroke; }
@@ -76,7 +81,7 @@ svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { st
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
 svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
 svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #fbe5d7; }
-svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #dcdce0; }
+svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots, .faded .clock-wave) { stroke: #dcdce0; }
 /* An arrowhead takes its colour from its marker, not from its path */
 svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path)[marker-end] { marker-end: url(#diagram-machine-data-arrow-faded); }
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path)[marker-end] { marker-end: url(#diagram-machine-address-arrow-faded); }
@@ -87,8 +92,12 @@ svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #dcdce0; }
 @media screen and (prefers-reduced-motion: no-preference) {
 /* Current running along a live wire */
 svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
+svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out var(--ticks, 1); }
 /* Focus changes in a moment rather than at once */
 svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+}
+@keyframes machine-tick {
+50% { opacity: 0.15; }
 }
 @keyframes machine-current {
 to { stroke-dashoffset: -12; }
@@ -610,7 +619,7 @@ break-inside: avoid;
 <marker id="diagram-machine-wire-arrow-faded" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
 <path class="marker-wire faded-marker" d="M0 0 L10 5 L0 10 z"/>
 </marker>
-</defs><g class="fragment teardown" data-fragment-index="6"/><g class="fragment teardown" data-fragment-index="3"/><g class="fragment teardown" data-fragment-index="8"/><g class="fragment teardown" data-fragment-index="2"/><g class="fragment teardown" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="8"/><g class="fragment focus" data-fragment-index="7"/><g class="fragment focus" data-fragment-index="6"/><g class="fragment focus" data-fragment-index="5"/><g class="fragment focus" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="2"/><g class="fragment focus" data-fragment-index="1"/><g class="fragment focus" data-fragment-index="0"/>
+</defs><g class="fragment teardown" data-fragment-index="7"/><g class="fragment teardown" data-fragment-index="5"/><g class="fragment teardown" data-fragment-index="1"/><g class="fragment teardown" data-fragment-index="6"/><g class="fragment teardown" data-fragment-index="3"/><g class="fragment teardown" data-fragment-index="8"/><g class="fragment teardown" data-fragment-index="2"/><g class="fragment teardown" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="8"/><g class="fragment focus" data-fragment-index="7"/><g class="fragment focus" data-fragment-index="6"/><g class="fragment focus" data-fragment-index="5"/><g class="fragment focus" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="2"/><g class="fragment focus" data-fragment-index="1"/><g class="fragment focus" data-fragment-index="0"/>
 <path class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H486 V572 A16 16 0 0 1 502 556 Z"/>
 <rect class="frame" x="10" y="10" width="590" height="580" rx="16"/>
 <path class="frame" d="M600 556 H502 A16 16 0 0 0 486 572 V590"/>
@@ -688,13 +697,13 @@ break-inside: avoid;
 <path class="wire" d="M500 255 H528"/><path class="wire-dots" d="M535 255 H556"/>
 <text class="tiny signal" x="550" y="185">control signals</text>
 </g>
-<g id="diagram-machine-clock">
+<g id="diagram-machine-clock" data-faded-at="1 2 3 5 7 8">
 <rect class="box" x="40" y="520" width="160" height="62" rx="8"/>
 <text class="label" x="120" y="540">Clock</text>
-<path d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5"/>
+<path id="diagram-machine-clock-wave" class="clock-wave" d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180"/><path class="fragment transient lit tick clock-wave" d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" style="--ticks: 1" data-fragment-index="6" data-gone-from="7"/><path class="fragment transient lit tick clock-wave" d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" style="--ticks: 1" data-fragment-index="4" data-gone-from="5"/><path class="fragment transient lit tick clock-wave" d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" style="--ticks: 1" data-fragment-index="0" data-gone-from="1"/>
 </g>
-<g id="diagram-machine-wire-clock">
-<path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/>
+<g id="diagram-machine-wire-clock" data-faded-at="1 2 3 5 7 8">
+<path class="wire" d="M200 551 H228"/><path class="fragment transient lit tick wire" d="M200 551 H228" style="--ticks: 1" data-fragment-index="6" data-gone-from="7"/><path class="fragment transient lit tick wire" d="M200 551 H228" style="--ticks: 1" data-fragment-index="4" data-gone-from="5"/><path class="fragment transient lit tick wire" d="M200 551 H228" style="--ticks: 1" data-fragment-index="0" data-gone-from="1"/><path class="wire-dots" d="M235 551 H256"/>
 <text class="tiny signal start" x="207" y="536">to every register</text>
 </g>
 <g id="diagram-machine-memory" data-faded-at="0 3 4 5 6">
@@ -726,5 +735,5 @@ break-inside: avoid;
 <g id="diagram-machine-live-wires"><g class="fragment transient live" data-fragment-index="1" data-gone-from="2"><path class="live-casing" d="M216 55 H476 L524 75 H738"/><path class="live-wire" d="M216 55 H476 L524 75 H738"/><path class="live-current" d="M216 55 H476 L524 75 H738"/></g><g class="fragment transient live" data-fragment-index="2" data-gone-from="3"><path class="live-casing" d="M806 80 H801 V96 H750 V491 H100 V244"/><path class="live-wire" d="M806 80 H801 V96 H750 V491 H100 V244"/><path class="live-current" d="M806 80 H801 V96 H750 V491 H100 V244"/></g><g class="fragment transient live" data-fragment-index="7" data-gone-from="8"><path class="live-casing" d="M293 210 V95 H476 L524 75 H738"/><path class="live-wire" d="M293 210 V95 H476 L524 75 H738"/><path class="live-current" d="M293 210 V95 H476 L524 75 H738"/></g><g class="fragment transient live" data-fragment-index="8"><path class="live-casing" d="M806 528 H801 V512 H750 V491 H190 V389"/><path class="live-wire" d="M806 528 H801 V512 H750 V491 H190 V389"/><path class="live-current" d="M806 528 H801 V512 H750 V491 H190 V389"/></g></g>
 </svg>
 </div>
-<template class="diagram-captions"><p data-caption="rest">A processor and a memory of sixteen cells, connected by a data bus and an address bus. The memory holds a program that multiplies 3 by 2 by adding 3 twice.</p><p data-caption="0">The program is in memory, and the program counter is at 0.</p><p data-caption="1">Fetch: the control unit fetches the next instruction from memory.</p><p data-caption="2">The control unit tells the selector to let the program counter’s address through, and the memory to read the cell at that address, 0.</p><p data-caption="3">The control unit tells the memory to put the bits of cell 0 on the data bus, and the instruction register to take them.</p><p data-caption="4">The control unit tells the program counter to add 1, ready for the next instruction.</p><p data-caption="5">Decode: the control unit decodes the instruction in the instruction register, to know what to do.</p><p data-caption="6">The instruction’s 4 bits of operation are LOAD, and its 4 bits of address 14: the bits of cell 0 were an instruction.</p><p data-caption="7">Execute: the control unit carries out the instruction.</p><p data-caption="8">The control unit tells the selector to let the instruction’s address through, and the memory to read the cell at that address, 14.</p><p data-caption="9">The control unit tells the memory to put the bits of cell 14 on the data bus, and the accumulator to take them: the accumulator holds 0.</p></template>
+<template class="diagram-captions"><p data-caption="rest">A processor and a memory of sixteen cells, connected by a data bus and an address bus. The memory holds a program that multiplies 3 by 2 by adding 3 twice.</p><p data-caption="0">The program is in memory, and the program counter is at 0.</p><p data-caption="1">Fetch: the clock ticks, and the control unit starts fetching the next instruction from memory.</p><p data-caption="2">The control unit tells the selector to let the program counter’s address through, and the memory to read the cell at that address, 0.</p><p data-caption="3">The control unit tells the memory to put the bits of cell 0 on the data bus, and the instruction register to take them.</p><p data-caption="4">The control unit tells the program counter to add 1, ready for the next instruction.</p><p data-caption="5">Decode: the clock ticks, and the control unit starts decoding the instruction in the instruction register, to know what to do.</p><p data-caption="6">The instruction’s 4 bits of operation are LOAD, and its 4 bits of address 14: the bits of cell 0 were an instruction.</p><p data-caption="7">Execute: the clock ticks, and the control unit starts carrying out the instruction.</p><p data-caption="8">The control unit tells the selector to let the instruction’s address through, and the memory to read the cell at that address, 14.</p><p data-caption="9">The control unit tells the memory to put the bits of cell 14 on the data bus, and the accumulator to take them: the accumulator holds 0.</p></template>
 </div>

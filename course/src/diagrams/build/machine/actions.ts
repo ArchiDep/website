@@ -16,7 +16,8 @@ import {
   hasClass,
   insertAfter,
   number,
-  rootOf
+  rootOf,
+  setVariables
 } from '../svg';
 
 /**
@@ -54,6 +55,10 @@ interface Machine {
    */
   readonly annotated: Map<string, number>;
   /**
+   * How many times the clock ticks at each step that it ticks at.
+   */
+  readonly ticks: Map<number, number>;
+  /**
    * The parts that can be faded, and what each step is about.
    */
   focus: {
@@ -72,6 +77,7 @@ function machine(builder: Builder): Machine {
       live: new Map(),
       values: new Map(),
       annotated: new Map(),
+      ticks: new Map(),
       focus: null
     };
     builder.whenBuilt(() => draw(builder, state));
@@ -151,6 +157,18 @@ export function value(slot: string, held: Value): Action {
  * annotation, the cell's `annotation` text, says what as. Until then, while
  * stepping, the annotation is hidden; the fully drawn diagram shows them all.
  */
+/**
+ * The clock ticks as this step starts, `times` times: the drawing's
+ * `clock-wave` and the first wire of `wire-clock` are lit for the step,
+ * flashing once for each tick. Each step's tick is drawn on its own, so that
+ * ticks on consecutive steps each flash.
+ */
+export function tick(times = 1): Action {
+  return (builder, index) => {
+    machine(builder).ticks.set(index, times);
+  };
+}
+
 export function annotate(cell: string): Action {
   return (builder, index) => {
     const annotated = machine(builder).annotated;
@@ -209,12 +227,20 @@ function draw(builder: Builder, state: Machine): void {
 
   drawAnnotations(builder, state.annotated);
 
+  for (const [index, times] of state.ticks) {
+    drawTick(builder, index, times);
+  }
+
   if (state.focus !== null) {
     drawFocus(builder, state.focus.parts, state.focus.focused);
   }
 }
 
-function drawLit(builder: Builder, id: string, indices: number[]): void {
+/**
+ * What lighting an element lights: the element if it is a shape, such as a
+ * wire, or else its first shape.
+ */
+function shapeOf(builder: Builder, id: string): Element {
   const element = builder.element(id);
   const isShape = (candidate: Element): boolean =>
     ['rect', 'polygon', 'path'].includes(candidate.localName ?? '');
@@ -225,9 +251,29 @@ function drawLit(builder: Builder, id: string, indices: number[]): void {
     throw new Error(`"${id}" has no shape to light`);
   }
 
+  return shape;
+}
+
+function drawLit(builder: Builder, id: string, indices: number[]): void {
+  const shape = shapeOf(builder, id);
   for (const run of runs(indices, builder.steps)) {
     const copy = copyOf(shape);
     addClasses(copy, 'lit');
+    insertAfter(shape, copy);
+    during(builder, copy, run);
+  }
+}
+
+function drawTick(builder: Builder, index: number, times: number): void {
+  const run: Run =
+    index + 1 < builder.steps
+      ? { from: index, to: index + 1 }
+      : { from: index };
+  for (const id of ['clock-wave', 'wire-clock']) {
+    const shape = shapeOf(builder, id);
+    const copy = copyOf(shape);
+    addClasses(copy, 'lit', 'tick');
+    setVariables(copy, { ticks: times });
     insertAfter(shape, copy);
     during(builder, copy, run);
   }

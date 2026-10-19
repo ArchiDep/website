@@ -11,12 +11,14 @@ import {
   live,
   reads,
   step,
+  tick,
   value
 } from '../src/diagrams/build/machine';
 
 // The parts a step can be about; the others are faded while it is the current
-// one. The control unit and the clock take part in every step, and are never
-// faded.
+// one. The control unit takes part in every step, and is never faded; the
+// clock is in focus when it ticks, at the step starting each phase.
+const CLOCK = ['clock', 'wire-clock'];
 const focus = focusOn([
   'program-counter',
   'path-pc-selector',
@@ -42,6 +44,7 @@ const focus = focusOn([
   'wire-subtract',
   'memory',
   'wire-read-write',
+  ...CLOCK,
   ...Array.from({ length: 16 }, (_, i) => `cell-${i}`)
 ]);
 
@@ -81,9 +84,11 @@ export default diagram({
   start: [value('program-counter', 0)],
   steps: [
     step(
-      'Fetch: the control unit fetches the next instruction from memory.',
+      'Fetch: the clock ticks, and the control unit starts fetching the next ' +
+        'instruction from memory.',
+      tick(),
       lit('step-fetch'),
-      focus()
+      focus(...CLOCK)
     ),
     step(
       'The control unit tells the selector to let the program counter’s ' +
@@ -120,10 +125,11 @@ export default diagram({
       focus('program-counter', 'wire-count')
     ),
     step(
-      'Decode: the control unit decodes the instruction in the instruction ' +
-        'register, to know what to do.',
+      'Decode: the clock ticks, and the control unit starts decoding the ' +
+        'instruction in the instruction register, to know what to do.',
+      tick(),
       lit('step-decode'),
-      focus('instruction-register')
+      focus(...CLOCK, 'instruction-register')
     ),
     step(
       'The instruction’s 4 bits of operation are LOAD, and its 4 bits of ' +
@@ -137,9 +143,11 @@ export default diagram({
       focus('instruction-register')
     ),
     step(
-      'Execute: the control unit carries out the instruction.',
+      'Execute: the clock ticks, and the control unit starts carrying out the ' +
+        'instruction.',
+      tick(),
       lit('step-execute'),
-      focus()
+      focus(...CLOCK)
     ),
     step(
       'The control unit tells the selector to let the instruction’s address ' +

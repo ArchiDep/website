@@ -22,6 +22,8 @@
     svg.diagram[data-family='machine'] .address-bus { fill: #e8590c; }
     svg.diagram[data-family='machine'] .wire { fill: none; stroke: #1d1d1f; stroke-width: 3; }
     svg.diagram[data-family='machine'] .wire.thin { stroke-width: 2; }
+    /* The clock's square wave */
+    svg.diagram[data-family='machine'] .clock-wave { fill: none; stroke: #1d1d1f; stroke-width: 2.5; }
     /* A wire that goes on somewhere not drawn */
     svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
     svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
@@ -52,6 +54,9 @@
     svg.diagram[data-family='machine'] .wire.lit { stroke: #e03131; }
     svg.diagram[data-family='machine'] .wire.lit[marker-end] { marker-end: url(#wire-arrow-lit); }
     svg.diagram[data-family='machine'] .marker-wire.lit-marker { fill: #e03131; }
+    /* The clock's tick: its wave and its wire in red, flashing as the step
+       starts, as many times as it ticks */
+    svg.diagram[data-family='machine'] .clock-wave.lit { stroke: #e03131; }
     /* R or W of the memory's controls, in red, the other letters paled, all
        drawn over the controls with a halo hiding them */
     svg.diagram[data-family='machine'] .read-write.lit { fill: #e03131; stroke: #ffffff; stroke-width: 3; stroke-linejoin: round; paint-order: stroke; }
@@ -77,7 +82,7 @@
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
     svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
     svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #fbe5d7; }
-    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots) { stroke: #dcdce0; }
+    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots, .faded .clock-wave) { stroke: #dcdce0; }
     /* An arrowhead takes its colour from its marker, not from its path */
     svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path)[marker-end] { marker-end: url(#data-arrow-faded); }
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path)[marker-end] { marker-end: url(#address-arrow-faded); }
@@ -89,8 +94,12 @@
     @media screen and (prefers-reduced-motion: no-preference) {
       /* Current running along a live wire */
       svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
+      svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out var(--ticks, 1); }
       /* Focus changes in a moment rather than at once */
       svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+    }
+    @keyframes machine-tick {
+      50% { opacity: 0.15; }
     }
     @keyframes machine-current {
       to { stroke-dashoffset: -12; }
@@ -242,7 +251,7 @@
   <g id="clock">
     <rect class="box" x="40" y="520" width="160" height="62" rx="8"/>
     <text class="label" x="120" y="540">Clock</text>
-    <path d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5"/>
+    <path id="clock-wave" class="clock-wave" d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180"/>
   </g>
   <g id="wire-clock">
     <path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/>
