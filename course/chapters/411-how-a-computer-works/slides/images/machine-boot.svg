@@ -25,6 +25,8 @@
     .data-bus { fill: #1971c2; }
     .address-bus { fill: #e8590c; }
     .wire { fill: none; stroke: #1d1d1f; stroke-width: 3; }
+    /* A wire that goes on somewhere not drawn */
+    .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
     .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
     .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
     .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
@@ -33,9 +35,11 @@
     .value { font-family: Menlo, Consolas, monospace; font-size: 17px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
   </style>
 
-  <!-- The processor -->
+  <!-- The processor, titled by a pill in its bottom-right corner -->
+  <path d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z" fill="#f0f0f2" />
   <rect class="frame" x="10" y="10" width="590" height="580" rx="16" />
-  <text class="small" x="62" y="22">Processor</text>
+  <path class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590" />
+  <text class="label" x="538" y="574" style="font-size: 18px; fill: #6e6e73">64-bit CPU</text>
 
   <g id="control-unit">
     <rect class="box" x="40" y="145" width="460" height="140" rx="8" />
@@ -76,7 +80,7 @@
   <path id="path-address-bus-controller" class="address-path" d="M669 405 H705" marker-end="url(#address-arrow)" />
   <!-- The firmware is only read: a small arrow inside its data path, since an
        arrowhead at its end would cut it off from the firmware -->
-  <polygon points="718,123 718,137 706,130" fill="#ffffff" />
+  <polygon points="739,123 739,137 727,130" fill="#ffffff" />
   <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 64 bits</text>
 
   <!-- Selector: chooses whether the program counter or the instruction gives
@@ -85,6 +89,9 @@
     <polygon class="box" points="470,30 530,50 530,100 470,120" />
     <text class="small" x="500" y="22">Selector</text>
   </g>
+
+  <!-- The control signal that picks the selector's input -->
+  <path id="wire-select" class="wire" d="M490 145 V117" marker-end="url(#wire-arrow)" />
 
   <!-- Program counter: a counter, not a plain register -->
   <g id="program-counter">
@@ -113,8 +120,21 @@
   </g>
 
   <!-- The zero flag: a single wire -->
-  <path id="wire-zero" class="wire" d="M440 329 V290" marker-end="url(#wire-arrow)" />
-  <text class="small" x="428" y="304" style="text-anchor: end">zero</text>
+  <path id="wire-zero" class="wire" d="M425 322 V290" marker-end="url(#wire-arrow)" />
+  <text class="small" x="414" y="305" style="text-anchor: end">zero</text>
+
+  <!-- The one control signal drawn in full: it tells the ALU which operation
+       to compute -->
+  <path id="wire-operation" class="wire" d="M465 285 V333" marker-end="url(#wire-arrow)" />
+  <text class="small" x="474" y="305" style="text-anchor: start">operation</text>
+
+  <!-- The control unit's other signals, which only start -->
+  <g id="control-signals">
+    <path class="wire" d="M500 205 H528" /><path class="wire-dots" d="M535 205 H556" />
+    <path class="wire" d="M500 230 H528" /><path class="wire-dots" d="M535 230 H556" />
+    <path class="wire" d="M500 255 H528" /><path class="wire-dots" d="M535 255 H556" />
+    <text class="tiny" x="550" y="185" style="font-size: 12px">control signals</text>
+  </g>
 
   <!-- Clock: drives every component that holds a value, which is narrated
        rather than drawn -->
@@ -123,6 +143,8 @@
     <text class="label" x="120" y="540">Clock</text>
     <path d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5" />
   </g>
+  <g id="wire-clock"><path class="wire" d="M200 551 H228" /><path class="wire-dots" d="M235 551 H256" /></g>
+  <text class="tiny" x="207" y="536" style="font-size: 12px; text-anchor: start">to every register</text>
 
   <!-- Firmware: where the processor starts -->
   <g id="firmware">

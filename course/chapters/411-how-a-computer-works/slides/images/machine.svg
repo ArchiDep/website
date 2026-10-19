@@ -25,6 +25,8 @@
     .data-bus { fill: #1971c2; }
     .address-bus { fill: #e8590c; }
     .wire { fill: none; stroke: #1d1d1f; stroke-width: 3; }
+    /* A wire that goes on somewhere not drawn */
+    .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
     .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
     .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
     .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
@@ -33,9 +35,11 @@
     .value { font-family: Menlo, Consolas, monospace; font-size: 17px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
   </style>
 
-  <!-- The processor -->
+  <!-- The processor, titled by a pill in its bottom-right corner -->
+  <path d="M600 556 V574 A16 16 0 0 1 584 590 H486 V572 A16 16 0 0 1 502 556 Z" fill="#f0f0f2" />
   <rect class="frame" x="10" y="10" width="590" height="580" rx="16" />
-  <text class="small" x="62" y="22">Processor</text>
+  <path class="frame" d="M600 556 H502 A16 16 0 0 0 486 572 V590" />
+  <text class="label" x="543" y="574" style="font-size: 18px; fill: #6e6e73">8-bit CPU</text>
 
   <g id="control-unit">
     <rect class="box" x="40" y="145" width="460" height="140" rx="8" />
@@ -49,10 +53,10 @@
     <path id="path-ir-selector" class="address-path" d="M293 214 V95 H435" marker-end="url(#address-arrow)" />
     <path id="path-ir-pc" class="address-path" d="M205 214 V157" marker-end="url(#address-arrow)" />
     <path id="path-bus-ir" class="data-path" d="M100 484 V279" marker-end="url(#data-arrow)" />
-    <path id="path-acc-bus" class="data-path" d="M190 365 V484" />
-    <path id="path-alu-acc" class="data-path" d="M444 352 H409" marker-end="url(#data-arrow)" />
-    <path id="path-bus-alu" class="data-path" d="M631 321 H555" marker-end="url(#data-arrow)" />
-    <path id="path-acc-alu" class="data-path" d="M330 365 V430 H560 V385 H555" marker-end="url(#data-arrow)" />
+    <path id="path-acc-bus" class="data-path" d="M190 385 V484" />
+    <path id="path-alu-acc" class="data-path" d="M444 372 H409" marker-end="url(#data-arrow)" />
+    <path id="path-bus-alu" class="data-path" d="M631 341 H555" marker-end="url(#data-arrow)" />
+    <path id="path-acc-alu" class="data-path" d="M330 385 V450 H560 V405 H555" marker-end="url(#data-arrow)" />
   </g>
 
   <!-- Buses -->
@@ -76,6 +80,9 @@
     <text class="small" x="500" y="22">Selector</text>
   </g>
 
+  <!-- The control signal that picks the selector's input -->
+  <path id="wire-select" class="wire" d="M490 145 V117" marker-end="url(#wire-arrow)" />
+
   <!-- Program counter: a counter, not a plain register -->
   <g id="program-counter">
     <rect class="box" x="30" y="36" width="190" height="86" rx="8" />
@@ -98,18 +105,31 @@
   </g>
 
   <!-- Accumulator: the same kind of register -->
-  <g id="accumulator"><rect class="bit" x="150" y="335" width="28" height="34" /><rect class="bit" x="178" y="335" width="28" height="34" /><rect class="bit" x="206" y="335" width="28" height="34" /><rect class="bit" x="234" y="335" width="28" height="34" /><rect class="bit" x="262" y="335" width="28" height="34" /><rect class="bit" x="290" y="335" width="28" height="34" /><rect class="bit" x="318" y="335" width="28" height="34" /><rect class="bit" x="346" y="335" width="28" height="34" /></g>
-  <text class="label" x="262" y="318">Accumulator</text>
+  <g id="accumulator"><rect class="bit" x="150" y="355" width="28" height="34" /><rect class="bit" x="178" y="355" width="28" height="34" /><rect class="bit" x="206" y="355" width="28" height="34" /><rect class="bit" x="234" y="355" width="28" height="34" /><rect class="bit" x="262" y="355" width="28" height="34" /><rect class="bit" x="290" y="355" width="28" height="34" /><rect class="bit" x="318" y="355" width="28" height="34" /><rect class="bit" x="346" y="355" width="28" height="34" /></g>
+  <text class="label" x="262" y="338">Accumulator</text>
 
   <!-- ALU: two operands in on the right, the result out on the left -->
   <g id="alu">
-    <polygon class="box" points="520,300 520,338 506,352 520,366 520,405 440,375 440,330" />
-    <text class="label" x="478" y="353">ALU</text>
+    <polygon class="box" points="520,320 520,358 506,372 520,386 520,425 440,395 440,350" />
+    <text class="label" x="478" y="373">ALU</text>
   </g>
 
   <!-- The zero flag: a single wire -->
-  <path id="wire-zero" class="wire" d="M480 314 V290" marker-end="url(#wire-arrow)" />
-  <text class="small" x="467" y="300" style="text-anchor: end">zero</text>
+  <path id="wire-zero" class="wire" d="M490 330 V290" marker-end="url(#wire-arrow)" />
+  <text class="small" x="503" y="305" style="text-anchor: start">zero</text>
+
+  <!-- The one control signal drawn in full: it tells the ALU to subtract
+       instead of add -->
+  <path id="wire-subtract" class="wire" d="M450 285 V343" marker-end="url(#wire-arrow)" />
+  <text class="small" x="441" y="305" style="text-anchor: end">subtract</text>
+
+  <!-- The control unit's other signals, which only start -->
+  <g id="control-signals">
+    <path class="wire" d="M500 205 H528" /><path class="wire-dots" d="M535 205 H556" />
+    <path class="wire" d="M500 230 H528" /><path class="wire-dots" d="M535 230 H556" />
+    <path class="wire" d="M500 255 H528" /><path class="wire-dots" d="M535 255 H556" />
+    <text class="tiny" x="550" y="185" style="font-size: 12px">control signals</text>
+  </g>
 
   <!-- Clock: drives every component that holds a value, which is narrated
        rather than drawn -->
@@ -118,6 +138,8 @@
     <text class="label" x="120" y="540">Clock</text>
     <path d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5" />
   </g>
+  <g id="wire-clock"><path class="wire" d="M200 551 H228" /><path class="wire-dots" d="M235 551 H256" /></g>
+  <text class="tiny" x="207" y="536" style="font-size: 12px; text-anchor: start">to every register</text>
 
   <!-- Memory: the program of the trace, then its data -->
   <!-- TODO: show the instructions as binary once the encodings are decided;
@@ -144,4 +166,8 @@
     <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28" /><text class="value" x="891" y="528">00000000</text></g>
     <g id="cell-15"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28" /><text class="value" x="891" y="560">00000001</text></g>
   </g>
+  <!-- The memory's read/write control signal, arriving from somewhere not
+       drawn -->
+  <g id="wire-read-write"><path class="wire-dots" d="M712 538 V552.5" /><path class="wire" d="M712 559 V576 H737" marker-end="url(#wire-arrow)" /></g>
+  <text class="tiny" x="747" y="576" style="font-size: 11px; text-anchor: start">R/W</text>
 </svg>

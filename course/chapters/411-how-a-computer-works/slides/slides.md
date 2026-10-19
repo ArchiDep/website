@@ -1358,16 +1358,21 @@ instruction gives the address.
 
 Every value, instructions included, travels on the shared **data bus**, and
 addresses travel on the **address bus**, to the memory. The control unit directs
-everything with control signals, which are not drawn: which component, the
-memory included, puts its value on the data bus, which one takes it in on the
-next tick, what the ALU computes, and which address the selector lets through.
-Only one component puts a value on the bus at a time.
+everything with control signals: which component, the memory included, puts its
+value on the data bus, which one takes it in on the next tick, what the ALU
+computes, and which address the selector lets through. Only one component puts
+a value on the bus at a time.
 
 Blue paths carry data, 8 bits at once, and orange paths carry addresses, 4 bits
 at once. An instruction arrives in the instruction register as 8 bits of data;
 its 4 bits of address then leave in orange, to the selector, or to the program
-counter for a jump. The only single wire drawn is the ALU's zero flag, which
-`JUMPZ` reads.
+counter for a jump. Single wires carry 1 bit each. Two control signals are drawn
+all the way: the one that tells the selector which address to let through, and
+**subtract**, which tells the ALU to subtract instead of add for `SUB`. The ALU
+answers on the **zero** wire, whether its last result was 0, which `JUMPZ`
+reads. The memory's R/W wire is one of the other control signals, seen only
+where it arrives: it tells the memory whether to put a cell's value on the data
+bus or to take the value on the bus into the cell.
 
 The control unit repeats the same cycle for every instruction:
 
@@ -1381,13 +1386,12 @@ The control unit repeats the same cycle for every instruction:
    again, at the instruction's address, which the selector lets through instead
    of the program counter's; `JUMP` only changes the program counter.
 
-The clock, whose wires are not drawn either, is connected to every component
-that holds a value: the registers, the program counter and the control unit. On
-each tick they all take their new values at once, so each step's result is
-ready, and stays put, before the next step uses it. The ALU and the selector
-hold nothing: their output follows their inputs. That is why the accumulator can
-feed the ALU and take its result back: it only takes the new value on the tick,
-then holds it.
+The clock is connected to every component that holds a value: the registers,
+the program counter and the control unit. On each tick they all take their new
+values at once, so each step's result is ready, and stays put, before the next
+step uses it. The ALU and the selector hold nothing: their output follows their
+inputs. That is why the accumulator can feed the ALU and take its result back:
+it only takes the new value on the tick, then holds it.
 
 To learn more: this machine is close to the SAP-1 ("Simple-As-Possible")
 teaching computer, which Ben Eater builds on breadboards, control signals
