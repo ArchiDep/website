@@ -6,7 +6,7 @@ import {
   launched,
   spawned,
   step
-} from '../src/diagrams/build';
+} from '../src/diagrams/build/processes';
 
 const CONNECTION = 'edge-alice-nc-bob-nc';
 const hello = data(CONNECTION, 'Hello', { reverse: true });

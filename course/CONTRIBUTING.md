@@ -135,8 +135,9 @@ the dashboard functionality is only available during the current semester).
     in slides.
   - `src/diagrams/`: The toolchain of the [architecture
     diagrams](#architecture-diagrams), kept apart from the rest of the site so
-    that it can become a project of its own: `build/` generates them, `runtime/`
-    steps through them in a page or a deck, and `diagram.css` is their motion.
+    that it can become a project of its own: `build/` generates them, its core
+    beside the vocabulary of each family, `runtime/` steps through them in a
+    page or a deck, and `diagram.css` is their motion.
 - **Other Things**
   - `favicons`: Favicons for various platforms and devices.
   - `src/assets/logging.ts`: Shared logging utilities for client-side scripts.
@@ -772,7 +773,10 @@ A diagram is three files in [`diagrams/`](./diagrams), all named after it:
 - **`407-tcp.svg`**, the drawing, as the diagram ends up. It is edited in
   Inkscape or by hand, and stays readable on its own.
 - **`407-tcp.ts`**, its steps: what each click does, and the sentence said over
-  it, which is the caption a page shows. The actions a step is made of are in
+  it, which is the caption a page shows. It imports the actions a step is made
+  of from its family's vocabulary,
+  [`src/diagrams/build/processes`](./src/diagrams/build/processes) for an
+  architecture diagram, which adds its own to those of the core in
   [`src/diagrams/build/index.ts`](./src/diagrams/build/index.ts).
 - **`407-tcp.html`**, generated from the other two: never edit it.
 
@@ -786,7 +790,10 @@ npm run --workspace course diagrams
 It copies the look, the arrowheads and the legend of `shared.svg` into every
 drawing, which is the one place they are edited, and generates the partials.
 With `-- --check`, it changes nothing and fails if anything is out of date,
-which CI does.
+which CI does. The committed partials are thereby the architecture diagrams'
+tests: a change to the toolchain that alters one shows as a difference to
+review. What no partial shows is tested beside the code, in `*.test.ts` files
+run by `npm run --workspace course test`, which CI runs too.
 
 A drawing that does not look like an architecture diagram belongs to a
 **family** of its own, named by the `data-family` attribute of its root, such as

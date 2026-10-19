@@ -10,7 +10,8 @@
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "pdf": "tsx src/scripts/pdf.ts",
-    "start": "webpack --config webpack.config.cjs --watch"
+    "start": "webpack --config webpack.config.cjs --watch",
+    "test": "tsx --test 'src/**/*.test.ts'"
   },
   "devDependencies": {
     "@alphahydrae/simgit": "~0.3.0-beta.1",

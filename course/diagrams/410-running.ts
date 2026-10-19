@@ -16,7 +16,7 @@ import {
   typedInto,
   typing,
   waiting
-} from '../src/diagrams/build';
+} from '../src/diagrams/build/processes';
 
 const SHELL = 'node-remote-shell';
 const PSQL = 'sudo -u postgres psql < schema.sql';

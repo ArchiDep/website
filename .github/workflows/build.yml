@@ -248,6 +248,9 @@ jobs:
       - name: Check that the diagrams are up to date
         run: npm run --workspace course diagrams -- --check
 
+      - name: Test the diagrams' toolchain
+        run: npm run --workspace course test
+
       # Built here rather than downloaded from the jobs beside this one: their
       # theme artifact carries `assets/theme` and not `assets/emoji`, which
       # every page of this renderer needs.

@@ -15,7 +15,7 @@ import {
   spawned,
   step,
   teardown
-} from '../src/diagrams/build';
+} from '../src/diagrams/build/processes';
 
 const CONNECTION = 'edge-ssh-client-ssh-session';
 

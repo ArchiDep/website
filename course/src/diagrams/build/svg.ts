@@ -183,7 +183,7 @@ export function removeComments(node: Node): void {
 }
 
 /**
- * The process box of a process: its first rectangle.
+ * The box of an element: its first rectangle, such as a process's box.
  */
 export interface Box {
   readonly x: number;
@@ -204,15 +204,6 @@ export function boxOf(doc: Document, id: string): Box {
     width: number(rect, 'width'),
     height: number(rect, 'height')
   };
-}
-
-export function commandOf(doc: Document, id: string): string {
-  const text = firstDescendant(byId(doc, id), 'text', 'command');
-  if (text === undefined || !text.textContent) {
-    throw new Error(`"${id}" has no command to type`);
-  }
-
-  return text.textContent;
 }
 
 export function pathOf(doc: Document, id: string): Element {

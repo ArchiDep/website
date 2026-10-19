@@ -1,7 +1,12 @@
 // Setting up the server of "Deploy a web application with SFTP", 1 of 3. The
 // SSH connection is already open and folded away, being only how commands are
 // typed: what matters is what installing starts, and what it does not.
-import { diagram, shortLived, show, step } from '../src/diagrams/build';
+import {
+  diagram,
+  shortLived,
+  show,
+  step
+} from '../src/diagrams/build/processes';
 
 const SHELL = 'node-remote-shell';
 

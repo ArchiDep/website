@@ -101,13 +101,7 @@ export function generate({ name, svg, definition, motion }: Partial): string {
     }
   });
 
-  for (const overlay of builder.overlays) {
-    if (overlay.pendingLeg !== null) {
-      throw new Error(
-        `${file}: data set off for the middle of an edge, and never went onward`
-      );
-    }
-  }
+  builder.finish();
 
   const root = rootOf(doc);
   removeComments(doc);
@@ -117,7 +111,7 @@ export function generate({ name, svg, definition, motion }: Partial): string {
   describe(root);
 
   for (const overlay of builder.overlays) {
-    root.appendChild(overlay.element);
+    root.appendChild(overlay);
   }
 
   insertAfter(
