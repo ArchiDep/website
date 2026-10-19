@@ -16,8 +16,8 @@ import {
   hasClass,
   insertAfter,
   number,
-  rootOf,
-  setVariables
+  removeClasses,
+  rootOf
 } from '../svg';
 
 /**
@@ -55,9 +55,9 @@ interface Machine {
    */
   readonly annotated: Map<string, number>;
   /**
-   * How many times the clock ticks at each step that it ticks at.
+   * The steps the clock ticks at.
    */
-  readonly ticks: Map<number, number>;
+  readonly ticks: Set<number>;
   /**
    * The parts that can be faded, and what each step is about.
    */
@@ -77,7 +77,7 @@ function machine(builder: Builder): Machine {
       live: new Map(),
       values: new Map(),
       annotated: new Map(),
-      ticks: new Map(),
+      ticks: new Set(),
       focus: null
     };
     builder.whenBuilt(() => draw(builder, state));
@@ -140,8 +140,10 @@ export function live(path: string): Action {
  * From this step on, a slot holds a value, until another step gives it
  * another, or nothing. A register's slot is its group, whose `bit` boxes show
  * the value in binary, its decimal value shown by a copy of `decimal-<slot>` if
- * the drawing has one. Any other slot is a template, copied with the value as
- * its text, such as a decoded field.
+ * the drawing has one. Any other slot is copied with the value as its text: a
+ * template drawn `transient`, such as a decoded field, or a text the drawing
+ * shows, such as a cell's bits, which then shows its final value only at rest,
+ * its values replacing it while stepping.
  */
 export function value(slot: string, held: Value): Action {
   return (builder, index) => {
@@ -158,14 +160,14 @@ export function value(slot: string, held: Value): Action {
  * stepping, the annotation is hidden; the fully drawn diagram shows them all.
  */
 /**
- * The clock ticks as this step starts, `times` times: the drawing's
- * `clock-wave` and the first wire of `wire-clock` are lit for the step,
- * flashing once for each tick. Each step's tick is drawn on its own, so that
- * ticks on consecutive steps each flash.
+ * The clock ticks as this step starts: the drawing's `clock-wave` and the
+ * first wire of `wire-clock` are lit for the step, flashing as it starts. Each
+ * step's tick is drawn on its own, so that ticks on consecutive steps each
+ * flash.
  */
-export function tick(times = 1): Action {
+export function tick(): Action {
   return (builder, index) => {
-    machine(builder).ticks.set(index, times);
+    machine(builder).ticks.add(index);
   };
 }
 
@@ -221,14 +223,16 @@ function draw(builder: Builder, state: Machine): void {
     drawLive(builder, path, indices);
   }
 
+  // Before the values, whose copies of annotations it would take for the
+  // drawing's own.
+  drawAnnotations(builder, state.annotated);
+
   for (const [slot, changes] of state.values) {
     drawValues(builder, slot, changes);
   }
 
-  drawAnnotations(builder, state.annotated);
-
-  for (const [index, times] of state.ticks) {
-    drawTick(builder, index, times);
+  for (const index of state.ticks) {
+    drawTick(builder, index);
   }
 
   if (state.focus !== null) {
@@ -264,7 +268,7 @@ function drawLit(builder: Builder, id: string, indices: number[]): void {
   }
 }
 
-function drawTick(builder: Builder, index: number, times: number): void {
+function drawTick(builder: Builder, index: number): void {
   const run: Run =
     index + 1 < builder.steps
       ? { from: index, to: index + 1 }
@@ -273,7 +277,6 @@ function drawTick(builder: Builder, index: number, times: number): void {
     const shape = shapeOf(builder, id);
     const copy = copyOf(shape);
     addClasses(copy, 'lit', 'tick');
-    setVariables(copy, { ticks: times });
     insertAfter(shape, copy);
     during(builder, copy, run);
   }
@@ -361,10 +364,17 @@ function valueOf(
   );
 
   if (bits.length === 0) {
+    // Shown while stepping, even when what it is a copy of is not.
     const copy = copyOf(element);
-    const text = firstDescendant(copy, 'text');
+    removeClasses(copy, 'at-rest');
+    const text =
+      copy.localName === 'text' ? copy : firstDescendant(copy, 'text');
     if (text === undefined) {
       throw new Error(`"${slot}" has no text to hold a value`);
+    }
+
+    if (!hasClass(element, 'transient')) {
+      addClasses(element, 'at-rest');
     }
 
     text.textContent = String(held);

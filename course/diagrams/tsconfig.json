@@ -1,0 +1,7 @@
+{
+  // The diagrams' definitions and the code that works out their steps, with
+  // the compiler options of the scripts that build them, for an editor, which
+  // only reads a file named tsconfig.json.
+  "extends": "../tsconfig.scripts.json",
+  "include": ["./**/*.ts"]
+}

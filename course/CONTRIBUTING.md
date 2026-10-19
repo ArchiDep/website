@@ -783,6 +783,11 @@ A diagram is three files in [`diagrams/`](./diagrams), all named after it:
   vocabulary's actions need of the drawing, they say themselves.
 - **`407-tcp.html`**, generated from the other two: never edit it.
 
+Steps worked out by code rather than written one by one, such as the machine's,
+whose trace an interpreter of its program computes, keep that code and its tests
+in a directory named after the diagram:
+[`diagrams/machine`](./diagrams/machine).
+
 After changing a diagram, its steps, [`shared.svg`](./diagrams/shared.svg) or
 the motion, run:
 

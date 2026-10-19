@@ -105,6 +105,28 @@ describe('value', () => {
     );
   });
 
+  it('shows the values of a text the drawing shows while stepping, and the text only at rest', () => {
+    assert.equal(
+      generated(
+        '<g id="cell-1"><text id="bits-1" class="bits">0000 0110</text>' +
+          '<text id="annotation-1" class="annotation">6</text></g>',
+        [[value('bits-1', '0000 0011'), value('annotation-1', '3')]],
+        [value('bits-1', '0000 0000')]
+      ),
+      partial(
+        '<g class="fragment teardown" data-fragment-index="0"/>' +
+          '<g id="diagram-m-cell-1">' +
+          '<text id="diagram-m-bits-1" class="at-rest bits">0000 0110</text>' +
+          '<text class="fragment transient bits" data-fragment-index="0">0000 0011</text>' +
+          '<text class="detail bits" data-gone-from="0">0000 0000</text>' +
+          '<text id="diagram-m-annotation-1" class="at-rest annotation">6</text>' +
+          '<text class="fragment transient annotation" data-fragment-index="0">3</text>' +
+          '</g>',
+        1
+      )
+    );
+  });
+
   it('fails for a value too wide for the register', () => {
     assert.throws(
       () =>
@@ -151,21 +173,21 @@ describe('lit', () => {
 });
 
 describe('tick', () => {
-  it('lights the clock and its wire for each step it ticks at, each on its own, flashing as many times as it ticks', () => {
+  it('lights the clock and its wire for each step it ticks at, each on its own', () => {
     assert.equal(
       generated(
         '<path id="clock-wave" class="clock-wave" d="M0 5 H5"/>' +
           '<g id="wire-clock"><path class="wire" d="M5 5 H9"/><text>to every register</text></g>',
-        [[tick()], [tick(3)]]
+        [[tick()], [tick()]]
       ),
       partial(
         '<g class="fragment teardown" data-fragment-index="1"/>' +
           '<path id="diagram-m-clock-wave" class="clock-wave" d="M0 5 H5"/>' +
-          '<path class="fragment transient lit tick clock-wave" d="M0 5 H5" style="--ticks: 3" data-fragment-index="1"/>' +
-          '<path class="fragment transient lit tick clock-wave" d="M0 5 H5" style="--ticks: 1" data-fragment-index="0" data-gone-from="1"/>' +
+          '<path class="fragment transient lit tick clock-wave" d="M0 5 H5" data-fragment-index="1"/>' +
+          '<path class="fragment transient lit tick clock-wave" d="M0 5 H5" data-fragment-index="0" data-gone-from="1"/>' +
           '<g id="diagram-m-wire-clock"><path class="wire" d="M5 5 H9"/>' +
-          '<path class="fragment transient lit tick wire" d="M5 5 H9" style="--ticks: 3" data-fragment-index="1"/>' +
-          '<path class="fragment transient lit tick wire" d="M5 5 H9" style="--ticks: 1" data-fragment-index="0" data-gone-from="1"/>' +
+          '<path class="fragment transient lit tick wire" d="M5 5 H9" data-fragment-index="1"/>' +
+          '<path class="fragment transient lit tick wire" d="M5 5 H9" data-fragment-index="0" data-gone-from="1"/>' +
           '<text>to every register</text></g>',
         2
       )

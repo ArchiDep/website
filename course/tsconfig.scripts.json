@@ -8,7 +8,7 @@
   "include": [
     "./src/scripts/**/*.ts",
     "./src/diagrams/build/**/*.ts",
-    "./diagrams/*.ts",
+    "./diagrams/**/*.ts",
     "./src/utils/**/*.ts"
   ]
 }

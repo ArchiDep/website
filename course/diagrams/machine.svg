@@ -55,7 +55,7 @@
     svg.diagram[data-family='machine'] .wire.lit[marker-end] { marker-end: url(#wire-arrow-lit); }
     svg.diagram[data-family='machine'] .marker-wire.lit-marker { fill: #e03131; }
     /* The clock's tick: its wave and its wire in red, flashing as the step
-       starts, as many times as it ticks */
+       starts */
     svg.diagram[data-family='machine'] .clock-wave.lit { stroke: #e03131; }
     /* R or W of the memory's controls, in red, the other letters paled, all
        drawn over the controls with a halo hiding them */
@@ -94,7 +94,7 @@
     @media screen and (prefers-reduced-motion: no-preference) {
       /* Current running along a live wire */
       svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
-      svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out var(--ticks, 1); }
+      svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
       /* Focus changes in a moment rather than at once */
       svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
     }
@@ -258,7 +258,8 @@
     <text class="tiny signal start" x="207" y="536">to every register</text>
   </g>
 
-  <!-- Memory: the program of the trace, then its data -->
+  <!-- Memory: the program of the trace, then its data, as the program leaves
+       them: 6, the result, in cell 14, and the counter down to 0 in cell 13 -->
   <!-- Each cell holds its bits; the annotation on its right is how the
        processor reads them, an instruction or a number -->
   <g id="memory">
@@ -266,22 +267,22 @@
     <text class="label" x="864" y="44">Memory</text>
   </g>
   <g id="cells">
-    <g id="cell-0"><text class="cell-address" x="796" y="80">0</text><rect class="cell" x="806" y="66" width="170" height="28"/><text class="bits" x="813" y="80">0001 1110</text><text class="annotation" x="969" y="80">LOAD 14</text></g>
-    <g id="cell-1"><text class="cell-address" x="796" y="112">1</text><rect class="cell" x="806" y="98" width="170" height="28"/><text class="bits" x="813" y="112">0010 1100</text><text class="annotation" x="969" y="112">ADD 12</text></g>
-    <g id="cell-2"><text class="cell-address" x="796" y="144">2</text><rect class="cell" x="806" y="130" width="170" height="28"/><text class="bits" x="813" y="144">0100 1110</text><text class="annotation" x="969" y="144">STORE 14</text></g>
-    <g id="cell-3"><text class="cell-address" x="796" y="176">3</text><rect class="cell" x="806" y="162" width="170" height="28"/><text class="bits" x="813" y="176">0001 1101</text><text class="annotation" x="969" y="176">LOAD 13</text></g>
-    <g id="cell-4"><text class="cell-address" x="796" y="208">4</text><rect class="cell" x="806" y="194" width="170" height="28"/><text class="bits" x="813" y="208">0011 1111</text><text class="annotation" x="969" y="208">SUB 15</text></g>
-    <g id="cell-5"><text class="cell-address" x="796" y="240">5</text><rect class="cell" x="806" y="226" width="170" height="28"/><text class="bits" x="813" y="240">0100 1101</text><text class="annotation" x="969" y="240">STORE 13</text></g>
-    <g id="cell-6"><text class="cell-address" x="796" y="272">6</text><rect class="cell" x="806" y="258" width="170" height="28"/><text class="bits" x="813" y="272">1000 1000</text><text class="annotation" x="969" y="272">JUMPZ 8</text></g>
-    <g id="cell-7"><text class="cell-address" x="796" y="304">7</text><rect class="cell" x="806" y="290" width="170" height="28"/><text class="bits" x="813" y="304">0110 0000</text><text class="annotation" x="969" y="304">JUMP 0</text></g>
-    <g id="cell-8"><text class="cell-address" x="796" y="336">8</text><rect class="cell" x="806" y="322" width="170" height="28"/><text class="bits" x="813" y="336">1111 0000</text><text class="annotation" x="969" y="336">HALT</text></g>
-    <g id="cell-9"><text class="cell-address" x="796" y="368">9</text><rect class="cell" x="806" y="354" width="170" height="28"/><text class="bits unused" x="813" y="368">0000 0000</text></g>
-    <g id="cell-10"><text class="cell-address" x="796" y="400">10</text><rect class="cell" x="806" y="386" width="170" height="28"/><text class="bits unused" x="813" y="400">0000 0000</text></g>
-    <g id="cell-11"><text class="cell-address" x="796" y="432">11</text><rect class="cell" x="806" y="418" width="170" height="28"/><text class="bits unused" x="813" y="432">0000 0000</text></g>
-    <g id="cell-12"><text class="cell-address" x="796" y="464">12</text><rect class="cell" x="806" y="450" width="170" height="28"/><text class="bits" x="813" y="464">0000 0011</text><text class="annotation" x="969" y="464">3</text></g>
-    <g id="cell-13"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28"/><text class="bits" x="813" y="496">0000 0010</text><text class="annotation" x="969" y="496">2</text></g>
-    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><text class="bits" x="813" y="528">0000 0000</text><text class="annotation" x="969" y="528">0</text></g>
-    <g id="cell-15"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28"/><text class="bits" x="813" y="560">0000 0001</text><text class="annotation" x="969" y="560">1</text></g>
+    <g id="cell-0"><text class="cell-address" x="796" y="80">0</text><rect class="cell" x="806" y="66" width="170" height="28"/><text id="bits-0" class="bits" x="813" y="80">0001 1110</text><text id="annotation-0" class="annotation" x="969" y="80">LOAD 14</text></g>
+    <g id="cell-1"><text class="cell-address" x="796" y="112">1</text><rect class="cell" x="806" y="98" width="170" height="28"/><text id="bits-1" class="bits" x="813" y="112">0010 1100</text><text id="annotation-1" class="annotation" x="969" y="112">ADD 12</text></g>
+    <g id="cell-2"><text class="cell-address" x="796" y="144">2</text><rect class="cell" x="806" y="130" width="170" height="28"/><text id="bits-2" class="bits" x="813" y="144">0100 1110</text><text id="annotation-2" class="annotation" x="969" y="144">STORE 14</text></g>
+    <g id="cell-3"><text class="cell-address" x="796" y="176">3</text><rect class="cell" x="806" y="162" width="170" height="28"/><text id="bits-3" class="bits" x="813" y="176">0001 1101</text><text id="annotation-3" class="annotation" x="969" y="176">LOAD 13</text></g>
+    <g id="cell-4"><text class="cell-address" x="796" y="208">4</text><rect class="cell" x="806" y="194" width="170" height="28"/><text id="bits-4" class="bits" x="813" y="208">0011 1111</text><text id="annotation-4" class="annotation" x="969" y="208">SUB 15</text></g>
+    <g id="cell-5"><text class="cell-address" x="796" y="240">5</text><rect class="cell" x="806" y="226" width="170" height="28"/><text id="bits-5" class="bits" x="813" y="240">0100 1101</text><text id="annotation-5" class="annotation" x="969" y="240">STORE 13</text></g>
+    <g id="cell-6"><text class="cell-address" x="796" y="272">6</text><rect class="cell" x="806" y="258" width="170" height="28"/><text id="bits-6" class="bits" x="813" y="272">1000 1000</text><text id="annotation-6" class="annotation" x="969" y="272">JUMPZ 8</text></g>
+    <g id="cell-7"><text class="cell-address" x="796" y="304">7</text><rect class="cell" x="806" y="290" width="170" height="28"/><text id="bits-7" class="bits" x="813" y="304">0110 0000</text><text id="annotation-7" class="annotation" x="969" y="304">JUMP 0</text></g>
+    <g id="cell-8"><text class="cell-address" x="796" y="336">8</text><rect class="cell" x="806" y="322" width="170" height="28"/><text id="bits-8" class="bits" x="813" y="336">1111 0000</text><text id="annotation-8" class="annotation" x="969" y="336">HALT</text></g>
+    <g id="cell-9"><text class="cell-address" x="796" y="368">9</text><rect class="cell" x="806" y="354" width="170" height="28"/><text id="bits-9" class="bits unused" x="813" y="368">0000 0000</text></g>
+    <g id="cell-10"><text class="cell-address" x="796" y="400">10</text><rect class="cell" x="806" y="386" width="170" height="28"/><text id="bits-10" class="bits unused" x="813" y="400">0000 0000</text></g>
+    <g id="cell-11"><text class="cell-address" x="796" y="432">11</text><rect class="cell" x="806" y="418" width="170" height="28"/><text id="bits-11" class="bits unused" x="813" y="432">0000 0000</text></g>
+    <g id="cell-12"><text class="cell-address" x="796" y="464">12</text><rect class="cell" x="806" y="450" width="170" height="28"/><text id="bits-12" class="bits" x="813" y="464">0000 0011</text><text id="annotation-12" class="annotation" x="969" y="464">3</text></g>
+    <g id="cell-13"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28"/><text id="bits-13" class="bits" x="813" y="496">0000 0000</text><text id="annotation-13" class="annotation" x="969" y="496">0</text></g>
+    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><text id="bits-14" class="bits" x="813" y="528">0000 0110</text><text id="annotation-14" class="annotation" x="969" y="528">6</text></g>
+    <g id="cell-15"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28"/><text id="bits-15" class="bits" x="813" y="560">0000 0001</text><text id="annotation-15" class="annotation" x="969" y="560">1</text></g>
   </g>
   <!-- The memory's read/write control signal, arriving from somewhere not
        drawn -->
