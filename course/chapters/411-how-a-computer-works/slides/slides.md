@@ -1419,7 +1419,7 @@ included, in his [8-bit computer](https://eater.net/8bit) video series.
      booting slide in the OS part. It keeps the first one's layout on purpose,
      so that the differences stand out. -->
 
-<img src="images/machine-boot.svg" alt="The machine at boot: a 64-bit processor with sixteen registers, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller" class="mx-auto" style="width: 940px">
+<img src="images/machine-boot.svg" alt="The machine at boot: a 64-bit processor with sixteen registers and several ALUs, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller" class="mx-auto" style="width: 940px">
 
 **Notes:**
 
@@ -1441,9 +1441,11 @@ processors only use 48 to 57 of those bits, which is still plenty.
 It also has more than one register to compute with: an x86-64 processor has 16
 general-purpose registers, and the ALU can take its operands from any of them
 and write its result into any of them. Values from memory are loaded into a
-register before the ALU uses them, and stored back afterwards. A register can
-also hold an address: that is how a program walks through memory, one address
-after the other, without a separate instruction for each one.
+register before the ALU uses them, and stored back afterwards. A modern
+processor also has several ALUs, and works on several instructions in the same
+tick when they do not depend on each other. A register can also hold an
+address: that is how a program walks through memory, one address after the
+other, without a separate instruction for each one.
 
 Its instructions are not all the same size, as the toy machine's were: an
 x86-64 instruction is 1 to 15 bytes long, and there is no fixed split between

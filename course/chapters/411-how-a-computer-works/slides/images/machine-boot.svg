@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-label="The machine at boot: a 64-bit processor with sixteen registers, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-label="The machine at boot: a 64-bit processor with sixteen registers and several ALUs, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller">
   <defs>
     <!-- Block arrowheads, sized relative to the path's width: a path ending
          in one stops 35 units short of its target. -->
@@ -43,6 +43,13 @@
   <g id="control-unit">
     <rect class="box" x="40" y="145" width="460" height="140" rx="8" />
     <text class="label" x="420" y="215">Control unit</text>
+  </g>
+
+  <!-- A modern core has several ALUs, stacked behind the one wired up, drawn under
+       the paths so that its result path stays in front -->
+  <g id="alu-others">
+    <polygon class="box" points="416,332 416,358 430,372 416,386 416,412 496,388 496,356" />
+    <polygon class="box" points="408,324 408,350 422,364 408,378 408,404 488,380 488,348" />
   </g>
 
   <!-- Paths, drawn under the boxes and buses they connect. Arrowheads mark the
