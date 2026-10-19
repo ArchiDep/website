@@ -14,26 +14,47 @@ import {
 } from './svg';
 
 /**
- * The parts every diagram shares, copied into each from the shared file so
- * that a diagram stays readable on its own, in Inkscape or downloaded: its
- * look, its arrowheads and its legend.
+ * The family a diagram belongs to, named by the `data-family` attribute of its
+ * root: null for the architecture diagrams, which have none.
  */
-const SHARED_IDS = ['diagram-styles', 'diagram-defs', 'legend'] as const;
+export function familyOf(source: string, file: string): string | null {
+  return rootOf(parseSvg(source, file)).getAttribute('data-family') || null;
+}
 
 /**
- * A diagram's file with the shared parts copied into it. Only their contents
- * are replaced: where the legend sits, given by its own `transform`, is the
- * diagram's.
+ * The file holding what the diagrams of a family share.
  */
-export function sync(source: string, shared: string, file: string): string {
-  const doc = parseSvg(source, file);
-  const sharedDoc = parseSvg(shared, 'shared.svg');
+export function sharedFileOf(family: string | null): string {
+  return family === null ? 'shared.svg' : `shared-${family}.svg`;
+}
 
-  for (const id of SHARED_IDS) {
-    const from = byId(sharedDoc, id);
+/**
+ * A diagram's file with the shared parts of its family copied into it, so that
+ * a diagram stays readable on its own, in Inkscape or downloaded. The shared
+ * parts are the elements of the shared file's root that have an id, such as
+ * the look, the arrowheads and the legend of the architecture diagrams. Only
+ * their contents are replaced: where the legend sits, given by its own
+ * `transform`, is the diagram's.
+ */
+export function sync(
+  source: string,
+  shared: string,
+  file: string,
+  sharedFile = 'shared.svg'
+): string {
+  const doc = parseSvg(source, file);
+  const sharedDoc = parseSvg(shared, sharedFile);
+  const parts = childElements(rootOf(sharedDoc)).filter(part =>
+    part.getAttribute('id')
+  );
+
+  for (const from of parts) {
+    const id = from.getAttribute('id') ?? '';
     const to = doc.getElementById(id);
     if (to === null) {
-      throw new Error(`${file}: there is no element with the id "${id}"`);
+      throw new Error(
+        `${file}: there is no element with the id "${id}", which ${sharedFile} shares`
+      );
     }
 
     while (to.firstChild !== null) {

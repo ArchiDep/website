@@ -7,10 +7,14 @@ const PADDING = 16;
  * Each shape's own box leaves out its own transform, so a box still growing in
  * is measured at its full size. A network boundary is not measured: it is drawn
  * as long as the whole diagram, legend included, and is cut where the rest
- * ends. Returns null if the diagram is not rendered, as on a slide that is not
- * shown.
+ * ends. Returns null if the diagram has no legend, or is not rendered, as on a
+ * slide that is not shown.
  */
 export function viewBoxWithoutLegend(svg: SVGSVGElement): string | null {
+  if (svg.querySelector('.legend') === null) {
+    return null;
+  }
+
   let box: { x1: number; y1: number; x2: number; y2: number } | null = null;
   for (const shape of svg.querySelectorAll<SVGGraphicsElement>(
     'rect, path, line, text'

@@ -761,6 +761,12 @@ It shows the same steps wherever it is included:
 - **In print and without JavaScript**, deck and page alike, it is fully drawn,
   legend included: what was drawn in the file, without what only a step shows.
 
+A diagram too full to share its slide gets a slide of its own, with its heading
+hidden, marked `<!-- .slide: class="full-diagram" -->` as a large [Git
+diagram](#interactive-git-diagrams) is: it is then as large as its proportions
+allow in the window, above the strip of the logos and controls, and across the
+whole slide in print.
+
 A diagram is three files in [`diagrams/`](./diagrams), all named after it:
 
 - **`407-tcp.svg`**, the drawing, as the diagram ends up. It is edited in
@@ -781,6 +787,17 @@ It copies the look, the arrowheads and the legend of `shared.svg` into every
 drawing, which is the one place they are edited, and generates the partials.
 With `-- --check`, it changes nothing and fails if anything is out of date,
 which CI does.
+
+A drawing that does not look like an architecture diagram belongs to a
+**family** of its own, named by the `data-family` attribute of its root, such as
+the machine drawn in "How a computer works": its shared parts are copied from
+`shared-<family>.svg` instead, which also says what they are, since every
+element with an `id` at the top of a shared file is one, and a drawing must have
+each. A family's look is scoped to its drawings
+(`svg.diagram[data-family='machine'] .label`), since a page or a deck can show
+them next to diagrams that use the same class names. Without a legend, nothing
+is hidden in a deck or while stepping. The conventions below are those of the
+architecture diagrams.
 
 The steps find what they reveal by its `id` in the drawing, so the drawing keeps
 to a few conventions:

@@ -437,6 +437,25 @@ svg.diagram .gone {
   max-height: 520px;
 }
 
+/* A slide of its own, marked `full-diagram`, makes the figure the whole window
+   but for the strip of the logos and controls: the card is as large as the
+   drawing's proportions allow in it, which the deck gives as --diagram-aspect,
+   since CSS cannot read a view box. The drawing's own margin is the card's
+   padding. */
+section.full-diagram .diagram-figure.in-deck {
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+section.full-diagram .diagram-figure.in-deck .diagram-canvas {
+  padding: 0;
+  width: min(100cqw, 100cqh * var(--diagram-aspect, 2));
+}
+section.full-diagram .diagram-figure.in-deck svg.diagram {
+  max-height: none;
+}
+
 /* A page stepping through the diagram does what reveal.js does in a deck:
    hides the steps not reached yet. The captions say what the legend would. */
 .diagram-figure.stepping svg.diagram .fragment {

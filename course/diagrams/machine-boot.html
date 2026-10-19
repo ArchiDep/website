@@ -1,0 +1,653 @@
+<!-- Generated from diagrams/machine-boot.svg and machine-boot.ts by "npm run diagrams": edit those instead. -->
+<div class="diagram-figure" data-diagram="machine-boot">
+<div class="diagram-canvas">
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" data-family="machine" viewBox="0 0 1000 600" role="img" aria-labelledby="diagram-machine-boot-title">
+<title id="diagram-machine-boot-title">The machine at boot: a 64-bit processor with sixteen registers and several ALUs, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller</title>
+<style id="diagram-machine-boot-diagram-styles">
+svg.diagram[data-family='machine'] .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
+svg.diagram[data-family='machine'] .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
+svg.diagram[data-family='machine'] .label { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .small { font-family: Helvetica, Arial, sans-serif; font-size: 16px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .tiny { font-family: Helvetica, Arial, sans-serif; font-size: 14px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .label.minor { font-size: 18px; }
+/* The processor's name, in the pill in its corner */
+svg.diagram[data-family='machine'] .label.chip-name { font-size: 18px; fill: #6e6e73; }
+svg.diagram[data-family='machine'] .chip-tab { fill: #f0f0f2; }
+/* What a single wire is labelled with */
+svg.diagram[data-family='machine'] .tiny.signal { font-size: 12px; }
+/* The memory's read and write controls, which a step can light one of */
+svg.diagram[data-family='machine'] .tiny.read-write { font-size: 11px; }
+svg.diagram[data-family='machine'] text.start { text-anchor: start; }
+svg.diagram[data-family='machine'] text.end { text-anchor: end; }
+svg.diagram[data-family='machine'] .data-path { fill: none; stroke: #1971c2; stroke-width: 22; stroke-linejoin: miter; }
+svg.diagram[data-family='machine'] .address-path { fill: none; stroke: #e8590c; stroke-width: 22; stroke-linejoin: miter; }
+svg.diagram[data-family='machine'] .data-bus { fill: #1971c2; }
+svg.diagram[data-family='machine'] .address-bus { fill: #e8590c; }
+svg.diagram[data-family='machine'] .wire { fill: none; stroke: #1d1d1f; stroke-width: 3; }
+svg.diagram[data-family='machine'] .wire.thin { stroke-width: 2; }
+/* A wire that goes on somewhere not drawn */
+svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
+svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+/* The cell being read or written, lit like a lamp */
+svg.diagram[data-family='machine'] .current-cell { fill: #fff3bf; stroke: #f59f00; stroke-width: 3; }
+/* A connection the control signals open between two components, drawn
+like a live wire in the circuits, its white casing keeping it apart
+from the paths it crosses */
+svg.diagram[data-family='machine'] .live-casing { fill: none; stroke: #ffffff; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+svg.diagram[data-family='machine'] .live-wire { fill: none; stroke: #d9480f; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+svg.diagram[data-family='machine'] .live-current { fill: none; stroke: #ffd43b; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 11; }
+svg.diagram[data-family='machine'] .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
+svg.diagram[data-family='machine'] .step { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+svg.diagram[data-family='machine'] .cell-address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .bits { font-family: Menlo, Consolas, monospace; font-size: 15px; fill: #1d1d1f; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .bits.unused { fill: #a3a3a8; }
+svg.diagram[data-family='machine'] .annotation { font-family: Menlo, Consolas, monospace; font-size: 12px; fill: #1971c2; text-anchor: end; dominant-baseline: middle; }
+svg.diagram[data-family='machine'] .marker-data { fill: #1971c2; }
+svg.diagram[data-family='machine'] .marker-address { fill: #e8590c; }
+svg.diagram[data-family='machine'] .marker-wire { fill: #1d1d1f; }
+</style><style class="diagram-motion">/* The steps of a diagram: what they hide, show and move, in a deck and in a
+page alike. The generator copies this file into every diagram it generates,
+after the diagram's own look, so that an included diagram needs no stylesheet
+of the site's. The motion script and the page stepper only change classes.
+A diagram is "fully drawn" when no step is reached: what was drawn in the
+file, without what only a step shows. That is the state a page opens with,
+the one a deck prints, and the one shown without JavaScript. */
+/* --- At rest ------------------------------------------------------------- */
+svg.diagram .prompt,
+svg.diagram .process .cog {
+display: none;
+}
+svg.diagram .process rect.glow {
+fill: #fff;
+stroke: none;
+opacity: 0;
+}
+svg.diagram .process .cog path {
+fill: #fff;
+fill-rule: evenodd;
+stroke: none;
+}
+/* Waiting for an answer: a still clock, where the cog turns while working. */
+svg.diagram .process .clock :is(circle, path) {
+fill: none;
+stroke: #fff;
+stroke-width: 1.5;
+stroke-linecap: round;
+stroke-linejoin: round;
+}
+/* Travelling data exists only while it travels. */
+svg.diagram .overlay:not(.visible) {
+display: none;
+}
+/* Transient: shown from its step until it is torn down, but not when fully
+drawn, such as a command that has finished by the end of the story. */
+svg.diagram .transient:not(.visible) {
+display: none;
+}
+/* A detail: shown while the diagram is explained, in a page stepping through it
+or in a deck, but left out of the fully drawn diagram, at rest and in print,
+since students are not expected to draw it. */
+svg.diagram .detail {
+display: none;
+}
+.diagram-figure:is(.stepping, .in-deck:not(.printed)) svg.diagram .detail {
+display: inline;
+}
+/* A short-lived process, and the control edge that started it, only while
+their step is the current one. */
+svg.diagram .passing:not(.current-fragment) {
+opacity: 0;
+visibility: hidden;
+}
+/* --- Typing -------------------------------------------------------------- */
+/* The typed text and the cursor are placed after the prompt in characters of
+the monospace font, whichever one shows them. */
+svg.diagram .prompt text,
+svg.diagram .process .prompt text,
+svg.diagram .prompt-line text {
+font-family:
+ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+'Courier New', monospace;
+font-size: 12px;
+font-weight: 700;
+fill: #000;
+text-anchor: start;
+}
+svg.diagram .prompt .typed,
+svg.diagram .prompt .cursor {
+transform: translateX(calc(var(--at, 0) * 1ch));
+}
+svg.diagram .prompt .cursor {
+display: none;
+}
+/* --- Folding ------------------------------------------------------------- */
+/* Until the fold, each folded process shows its own label, and the edges
+between them are drawn; after it, the stack's label. The motion script moves
+the processes and sets `unfolded`. */
+svg.diagram .process .own {
+opacity: 0;
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .own {
+opacity: 1;
+}
+svg.diagram .process .stack-label {
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .process .stack-label {
+opacity: 0;
+}
+svg.diagram .folds-away path {
+opacity: 0;
+transition: opacity 0.4s;
+}
+svg.diagram.unfolded .folds-away path {
+opacity: 1;
+}
+/* --- Data ---------------------------------------------------------------- */
+/* A trip in two clicks: to the middle, where it waits, then the rest of the
+way. Along the edge from --from to --to, which run backwards when it travels
+against the arrow. */
+svg.diagram .packet path {
+fill: #1f6feb;
+stroke: #1f6feb;
+stroke-width: 3;
+stroke-linejoin: round;
+}
+svg.diagram .packet text {
+fill: #fff;
+font-size: 13px;
+font-weight: 700;
+text-anchor: middle;
+}
+svg.diagram .packet .leg {
+offset-rotate: 0deg;
+offset-distance: 50%;
+}
+/* The second click must not hide the data before it is reached. */
+svg.diagram .packet .leg.fragment {
+opacity: 1;
+visibility: inherit;
+}
+svg.diagram .packet .leg.fragment.visible {
+offset-distance: var(--to);
+opacity: 0;
+}
+/* In one click: gone once the next step is reached. */
+svg.diagram .packet.whole.visible:not(.current-fragment) .leg:not(.visible) {
+animation: none;
+opacity: 0;
+}
+/* Nor does the second half of a trip outlive its step, such as a slow one cut
+short by a click. */
+svg.diagram .packet .leg.fragment.visible:not(.current-fragment) {
+animation: none;
+opacity: 0;
+}
+/* --- Torn down ----------------------------------------------------------- */
+/* Gone from a step on, such as a session closing; the fully drawn diagram still
+shows it. The motion script sets `gone`. */
+svg.diagram .gone {
+/* Important: reveal.js's rules for visible fragments are more specific. */
+opacity: 0 !important;
+visibility: hidden !important;
+transition:
+opacity 0.6s,
+visibility 0s 0.6s !important;
+}
+/* --- Motion -------------------------------------------------------------- */
+@media screen and (prefers-reduced-motion: no-preference) {
+/* A connection draws itself from the side that opened it: the path's length
+is 1 (`pathLength`), whatever its shape. */
+svg.diagram .draw-on.visible path {
+stroke-dasharray: 1 1;
+animation: diagram-draw 0.7s ease-out var(--delay, 0s) both;
+}
+/* Its label arrives with the line, not before. */
+svg.diagram .draw-on.visible text {
+animation: diagram-fade-in 0.3s ease-out calc(var(--delay, 0s) + 0.5s) both;
+}
+/* A control edge appears, then the process it starts. */
+svg.diagram .fade-on.visible {
+animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) both;
+}
+/* The cursor types, then disappears on Enter. */
+svg.diagram :is(.spawn, .input).visible .prompt .cursor {
+display: inline;
+animation:
+diagram-cursor-move var(--type) steps(var(--chars), end) var(--t0) both,
+diagram-cursor-blink 0.5s step-end infinite,
+diagram-cursor-off 0.01s var(--enter) both;
+}
+/* Typed at a shell's prompt or into an application, which clears on Enter. */
+svg.diagram :is(.spawn, .input).visible .prompt {
+display: inline;
+animation: diagram-cursor-off 0.01s var(--enter) both;
+}
+svg.diagram :is(.spawn, .input).visible .prompt .typed {
+animation: diagram-type var(--type) steps(var(--chars), end) var(--t0) both;
+}
+/* The process starts: its box, its text, then its listening port. */
+svg.diagram :is(.spawn, .child).visible &gt; rect:not(.glow) {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-box-in 0.35s ease-out var(--launch) both;
+}
+svg.diagram :is(.spawn, .child).visible &gt; text {
+animation: diagram-fade-in 0.3s ease-out var(--launch) both;
+}
+svg.diagram :is(.spawn, .child).visible .socket {
+animation: diagram-fade-in 0.3s ease-out calc(var(--launch) + 0.4s) both;
+}
+/* A process working while its step is the current one: its box brightens
+three times while a cog turns in its top right corner, then both settle,
+the cog slowing to a stop as the last pulse ends. A still cog means
+settings, so it fades out as it stops. */
+svg.diagram .process:has(&gt; .pulse.current-fragment) &gt; .glow {
+animation: diagram-glow 0.8s ease-in-out 3;
+}
+svg.diagram .process:has(&gt; .pulse.current-fragment) .cog {
+display: inline;
+animation: diagram-fade-out 0.3s ease-in 2.3s both;
+}
+svg.diagram .process:has(&gt; .pulse.current-fragment) .cog path {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) both;
+}
+svg.diagram .packet.visible .leg:not(.visible) {
+animation: diagram-leg-1 0.9s ease-in-out both;
+}
+svg.diagram .packet.whole.visible .leg:not(.visible) {
+animation: diagram-trip 1.8s ease-in-out both;
+}
+svg.diagram .packet.visible .leg.visible {
+animation: diagram-leg-2 1.6s ease-in-out both;
+}
+/* Heavy data, such as the hundreds of files of node_modules, is slower. */
+svg.diagram .packet.heavy.visible .leg:not(.visible) {
+animation-duration: 2.7s;
+}
+svg.diagram .packet.heavy.visible .leg.visible {
+animation-duration: 4.8s;
+}
+svg.diagram .packet.heavy.whole.visible .leg:not(.visible) {
+animation-duration: 6s;
+}
+/* A short-lived process works once started, then exits after a moment to
+read it: its box and its edge fade out. No transition into its step:
+Firefox would hold the box at the start of the transition, transparent,
+while its exit animation waits to begin. */
+svg.diagram .process.passing.current-fragment,
+svg.diagram .edge.passing.current-fragment {
+transition: none;
+}
+svg.diagram .passing.current-fragment &gt; .glow {
+animation: diagram-glow 0.8s ease-in-out var(--work) 3;
+}
+svg.diagram .passing.current-fragment .cog {
+display: inline;
+animation: diagram-fade-out 0.3s ease-in calc(var(--work) + 2.3s) both;
+}
+svg.diagram .passing.current-fragment .cog path {
+transform-box: fill-box;
+transform-origin: center;
+animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) var(--work) both;
+}
+svg.diagram .process.passing.current-fragment {
+animation: diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+svg.diagram .edge.passing.current-fragment {
+animation:
+diagram-fade-in 0.4s ease-out var(--delay, 0s) both,
+diagram-exit 0.8s ease-in calc(var(--work) + 3.9s) forwards;
+}
+/* A process starts waiting as its request sets off. */
+svg.diagram .clock.visible {
+animation: diagram-fade-in 0.4s ease-out 0.2s both;
+}
+/* Shown once the data that brings it has arrived. */
+svg.diagram .arrives.visible {
+animation: diagram-fade-in 0.2s ease-out 1.1s both;
+}
+}
+@keyframes diagram-draw {
+/* The arrowhead waits for the line to reach it. */
+from {
+stroke-dashoffset: 1;
+marker-end: none;
+}
+99% {
+marker-end: none;
+}
+to {
+stroke-dashoffset: 0;
+}
+}
+@keyframes diagram-leg-1 {
+from {
+offset-distance: var(--from);
+opacity: 0;
+}
+20% {
+opacity: 1;
+}
+to {
+offset-distance: 50%;
+opacity: 1;
+}
+}
+/* Delivered: it sits on the box a moment, then fades. */
+@keyframes diagram-leg-2 {
+from {
+offset-distance: 50%;
+opacity: 1;
+}
+55% {
+offset-distance: var(--to);
+opacity: 1;
+}
+80% {
+opacity: 1;
+}
+to {
+offset-distance: var(--to);
+opacity: 0;
+}
+}
+@keyframes diagram-trip {
+from {
+offset-distance: var(--from);
+opacity: 0;
+}
+10% {
+opacity: 1;
+}
+60% {
+offset-distance: var(--to);
+opacity: 1;
+}
+85% {
+opacity: 1;
+}
+to {
+offset-distance: var(--to);
+opacity: 0;
+}
+}
+@keyframes diagram-cursor-move {
+from {
+transform: translateX(calc(var(--at, 0) * 1ch));
+}
+to {
+transform: translateX(calc((var(--at, 0) + var(--chars)) * 1ch));
+}
+}
+@keyframes diagram-cursor-blink {
+50% {
+opacity: 0;
+}
+}
+@keyframes diagram-cursor-off {
+to {
+visibility: hidden;
+}
+}
+@keyframes diagram-type {
+from {
+clip-path: inset(0 100% 0 0);
+}
+to {
+clip-path: inset(0);
+}
+}
+@keyframes diagram-box-in {
+from {
+opacity: 0;
+transform: scale(0.8, 0.5);
+}
+to {
+opacity: 1;
+transform: none;
+}
+}
+@keyframes diagram-fade-in {
+from {
+opacity: 0;
+}
+}
+@keyframes diagram-glow {
+50% {
+opacity: 0.3;
+}
+}
+@keyframes diagram-spin {
+to {
+transform: rotate(1turn);
+}
+}
+@keyframes diagram-fade-out {
+to {
+opacity: 0;
+}
+}
+@keyframes diagram-exit {
+from {
+opacity: 1;
+}
+to {
+opacity: 0;
+}
+}
+/* --- Around the diagram -------------------------------------------------- */
+/* Drawn for a white background, in a dark page and on a slide alike. */
+.diagram-figure .diagram-canvas {
+background: #fff;
+border-radius: 8px;
+padding: 8px;
+}
+.diagram-figure svg.diagram {
+display: block;
+width: 100%;
+height: auto;
+}
+/* A deck hides the legend, the teacher being there to explain, except in
+print, which shows the diagram fully drawn. */
+.diagram-figure.in-deck:not(.printed) .legend {
+display: none;
+}
+.diagram-figure.in-deck svg.diagram {
+max-height: 520px;
+}
+/* A slide of its own, marked `full-diagram`, makes the figure the whole window
+but for the strip of the logos and controls: the card is as large as the
+drawing's proportions allow in it, which the deck gives as --diagram-aspect,
+since CSS cannot read a view box. The drawing's own margin is the card's
+padding. */
+section.full-diagram .diagram-figure.in-deck {
+container-type: size;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+section.full-diagram .diagram-figure.in-deck .diagram-canvas {
+padding: 0;
+width: min(100cqw, 100cqh * var(--diagram-aspect, 2));
+}
+section.full-diagram .diagram-figure.in-deck svg.diagram {
+max-height: none;
+}
+/* A page stepping through the diagram does what reveal.js does in a deck:
+hides the steps not reached yet. The captions say what the legend would. */
+.diagram-figure.stepping svg.diagram .fragment {
+transition: opacity 0.2s;
+}
+.diagram-figure.stepping svg.diagram .fragment:not(.visible):not(.leg) {
+opacity: 0;
+visibility: hidden;
+}
+.diagram-figure.stepping .legend {
+display: none;
+}
+/* The page's controls, in whatever colours the page is in. */
+.diagram-figure .diagram-caption {
+margin: 0.5em 0.25em 0;
+}
+.diagram-figure .diagram-controls {
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 0.5em;
+margin-top: 0.5em;
+}
+.diagram-figure .diagram-controls button {
+font: inherit;
+font-size: 0.9em;
+color: inherit;
+background: color-mix(in srgb, currentColor 8%, transparent);
+border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+border-radius: 6px;
+padding: 0.2em 0.75em;
+cursor: pointer;
+}
+.diagram-figure .diagram-controls button:disabled {
+opacity: 0.4;
+cursor: default;
+}
+.diagram-figure .diagram-controls button.primary {
+background: #1f6feb;
+border-color: #1f6feb;
+color: #fff;
+}
+.diagram-figure .diagram-controls .counter {
+min-width: 7em;
+text-align: center;
+font-size: 0.9em;
+opacity: 0.7;
+}
+/* Printed fully drawn, with the caption that goes with it. */
+@media print {
+.diagram-figure .diagram-controls {
+display: none;
+}
+.diagram-figure .diagram-canvas {
+break-inside: avoid;
+}
+}
+</style>
+<defs id="diagram-machine-boot-diagram-defs">
+<marker id="diagram-machine-boot-data-arrow" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+<path class="marker-data" d="M0 0 L8 5 L0 10 z"/>
+</marker>
+<marker id="diagram-machine-boot-address-arrow" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+<path class="marker-address" d="M0 0 L8 5 L0 10 z"/>
+</marker>
+<marker id="diagram-machine-boot-wire-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+<path class="marker-wire" d="M0 0 L10 5 L0 10 z"/>
+</marker>
+</defs>
+<path class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z"/>
+<rect class="frame" x="10" y="10" width="590" height="580" rx="16"/>
+<path class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590"/>
+<text class="label chip-name" x="538" y="574">64-bit CPU</text>
+<g id="diagram-machine-boot-control-unit">
+<rect class="box" x="40" y="145" width="460" height="140" rx="8"/>
+<text class="label" x="420" y="215">Control unit</text>
+</g>
+<g id="diagram-machine-boot-alu-others">
+<polygon class="box" points="416,332 416,358 430,372 416,386 416,412 496,388 496,356"/>
+<polygon class="box" points="408,324 408,350 422,364 408,378 408,404 488,380 488,348"/>
+</g>
+<g id="diagram-machine-boot-paths">
+<path id="diagram-machine-boot-path-pc-selector" class="address-path" d="M216 55 H435" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<path id="diagram-machine-boot-path-ir-selector" class="address-path" d="M255 214 V95 H435" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<path id="diagram-machine-boot-path-ir-pc" class="address-path" d="M205 214 V157" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<path id="diagram-machine-boot-path-registers-selector" class="address-path" d="M325 310 V95"/>
+<path id="diagram-machine-boot-path-bus-ir" class="data-path" d="M100 484 V279" marker-end="url(#diagram-machine-boot-data-arrow)"/>
+<path id="diagram-machine-boot-path-registers-bus" class="data-path" d="M170 390 V484"/>
+<path id="diagram-machine-boot-path-registers-alu-a" class="data-path" d="M336 334 H365" marker-end="url(#diagram-machine-boot-data-arrow)"/>
+<path id="diagram-machine-boot-path-registers-alu-b" class="data-path" d="M336 380 H365" marker-end="url(#diagram-machine-boot-data-arrow)"/>
+<path id="diagram-machine-boot-path-alu-registers" class="data-path" d="M476 356 H550 V452 H290 V427" marker-end="url(#diagram-machine-boot-data-arrow)"/>
+</g>
+<path id="diagram-machine-boot-path-selector-address-bus" class="address-path" d="M526 75 H669"/>
+<path id="diagram-machine-boot-path-data-bus-firmware" class="data-path" d="M631 130 H742"/>
+<path id="diagram-machine-boot-path-data-bus-memory" class="data-path" d="M631 315 H742"/>
+<path id="diagram-machine-boot-path-data-bus-controller" class="data-path" d="M631 445 H742"/>
+<g id="diagram-machine-boot-data-bus">
+<rect class="data-bus" x="620" y="20" width="22" height="568"/>
+<rect class="data-bus" x="80" y="480" width="562" height="22"/>
+<text class="bus-label" x="330" y="492">Data bus · 64 bits</text>
+</g>
+<g id="diagram-machine-boot-address-bus">
+<rect class="address-bus" x="658" y="20" width="22" height="568"/>
+</g>
+<path id="diagram-machine-boot-path-address-bus-firmware" class="address-path" d="M669 75 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 235 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<path id="diagram-machine-boot-path-address-bus-controller" class="address-path" d="M669 405 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<polygon points="739,123 739,137 727,130" fill="#ffffff"/>
+<text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 64 bits</text>
+<g id="diagram-machine-boot-selector">
+<polygon class="box" points="470,30 530,50 530,100 470,120"/>
+<text class="small" x="500" y="22">Selector</text>
+</g>
+<path id="diagram-machine-boot-wire-select" class="wire" d="M490 145 V117" marker-end="url(#diagram-machine-boot-wire-arrow)"/>
+<g id="diagram-machine-boot-program-counter">
+<rect class="box" x="30" y="36" width="190" height="86" rx="8"/>
+<text class="label" x="125" y="58">Program counter</text>
+<rect class="bit" x="69" y="76" width="112" height="34"/><text class="tiny" x="125" y="93">64 bits</text>
+</g>
+<g id="diagram-machine-boot-instruction-register"><rect class="bit" x="80" y="210" width="224" height="34"/><text class="tiny" x="192" y="227">1 to 15 bytes</text></g>
+<text class="small" x="192" y="262">Instruction</text>
+<g id="diagram-machine-boot-registers">
+<rect class="box" x="120" y="296" width="220" height="96" rx="8"/>
+<text class="small" x="230" y="312"><tspan class="label minor">Registers</tspan> · 16 × 64 bits</text>
+<rect class="bit" x="136" y="326" width="188" height="16"/><rect class="bit" x="136" y="348" width="188" height="16"/>
+<text class="label" x="230" y="374">…</text>
+</g>
+<g id="diagram-machine-boot-alu">
+<polygon class="box" points="400,316 400,342 414,356 400,370 400,396 480,372 480,340"/>
+<text class="label" x="443" y="357">ALU</text>
+</g>
+<path id="diagram-machine-boot-wire-zero" class="wire" d="M425 322 V290" marker-end="url(#diagram-machine-boot-wire-arrow)"/>
+<text class="small end" x="414" y="305">zero</text>
+<path id="diagram-machine-boot-wire-operation" class="wire" d="M465 285 V333" marker-end="url(#diagram-machine-boot-wire-arrow)"/>
+<text class="small start" x="474" y="305">operation</text>
+<g id="diagram-machine-boot-control-signals">
+<path class="wire" d="M500 205 H528"/><path class="wire-dots" d="M535 205 H556"/>
+<path class="wire" d="M500 230 H528"/><path class="wire-dots" d="M535 230 H556"/>
+<path class="wire" d="M500 255 H528"/><path class="wire-dots" d="M535 255 H556"/>
+<text class="tiny signal" x="550" y="185">control signals</text>
+</g>
+<g id="diagram-machine-boot-clock">
+<rect class="box" x="40" y="520" width="160" height="62" rx="8"/>
+<text class="label" x="120" y="540">Clock</text>
+<path d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180" fill="none" stroke="#1d1d1f" stroke-width="2.5"/>
+</g>
+<g id="diagram-machine-boot-wire-clock"><path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/></g>
+<text class="tiny signal start" x="207" y="536">to every register</text>
+<g id="diagram-machine-boot-firmware">
+<rect class="box" x="740" y="20" width="248" height="150" rx="8"/>
+<text class="label" x="864" y="83">Firmware</text>
+<text class="small" x="864" y="113">ROM chip: UEFI</text>
+</g>
+<g id="diagram-machine-boot-memory">
+<rect class="box" x="740" y="195" width="248" height="160" rx="8"/>
+<text class="label" x="864" y="261">Memory</text>
+<text class="small" x="864" y="291">RAM: no program yet</text>
+</g>
+<path id="diagram-machine-boot-path-controller-storage" class="data-path" d="M864 465 V500"/>
+<g id="diagram-machine-boot-disk-controller">
+<rect class="box" x="740" y="380" width="248" height="90" rx="8"/>
+<text class="label" x="864" y="425">Disk controller</text>
+</g>
+<g id="diagram-machine-boot-storage">
+<rect class="box" x="740" y="495" width="248" height="91" rx="8"/>
+<text class="label" x="864" y="518">Storage</text>
+<text class="small" x="864" y="546">Disk: bootloader, kernel,</text>
+<text class="small" x="864" y="568">programs, files</text>
+</g>
+</svg>
+</div>
+<template class="diagram-captions"><p data-caption="rest">A 64-bit processor, connected by a data bus and an address bus to the firmware, the memory and the disk controller. The storage is behind the disk controller, which the processor asks to copy from it into memory.</p><p data-caption="0">The machine is powered on. There is no program in memory yet.</p></template>
+</div>

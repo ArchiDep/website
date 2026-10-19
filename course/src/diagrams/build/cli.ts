@@ -1,5 +1,5 @@
-// Brings every diagram up to date: copies the shared parts into each drawing,
-// then generates the partial that pages and decks include.
+// Brings every diagram up to date: copies the shared parts of its family into
+// each drawing, then generates the partial that pages and decks include.
 //
 //     npm run diagrams              # write what is out of date
 //     npm run diagrams -- --check   # only report it, and fail
@@ -10,7 +10,7 @@ import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 
 import type { DiagramDefinition } from './builder';
-import { generate, sync } from './generate';
+import { familyOf, generate, sharedFileOf, sync } from './generate';
 
 const COURSE_DIR = path.resolve(import.meta.dirname, '..', '..', '..');
 
@@ -24,7 +24,9 @@ const { values } = parseArgs({
 const dir = path.resolve(values.dir);
 const check = values.check;
 
-const shared = await readFile(path.join(dir, 'shared.svg'), 'utf8');
+// What each family of diagrams shares, read once.
+const shared = new Map<string, string>();
+
 const motion = await readFile(
   path.join(COURSE_DIR, 'src', 'diagrams', 'diagram.css'),
   'utf8'
@@ -41,7 +43,13 @@ const stale: string[] = [];
 for (const name of names) {
   const svgFile = path.join(dir, `${name}.svg`);
   const source = await readFile(svgFile, 'utf8');
-  const svg = sync(source, shared, `${name}.svg`);
+  const sharedFile = sharedFileOf(familyOf(source, `${name}.svg`));
+  const svg = sync(
+    source,
+    await sharedOf(sharedFile),
+    `${name}.svg`,
+    sharedFile
+  );
   await update(svgFile, source, svg);
 
   const module: unknown = await import(
@@ -80,6 +88,16 @@ async function update(
   if (!check) {
     await writeFile(file, wanted, 'utf8');
   }
+}
+
+async function sharedOf(file: string): Promise<string> {
+  let contents = shared.get(file);
+  if (contents === undefined) {
+    contents = await readFile(path.join(dir, file), 'utf8');
+    shared.set(file, contents);
+  }
+
+  return contents;
 }
 
 async function readIfExists(file: string): Promise<string | null> {

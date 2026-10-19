@@ -52,6 +52,7 @@ function setUp(figure: HTMLElement, print: boolean): void {
     }
   }
 
+  setAspect(figure, svg);
   animate(svg);
 }
 
@@ -63,6 +64,21 @@ function fitDiagrams(slide: HTMLElement | undefined): void {
     if (viewBox !== null) {
       svg.setAttribute('viewBox', viewBox);
       svg.dataset['fitted'] = '';
+      const figure = svg.closest<HTMLElement>('.diagram-figure');
+      if (figure !== null) {
+        setAspect(figure, svg);
+      }
     }
+  }
+}
+
+/**
+ * The proportions of what the diagram shows, which a slide of its own sizes
+ * it by.
+ */
+function setAspect(figure: HTMLElement, svg: SVGSVGElement): void {
+  const { width, height } = svg.viewBox.baseVal;
+  if (width && height) {
+    figure.style.setProperty('--diagram-aspect', `${width} / ${height}`);
   }
 }

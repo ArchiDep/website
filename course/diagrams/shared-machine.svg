@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" data-family="machine" viewBox="0 0 200 60" width="200" height="60">
+  <title>What every machine diagram shares: its look and its arrowheads</title>
+  <!-- The one place these are edited. "npm run diagrams" copies the contents of
+       the two elements below into every drawing of the machine family, the
+       drawings whose root has data-family="machine". Its rules are scoped to
+       them, since a page or a deck can show them next to the architecture
+       diagrams, whose look uses the same class names. -->
+  <style id="diagram-styles">
+    svg.diagram[data-family='machine'] .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
+    svg.diagram[data-family='machine'] .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
+    svg.diagram[data-family='machine'] .label { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .small { font-family: Helvetica, Arial, sans-serif; font-size: 16px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .tiny { font-family: Helvetica, Arial, sans-serif; font-size: 14px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .label.minor { font-size: 18px; }
+    /* The processor's name, in the pill in its corner */
+    svg.diagram[data-family='machine'] .label.chip-name { font-size: 18px; fill: #6e6e73; }
+    svg.diagram[data-family='machine'] .chip-tab { fill: #f0f0f2; }
+    /* What a single wire is labelled with */
+    svg.diagram[data-family='machine'] .tiny.signal { font-size: 12px; }
+    /* The memory's read and write controls, which a step can light one of */
+    svg.diagram[data-family='machine'] .tiny.read-write { font-size: 11px; }
+    svg.diagram[data-family='machine'] text.start { text-anchor: start; }
+    svg.diagram[data-family='machine'] text.end { text-anchor: end; }
+    svg.diagram[data-family='machine'] .data-path { fill: none; stroke: #1971c2; stroke-width: 22; stroke-linejoin: miter; }
+    svg.diagram[data-family='machine'] .address-path { fill: none; stroke: #e8590c; stroke-width: 22; stroke-linejoin: miter; }
+    svg.diagram[data-family='machine'] .data-bus { fill: #1971c2; }
+    svg.diagram[data-family='machine'] .address-bus { fill: #e8590c; }
+    svg.diagram[data-family='machine'] .wire { fill: none; stroke: #1d1d1f; stroke-width: 3; }
+    svg.diagram[data-family='machine'] .wire.thin { stroke-width: 2; }
+    /* A wire that goes on somewhere not drawn */
+    svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
+    svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    /* The cell being read or written, lit like a lamp */
+    svg.diagram[data-family='machine'] .current-cell { fill: #fff3bf; stroke: #f59f00; stroke-width: 3; }
+    /* A connection the control signals open between two components, drawn
+       like a live wire in the circuits, its white casing keeping it apart
+       from the paths it crosses */
+    svg.diagram[data-family='machine'] .live-casing { fill: none; stroke: #ffffff; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+    svg.diagram[data-family='machine'] .live-wire { fill: none; stroke: #d9480f; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    svg.diagram[data-family='machine'] .live-current { fill: none; stroke: #ffd43b; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 11; }
+    svg.diagram[data-family='machine'] .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
+    svg.diagram[data-family='machine'] .step { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    svg.diagram[data-family='machine'] .cell-address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .bits { font-family: Menlo, Consolas, monospace; font-size: 15px; fill: #1d1d1f; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .bits.unused { fill: #a3a3a8; }
+    svg.diagram[data-family='machine'] .annotation { font-family: Menlo, Consolas, monospace; font-size: 12px; fill: #1971c2; text-anchor: end; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .marker-data { fill: #1971c2; }
+    svg.diagram[data-family='machine'] .marker-address { fill: #e8590c; }
+    svg.diagram[data-family='machine'] .marker-wire { fill: #1d1d1f; }
+  </style>
+  <defs id="diagram-defs">
+    <!-- Block arrowheads, sized relative to the path's width: a path ending
+         in one stops 35 units short of its target. -->
+    <marker id="data-arrow" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-data" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <marker id="address-arrow" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-address" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <!-- Thin arrowhead, for a single wire -->
+    <marker id="wire-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path class="marker-wire" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+  </defs>
+
+  <path class="data-path" d="M10 20 H150" marker-end="url(#data-arrow)"/>
+  <path class="address-path" d="M10 45 H110" marker-end="url(#address-arrow)"/>
+  <path class="wire" d="M130 45 H190" marker-end="url(#wire-arrow)"/>
+</svg>

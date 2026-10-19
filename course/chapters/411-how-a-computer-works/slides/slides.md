@@ -1350,15 +1350,16 @@ read one more way.
 
 ---
 
+<!-- .slide: class="full-diagram" -->
+
 ### The machine
 
 <!-- .element: class="hidden" -->
 
-<!-- TODO: first draft, static. Animating it with CSS from fragments needs the
-     SVG inline in the slide (or loaded into it), since a page's CSS cannot
-     reach inside an <img>. -->
+<!-- TODO: first draft, static: its steps are to follow the trace. See
+     "Architecture Diagrams" in `course/CONTRIBUTING.md`. -->
 
-<img src="images/machine.svg" alt="The machine: a processor with a clock, a program counter, a control unit, an ALU and an accumulator, connected to a memory of 16 cells by a data bus and an address bus" class="mx-auto" style="width: 940px">
+{% include diagrams/machine.html %}
 
 **Notes:**
 
@@ -1411,6 +1412,8 @@ included, in his [8-bit computer](https://eater.net/8bit) video series.
 
 ---
 
+<!-- .slide: class="full-diagram" -->
+
 ### The machine at boot
 
 <!-- .element: class="hidden" -->
@@ -1419,7 +1422,7 @@ included, in his [8-bit computer](https://eater.net/8bit) video series.
      booting slide in the OS part. It keeps the first one's layout on purpose,
      so that the differences stand out. -->
 
-<img src="images/machine-boot.svg" alt="The machine at boot: a 64-bit processor with sixteen registers and several ALUs, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller" class="mx-auto" style="width: 940px">
+{% include diagrams/machine-boot.html %}
 
 **Notes:**
 

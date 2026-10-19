@@ -91,9 +91,9 @@ body {
 }
 
 /* A slide showing nothing but a large Git diagram (see "Interactive Git
-   Diagrams" in `course/CONTRIBUTING.md`): the diagram takes the whole window,
-   gaps around the slide included, except a strip at the bottom for the logos
-   and controls.
+   Diagrams" in `course/CONTRIBUTING.md`) or architecture diagram (see
+   "Architecture Diagrams"): the diagram takes the whole window, gaps around the
+   slide included, except a strip at the bottom for the logos and controls.
 
    reveal.js lays the slide out at a fixed size and scales it to the window, and
    says by how much in `--slide-scale`, so the window's size in the slide's own
@@ -110,7 +110,7 @@ body {
   padding: 0;
 }
 
-.reveal .slides section.full-diagram simgit-story {
+.reveal .slides section.full-diagram :is(simgit-story, .diagram-figure) {
   --full-diagram-bottom: 96px;
   --full-diagram-scale: var(--slide-scale, 1);
   --full-diagram-width: var(--viewport-width, var(--slide-width));
