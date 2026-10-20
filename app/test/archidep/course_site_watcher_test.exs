@@ -14,6 +14,7 @@ defmodule ArchiDep.CourseSiteWatcherTest do
             "/archidep/course/chapters/101-command-line/subject.md",
             "/archidep/course/cheatsheets/git/cheatsheet.md",
             "/archidep/course/course.yml",
+            "/archidep/course/diagrams/machine-boot.html",
             "/archidep/course/icons/tip.html",
             "/archidep/course/favicons/heig.png",
             "/archidep/course/favicon.ico",
@@ -29,6 +30,9 @@ defmodule ArchiDep.CourseSiteWatcherTest do
       for path <- [
             "/archidep/course/node_modules/reveal.js/dist/reveal.js",
             "/archidep/course/src/scripts/pdf.ts",
+            "/archidep/course/diagrams/machine-boot.svg",
+            "/archidep/course/diagrams/machine-boot.ts",
+            "/archidep/course/diagrams/machine/routes.ts",
             "/archidep/course/pdf/101-command-line.pdf",
             "/archidep/course/README.md",
             "/archidep/course/archives.yml",

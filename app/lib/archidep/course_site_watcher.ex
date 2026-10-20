@@ -33,7 +33,9 @@ defmodule ArchiDep.CourseSiteWatcher do
   # pipeline or an output of this one, and rebuilding on it would be a rebuild
   # per rebuild. `archives.yml` sits beside `course.yml` and is deliberately not
   # here: it is compiled into `ArchiDep.CourseSite.Archives` rather than read by
-  # a build, so a rebuild on it would write the same bytes again.
+  # a build, so a rebuild on it would write the same bytes again. Of the
+  # diagrams, a build reads only the partials generated from their drawings and
+  # definitions, which are inputs of that generation.
   @watched_dirs ["chapters", "cheatsheets", "favicons", "icons", "images"]
   @watched_files ["course.yml", "favicon.ico", "index.md"]
 
@@ -111,6 +113,8 @@ defmodule ArchiDep.CourseSiteWatcher do
     Logger.warning("The course material site will not be rebuilt: the watcher stopped")
     {:noreply, state}
   end
+
+  defp course_input?(["diagrams", file]), do: Path.extname(file) == ".html"
 
   defp course_input?([first | rest]),
     do: first in @watched_dirs or (rest == [] and first in @watched_files)
