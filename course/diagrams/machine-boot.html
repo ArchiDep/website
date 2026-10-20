@@ -2,7 +2,7 @@
 <div class="diagram-figure" data-diagram="machine-boot">
 <div class="diagram-canvas">
 <svg xmlns="http://www.w3.org/2000/svg" class="diagram" data-family="machine" viewBox="0 0 1000 600" role="img" aria-labelledby="diagram-machine-boot-title">
-<title id="diagram-machine-boot-title">The machine at boot: a 64-bit processor with sixteen registers and several ALUs, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller</title>
+<title id="diagram-machine-boot-title">The machine at boot: a 64-bit processor with sixteen registers, several ALUs and three levels of cache, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller</title>
 <style id="diagram-machine-boot-diagram-styles">
 svg.diagram[data-family='machine'] .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
 svg.diagram[data-family='machine'] .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
@@ -650,7 +650,13 @@ break-inside: avoid;
 <g id="diagram-machine-boot-data-bus">
 <rect class="data-bus" x="620" y="20" width="22" height="568"/>
 <rect class="data-bus" x="80" y="480" width="562" height="22"/>
-<text class="bus-label" x="330" y="492">Data bus · 64 bits</text>
+<text class="bus-label" x="631" y="230" transform="rotate(-90 631 230)">Data bus · 64 bits</text>
+</g>
+<g id="diagram-machine-boot-caches">
+<g id="diagram-machine-boot-cache-l1"><rect class="box" x="300" y="474" width="56" height="34" rx="6"/><text class="label minor" x="328" y="491">L1</text></g>
+<g id="diagram-machine-boot-cache-l2"><rect class="box" x="368" y="474" width="80" height="34" rx="6"/><text class="label minor" x="408" y="491">L2</text></g>
+<g id="diagram-machine-boot-cache-l3"><rect class="box" x="460" y="474" width="130" height="34" rx="6"/><text class="label minor" x="525" y="491">L3</text></g>
+<text class="small" x="445" y="525">Caches</text>
 </g>
 <g id="diagram-machine-boot-address-bus">
 <rect class="address-bus" x="658" y="20" width="22" height="568"/>

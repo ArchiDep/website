@@ -1486,6 +1486,12 @@ tick when they do not depend on each other. A register can also hold an
 address: that is how a program walks through memory, one address after the
 other, without a separate instruction for each one.
 
+Between the processor and the buses are its caches, small and fast memories that
+keep copies of recently used memory, since memory is far and slow. The processor
+looks in L1 first, then L2, then L3, each larger and slower than the one before,
+and only then asks the memory. L1 and L2 belong to a core; L3 is shared by all
+of a processor's cores.
+
 Its instructions are not all the same size, as the toy machine's were: an
 x86-64 instruction is 1 to 15 bytes long, and there is no fixed split between
 operation and address.
