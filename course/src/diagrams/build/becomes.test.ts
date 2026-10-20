@@ -63,7 +63,7 @@ describe('becoming', () => {
         '<!-- Generated from diagrams/lamp.svg and lamp.ts by "npm run diagrams": edit those instead. -->',
         '<div class="diagram-figure" data-diagram="lamp">',
         '<div class="diagram-canvas">',
-        '<svg xmlns="http://www.w3.org/2000/svg" class="diagram" role="img" aria-labelledby="diagram-lamp-title">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" class="diagram" role="img" aria-labelledby="diagram-lamp-title" data-diagram="lamp">' +
           '<title id="diagram-lamp-title">A lamp</title>' +
           '<style id="diagram-lamp-diagram-styles"/><style class="diagram-motion"></style>' +
           '<defs id="diagram-lamp-diagram-defs"/>' +

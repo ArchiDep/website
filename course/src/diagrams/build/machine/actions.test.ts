@@ -51,7 +51,7 @@ function partial(body: string, steps: number): string {
     '<!-- Generated from diagrams/m.svg and m.ts by "npm run diagrams": edit those instead. -->',
     '<div class="diagram-figure" data-diagram="m">',
     '<div class="diagram-canvas">',
-    '<svg xmlns="http://www.w3.org/2000/svg" class="diagram" role="img" aria-labelledby="diagram-m-title">' +
+    '<svg xmlns="http://www.w3.org/2000/svg" class="diagram" role="img" aria-labelledby="diagram-m-title" data-diagram="m">' +
       '<title id="diagram-m-title">T</title>' +
       '<style id="diagram-m-diagram-styles"/><style class="diagram-motion"></style>' +
       `<defs id="diagram-m-diagram-defs"/>${body}</svg>`,

@@ -106,7 +106,7 @@ describe('generate', () => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 40 20" width="40" height="20">' +
       '<title>A lamp</title>' +
-      '<style id="diagram-styles">.on { fill: yellow; } .dim { marker-end: url(#tip); fill: url(#elsewhere); }</style>' +
+      '<style id="diagram-styles">.on { fill: yellow; } /* Paler */ svg.diagram :is(.dim, .off)[marker-end], .out { marker-end: url(#tip); } .far { fill: url(#elsewhere); }</style>' +
       '<defs id="diagram-defs"><marker id="tip"/></defs>' +
       '<!-- lit later -->' +
       '<rect id="bulb" class="on" x="5" y="5" width="10" height="10"/>' +
@@ -127,9 +127,13 @@ describe('generate', () => {
         '<!-- Generated from diagrams/lamp.svg and lamp.ts by "npm run diagrams": edit those instead. -->',
         '<div class="diagram-figure" data-diagram="lamp">',
         '<div class="diagram-canvas">',
-        '<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 40 20" role="img" aria-labelledby="diagram-lamp-title">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 40 20" role="img" aria-labelledby="diagram-lamp-title" data-diagram="lamp">' +
           '<title id="diagram-lamp-title">A lamp</title>' +
-          '<style id="diagram-lamp-diagram-styles">.on { fill: yellow; } .dim { marker-end: url(#diagram-lamp-tip); fill: url(#elsewhere); }</style>' +
+          // A rule referring to the drawing's own definitions applies to it
+          // only, whichever its selectors start from
+          '<style id="diagram-lamp-diagram-styles">.on { fill: yellow; } /* Paler */ ' +
+          "svg.diagram[data-diagram='lamp'] :is(.dim, .off)[marker-end], svg.diagram[data-diagram='lamp'] .out { marker-end: url(#diagram-lamp-tip); } " +
+          '.far { fill: url(#elsewhere); }</style>' +
           '<style class="diagram-motion">.fragment { opacity: 0; }</style>' +
           '<defs id="diagram-lamp-diagram-defs"><marker id="diagram-lamp-tip"/></defs>' +
           '<rect id="diagram-lamp-bulb" class="fragment on" x="5" y="5" width="10" height="10" data-fragment-index="0"/>' +

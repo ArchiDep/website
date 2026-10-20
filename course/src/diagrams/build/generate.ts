@@ -123,7 +123,8 @@ export function generate({ name, svg, definition, motion }: Partial): string {
     create(doc, 'style', { class: 'diagram-motion' }, motion)
   );
 
-  prefixIds(root, `diagram-${name}-`);
+  root.setAttribute('data-diagram', name);
+  prefixIds(root, name);
 
   const captions = [
     caption('rest', definition.captions.rest),
@@ -170,7 +171,8 @@ function caption(step: string, html: string): string {
  * Ids are prefixed with the diagram's name, so that two diagrams in one page or
  * deck do not take each other's arrowheads.
  */
-function prefixIds(root: Element, prefix: string): void {
+function prefixIds(root: Element, name: string): void {
+  const prefix = `diagram-${name}-`;
   const elements = [root, ...descendants(root)];
   const ids = new Set(
     elements.map(e => e.getAttribute('id')).filter((id): id is string => !!id)
@@ -188,9 +190,18 @@ function prefixIds(root: Element, prefix: string): void {
     }
 
     // A stylesheet can refer to the drawing's definitions too, such as a
-    // marker a rule swaps in.
+    // marker a rule swaps in. Such a rule applies to this diagram only: the
+    // other diagrams of a family carry the same rule, referring to their own,
+    // and whichever came last in the page would otherwise win for all of
+    // them.
     if (element.localName === 'style' && element.textContent) {
-      const css = prefixUrls(element.textContent);
+      const css = prefixUrls(
+        narrowRules(element.textContent, name, body =>
+          [...body.matchAll(/url\(#([^)]+)\)/gu)].some(([, ref]) =>
+            ids.has(ref ?? '')
+          )
+        )
+      );
       if (css !== element.textContent) {
         element.textContent = css;
       }
@@ -215,6 +226,67 @@ function prefixIds(root: Element, prefix: string): void {
   if (labelledBy) {
     root.setAttribute('aria-labelledby', `${prefix}${labelledBy}`);
   }
+}
+
+/**
+ * The rules of a stylesheet whose declarations `narrow` picks, applied to the
+ * diagram named `name` only: each of their selectors starts from its root,
+ * `svg.diagram[data-diagram='…']`. A selector that does not start from a
+ * diagram's root is taken to be about something in it.
+ */
+function narrowRules(
+  css: string,
+  name: string,
+  narrow: (declarations: string) => boolean
+): string {
+  const root = `svg.diagram[data-diagram='${name}']`;
+  // A rule without braces inside it: what an at-rule holds, not the at-rule.
+  return css.replace(
+    /([^{}]*)\{([^{}]*)\}/gu,
+    (rule, head: string, declarations: string) => {
+      if (!narrow(declarations)) {
+        return rule;
+      }
+
+      // A comment before the selectors stays as it is.
+      const commentEnd = head.lastIndexOf('*/');
+      const before = commentEnd === -1 ? '' : head.slice(0, commentEnd + 2);
+      const selectors = splitSelectors(head.slice(before.length)).map(
+        selector => {
+          const rest = selector.trimStart();
+          const space = selector.slice(0, selector.length - rest.length);
+          return rest.startsWith('svg.diagram')
+            ? `${space}${root}${rest.slice('svg.diagram'.length)}`
+            : `${space}${root} ${rest}`;
+        }
+      );
+      return `${before}${selectors.join(',')}{${declarations}}`;
+    }
+  );
+}
+
+/**
+ * A selector list's selectors, split on the commas outside parentheses, such
+ * as those of `:is(…)`.
+ */
+function splitSelectors(list: string): string[] {
+  const selectors: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < list.length; i++) {
+    const char = list[i];
+    if (char === '(') {
+      depth++;
+    } else if (char === ')') {
+      depth--;
+    } else if (char === ',' && depth === 0) {
+      selectors.push(list.slice(start, i));
+      start = i + 1;
+    }
+  }
+
+  selectors.push(list.slice(start));
+  return selectors;
 }
 
 // Indentation and blank lines go: a blank line would end the HTML block the
