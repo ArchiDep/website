@@ -1429,6 +1429,13 @@ step uses it. The ALU and the selector hold nothing: their output follows their
 inputs. That is why the accumulator can feed the ALU and take its result back:
 it only takes the new value on the tick, then holds it.
 
+The program uses the three building blocks of structured programming.
+**Sequence**: the program counter adds 1 after each instruction, so they run one
+after the other. **Selection**: `JUMPZ` chooses between two ways forward,
+depending on the last result. **Iteration**: `JUMP 0` goes back to repeat the
+loop, and `JUMPZ` decides when to leave it. Every `if` and every loop of a
+programming language comes down to such jumps, conditional or not.
+
 This machine simplifies one thing that every real processor does differently:
 its ALU takes a number straight from memory, over the data bus. A real processor
 never computes on a value in memory. It first copies the value into a register,

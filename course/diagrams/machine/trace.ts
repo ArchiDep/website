@@ -147,11 +147,6 @@ function instructionOf(word: number): string {
   return operation === 'HALT' ? operation : `${operation} ${word & 0b1111}`;
 }
 
-/** The cell a slot named after it is in, such as 14 for annotation-14. */
-function cellOf(slot: string): number {
-  return Number(/-(\d+)$/u.exec(slot)?.[1]);
-}
-
 /** The cell the program leaves its result in. */
 export const RESULT = 14;
 
@@ -165,6 +160,9 @@ export function trace(
   let zero = false;
   let secondPass = false;
   const steps: StepState[] = [];
+  // The cells the program runs as instructions, and those it uses as data.
+  const instructions = new Set<number>();
+  const data = new Set<number>();
 
   // What each slot shows, so that a step only says what it changes.
   const shown = new Map<string, Value>([['program-counter', 0]]);
@@ -235,6 +233,11 @@ export function trace(
     // What the instruction does, worked out before it is told.
     const before = accumulator;
     const operand = memory[address] ?? 0;
+    instructions.add(at);
+    if (['LOAD', 'ADD', 'SUB', 'STORE'].includes(operation)) {
+      data.add(address);
+    }
+
     pc = at + 1;
     let jumped = false;
     switch (operation) {
@@ -687,37 +690,78 @@ export function trace(
     }
   }
 
-  // The end, a step of its own: the machine shown whole, nothing lit, the
-  // memory as the program leaves it.
+  // The end, a step of its own: the machine shown whole, nothing lit but the
+  // result, the memory as the program leaves it.
   step(
     'The program is done, and the machine has stopped: cell ' +
       `${result} holds its result, ${memory[result] ?? 0}.`,
-    { focus: null }
+    { lit: [`cell-${result}`], focus: null }
   );
 
-  // The beginning, a step of its own: the annotations, which say what the
-  // program means to the room, go, since the processor knows none of it. Each
-  // comes back when the processor first uses its cell, which only the trace
-  // tells.
-  const annotations = [
-    ...new Set(
-      steps.flatMap(({ values }) =>
-        Object.keys(values).filter(slot => slot.startsWith('annotation-'))
-      )
-    )
-  ].sort((a, b) => cellOf(a) - cellOf(b));
-  steps.unshift({
-    caption:
-      'The processor knows none of this: to it, the memory holds only bits. ' +
-      'A cell is an instruction or a number only once the processor uses it ' +
-      'as one.',
-    tick: false,
-    lit: [],
-    access: null,
-    live: [],
-    values: Object.fromEntries(annotations.map(slot => [slot, null])),
-    focus: ['memory', ...annotations.map(slot => `cell-${cellOf(slot)}`)]
-  });
+  // The beginning, told over the program as the room reads it, which only the
+  // trace knows: where its instructions are, then its data, in the same
+  // memory; then the annotations go, since the processor knows none of it.
+  // Each comes back when the processor first uses its cell.
+  const sorted = (cells: Set<number>): number[] =>
+    [...cells].sort((a, b) => a - b);
+  const cellsOf = (cells: Set<number>): string[] =>
+    sorted(cells).map(cell => `cell-${cell}`);
+  const used = new Set([...instructions, ...data]);
+  const quiet = { tick: false, access: null, live: [] } as const;
+  steps.unshift(
+    {
+      caption: `${capitalized(cellsNamed(instructions))} hold the program: its instructions, one per cell.`,
+      ...quiet,
+      lit: cellsOf(instructions),
+      values: {},
+      focus: null
+    },
+    {
+      caption:
+        `${capitalized(cellsNamed(data))} hold its data, the numbers it ` +
+        'works on, in the same memory as its instructions.',
+      ...quiet,
+      lit: cellsOf(data),
+      values: {},
+      focus: null
+    },
+    {
+      caption:
+        'The processor knows none of this: to it, the memory holds only ' +
+        'bits. A cell is an instruction or a number only once the processor ' +
+        'uses it as one.',
+      ...quiet,
+      lit: [],
+      values: Object.fromEntries(
+        sorted(used).map(cell => [`annotation-${cell}`, null])
+      ),
+      focus: ['memory', ...cellsOf(used)]
+    }
+  );
 
   return { start: { 'program-counter': 0 }, steps, memory };
+}
+
+/** Cells as a caption names them, such as "cells 0 to 8" or "cells 3 and 5". */
+function cellsNamed(cells: Set<number>): string {
+  const ordered = [...cells].sort((a, b) => a - b);
+  const first = ordered[0];
+  const last = ordered.at(-1);
+  if (first === undefined || last === undefined) {
+    return 'no cells';
+  }
+
+  if (ordered.length === 1) {
+    return `cell ${first}`;
+  }
+
+  if (last - first === ordered.length - 1) {
+    return `cells ${first} to ${last}`;
+  }
+
+  return `cells ${ordered.slice(0, -1).join(', ')} and ${last}`;
+}
+
+function capitalized(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

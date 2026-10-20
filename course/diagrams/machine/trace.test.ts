@@ -24,50 +24,82 @@ const DATA_FROM_MEMORY = [
 ];
 
 describe('trace', () => {
-  it('begins by taking away the annotations of the cells the program uses', () => {
-    assert.deepEqual(trace().steps[0], {
-      caption:
-        'The processor knows none of this: to it, the memory holds only bits. A cell is an instruction or a number only once the processor uses it as one.',
-      tick: false,
-      lit: [],
-      access: null,
-      live: [],
-      values: {
-        'annotation-0': null,
-        'annotation-1': null,
-        'annotation-2': null,
-        'annotation-3': null,
-        'annotation-4': null,
-        'annotation-5': null,
-        'annotation-6': null,
-        'annotation-7': null,
-        'annotation-8': null,
-        'annotation-12': null,
-        'annotation-13': null,
-        'annotation-14': null,
-        'annotation-15': null
+  it('begins with the program, then its data, in the same memory, then takes away the annotations of the cells it uses', () => {
+    assert.deepEqual(trace().steps.slice(0, 3), [
+      {
+        caption:
+          'Cells 0 to 8 hold the program: its instructions, one per cell.',
+        tick: false,
+        lit: [
+          'cell-0',
+          'cell-1',
+          'cell-2',
+          'cell-3',
+          'cell-4',
+          'cell-5',
+          'cell-6',
+          'cell-7',
+          'cell-8'
+        ],
+        access: null,
+        live: [],
+        values: {},
+        focus: null
       },
-      focus: [
-        'memory',
-        'cell-0',
-        'cell-1',
-        'cell-2',
-        'cell-3',
-        'cell-4',
-        'cell-5',
-        'cell-6',
-        'cell-7',
-        'cell-8',
-        'cell-12',
-        'cell-13',
-        'cell-14',
-        'cell-15'
-      ]
-    });
+      {
+        caption:
+          'Cells 12 to 15 hold its data, the numbers it works on, in the same memory as its instructions.',
+        tick: false,
+        lit: ['cell-12', 'cell-13', 'cell-14', 'cell-15'],
+        access: null,
+        live: [],
+        values: {},
+        focus: null
+      },
+      {
+        caption:
+          'The processor knows none of this: to it, the memory holds only bits. A cell is an instruction or a number only once the processor uses it as one.',
+        tick: false,
+        lit: [],
+        access: null,
+        live: [],
+        values: {
+          'annotation-0': null,
+          'annotation-1': null,
+          'annotation-2': null,
+          'annotation-3': null,
+          'annotation-4': null,
+          'annotation-5': null,
+          'annotation-6': null,
+          'annotation-7': null,
+          'annotation-8': null,
+          'annotation-12': null,
+          'annotation-13': null,
+          'annotation-14': null,
+          'annotation-15': null
+        },
+        focus: [
+          'memory',
+          'cell-0',
+          'cell-1',
+          'cell-2',
+          'cell-3',
+          'cell-4',
+          'cell-5',
+          'cell-6',
+          'cell-7',
+          'cell-8',
+          'cell-12',
+          'cell-13',
+          'cell-14',
+          'cell-15'
+        ]
+      }
+    ]);
   });
 
   it('tells the first instruction in full, each phase opening with its tick and pill alone', () => {
-    assert.deepEqual(trace().steps.slice(1, 10), [
+    assert.deepEqual(trace().steps.slice(3, 12), [
       {
         caption:
           'Fetch: the clock ticks, and the control unit starts fetching the next instruction from memory.',
@@ -181,7 +213,7 @@ describe('trace', () => {
   });
 
   it('tells an addition of the first pass at the medium pace, in six steps', () => {
-    assert.deepEqual(trace().steps.slice(10, 16), [
+    assert.deepEqual(trace().steps.slice(12, 18), [
       {
         caption:
           'Fetch: the clock ticks, and the control unit has the memory read cell 1, at the program counter’s address, into the instruction register.',
@@ -285,7 +317,7 @@ describe('trace', () => {
   });
 
   it('tells an instruction of the second pass at the fast pace, a step per phase', () => {
-    assert.deepEqual(trace().steps.slice(53, 56), [
+    assert.deepEqual(trace().steps.slice(55, 58), [
       {
         caption:
           'Fetch: the clock ticks, and the control unit has the memory read cell 2, at the program counter’s address, into the instruction register, and tells the program counter to add 1.',
@@ -374,12 +406,12 @@ describe('trace', () => {
     });
   });
 
-  it('ends on a step of its own, the whole machine in focus and nothing lit', () => {
+  it('ends on a step of its own, the whole machine in focus and only the result lit', () => {
     assert.deepEqual(trace().steps.at(-1), {
       caption:
         'The program is done, and the machine has stopped: cell 14 holds its result, 6.',
       tick: false,
-      lit: [],
+      lit: ['cell-14'],
       access: null,
       live: [],
       values: {},
