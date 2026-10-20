@@ -1503,6 +1503,20 @@ address, and data travels between the processor and what it addresses.
 
 ---
 
+<!-- .slide: class="full-diagram" data-transition="none" -->
+
+### The machine at boot, opaque
+
+<!-- .element: class="hidden" -->
+
+{% include diagrams/machine-boot-opaque.html %}
+
+**Notes:**
+
+TODO: the same machine with its processor drawn as a box, to follow the boot.
+
+---
+
 <!-- TODO: draft ideas, to place and rework once the end of the CPU part and
      the OS part are written. The first slide probably closes the CPU part, and
      the second belongs in the OS part, next to switching between programs. -->

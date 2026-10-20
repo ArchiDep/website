@@ -31,6 +31,16 @@ svg.diagram[data-family='machine'] .clock-wave { fill: none; stroke: #1d1d1f; st
 svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
 svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
 svg.diagram[data-family='machine'] .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+/* A box drawn over what it holds, only its border */
+svg.diagram[data-family='machine'] .box.hollow { fill: none; }
+/* A core of the processor drawn opaque, like the processor's frame */
+svg.diagram[data-family='machine'] .core { fill: #ffffff; stroke: #a3a3a8; stroke-width: 2; }
+/* A file on the storage, or a device behind its controller */
+svg.diagram[data-family='machine'] .file { fill: #f0f0f2; stroke: #a3a3a8; stroke-width: 1.5; }
+/* The part of memory a program is copied into */
+svg.diagram[data-family='machine'] .band { fill: #e5dbff; stroke: #9775fa; stroke-width: 1.5; }
+svg.diagram[data-family='machine'] .band.program { fill: #d3f9d8; stroke: #51cf66; }
+svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
 /* A connection the control signals open between two components, drawn
 like a live wire in the circuits, its white casing keeping it apart
 from the paths it crosses */
@@ -644,11 +654,11 @@ break-inside: avoid;
 <path id="diagram-machine-boot-path-alu-registers" class="data-path" d="M476 356 H550 V452 H290 V427" marker-end="url(#diagram-machine-boot-data-arrow)"/>
 </g>
 <path id="diagram-machine-boot-path-selector-address-bus" class="address-path" d="M526 75 H669"/>
-<path id="diagram-machine-boot-path-data-bus-firmware" class="data-path" d="M631 130 H742"/>
-<path id="diagram-machine-boot-path-data-bus-memory" class="data-path" d="M631 315 H742"/>
-<path id="diagram-machine-boot-path-data-bus-controller" class="data-path" d="M631 445 H742"/>
+<path id="diagram-machine-boot-path-data-bus-firmware" class="data-path" d="M631 34 H742"/>
+<path id="diagram-machine-boot-path-data-bus-memory" class="data-path" d="M631 210 H742"/>
+<path id="diagram-machine-boot-path-data-bus-controller" class="data-path" d="M631 465 H742"/>
 <g id="diagram-machine-boot-data-bus">
-<rect class="data-bus" x="620" y="20" width="22" height="568"/>
+<rect class="data-bus" x="620" y="23" width="22" height="479"/>
 <rect class="data-bus" x="80" y="480" width="562" height="22"/>
 <text class="bus-label" x="631" y="230" transform="rotate(-90 631 230)">Data bus · 64 bits</text>
 </g>
@@ -659,12 +669,12 @@ break-inside: avoid;
 <text class="small" x="445" y="525">Caches</text>
 </g>
 <g id="diagram-machine-boot-address-bus">
-<rect class="address-bus" x="658" y="20" width="22" height="568"/>
+<rect class="address-bus" x="658" y="59" width="22" height="379"/>
 </g>
-<path id="diagram-machine-boot-path-address-bus-firmware" class="address-path" d="M669 75 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
-<path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 235 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
-<path id="diagram-machine-boot-path-address-bus-controller" class="address-path" d="M669 405 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
-<polygon points="739,123 739,137 727,130" fill="#ffffff"/>
+<path id="diagram-machine-boot-path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<path id="diagram-machine-boot-path-address-bus-controller" class="address-path" d="M669 427 H705" marker-end="url(#diagram-machine-boot-address-arrow)"/>
+<polygon points="739,27 739,41 727,34" fill="#ffffff"/>
 <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 64 bits</text>
 <g id="diagram-machine-boot-selector">
 <polygon class="box" points="470,30 530,50 530,100 470,120"/>
@@ -706,19 +716,19 @@ break-inside: avoid;
 <g id="diagram-machine-boot-wire-clock"><path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/></g>
 <text class="tiny signal start" x="207" y="536">to every register</text>
 <g id="diagram-machine-boot-firmware">
-<rect class="box" x="740" y="20" width="248" height="150" rx="8"/>
-<text class="label" x="864" y="83">Firmware</text>
-<text class="small" x="864" y="113">ROM chip: UEFI</text>
+<rect class="box" x="740" y="20" width="248" height="72" rx="8"/>
+<text class="label" x="864" y="44">Firmware</text>
+<text class="small" x="864" y="70">ROM chip: UEFI</text>
 </g>
 <g id="diagram-machine-boot-memory">
-<rect class="box" x="740" y="195" width="248" height="160" rx="8"/>
-<text class="label" x="864" y="261">Memory</text>
-<text class="small" x="864" y="291">RAM: no program yet</text>
+<rect class="box" x="740" y="108" width="248" height="283" rx="8"/>
+<text class="label" x="864" y="132">Memory</text>
+<text class="small" x="864" y="156">RAM: no program yet</text>
 </g>
-<path id="diagram-machine-boot-path-controller-storage" class="data-path" d="M864 465 V500"/>
+<path id="diagram-machine-boot-path-controller-storage" class="data-path" d="M864 474 V500"/>
 <g id="diagram-machine-boot-disk-controller">
-<rect class="box" x="740" y="380" width="248" height="90" rx="8"/>
-<text class="label" x="864" y="425">Disk controller</text>
+<rect class="box" x="740" y="407" width="248" height="72" rx="8"/>
+<text class="label" x="864" y="443">Disk controller</text>
 </g>
 <g id="diagram-machine-boot-storage">
 <rect class="box" x="740" y="495" width="248" height="91" rx="8"/>

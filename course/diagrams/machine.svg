@@ -28,6 +28,16 @@
     svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
     svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
     svg.diagram[data-family='machine'] .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    /* A box drawn over what it holds, only its border */
+    svg.diagram[data-family='machine'] .box.hollow { fill: none; }
+    /* A core of the processor drawn opaque, like the processor's frame */
+    svg.diagram[data-family='machine'] .core { fill: #ffffff; stroke: #a3a3a8; stroke-width: 2; }
+    /* A file on the storage, or a device behind its controller */
+    svg.diagram[data-family='machine'] .file { fill: #f0f0f2; stroke: #a3a3a8; stroke-width: 1.5; }
+    /* The part of memory a program is copied into */
+    svg.diagram[data-family='machine'] .band { fill: #e5dbff; stroke: #9775fa; stroke-width: 1.5; }
+    svg.diagram[data-family='machine'] .band.program { fill: #d3f9d8; stroke: #51cf66; }
+    svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
     /* A connection the control signals open between two components, drawn
        like a live wire in the circuits, its white casing keeping it apart
        from the paths it crosses */
