@@ -3,10 +3,14 @@
 // holds, what it is about — and the vocabulary works out, once every step is
 // known, how long each thing lasts: one copy of a lit cell for each stretch of
 // steps it stays lit, one text for each value a register holds.
+//
+// The fully drawn diagram is the machine as its program starts, which a reader
+// can trace the program from: the drawing, with what the machine holds from the
+// start of stepping.
 import type { Element } from '@xmldom/xmldom';
 
-import { copyOf, during, reveal, runs, type Run } from '../actions';
-import type { Action, Builder } from '../builder';
+import { copyOf, during, runs, type Run } from '../actions';
+import { START, type Action, type Builder } from '../builder';
 import {
   addClasses,
   childElements,
@@ -15,9 +19,7 @@ import {
   firstDescendant,
   hasClass,
   insertAfter,
-  number,
-  removeClasses,
-  rootOf
+  number
 } from '../svg';
 
 /**
@@ -51,10 +53,6 @@ interface Machine {
    */
   readonly values: Map<string, Change[]>;
   /**
-   * The step each cell is first used at, which its annotation appears at.
-   */
-  readonly annotated: Map<string, number>;
-  /**
    * The steps the clock ticks at.
    */
   readonly ticks: Set<number>;
@@ -76,7 +74,6 @@ function machine(builder: Builder): Machine {
       access: { read: [], write: [] },
       live: new Map(),
       values: new Map(),
-      annotated: new Map(),
       ticks: new Set(),
       focus: null
     };
@@ -140,10 +137,13 @@ export function live(path: string): Action {
  * From this step on, a slot holds a value, until another step gives it
  * another, or nothing. A register's slot is its group, whose `bit` boxes show
  * the value in binary, its decimal value shown by a copy of `decimal-<slot>` if
- * the drawing has one. Any other slot is copied with the value as its text: a
- * template drawn `transient`, such as a decoded field, or a text the drawing
- * shows, such as a cell's bits, which then shows its final value only at rest,
- * its values replacing it while stepping.
+ * the drawing has one. A template drawn `transient`, such as a decoded field,
+ * is copied with the value as its text. Any other slot is a text the drawing
+ * shows, such as a cell's bits, which is what it holds from the start: it is
+ * shown until a step gives it a value, each copied with the value as its text.
+ *
+ * Given at the start, the value is shown in the fully drawn diagram too. A
+ * text the drawing shows must hold it already.
  */
 export function value(slot: string, held: Value): Action {
   return (builder, index) => {
@@ -155,11 +155,6 @@ export function value(slot: string, held: Value): Action {
 }
 
 /**
- * The processor uses the cell for the first time at this step, which its
- * annotation, the cell's `annotation` text, says what as. Until then, while
- * stepping, the annotation is hidden; the fully drawn diagram shows them all.
- */
-/**
  * The clock ticks as this step starts: the drawing's `clock-wave` and the
  * first wire of `wire-clock` are lit for the step, flashing as it starts. Each
  * step's tick is drawn on its own, so that ticks on consecutive steps each
@@ -168,15 +163,6 @@ export function value(slot: string, held: Value): Action {
 export function tick(): Action {
   return (builder, index) => {
     machine(builder).ticks.add(index);
-  };
-}
-
-export function annotate(cell: string): Action {
-  return (builder, index) => {
-    const annotated = machine(builder).annotated;
-    if (!annotated.has(cell)) {
-      annotated.set(cell, index);
-    }
   };
 }
 
@@ -222,10 +208,6 @@ function draw(builder: Builder, state: Machine): void {
   for (const [path, indices] of state.live) {
     drawLive(builder, path, indices);
   }
-
-  // Before the values, whose copies of annotations it would take for the
-  // drawing's own.
-  drawAnnotations(builder, state.annotated);
 
   for (const [slot, changes] of state.values) {
     drawValues(builder, slot, changes);
@@ -335,18 +317,67 @@ function drawLive(builder: Builder, path: string, indices: number[]): void {
 }
 
 function drawValues(builder: Builder, slot: string, changes: Change[]): void {
-  changes.forEach(({ index, value: held }, i) => {
-    const next = changes[i + 1];
+  const element = builder.element(slot);
+  const drawnText = isDrawnText(element);
+  let given = changes;
+  if (drawnText && changes[0]?.index === START) {
+    const drawn = textOf(element, slot).textContent;
+    if (String(changes[0].value) !== drawn) {
+      throw new Error(
+        `"${slot}" is drawn holding "${drawn}", which is what it holds ` +
+          `from the start, not "${changes[0].value}"`
+      );
+    }
+
+    given = changes.slice(1);
+  }
+
+  given.forEach(({ index, value: held }, i) => {
+    const next = given[i + 1];
     if (held === null) {
       return;
     }
 
     const run: Run =
       next === undefined ? { from: index } : { from: index, to: next.index };
-    for (const shown of valueOf(builder, slot, held)) {
-      during(builder, shown, run);
+    for (const shown of valueOf(builder, element, slot, held)) {
+      during(builder, shown, run, { atRest: true });
     }
   });
+
+  // The drawing itself shows what it holds until a step gives it a value;
+  // marked once its copies are made, which must not take the mark.
+  const first = given[0];
+  if (drawnText && first !== undefined) {
+    during(
+      builder,
+      element,
+      { from: START, to: first.index },
+      { atRest: true }
+    );
+  }
+}
+
+function bitsOf(element: Element): Element[] {
+  return descendants(element, 'rect').filter(rect => hasClass(rect, 'bit'));
+}
+
+/**
+ * Whether a slot is a text the drawing shows, which is neither a register nor
+ * a template.
+ */
+function isDrawnText(element: Element): boolean {
+  return bitsOf(element).length === 0 && !hasClass(element, 'transient');
+}
+
+function textOf(element: Element, slot: string): Element {
+  const text =
+    element.localName === 'text' ? element : firstDescendant(element, 'text');
+  if (text === undefined) {
+    throw new Error(`"${slot}" has no text to hold a value`);
+  }
+
+  return text;
 }
 
 /**
@@ -355,29 +386,15 @@ function drawValues(builder: Builder, slot: string, changes: Change[]): void {
  */
 function valueOf(
   builder: Builder,
+  element: Element,
   slot: string,
   held: number | string
 ): Element[] {
-  const element = builder.element(slot);
-  const bits = descendants(element, 'rect').filter(rect =>
-    hasClass(rect, 'bit')
-  );
+  const bits = bitsOf(element);
 
   if (bits.length === 0) {
-    // Shown while stepping, even when what it is a copy of is not.
     const copy = copyOf(element);
-    removeClasses(copy, 'at-rest');
-    const text =
-      copy.localName === 'text' ? copy : firstDescendant(copy, 'text');
-    if (text === undefined) {
-      throw new Error(`"${slot}" has no text to hold a value`);
-    }
-
-    if (!hasClass(element, 'transient')) {
-      addClasses(element, 'at-rest');
-    }
-
-    text.textContent = String(held);
+    textOf(copy, slot).textContent = String(held);
     insertAfter(element, copy);
     return [copy];
   }
@@ -423,34 +440,6 @@ function valueOf(
   copy.textContent = String(held);
   insertAfter(decimal, copy);
   return [shown, copy];
-}
-
-function drawAnnotations(
-  builder: Builder,
-  annotated: ReadonlyMap<string, number>
-): void {
-  for (const [cell, index] of annotated) {
-    const annotation = firstDescendant(
-      builder.element(cell),
-      'text',
-      'annotation'
-    );
-    if (annotation === undefined) {
-      throw new Error(`"${cell}" is annotated, but has no annotation`);
-    }
-
-    reveal(annotation, index);
-  }
-
-  // Annotations no step reveals are those of cells the story does not use.
-  for (const annotation of descendants(rootOf(builder.doc), 'text')) {
-    if (
-      hasClass(annotation, 'annotation') &&
-      !hasClass(annotation, 'fragment')
-    ) {
-      addClasses(annotation, 'at-rest');
-    }
-  }
 }
 
 function drawFocus(

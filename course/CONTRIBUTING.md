@@ -770,7 +770,8 @@ whole slide in print.
 
 A diagram is three files in [`diagrams/`](./diagrams), all named after it:
 
-- **`407-tcp.svg`**, the drawing, as the diagram ends up. It is edited in
+- **`407-tcp.svg`**, the drawing, as the diagram ends up, or for a machine as
+  its program starts, which a reader can trace it from. It is edited in
   Inkscape or by hand, and stays readable on its own.
 - **`407-tcp.ts`**, its steps: what each click does, and the sentence said over
   it, which is the caption a page shows. It imports the actions a step is made

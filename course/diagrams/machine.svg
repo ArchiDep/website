@@ -258,8 +258,8 @@
     <text class="tiny signal start" x="207" y="536">to every register</text>
   </g>
 
-  <!-- Memory: the program of the trace, then its data, as the program leaves
-       them: 6, the result, in cell 14, and the counter down to 0 in cell 13 -->
+  <!-- Memory: the program of the trace, then its data, as the program starts:
+       the counter at 2 in cell 13, and the result at 0 in cell 14 -->
   <!-- Each cell holds its bits; the annotation on its right is how the
        processor reads them, an instruction or a number -->
   <g id="memory">
@@ -280,8 +280,8 @@
     <g id="cell-10"><text class="cell-address" x="796" y="400">10</text><rect class="cell" x="806" y="386" width="170" height="28"/><text id="bits-10" class="bits unused" x="813" y="400">0000 0000</text></g>
     <g id="cell-11"><text class="cell-address" x="796" y="432">11</text><rect class="cell" x="806" y="418" width="170" height="28"/><text id="bits-11" class="bits unused" x="813" y="432">0000 0000</text></g>
     <g id="cell-12"><text class="cell-address" x="796" y="464">12</text><rect class="cell" x="806" y="450" width="170" height="28"/><text id="bits-12" class="bits" x="813" y="464">0000 0011</text><text id="annotation-12" class="annotation" x="969" y="464">3</text></g>
-    <g id="cell-13"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28"/><text id="bits-13" class="bits" x="813" y="496">0000 0000</text><text id="annotation-13" class="annotation" x="969" y="496">0</text></g>
-    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><text id="bits-14" class="bits" x="813" y="528">0000 0110</text><text id="annotation-14" class="annotation" x="969" y="528">6</text></g>
+    <g id="cell-13"><text class="cell-address" x="796" y="496">13</text><rect class="cell" x="806" y="482" width="170" height="28"/><text id="bits-13" class="bits" x="813" y="496">0000 0010</text><text id="annotation-13" class="annotation" x="969" y="496">2</text></g>
+    <g id="cell-14"><text class="cell-address" x="796" y="528">14</text><rect class="cell" x="806" y="514" width="170" height="28"/><text id="bits-14" class="bits" x="813" y="528">0000 0000</text><text id="annotation-14" class="annotation" x="969" y="528">0</text></g>
     <g id="cell-15"><text class="cell-address" x="796" y="560">15</text><rect class="cell" x="806" y="546" width="170" height="28"/><text id="bits-15" class="bits" x="813" y="560">0000 0001</text><text id="annotation-15" class="annotation" x="969" y="560">1</text></g>
   </g>
   <!-- The memory's read/write control signal, arriving from somewhere not

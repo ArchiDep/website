@@ -5,7 +5,7 @@ import { describe, it } from 'node:test';
 
 import { DOMParser } from '@xmldom/xmldom';
 
-import { bitsOf, trace } from './trace';
+import { PROGRAM, bitsOf, trace } from './trace';
 
 const ADDRESS_TO_MEMORY = [
   'selector',
@@ -24,8 +24,50 @@ const DATA_FROM_MEMORY = [
 ];
 
 describe('trace', () => {
+  it('begins by taking away the annotations of the cells the program uses', () => {
+    assert.deepEqual(trace().steps[0], {
+      caption:
+        'The processor knows none of this: to it, the memory holds only bits. A cell is an instruction or a number only once the processor uses it as one.',
+      tick: false,
+      lit: [],
+      access: null,
+      live: [],
+      values: {
+        'annotation-0': null,
+        'annotation-1': null,
+        'annotation-2': null,
+        'annotation-3': null,
+        'annotation-4': null,
+        'annotation-5': null,
+        'annotation-6': null,
+        'annotation-7': null,
+        'annotation-8': null,
+        'annotation-12': null,
+        'annotation-13': null,
+        'annotation-14': null,
+        'annotation-15': null
+      },
+      focus: [
+        'memory',
+        'cell-0',
+        'cell-1',
+        'cell-2',
+        'cell-3',
+        'cell-4',
+        'cell-5',
+        'cell-6',
+        'cell-7',
+        'cell-8',
+        'cell-12',
+        'cell-13',
+        'cell-14',
+        'cell-15'
+      ]
+    });
+  });
+
   it('tells the first instruction in full, each phase opening with its tick and pill alone', () => {
-    assert.deepEqual(trace().steps.slice(0, 9), [
+    assert.deepEqual(trace().steps.slice(1, 10), [
       {
         caption:
           'Fetch: the clock ticks, and the control unit starts fetching the next instruction from memory.',
@@ -139,7 +181,7 @@ describe('trace', () => {
   });
 
   it('tells an addition of the first pass at the medium pace, in six steps', () => {
-    assert.deepEqual(trace().steps.slice(9, 15), [
+    assert.deepEqual(trace().steps.slice(10, 16), [
       {
         caption:
           'Fetch: the clock ticks, and the control unit has the memory read cell 1, at the program counter’s address, into the instruction register.',
@@ -243,7 +285,7 @@ describe('trace', () => {
   });
 
   it('tells an instruction of the second pass at the fast pace, a step per phase', () => {
-    assert.deepEqual(trace().steps.slice(52, 55), [
+    assert.deepEqual(trace().steps.slice(53, 56), [
       {
         caption:
           'Fetch: the clock ticks, and the control unit has the memory read cell 2, at the program counter’s address, into the instruction register, and tells the program counter to add 1.',
@@ -345,12 +387,8 @@ describe('trace', () => {
     });
   });
 
-  it('starts with the program counter at 0, and the cells the program writes as they are', () => {
-    assert.deepEqual(trace().start, {
-      'program-counter': 0,
-      'bits-13': '0000 0010',
-      'bits-14': '0000 0000'
-    });
+  it('starts with the program counter at 0', () => {
+    assert.deepEqual(trace().start, { 'program-counter': 0 });
   });
 
   it('halts with the product, 6, in cell 14, and the counter down to 0', () => {
@@ -363,8 +401,8 @@ describe('trace', () => {
     );
   });
 
-  it('leaves the memory as the fully drawn diagram shows it', () => {
-    const { memory, steps } = trace();
+  it('starts from the memory and the annotations the fully drawn diagram shows', () => {
+    const { steps } = trace();
     const doc = new DOMParser().parseFromString(
       readFileSync(path.join(import.meta.dirname, '..', 'machine.svg'), 'utf8'),
       'image/svg+xml'
@@ -376,12 +414,16 @@ describe('trace', () => {
           doc.getElementById(`${prefix}-${cell}`)?.textContent ?? null
         ]).filter(([, text]) => text !== null)
       );
-    // The last value each annotation is given.
+    // The first value each annotation is given, once taken away.
     const annotations: Record<string, string> = {};
     for (const { values } of steps) {
       for (const [slot, value] of Object.entries(values)) {
         const cell = /^annotation-(\d+)$/u.exec(slot)?.[1];
-        if (cell !== undefined && typeof value === 'string') {
+        if (
+          cell !== undefined &&
+          typeof value === 'string' &&
+          !(cell in annotations)
+        ) {
           annotations[cell] = value;
         }
       }
@@ -391,7 +433,7 @@ describe('trace', () => {
       { bits: drawn('bits'), annotations: drawn('annotation') },
       {
         bits: Object.fromEntries(
-          memory.map((word, cell) => [cell, bitsOf(word)])
+          PROGRAM.map((word, cell) => [cell, bitsOf(word)])
         ),
         annotations
       }

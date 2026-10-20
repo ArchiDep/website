@@ -67,8 +67,11 @@ export default diagram({
     rest:
       'A processor and a memory of sixteen cells, connected by a data bus and ' +
       'an address bus. The memory holds a program that multiplies 3 by 2 by ' +
-      'adding 3 twice, and its result, 6, in cell 14.',
-    start: 'The program is in memory, and the program counter is at 0.'
+      'adding 3 twice, and leaves its result in cell 14. The program counter ' +
+      'is at 0, ready to start.',
+    start:
+      'The program is in memory, and the program counter is at 0. It ' +
+      'multiplies 3 by 2 by adding 3 twice, and leaves its result in cell 14.'
   },
   start: Object.entries(start).map(([slot, held]) => value(slot, held)),
   steps: steps.map(state => step(state.caption, ...actionsOf(state)))

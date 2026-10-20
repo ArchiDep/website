@@ -96,18 +96,22 @@ const TEARDOWNS = Symbol('teardowns');
 /**
  * Shows an element only during a stretch of steps: from the step at `from`, or
  * from the start of stepping if it is `START`, until the step at `to`, or to
- * the end without one. The fully drawn diagram leaves it out. Each time an
- * element of the drawing is shown again, it is a copy of it shown.
+ * the end without one. The fully drawn diagram leaves it out, unless it is
+ * shown from the start and `atRest` says the fully drawn diagram shows it too.
+ * Each time an element of the drawing is shown again, it is a copy of it shown.
  */
 export function during(
   builder: Builder,
   element: Element,
-  { from, to }: Run
+  { from, to }: Run,
+  { atRest = false }: { readonly atRest?: boolean } = {}
 ): void {
   if (from === START) {
     // Shown before any step is reached, which a transient element is not.
     removeClasses(element, 'transient');
-    addClasses(element, 'detail');
+    if (!atRest) {
+      addClasses(element, 'detail');
+    }
   } else {
     reveal(element, from, 'transient');
   }

@@ -3,7 +3,6 @@ import { describe, it } from 'node:test';
 
 import { generate } from '../generate';
 import {
-  annotate,
   diagram,
   focusOn,
   lit,
@@ -66,7 +65,7 @@ function partial(body: string, steps: number): string {
 }
 
 describe('value', () => {
-  it("shows a register's value in its bits and in decimal, from the step that gives it until the next", () => {
+  it("shows a register's value in its bits and in decimal, from the step that gives it until the next, and its value at the start at rest too", () => {
     assert.equal(
       generated(
         '<g id="counter"><rect class="bit" x="0" y="0" width="10" height="10"/><rect class="bit" x="10" y="0" width="10" height="10"/></g>' +
@@ -80,11 +79,11 @@ describe('value', () => {
           '<g id="diagram-m-counter"><rect class="bit" x="0" y="0" width="10" height="10"/><rect class="bit" x="10" y="0" width="10" height="10"/></g>' +
           '<g class="fragment transient register-value" data-fragment-index="1"><text class="bit-value" x="5" y="5">1</text><text class="bit-value" x="15" y="5">1</text></g>' +
           '<g class="fragment transient register-value" data-fragment-index="0" data-gone-from="1"><text class="bit-value" x="5" y="5">1</text><text class="bit-value" x="15" y="5">0</text></g>' +
-          '<g class="detail register-value" data-gone-from="0"><text class="bit-value" x="5" y="5">0</text><text class="bit-value" x="15" y="5">1</text></g>' +
+          '<g class="register-value" data-gone-from="0"><text class="bit-value" x="5" y="5">0</text><text class="bit-value" x="15" y="5">1</text></g>' +
           '<text id="diagram-m-decimal-counter" class="decimal transient" x="30" y="5">0</text>' +
           '<text class="fragment decimal transient" x="30" y="5" data-fragment-index="1">3</text>' +
           '<text class="fragment decimal transient" x="30" y="5" data-fragment-index="0" data-gone-from="1">2</text>' +
-          '<text class="detail decimal" x="30" y="5" data-gone-from="0">1</text>',
+          '<text class="decimal" x="30" y="5" data-gone-from="0">1</text>',
         2
       )
     );
@@ -105,24 +104,42 @@ describe('value', () => {
     );
   });
 
-  it('shows the values of a text the drawing shows while stepping, and the text only at rest', () => {
+  it('shows a text the drawing shows, at rest and from the start, until a step gives it a value', () => {
     assert.equal(
       generated(
-        '<g id="cell-1"><text id="bits-1" class="bits">0000 0110</text>' +
-          '<text id="annotation-1" class="annotation">6</text></g>',
-        [[value('bits-1', '0000 0011'), value('annotation-1', '3')]],
+        '<g id="cell-1"><text id="bits-1" class="bits">0000 0000</text>' +
+          '<text id="annotation-1" class="annotation">0</text></g>' +
+          '<g id="cell-2"><text id="annotation-2" class="annotation">1</text></g>',
+        [
+          [value('bits-1', '0000 0011'), value('annotation-1', null)],
+          [value('annotation-1', '3')]
+        ],
         [value('bits-1', '0000 0000')]
       ),
       partial(
         '<g class="fragment teardown" data-fragment-index="0"/>' +
           '<g id="diagram-m-cell-1">' +
-          '<text id="diagram-m-bits-1" class="at-rest bits">0000 0110</text>' +
+          '<text id="diagram-m-bits-1" class="bits" data-gone-from="0">0000 0000</text>' +
           '<text class="fragment transient bits" data-fragment-index="0">0000 0011</text>' +
-          '<text class="detail bits" data-gone-from="0">0000 0000</text>' +
-          '<text id="diagram-m-annotation-1" class="at-rest annotation">6</text>' +
-          '<text class="fragment transient annotation" data-fragment-index="0">3</text>' +
-          '</g>',
-        1
+          '<text id="diagram-m-annotation-1" class="annotation" data-gone-from="0">0</text>' +
+          '<text class="fragment transient annotation" data-fragment-index="1">3</text>' +
+          '</g>' +
+          '<g id="diagram-m-cell-2"><text id="diagram-m-annotation-2" class="annotation">1</text></g>',
+        2
+      )
+    );
+  });
+
+  it('fails for a value at the start that a text the drawing shows does not hold', () => {
+    assert.throws(
+      () =>
+        generated(
+          '<text id="bits-1" class="bits">0000 0110</text>',
+          [[value('bits-1', '0000 0011')]],
+          [value('bits-1', '0000 0000')]
+        ),
+      new Error(
+        '"bits-1" is drawn holding "0000 0110", which is what it holds from the start, not "0000 0000"'
       )
     );
   });
@@ -229,33 +246,6 @@ describe('live', () => {
           '</g>',
         3
       )
-    );
-  });
-});
-
-describe('annotate', () => {
-  it("shows a cell's annotation from its first use, and others only at rest", () => {
-    assert.equal(
-      generated(
-        '<g id="cell-0"><rect class="cell"/><text class="annotation">LOAD 1</text></g>' +
-          '<g id="cell-1"><rect class="cell"/><text class="annotation">7</text></g>',
-        [[annotate('cell-1')], [annotate('cell-1')]]
-      ),
-      partial(
-        '<g id="diagram-m-cell-0"><rect class="cell"/><text class="at-rest annotation">LOAD 1</text></g>' +
-          '<g id="diagram-m-cell-1"><rect class="cell"/><text class="fragment annotation" data-fragment-index="0">7</text></g>',
-        2
-      )
-    );
-  });
-
-  it('fails for a cell without an annotation', () => {
-    assert.throws(
-      () =>
-        generated('<g id="cell-9"><rect class="cell"/></g>', [
-          [annotate('cell-9')]
-        ]),
-      new Error('"cell-9" is annotated, but has no annotation')
     );
   });
 });

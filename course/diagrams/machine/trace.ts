@@ -77,7 +77,10 @@ export interface StepState {
 }
 
 export interface Trace {
-  /** What shows from the start of stepping. */
+  /**
+   * What the machine holds from the start of stepping, besides the memory and
+   * its annotations, which the drawing shows.
+   */
   readonly start: Readonly<Record<string, Value>>;
   readonly steps: readonly StepState[];
   /** The memory once the program has halted. */
@@ -144,6 +147,11 @@ function instructionOf(word: number): string {
   return operation === 'HALT' ? operation : `${operation} ${word & 0b1111}`;
 }
 
+/** The cell a slot named after it is in, such as 14 for annotation-14. */
+function cellOf(slot: string): number {
+  return Number(/-(\d+)$/u.exec(slot)?.[1]);
+}
+
 /** The cell the program leaves its result in. */
 export const RESULT = 14;
 
@@ -156,7 +164,6 @@ export function trace(
   let accumulator = 0;
   let zero = false;
   let secondPass = false;
-  const written = new Set<number>();
   const steps: StepState[] = [];
 
   // What each slot shows, so that a step only says what it changes.
@@ -244,7 +251,6 @@ export function trace(
         break;
       case 'STORE':
         memory[address] = accumulator;
-        written.add(address);
         break;
       case 'JUMP':
         jumped = true;
@@ -689,10 +695,29 @@ export function trace(
     { focus: null }
   );
 
-  const start: Record<string, Value> = { 'program-counter': 0 };
-  for (const address of [...written].sort((a, b) => a - b)) {
-    start[`bits-${address}`] = bitsOf(program[address] ?? 0);
-  }
+  // The beginning, a step of its own: the annotations, which say what the
+  // program means to the room, go, since the processor knows none of it. Each
+  // comes back when the processor first uses its cell, which only the trace
+  // tells.
+  const annotations = [
+    ...new Set(
+      steps.flatMap(({ values }) =>
+        Object.keys(values).filter(slot => slot.startsWith('annotation-'))
+      )
+    )
+  ].sort((a, b) => cellOf(a) - cellOf(b));
+  steps.unshift({
+    caption:
+      'The processor knows none of this: to it, the memory holds only bits. ' +
+      'A cell is an instruction or a number only once the processor uses it ' +
+      'as one.',
+    tick: false,
+    lit: [],
+    access: null,
+    live: [],
+    values: Object.fromEntries(annotations.map(slot => [slot, null])),
+    focus: ['memory', ...annotations.map(slot => `cell-${cellOf(slot)}`)]
+  });
 
-  return { start, steps, memory };
+  return { start: { 'program-counter': 0 }, steps, memory };
 }

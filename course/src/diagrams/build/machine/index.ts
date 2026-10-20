@@ -3,14 +3,5 @@
 export { diagram, START, step } from '..';
 export type { Action, DiagramDefinition, Step } from '..';
 
-export {
-  annotate,
-  focusOn,
-  lit,
-  live,
-  reads,
-  tick,
-  value,
-  writes
-} from './actions';
+export { focusOn, lit, live, reads, tick, value, writes } from './actions';
 export type { Value } from './actions';
