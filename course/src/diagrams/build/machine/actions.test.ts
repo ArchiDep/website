@@ -5,6 +5,7 @@ import { copyOf } from '../actions';
 import { generate } from '../generate';
 import {
   diagram,
+  fills,
   focusOn,
   lit,
   live,
@@ -12,6 +13,8 @@ import {
   step,
   tick,
   value,
+  walks,
+  works,
   writes,
   type Action
 } from '.';
@@ -207,6 +210,61 @@ describe('tick', () => {
           '<path class="fragment transient lit tick wire" d="M5 5 H9" data-fragment-index="1"/>' +
           '<path class="fragment transient lit tick wire" d="M5 5 H9" data-fragment-index="0" data-gone-from="1"/>' +
           '<text>to every register</text></g>',
+        2
+      )
+    );
+  });
+});
+
+describe('works', () => {
+  it('turns a copy of the cog for each stretch of steps the processor works', () => {
+    assert.equal(
+      generated('<path id="cog" class="cog transient" d="M0 0 H9"/>', [
+        [works()],
+        [works()],
+        [],
+        [works()]
+      ]),
+      partial(
+        '<g class="fragment teardown" data-fragment-index="2"/>' +
+          '<path id="diagram-m-cog" class="cog transient" d="M0 0 H9"/>' +
+          '<path class="fragment cog transient" d="M0 0 H9" data-fragment-index="3"/>' +
+          '<path class="fragment cog transient" d="M0 0 H9" data-fragment-index="0" data-gone-from="2"/>',
+        4
+      )
+    );
+  });
+});
+
+describe('walks', () => {
+  it('lights a copy of each cell for the step, each timed after the one before, the last one marked to stay lit', () => {
+    assert.equal(
+      generated(
+        '<rect id="a" class="cell" x="0" y="0" width="5" height="2"/>' +
+          '<rect id="b" class="cell" x="6" y="0" width="5" height="2"/>',
+        [[walks('a', 'b')], []]
+      ),
+      partial(
+        '<g class="fragment teardown" data-fragment-index="1"/>' +
+          '<rect id="diagram-m-a" class="cell" x="0" y="0" width="5" height="2"/>' +
+          '<rect class="fragment transient lit walk cell" x="0" y="0" width="5" height="2" style="--delay: 0s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/>' +
+          '<rect id="diagram-m-b" class="cell" x="6" y="0" width="5" height="2"/>' +
+          '<rect class="fragment transient lit walk last cell" x="6" y="0" width="5" height="2" style="--delay: 0.16s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/>',
+        2
+      )
+    );
+  });
+});
+
+describe('fills', () => {
+  it('shows a part from its step on, filling', () => {
+    assert.equal(
+      generated(
+        '<g id="band" class="transient"><rect class="band"/><text>boot</text></g>',
+        [[], [fills('band')]]
+      ),
+      partial(
+        '<g id="diagram-m-band" class="fragment fill transient" data-fragment-index="1"><rect class="band"/><text>boot</text></g>',
         2
       )
     );

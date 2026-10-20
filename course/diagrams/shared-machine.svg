@@ -61,8 +61,14 @@
 
     /* --- What the steps show ------------------------------------------- */
 
-    /* A pill of the cycle, or the cell being read or written, lit like a lamp */
-    svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* A pill of the cycle, the cell being read or written, or the file being
+       copied, lit like a lamp */
+    svg.diagram[data-family='machine'] :is(.cell, .step, .file).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* As the highlight walks through cells, each is lit in turn for a moment,
+       the last one from then on: only the last one without motion */
+    svg.diagram[data-family='machine'] .walk:not(.last) { fill-opacity: 0; stroke-opacity: 0; }
+    /* The core working */
+    svg.diagram[data-family='machine'] .cog { fill: #a3a3a8; fill-rule: evenodd; }
     svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
     svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
     /* A control signal the control unit gives, in red */
@@ -96,6 +102,10 @@
     svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
+    svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
+    /* Still lit, but paler, such as an instruction the processor loops on
+       while the step is about something else */
+    svg.diagram[data-family='machine'] :is(.faded .cell.lit, .faded .file.lit) { fill: #fffaeb; stroke: #fce3a6; }
     svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
     svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -115,9 +125,34 @@
       svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
       /* Focus changes in a moment rather than at once */
       svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+      /* The cog turns slowly, steadily */
+      svg.diagram[data-family='machine'] .cog.visible { transform-box: fill-box; transform-origin: center; animation: machine-spin 8s linear infinite; }
+      /* Each cell of a walk lit for its moment; the last one unlit until its
+         own */
+      svg.diagram[data-family='machine'] .walk.visible:not(.last) { animation: machine-lit var(--each) step-end var(--delay); }
+      svg.diagram[data-family='machine'] .walk.last.visible { animation: machine-unlit var(--delay) step-end; }
+      /* A band of memory fills from the bottom as it is copied into, then its
+         label and cells appear */
+      svg.diagram[data-family='machine'] .fill.visible > .band { transform-box: fill-box; transform-origin: bottom; animation: machine-fill 1.6s ease-in-out both; }
+      svg.diagram[data-family='machine'] .fill.visible > :not(.band) { animation: machine-appear 0.4s ease-out 1.6s both; }
     }
     @keyframes machine-tick {
       50% { opacity: 0.15; }
+    }
+    @keyframes machine-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes machine-lit {
+      from, to { fill-opacity: 1; stroke-opacity: 1; }
+    }
+    @keyframes machine-unlit {
+      from, to { fill-opacity: 0; stroke-opacity: 0; }
+    }
+    @keyframes machine-fill {
+      from { transform: scaleY(0); }
+    }
+    @keyframes machine-appear {
+      from { opacity: 0; }
     }
     @keyframes machine-current {
       to { stroke-dashoffset: -12; }

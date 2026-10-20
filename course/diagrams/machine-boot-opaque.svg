@@ -56,8 +56,14 @@
 
     /* --- What the steps show ------------------------------------------- */
 
-    /* A pill of the cycle, or the cell being read or written, lit like a lamp */
-    svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* A pill of the cycle, the cell being read or written, or the file being
+       copied, lit like a lamp */
+    svg.diagram[data-family='machine'] :is(.cell, .step, .file).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* As the highlight walks through cells, each is lit in turn for a moment,
+       the last one from then on: only the last one without motion */
+    svg.diagram[data-family='machine'] .walk:not(.last) { fill-opacity: 0; stroke-opacity: 0; }
+    /* The core working */
+    svg.diagram[data-family='machine'] .cog { fill: #a3a3a8; fill-rule: evenodd; }
     svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
     svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
     /* A control signal the control unit gives, in red */
@@ -91,6 +97,10 @@
     svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
+    svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
+    /* Still lit, but paler, such as an instruction the processor loops on
+       while the step is about something else */
+    svg.diagram[data-family='machine'] :is(.faded .cell.lit, .faded .file.lit) { fill: #fffaeb; stroke: #fce3a6; }
     svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
     svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -110,9 +120,34 @@
       svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
       /* Focus changes in a moment rather than at once */
       svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+      /* The cog turns slowly, steadily */
+      svg.diagram[data-family='machine'] .cog.visible { transform-box: fill-box; transform-origin: center; animation: machine-spin 8s linear infinite; }
+      /* Each cell of a walk lit for its moment; the last one unlit until its
+         own */
+      svg.diagram[data-family='machine'] .walk.visible:not(.last) { animation: machine-lit var(--each) step-end var(--delay); }
+      svg.diagram[data-family='machine'] .walk.last.visible { animation: machine-unlit var(--delay) step-end; }
+      /* A band of memory fills from the bottom as it is copied into, then its
+         label and cells appear */
+      svg.diagram[data-family='machine'] .fill.visible &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-fill 1.6s ease-in-out both; }
+      svg.diagram[data-family='machine'] .fill.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.6s both; }
     }
     @keyframes machine-tick {
       50% { opacity: 0.15; }
+    }
+    @keyframes machine-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes machine-lit {
+      from, to { fill-opacity: 1; stroke-opacity: 1; }
+    }
+    @keyframes machine-unlit {
+      from, to { fill-opacity: 0; stroke-opacity: 0; }
+    }
+    @keyframes machine-fill {
+      from { transform: scaleY(0); }
+    }
+    @keyframes machine-appear {
+      from { opacity: 0; }
     }
     @keyframes machine-current {
       to { stroke-dashoffset: -12; }
@@ -153,9 +188,12 @@
   <path id="path-address-bus-device-controllers" class="address-path" d="M329 272 H274" marker-end="url(#address-arrow)"/>
   <path id="path-device-controllers-devices" class="data-path" d="M134 335 V385"/>
 
-  <!-- The processor as a stack of identical cores, the front one titled by a
-       pill in its corner, as the processor was. The front core is what the
-       processor's frame becomes, so its style says what the frame's does. -->
+  <!-- The processor as a stack of identical cores, the front one titled across
+       its bottom, as the processor was in its corner. The front core is what
+       the processor's frame becomes, so its style says what the frame's does,
+       and its title's shapes are drawn as the corner's are, with the corners
+       they do not round as arcs of no radius, so that one can become the
+       other. -->
   <g id="cores">
     <g id="cores-behind">
       <rect class="core" x="70" y="50" width="160" height="160" rx="16"/>
@@ -163,9 +201,11 @@
       <rect class="core" x="50" y="30" width="160" height="160" rx="16"/>
     </g>
     <rect id="processor" class="core" x="40" y="20" width="160" height="160" rx="16" style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1"/>
-    <path id="processor-tab" class="chip-tab" d="M200 146 V164 A16 16 0 0 1 184 180 H96 V162 A16 16 0 0 1 112 146 Z"/>
-    <path id="processor-pill" class="core" d="M200 146 H112 A16 16 0 0 0 96 162 V180" style="fill: none; stroke-opacity: 1"/>
-    <text id="core-name" class="label chip-name" x="148" y="164">CPU core</text>
+    <path id="processor-tab" class="chip-tab" d="M200 146 V164 A16 16 0 0 1 184 180 H56 A16 16 0 0 1 40 164 V146 A0 0 0 0 1 40 146 Z"/>
+    <path id="processor-pill" class="core" d="M200 146 H40 A0 0 0 0 0 40 146 V146" style="fill: none; stroke-opacity: 1"/>
+    <text id="core-name" class="label chip-name" x="120" y="164">CPU core</text>
+    <!-- Turns while the core works, centred in the room above its title -->
+    <path id="cog" class="cog transient" d="M140.6,80.1 L147.9,81.4 L147.9,86.6 L140.6,87.9 L139.0,92.9 L144.1,98.3 L141.0,102.5 L134.4,99.3 L130.1,102.4 L131.1,109.7 L126.1,111.3 L122.6,104.8 L117.4,104.8 L113.9,111.3 L108.9,109.7 L109.9,102.4 L105.6,99.3 L99.0,102.5 L95.9,98.3 L101.0,92.9 L99.4,87.9 L92.1,86.6 L92.1,81.4 L99.4,80.1 L101.0,75.1 L95.9,69.7 L99.0,65.5 L105.6,68.7 L109.9,65.6 L108.9,58.3 L113.9,56.7 L117.4,63.2 L122.6,63.2 L126.1,56.7 L131.1,58.3 L130.1,65.6 L134.4,68.7 L141.0,65.5 L144.1,69.7 L139.0,75.1 Z M128,84 A8,8 0 1 0 112,84 A8,8 0 1 0 128,84 Z"/>
   </g>
   <!-- The processor's paths, from the edge of the stack of cores rather than
        from one of them -->
@@ -181,12 +221,15 @@
     <rect id="data-bus-rail" class="data-bus" x="280" y="23" width="22" height="453"/>
     <text id="data-bus-label" class="bus-label" x="291" y="330" transform="rotate(-90 291 330)">Data buses · 64 bits</text>
   </g>
+  <!-- Under the bus they branch off, as the data bus's are -->
+  <path id="path-address-bus-firmware" class="address-path" d="M329 70 H345" marker-end="url(#address-arrow)"/>
+  <path id="path-address-bus-memory" class="address-path" d="M329 150 H345" marker-end="url(#address-arrow)"/>
+  <!-- Two-way: the disk controller gives addresses too, of the memory it copies
+       into -->
+  <path id="path-address-bus-disk-controller" class="address-path" d="M329 427 H382"/>
   <g id="address-bus">
     <rect id="address-bus-rail" class="address-bus" x="318" y="59" width="22" height="379"/>
   </g>
-  <path id="path-address-bus-firmware" class="address-path" d="M329 70 H345" marker-end="url(#address-arrow)"/>
-  <path id="path-address-bus-memory" class="address-path" d="M329 150 H345" marker-end="url(#address-arrow)"/>
-  <path id="path-address-bus-disk-controller" class="address-path" d="M329 427 H345" marker-end="url(#address-arrow)"/>
   <!-- The firmware is only read -->
   <polygon id="firmware-read-only" points="377,27 377,41 365,34" fill="#ffffff"/>
   <text id="address-bus-label" class="bus-label" x="329" y="325" transform="rotate(-90 329 325)">Address buses · 64 bits</text>
@@ -197,8 +240,8 @@
     <text id="firmware-label" class="label" x="470" y="44">Firmware</text>
     <text id="firmware-chip" class="small" x="470" y="70">ROM chip: UEFI</text>
     <g id="firmware-instructions">
-    <rect class="cell" x="574" y="38" width="50" height="14"/><rect class="cell" x="630" y="38" width="50" height="14"/><rect class="cell" x="686" y="38" width="50" height="14"/><rect class="cell" x="742" y="38" width="50" height="14"/><rect class="cell" x="798" y="38" width="50" height="14"/><rect class="cell" x="854" y="38" width="50" height="14"/><rect class="cell" x="910" y="38" width="50" height="14"/>
-    <rect class="cell" x="574" y="58" width="50" height="14"/><rect class="cell" x="630" y="58" width="50" height="14"/><rect class="cell" x="686" y="58" width="50" height="14"/><rect class="cell" x="742" y="58" width="50" height="14"/><rect class="cell" x="798" y="58" width="50" height="14"/><rect class="cell" x="854" y="58" width="50" height="14"/><rect class="cell" x="910" y="58" width="50" height="14"/>
+    <rect id="firmware-cell-0" class="cell" x="574" y="38" width="50" height="14"/><rect id="firmware-cell-1" class="cell" x="630" y="38" width="50" height="14"/><rect id="firmware-cell-2" class="cell" x="686" y="38" width="50" height="14"/><rect id="firmware-cell-3" class="cell" x="742" y="38" width="50" height="14"/><rect id="firmware-cell-4" class="cell" x="798" y="38" width="50" height="14"/><rect id="firmware-cell-5" class="cell" x="854" y="38" width="50" height="14"/><rect id="firmware-cell-6" class="cell" x="910" y="38" width="50" height="14"/>
+    <rect id="firmware-cell-7" class="cell" x="574" y="58" width="50" height="14"/><rect id="firmware-cell-8" class="cell" x="630" y="58" width="50" height="14"/><rect id="firmware-cell-9" class="cell" x="686" y="58" width="50" height="14"/><rect id="firmware-cell-10" class="cell" x="742" y="58" width="50" height="14"/><rect id="firmware-cell-11" class="cell" x="798" y="58" width="50" height="14"/><rect id="firmware-cell-12" class="cell" x="854" y="58" width="50" height="14"/><rect id="firmware-cell-13" class="cell" x="910" y="58" width="50" height="14"/>
     </g>
   </g>
 
@@ -207,19 +250,29 @@
   <g id="memory">
     <rect id="memory-box" class="box" x="380" y="108" width="608" height="283" rx="8"/>
     <text id="memory-label" class="label" x="684" y="132">Memory</text>
-    <text id="memory-note" class="small detail" x="684" y="156">RAM: no program yet</text>
-    <text class="small at-rest" x="684" y="156">RAM</text>
+    <text id="memory-note" class="small" x="684" y="156">RAM</text>
+    <text id="memory-empty" class="small detail" x="684" y="250">No program/data yet</text>
   </g>
+  <!-- The bootloader, the first program copied into memory, and freed once
+       the kernel runs -->
+  <g id="band-bootloader" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band program" x="380" y="351" width="608" height="40"/>
+    <text class="band-label" x="396" y="371">bootloader</text>
+    <g class="band-cells">
+      <rect id="bootloader-cell-0" class="cell" x="490" y="364" width="50" height="14"/><rect id="bootloader-cell-1" class="cell" x="546" y="364" width="50" height="14"/><rect id="bootloader-cell-2" class="cell" x="602" y="364" width="50" height="14"/><rect id="bootloader-cell-3" class="cell" x="658" y="364" width="50" height="14"/>
+    </g>
+  </g>
+  <!-- Once booted: the kernel above where the bootloader was, then init -->
   <g id="bands" class="at-rest" clip-path="url(#memory-inside)">
     <g id="band-init">
-      <rect class="band program" x="380" y="311" width="608" height="40"/>
-      <text class="band-label" x="396" y="331">init</text>
-      <rect class="cell" x="470" y="324" width="50" height="14"/><rect class="cell" x="526" y="324" width="50" height="14"/><rect class="cell" x="582" y="324" width="50" height="14"/>
+      <rect class="band program" x="380" y="271" width="608" height="40"/>
+      <text class="band-label" x="396" y="291">init</text>
+      <rect class="cell" x="490" y="284" width="50" height="14"/><rect class="cell" x="546" y="284" width="50" height="14"/><rect class="cell" x="602" y="284" width="50" height="14"/>
     </g>
     <g id="band-kernel">
-      <rect class="band" x="380" y="351" width="608" height="40"/>
-      <text class="band-label" x="396" y="371">kernel</text>
-      <rect class="cell" x="470" y="364" width="50" height="14"/><rect class="cell" x="526" y="364" width="50" height="14"/><rect class="cell" x="582" y="364" width="50" height="14"/><rect class="cell" x="638" y="364" width="50" height="14"/><rect class="cell" x="694" y="364" width="50" height="14"/><rect class="cell" x="750" y="364" width="50" height="14"/>
+      <rect class="band" x="380" y="311" width="608" height="40"/>
+      <text class="band-label" x="396" y="331">kernel</text>
+      <rect class="cell" x="490" y="324" width="50" height="14"/><rect class="cell" x="546" y="324" width="50" height="14"/><rect class="cell" x="602" y="324" width="50" height="14"/><rect class="cell" x="658" y="324" width="50" height="14"/><rect class="cell" x="714" y="324" width="50" height="14"/><rect class="cell" x="770" y="324" width="50" height="14"/>
     </g>
   </g>
   <rect id="memory-border" class="box hollow" x="380" y="108" width="608" height="283" rx="8"/>
@@ -238,7 +291,7 @@
     <text id="storage-label" class="label" x="470" y="528">Storage</text>
     <text id="storage-disk" class="small" x="470" y="554">Disk</text>
     <g id="storage-files">
-    <rect class="file" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text>
+    <g id="file-bootloader"><rect class="file" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text></g>
     <rect class="file" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text>
     <rect class="file" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text>
     <text class="label" x="834" y="537">…</text>
@@ -262,5 +315,17 @@
   <!-- The interrupt: a single wire, by which a device tells the processor
        something must be handled -->
   <path id="wire-interrupt" class="wire" d="M45 250 V183" marker-end="url(#wire-arrow)"/>
-  <text id="interrupt-label" class="tiny signal start" x="52" y="230">interrupts</text>
+  <text id="interrupt-label" class="tiny signal start" x="52" y="224">interrupts</text>
+  <!-- The other controllers' interrupts joining it, from somewhere not drawn,
+       such as the disk controller's -->
+  <g id="wire-interrupt-others">
+    <path class="wire" d="M73 239 H45"/><path class="wire-dots" d="M80 239 H101"/>
+  </g>
+  <g id="wire-interrupt-disk-controller">
+    <path class="wire" d="M628 443 H656"/><path class="wire-dots" d="M663 443 H684"/>
+    <text class="tiny signal start" x="636" y="428">interrupts</text>
+  </g>
+
+  <!-- The connections the steps open, over everything else -->
+  <g id="live-wires"/>
 </svg>

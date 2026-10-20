@@ -88,7 +88,9 @@ const PARTS = [
   ...STORAGE.filter(part => !BUSES.includes(part)),
   ...DEVICES,
   'wire-interrupt',
-  'interrupt-label'
+  'interrupt-label',
+  'wire-interrupt-others',
+  'wire-interrupt-disk-controller'
 ];
 const focus = focusOn(PARTS);
 
@@ -163,12 +165,12 @@ export default diagram({
       opaque.reshaped(
         {
           processor: { x: '40', y: '20', width: '160', height: '160' },
-          // Its pill, in the corner it moves to, as wide as before
+          // Its pill, across the bottom of the core, its name centred
           'processor-tab': {
-            d: 'M200 146 V164 A16 16 0 0 1 184 180 H76 V162 A16 16 0 0 1 92 146 Z'
+            d: 'M200 146 V164 A16 16 0 0 1 184 180 H56 A16 16 0 0 1 40 164 V146 A0 0 0 0 1 40 146 Z'
           },
-          'processor-pill': { d: 'M200 146 H92 A16 16 0 0 0 76 162 V180' },
-          'processor-name': { x: '138', y: '164' }
+          'processor-pill': { d: 'M200 146 H40 A0 0 0 0 0 40 146 V146' },
+          'processor-name': { x: '120', y: '164' }
         },
         { unseen: ['processor-name'] }
       )
@@ -201,6 +203,7 @@ export default diagram({
         'memory-box',
         'memory-label',
         'memory-note',
+        'memory-empty',
         'path-data-bus-disk-controller',
         'path-address-bus-disk-controller',
         'disk-controller',
@@ -228,7 +231,9 @@ export default diagram({
         'device-controllers',
         'devices',
         'wire-interrupt',
-        'interrupt-label'
+        'interrupt-label',
+        'wire-interrupt-others',
+        'wire-interrupt-disk-controller'
       ]),
       opaque.arriving(
         [

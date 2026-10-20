@@ -57,8 +57,14 @@ svg.diagram[data-family='machine'] .marker-data { fill: #1971c2; }
 svg.diagram[data-family='machine'] .marker-address { fill: #e8590c; }
 svg.diagram[data-family='machine'] .marker-wire { fill: #1d1d1f; }
 /* --- What the steps show ------------------------------------------- */
-/* A pill of the cycle, or the cell being read or written, lit like a lamp */
-svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+/* A pill of the cycle, the cell being read or written, or the file being
+copied, lit like a lamp */
+svg.diagram[data-family='machine'] :is(.cell, .step, .file).lit { fill: #fff3bf; stroke: #f59f00; }
+/* As the highlight walks through cells, each is lit in turn for a moment,
+the last one from then on: only the last one without motion */
+svg.diagram[data-family='machine'] .walk:not(.last) { fill-opacity: 0; stroke-opacity: 0; }
+/* The core working */
+svg.diagram[data-family='machine'] .cog { fill: #a3a3a8; fill-rule: evenodd; }
 svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
 svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
 /* A control signal the control unit gives, in red */
@@ -90,6 +96,10 @@ svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
 svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
+svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
+/* Still lit, but paler, such as an instruction the processor loops on
+while the step is about something else */
+svg.diagram[data-family='machine'] :is(.faded .cell.lit, .faded .file.lit) { fill: #fffaeb; stroke: #fce3a6; }
 svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
 svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -108,9 +118,34 @@ svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.
 svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
 /* Focus changes in a moment rather than at once */
 svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+/* The cog turns slowly, steadily */
+svg.diagram[data-family='machine'] .cog.visible { transform-box: fill-box; transform-origin: center; animation: machine-spin 8s linear infinite; }
+/* Each cell of a walk lit for its moment; the last one unlit until its
+own */
+svg.diagram[data-family='machine'] .walk.visible:not(.last) { animation: machine-lit var(--each) step-end var(--delay); }
+svg.diagram[data-family='machine'] .walk.last.visible { animation: machine-unlit var(--delay) step-end; }
+/* A band of memory fills from the bottom as it is copied into, then its
+label and cells appear */
+svg.diagram[data-family='machine'] .fill.visible &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-fill 1.6s ease-in-out both; }
+svg.diagram[data-family='machine'] .fill.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.6s both; }
 }
 @keyframes machine-tick {
 50% { opacity: 0.15; }
+}
+@keyframes machine-spin {
+to { transform: rotate(360deg); }
+}
+@keyframes machine-lit {
+from, to { fill-opacity: 1; stroke-opacity: 1; }
+}
+@keyframes machine-unlit {
+from, to { fill-opacity: 0; stroke-opacity: 0; }
+}
+@keyframes machine-fill {
+from { transform: scaleY(0); }
+}
+@keyframes machine-appear {
+from { opacity: 0; }
 }
 @keyframes machine-current {
 to { stroke-dashoffset: -12; }
@@ -645,17 +680,17 @@ break-inside: avoid;
 <marker id="diagram-machine-boot-wire-arrow-faded" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
 <path class="marker-wire faded-marker" d="M0 0 L10 5 L0 10 z"/>
 </marker>
-</defs><g class="fragment reshape" data-fragment-index="7" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="6" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="5" style="--delay: 0s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="4" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment focus" data-fragment-index="15"/><g class="fragment focus" data-fragment-index="14"/><g class="fragment focus" data-fragment-index="13"/><g class="fragment focus" data-fragment-index="12"/><g class="fragment focus" data-fragment-index="11"/><g class="fragment focus" data-fragment-index="10"/><g class="fragment focus" data-fragment-index="9"/><g class="fragment teardown" data-fragment-index="7"/><g class="fragment teardown" data-fragment-index="6"/><g class="fragment teardown" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="2"/><g class="fragment focus" data-fragment-index="1"/><g class="fragment focus" data-fragment-index="0"/>
-<g class="fragment transient arrive" data-fragment-index="6" data-faded-at="0 1 2 10 11 12 13 14" style="--delay: 1.2s">
+</defs><g class="fragment reshape" data-fragment-index="7" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="5" style="--delay: 0s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="4" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment focus" data-fragment-index="15"/><g class="fragment focus" data-fragment-index="14"/><g class="fragment focus" data-fragment-index="13"/><g class="fragment focus" data-fragment-index="12"/><g class="fragment focus" data-fragment-index="11"/><g class="fragment focus" data-fragment-index="10"/><g class="fragment focus" data-fragment-index="9"/><g class="fragment teardown" data-fragment-index="7"/><g class="fragment teardown" data-fragment-index="6"/><g class="fragment teardown" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="2"/><g class="fragment focus" data-fragment-index="1"/><g class="fragment focus" data-fragment-index="0"/>
+<g class="fragment transient arrive" data-fragment-index="6" data-faded-at="0 1 2 10 11 12 13 14" style="--delay: 0.3s">
 <rect class="core" x="70" y="50" width="160" height="160" rx="16"/>
 <rect class="core" x="60" y="40" width="160" height="160" rx="16"/>
 <rect class="core" x="50" y="30" width="160" height="160" rx="16"/>
 </g><rect id="diagram-machine-boot-processor" class="core" x="10" y="10" width="590" height="580" rx="16" style="fill: #ffffff; fill-opacity: 0; stroke-opacity: 0" data-reshaped-4-style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1" data-reshaped-5-x="40" data-reshaped-5-y="20" data-reshaped-5-width="160" data-reshaped-5-height="160" data-faded-at="10 11 12 13 14"/>
 <rect id="diagram-machine-boot-processor-dashes" class="frame" x="10" y="10" width="590" height="580" rx="16" data-gone-from="4"/>
-<path id="diagram-machine-boot-processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z" data-reshaped-5-d="M200 146 V164 A16 16 0 0 1 184 180 H76 V162 A16 16 0 0 1 92 146 Z" data-reshaped-6-d="M200 146 V164 A16 16 0 0 1 184 180 H96 V162 A16 16 0 0 1 112 146 Z" data-faded-at="10 11 12 13 14"/>
-<path id="diagram-machine-boot-processor-pill" class="core" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-opacity: 0" data-reshaped-4-style="fill: none; stroke-opacity: 1" data-reshaped-5-d="M200 146 H92 A16 16 0 0 0 76 162 V180" data-reshaped-6-d="M200 146 H112 A16 16 0 0 0 96 162 V180" data-faded-at="10 11 12 13 14"/>
+<path id="diagram-machine-boot-processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 A0 0 0 0 1 476 590 V572 A16 16 0 0 1 492 556 Z" data-reshaped-5-d="M200 146 V164 A16 16 0 0 1 184 180 H56 A16 16 0 0 1 40 164 V146 A0 0 0 0 1 40 146 Z" data-faded-at="10 11 12 13 14"/>
+<path id="diagram-machine-boot-processor-pill" class="core" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-opacity: 0" data-reshaped-4-style="fill: none; stroke-opacity: 1" data-reshaped-5-d="M200 146 H40 A0 0 0 0 0 40 146 V146" data-faded-at="10 11 12 13 14"/>
 <path id="diagram-machine-boot-processor-pill-dashes" class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590" data-gone-from="4"/>
-<text id="diagram-machine-boot-processor-name" class="label chip-name" x="538" y="574" data-reshaped-5-x="138" data-reshaped-5-y="164" data-unseen-at="5" data-gone-from="6">64-bit CPU</text>
+<text id="diagram-machine-boot-processor-name" class="label chip-name" x="538" y="574" data-reshaped-5-x="120" data-reshaped-5-y="164" data-unseen-at="5" data-gone-from="6">64-bit CPU</text>
 <g id="diagram-machine-boot-control-unit" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
 <rect class="box" x="40" y="145" width="460" height="140" rx="8"/>
 <text class="label" x="420" y="215">Control unit</text>
@@ -691,12 +726,12 @@ break-inside: avoid;
 <g id="diagram-machine-boot-cache-l3"><rect class="box" x="460" y="474" width="130" height="34" rx="6"/><text class="label minor" x="525" y="491">L3</text></g>
 <text class="small" x="445" y="525">Caches</text>
 </g>
+<path id="diagram-machine-boot-path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 70 H345" data-faded-at="0 2 9 10 11 12 14"/>
+<path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 150 H345" data-faded-at="0 2 9 11 12 14"/>
+<path id="diagram-machine-boot-path-address-bus-disk-controller" class="address-path" d="M669 427 H742" data-reshaped-7-d="M329 427 H382" data-faded-at="0 2 9 10 11 14"/>
 <g id="diagram-machine-boot-address-bus" data-faded-at="0 2 9 10 11 12 14">
 <rect id="diagram-machine-boot-address-bus-rail" class="address-bus" x="658" y="59" width="22" height="379" data-reshaped-7-x="318"/>
 </g>
-<path id="diagram-machine-boot-path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 70 H345" data-faded-at="0 2 9 10 11 12 14"/>
-<path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 150 H345" data-faded-at="0 2 9 11 12 14"/>
-<path id="diagram-machine-boot-path-address-bus-disk-controller" class="address-path" d="M669 427 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 427 H345" data-faded-at="0 2 9 10 11 14"/>
 <polygon id="diagram-machine-boot-firmware-read-only" points="739,27 739,41 727,34" fill="#ffffff" data-reshaped-7-points="377,27 377,41 365,34"/>
 <text id="diagram-machine-boot-address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)" data-reshaped-7-x="329" data-reshaped-7-y="325" data-reshaped-7-transform="rotate(-90 329 325)" data-faded-at="0 2 9 10 11 12 14">Address buses · 64 bits</text>
 <g id="diagram-machine-boot-selector" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
@@ -746,7 +781,8 @@ break-inside: avoid;
 <g id="diagram-machine-boot-memory" data-faded-at="0 1 2 9 11 12 13 14">
 <rect id="diagram-machine-boot-memory-box" class="box" x="740" y="108" width="248" height="283" rx="8" data-reshaped-7-x="380" data-reshaped-7-width="608"/>
 <text id="diagram-machine-boot-memory-label" class="label" x="864" y="132" data-reshaped-7-x="684">Memory</text>
-<text id="diagram-machine-boot-memory-note" class="small" x="864" y="156" data-reshaped-7-x="684">RAM: no program yet</text>
+<text id="diagram-machine-boot-memory-note" class="small" x="864" y="156" data-reshaped-7-x="684">RAM</text>
+<text id="diagram-machine-boot-memory-empty" class="small" x="864" y="250" data-reshaped-7-x="684">No program/data yet</text>
 </g>
 <path id="diagram-machine-boot-path-disk-controller-storage" class="data-path" d="M864 474 V500" data-reshaped-7-d="M504 474 V500" data-faded-at="0 1 2 9 10 11 13 14"/>
 <g id="diagram-machine-boot-disk-controller" transform="translate(0 0)" data-reshaped-7-transform="translate(-360 0)" data-faded-at="0 1 2 9 10 11 13 14">
@@ -761,11 +797,11 @@ break-inside: avoid;
 <text class="small" x="864" y="568">programs, files</text>
 </g>
 </g>
-<text class="fragment transient arrive label chip-name" x="148" y="164" data-fragment-index="6" data-faded-at="0 1 2 10 11 12 13 14" style="--delay: 1.2s">CPU core</text><g class="fragment transient arrive" data-fragment-index="7" data-faded-at="0 1 2 9 10 12 13 14" style="--delay: 1.2s">
+<text class="fragment transient arrive label chip-name" x="120" y="164" data-fragment-index="6" data-faded-at="0 1 2 10 11 12 13 14" style="--delay: 0.3s">CPU core</text><g class="fragment transient arrive" data-fragment-index="7" data-faded-at="0 1 2 9 10 12 13 14" style="--delay: 1.2s">
 <rect class="cell" x="574" y="38" width="50" height="14"/><rect class="cell" x="630" y="38" width="50" height="14"/><rect class="cell" x="686" y="38" width="50" height="14"/><rect class="cell" x="742" y="38" width="50" height="14"/><rect class="cell" x="798" y="38" width="50" height="14"/><rect class="cell" x="854" y="38" width="50" height="14"/><rect class="cell" x="910" y="38" width="50" height="14"/>
 <rect class="cell" x="574" y="58" width="50" height="14"/><rect class="cell" x="630" y="58" width="50" height="14"/><rect class="cell" x="686" y="58" width="50" height="14"/><rect class="cell" x="742" y="58" width="50" height="14"/><rect class="cell" x="798" y="58" width="50" height="14"/><rect class="cell" x="854" y="58" width="50" height="14"/><rect class="cell" x="910" y="58" width="50" height="14"/>
 </g><rect class="fragment transient arrive box hollow" x="380" y="108" width="608" height="283" rx="8" data-fragment-index="7" data-faded-at="0 1 2 9 11 12 13 14" style="--delay: 1.2s"/><text class="fragment transient arrive small" x="470" y="554" data-fragment-index="7" data-faded-at="0 1 2 9 10 11 13 14" style="--delay: 1.2s">Disk</text><g class="fragment transient arrive" data-fragment-index="7" data-faded-at="0 1 2 9 10 11 13 14" style="--delay: 1.2s">
-<rect class="file" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text>
+<g><rect class="file" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text></g>
 <rect class="file" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text>
 <rect class="file" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text>
 <text class="label" x="834" y="537">…</text>
@@ -778,7 +814,12 @@ break-inside: avoid;
 <rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text>
 <rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text>
 <rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text>
-</g><path class="fragment transient arrive wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-wire-arrow)" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s"/><text class="fragment transient arrive tiny signal start" x="52" y="230" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">interrupts</text></svg>
+</g><path class="fragment transient arrive wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-wire-arrow)" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s"/><text class="fragment transient arrive tiny signal start" x="52" y="224" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">interrupts</text><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">
+<path class="wire" d="M73 239 H45"/><path class="wire-dots" d="M80 239 H101"/>
+</g><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">
+<path class="wire" d="M628 443 H656"/><path class="wire-dots" d="M663 443 H684"/>
+<text class="tiny signal start" x="636" y="428">interrupts</text>
+</g></svg>
 </div>
 <template class="diagram-captions"><p data-caption="rest">A 64-bit processor, connected by data and address buses to the firmware, the memory and the disk controller. The storage is behind the disk controller, which the processor asks to copy from it into memory.</p><p data-caption="0">A modern computer, drawn like the toy machine. The machine is powered on, and there is no program in memory yet.</p><p data-caption="1">4.5 GHz: the clock ticks 4.5 billion times a second.</p><p data-caption="2">64-bit: the registers hold 64 bits each, and the buses carry 64 bits at once, of data or of an address.</p><p data-caption="3">32 MB of L3 cache: the largest of the processor’s caches, which keep copies of recently used memory. L1 and L2 belong to a core, and L3 is shared by all of them.</p><p data-caption="4">The whole processor again.</p><p data-caption="5">From now on, the processor is drawn as a box: what is inside it is no longer shown.</p><p data-caption="6">The processor is drawn smaller: what follows happens outside it.</p><p data-caption="7">It is one core of the processor, which has several, each following a program of its own.</p><p data-caption="8">The firmware, the memory and the storage take the room the processor leaves.</p><p data-caption="9">Everything else is a device behind a controller on the buses, which can interrupt the processor when something must be handled.</p><p data-caption="10">4 cores: four processors in one chip, each following a program of its own at the same time, sharing the buses and the memory.</p><p data-caption="11">32 GB of RAM, in two sticks of 16 GB: still one memory, of about 32 billion cells, its addresses running on from one stick to the other. DDR5 6000 MHz: up to 6000 million transfers a second, which says nothing of how long a value takes to arrive.</p><p data-caption="12">UEFI: the firmware, which the processor runs first at power-on, from a chip that is only read.</p><p data-caption="13">A 2 TB NVMe SSD: the storage, where programs and files stay with the power off, its controller on the drive itself. PCIe 4.0 connects the disk controller to the rest, and up to 7450 MB/s is how fast it copies from the storage into memory.</p><p data-caption="14">B650: the motherboard, which everything plugs into, and which carries the buses between the parts.</p><p data-caption="15">A graphics card, Wi-Fi and Ethernet: devices, each behind a controller whose registers the processor reaches at addresses of their own.</p><p data-caption="16">The whole machine again, ready to boot.</p></template>
 </div>

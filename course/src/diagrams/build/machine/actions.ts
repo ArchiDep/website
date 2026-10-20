@@ -9,7 +9,7 @@
 // start of stepping.
 import type { Element } from '@xmldom/xmldom';
 
-import { copyOf, during, runs, type Run } from '../actions';
+import { copyOf, during, reveal, runs, type Run } from '../actions';
 import { START, type Action, type Builder } from '../builder';
 import {
   addClasses,
@@ -19,8 +19,13 @@ import {
   firstDescendant,
   hasClass,
   insertAfter,
-  number
+  number,
+  setVariables
 } from '../svg';
+import { seconds } from '../timing';
+
+// How long each cell stays lit as the highlight walks through them.
+const WALK = 0.16;
 
 /**
  * A value a register or a decoded field holds, or nothing.
@@ -57,6 +62,14 @@ interface Machine {
    */
   readonly ticks: Set<number>;
   /**
+   * The steps the processor works at.
+   */
+  readonly works: number[];
+  /**
+   * What the highlight walks through at each step that has it walk, in order.
+   */
+  readonly walks: Map<number, readonly string[]>;
+  /**
    * The parts that can be faded, and what each step is about.
    */
   focus: {
@@ -75,6 +88,8 @@ function machine(builder: Builder): Machine {
       live: new Map(),
       values: new Map(),
       ticks: new Set(),
+      works: [],
+      walks: new Map(),
       focus: null
     };
     builder.whenBuilt(() => draw(builder, state));
@@ -167,6 +182,37 @@ export function tick(): Action {
 }
 
 /**
+ * The processor works while this step is the current one: a copy of the
+ * drawing's `cog` turns, without stopping between consecutive steps.
+ */
+export function works(): Action {
+  return (builder, index) => {
+    machine(builder).works.push(index);
+  };
+}
+
+/**
+ * The highlight walks through cells within this step, each lit in turn for a
+ * moment, such as a program run from its first instruction to its last
+ * without a jump. The last one stays lit until the next step.
+ */
+export function walks(...ids: string[]): Action {
+  return (builder, index) => {
+    machine(builder).walks.set(index, ids);
+  };
+}
+
+/**
+ * Shown from this step on, filling from the bottom, such as a band of memory
+ * a program is copied into: its first shape grows, then the rest appears.
+ */
+export function fills(id: string): Action {
+  return (builder, index) => {
+    reveal(builder.element(id), index, 'fill');
+  };
+}
+
+/**
  * What a step is about, among the parts of the drawing that can be faded: the
  * others are faded while the step is the current one. A step that says nothing
  * of it fades nothing.
@@ -217,6 +263,17 @@ function draw(builder: Builder, state: Machine): void {
     drawTick(builder, index);
   }
 
+  for (const run of runs(state.works, builder.steps)) {
+    const cog = builder.element('cog');
+    const copy = copyOf(cog);
+    insertAfter(cog, copy);
+    during(builder, copy, run);
+  }
+
+  for (const [index, ids] of state.walks) {
+    drawWalk(builder, index, ids);
+  }
+
   if (state.focus !== null) {
     drawFocus(builder, state.focus.parts, state.focus.focused);
   }
@@ -262,6 +319,28 @@ function drawTick(builder: Builder, index: number): void {
     insertAfter(shape, copy);
     during(builder, copy, run);
   }
+}
+
+/**
+ * A lit copy of each cell, for the step, each timed to be lit after the one
+ * before, the last one from then on.
+ */
+function drawWalk(builder: Builder, index: number, ids: readonly string[]) {
+  const run: Run =
+    index + 1 < builder.steps
+      ? { from: index, to: index + 1 }
+      : { from: index };
+  ids.forEach((id, i) => {
+    const shape = shapeOf(builder, id);
+    const copy = copyOf(shape);
+    addClasses(copy, 'lit', 'walk', ...(i === ids.length - 1 ? ['last'] : []));
+    setVariables(copy, {
+      delay: seconds(i * WALK),
+      each: seconds(WALK)
+    });
+    insertAfter(shape, copy);
+    during(builder, copy, run);
+  });
 }
 
 /**

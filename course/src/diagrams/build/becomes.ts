@@ -369,8 +369,12 @@ function check(
       return true;
     }
 
+    // A group with nothing in it draws nothing, such as a layer that steps
+    // draw into.
     const children = childElements(element);
-    return children.length > 0 && children.every(accounted);
+    return children.length > 0
+      ? children.every(accounted)
+      : element.localName === 'g';
   };
 
   for (const element of childElements(rootOf(doc))) {

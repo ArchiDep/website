@@ -56,8 +56,14 @@
 
     /* --- What the steps show ------------------------------------------- */
 
-    /* A pill of the cycle, or the cell being read or written, lit like a lamp */
-    svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* A pill of the cycle, the cell being read or written, or the file being
+       copied, lit like a lamp */
+    svg.diagram[data-family='machine'] :is(.cell, .step, .file).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* As the highlight walks through cells, each is lit in turn for a moment,
+       the last one from then on: only the last one without motion */
+    svg.diagram[data-family='machine'] .walk:not(.last) { fill-opacity: 0; stroke-opacity: 0; }
+    /* The core working */
+    svg.diagram[data-family='machine'] .cog { fill: #a3a3a8; fill-rule: evenodd; }
     svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
     svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
     /* A control signal the control unit gives, in red */
@@ -91,6 +97,10 @@
     svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
+    svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
+    /* Still lit, but paler, such as an instruction the processor loops on
+       while the step is about something else */
+    svg.diagram[data-family='machine'] :is(.faded .cell.lit, .faded .file.lit) { fill: #fffaeb; stroke: #fce3a6; }
     svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
     svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -110,9 +120,34 @@
       svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
       /* Focus changes in a moment rather than at once */
       svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+      /* The cog turns slowly, steadily */
+      svg.diagram[data-family='machine'] .cog.visible { transform-box: fill-box; transform-origin: center; animation: machine-spin 8s linear infinite; }
+      /* Each cell of a walk lit for its moment; the last one unlit until its
+         own */
+      svg.diagram[data-family='machine'] .walk.visible:not(.last) { animation: machine-lit var(--each) step-end var(--delay); }
+      svg.diagram[data-family='machine'] .walk.last.visible { animation: machine-unlit var(--delay) step-end; }
+      /* A band of memory fills from the bottom as it is copied into, then its
+         label and cells appear */
+      svg.diagram[data-family='machine'] .fill.visible &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-fill 1.6s ease-in-out both; }
+      svg.diagram[data-family='machine'] .fill.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.6s both; }
     }
     @keyframes machine-tick {
       50% { opacity: 0.15; }
+    }
+    @keyframes machine-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes machine-lit {
+      from, to { fill-opacity: 1; stroke-opacity: 1; }
+    }
+    @keyframes machine-unlit {
+      from, to { fill-opacity: 0; stroke-opacity: 0; }
+    }
+    @keyframes machine-fill {
+      from { transform: scaleY(0); }
+    }
+    @keyframes machine-appear {
+      from { opacity: 0; }
     }
     @keyframes machine-current {
       to { stroke-dashoffset: -12; }
@@ -149,10 +184,13 @@
 
   <!-- The processor, titled by a pill in its bottom-right corner. Its dashed
        frame is drawn over a solid one, empty and unseen, as its style says, so
-       that it can fill and fade into the core it becomes once opaque. -->
+       that it can fill and fade into the core it becomes once opaque. The
+       pill's shapes are drawn as the core's title across its bottom is, with
+       the corner they do not round as an arc of no radius, so that one can
+       become the other. -->
   <rect id="processor" class="core" x="10" y="10" width="590" height="580" rx="16" style="fill: #ffffff; fill-opacity: 0; stroke-opacity: 0"/>
   <rect id="processor-dashes" class="frame" x="10" y="10" width="590" height="580" rx="16"/>
-  <path id="processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z"/>
+  <path id="processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 A0 0 0 0 1 476 590 V572 A16 16 0 0 1 492 556 Z"/>
   <path id="processor-pill" class="core" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-opacity: 0"/>
   <path id="processor-pill-dashes" class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590"/>
   <text id="processor-name" class="label chip-name" x="538" y="574">64-bit CPU</text>
@@ -207,12 +245,15 @@
     <g id="cache-l3"><rect class="box" x="460" y="474" width="130" height="34" rx="6"/><text class="label minor" x="525" y="491">L3</text></g>
     <text class="small" x="445" y="525">Caches</text>
   </g>
+  <!-- Under the bus they branch off, as the data bus's are -->
+  <path id="path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#address-arrow)"/>
+  <path id="path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#address-arrow)"/>
+  <!-- Two-way: the disk controller gives addresses too, of the memory it copies
+       into -->
+  <path id="path-address-bus-disk-controller" class="address-path" d="M669 427 H742"/>
   <g id="address-bus">
     <rect id="address-bus-rail" class="address-bus" x="658" y="59" width="22" height="379"/>
   </g>
-  <path id="path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#address-arrow)"/>
-  <path id="path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#address-arrow)"/>
-  <path id="path-address-bus-disk-controller" class="address-path" d="M669 427 H705" marker-end="url(#address-arrow)"/>
   <!-- The firmware is only read: a small arrow inside its data path, since an
        arrowhead at its end would cut it off from the firmware -->
   <polygon id="firmware-read-only" points="739,27 739,41 727,34" fill="#ffffff"/>
@@ -292,7 +333,8 @@
   <g id="memory">
     <rect id="memory-box" class="box" x="740" y="108" width="248" height="283" rx="8"/>
     <text id="memory-label" class="label" x="864" y="132">Memory</text>
-    <text id="memory-note" class="small" x="864" y="156">RAM: no program yet</text>
+    <text id="memory-note" class="small" x="864" y="156">RAM</text>
+    <text id="memory-empty" class="small" x="864" y="250">No program/data yet</text>
   </g>
 
   <!-- Disk controller: on the buses, unlike the storage behind it, which the

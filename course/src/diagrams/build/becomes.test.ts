@@ -124,6 +124,16 @@ describe('becoming', () => {
     );
   });
 
+  it('needs nothing of a group with nothing in it, which draws nothing, such as a layer steps draw into', () => {
+    assert.doesNotThrow(() =>
+      generated(
+        moved => [step('It moves.', moved.into('sign'))],
+        HEAD + '<text id="sign" x="0" y="0">Lamp</text></svg>',
+        HEAD + '<text id="sign" x="30" y="0">Lamp</text><g id="layer"/></svg>'
+      )
+    );
+  });
+
   it('fails on a part changed after it moved into the other drawing', () => {
     assert.throws(
       () =>

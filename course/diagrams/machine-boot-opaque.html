@@ -57,8 +57,14 @@ svg.diagram[data-family='machine'] .marker-data { fill: #1971c2; }
 svg.diagram[data-family='machine'] .marker-address { fill: #e8590c; }
 svg.diagram[data-family='machine'] .marker-wire { fill: #1d1d1f; }
 /* --- What the steps show ------------------------------------------- */
-/* A pill of the cycle, or the cell being read or written, lit like a lamp */
-svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+/* A pill of the cycle, the cell being read or written, or the file being
+copied, lit like a lamp */
+svg.diagram[data-family='machine'] :is(.cell, .step, .file).lit { fill: #fff3bf; stroke: #f59f00; }
+/* As the highlight walks through cells, each is lit in turn for a moment,
+the last one from then on: only the last one without motion */
+svg.diagram[data-family='machine'] .walk:not(.last) { fill-opacity: 0; stroke-opacity: 0; }
+/* The core working */
+svg.diagram[data-family='machine'] .cog { fill: #a3a3a8; fill-rule: evenodd; }
 svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
 svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
 /* A control signal the control unit gives, in red */
@@ -90,6 +96,10 @@ svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
 svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
+svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
+/* Still lit, but paler, such as an instruction the processor loops on
+while the step is about something else */
+svg.diagram[data-family='machine'] :is(.faded .cell.lit, .faded .file.lit) { fill: #fffaeb; stroke: #fce3a6; }
 svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
 svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -108,9 +118,34 @@ svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.
 svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
 /* Focus changes in a moment rather than at once */
 svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+/* The cog turns slowly, steadily */
+svg.diagram[data-family='machine'] .cog.visible { transform-box: fill-box; transform-origin: center; animation: machine-spin 8s linear infinite; }
+/* Each cell of a walk lit for its moment; the last one unlit until its
+own */
+svg.diagram[data-family='machine'] .walk.visible:not(.last) { animation: machine-lit var(--each) step-end var(--delay); }
+svg.diagram[data-family='machine'] .walk.last.visible { animation: machine-unlit var(--delay) step-end; }
+/* A band of memory fills from the bottom as it is copied into, then its
+label and cells appear */
+svg.diagram[data-family='machine'] .fill.visible &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-fill 1.6s ease-in-out both; }
+svg.diagram[data-family='machine'] .fill.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.6s both; }
 }
 @keyframes machine-tick {
 50% { opacity: 0.15; }
+}
+@keyframes machine-spin {
+to { transform: rotate(360deg); }
+}
+@keyframes machine-lit {
+from, to { fill-opacity: 1; stroke-opacity: 1; }
+}
+@keyframes machine-unlit {
+from, to { fill-opacity: 0; stroke-opacity: 0; }
+}
+@keyframes machine-fill {
+from { transform: scaleY(0); }
+}
+@keyframes machine-appear {
+from { opacity: 0; }
 }
 @keyframes machine-current {
 to { stroke-dashoffset: -12; }
@@ -645,97 +680,113 @@ break-inside: avoid;
 <marker id="diagram-machine-boot-opaque-wire-arrow-faded" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
 <path class="marker-wire faded-marker" d="M0 0 L10 5 L0 10 z"/>
 </marker>
-</defs>
+</defs><g class="fragment teardown" data-fragment-index="2"/><g class="fragment teardown" data-fragment-index="1"/><g class="fragment teardown" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="2"/><g class="fragment teardown" data-fragment-index="2"/><g class="fragment focus" data-fragment-index="1"/><g class="fragment focus" data-fragment-index="0"/>
 <clipPath id="diagram-machine-boot-opaque-memory-inside"><rect x="380" y="108" width="608" height="283" rx="8"/></clipPath>
-<path id="diagram-machine-boot-opaque-path-address-bus-device-controllers" class="address-path" d="M329 272 H274" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
-<path id="diagram-machine-boot-opaque-path-device-controllers-devices" class="data-path" d="M134 335 V385"/>
-<g id="diagram-machine-boot-opaque-cores">
+<path id="diagram-machine-boot-opaque-path-address-bus-device-controllers" class="address-path" d="M329 272 H274" marker-end="url(#diagram-machine-boot-opaque-address-arrow)" data-faded-at="0 1 2 3"/>
+<path id="diagram-machine-boot-opaque-path-device-controllers-devices" class="data-path" d="M134 335 V385" data-faded-at="0 1 2 3"/>
+<g id="diagram-machine-boot-opaque-cores" data-faded-at="2">
 <g id="diagram-machine-boot-opaque-cores-behind">
 <rect class="core" x="70" y="50" width="160" height="160" rx="16"/>
 <rect class="core" x="60" y="40" width="160" height="160" rx="16"/>
 <rect class="core" x="50" y="30" width="160" height="160" rx="16"/>
 </g>
 <rect id="diagram-machine-boot-opaque-processor" class="core" x="40" y="20" width="160" height="160" rx="16" style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1"/>
-<path id="diagram-machine-boot-opaque-processor-tab" class="chip-tab" d="M200 146 V164 A16 16 0 0 1 184 180 H96 V162 A16 16 0 0 1 112 146 Z"/>
-<path id="diagram-machine-boot-opaque-processor-pill" class="core" d="M200 146 H112 A16 16 0 0 0 96 162 V180" style="fill: none; stroke-opacity: 1"/>
-<text id="diagram-machine-boot-opaque-core-name" class="label chip-name" x="148" y="164">CPU core</text>
+<path id="diagram-machine-boot-opaque-processor-tab" class="chip-tab" d="M200 146 V164 A16 16 0 0 1 184 180 H56 A16 16 0 0 1 40 164 V146 A0 0 0 0 1 40 146 Z"/>
+<path id="diagram-machine-boot-opaque-processor-pill" class="core" d="M200 146 H40 A0 0 0 0 0 40 146 V146" style="fill: none; stroke-opacity: 1"/>
+<text id="diagram-machine-boot-opaque-core-name" class="label chip-name" x="120" y="164">CPU core</text>
+<path id="diagram-machine-boot-opaque-cog" class="cog transient" d="M140.6,80.1 L147.9,81.4 L147.9,86.6 L140.6,87.9 L139.0,92.9 L144.1,98.3 L141.0,102.5 L134.4,99.3 L130.1,102.4 L131.1,109.7 L126.1,111.3 L122.6,104.8 L117.4,104.8 L113.9,111.3 L108.9,109.7 L109.9,102.4 L105.6,99.3 L99.0,102.5 L95.9,98.3 L101.0,92.9 L99.4,87.9 L92.1,86.6 L92.1,81.4 L99.4,80.1 L101.0,75.1 L95.9,69.7 L99.0,65.5 L105.6,68.7 L109.9,65.6 L108.9,58.3 L113.9,56.7 L117.4,63.2 L122.6,63.2 L126.1,56.7 L131.1,58.3 L130.1,65.6 L134.4,68.7 L141.0,65.5 L144.1,69.7 L139.0,75.1 Z M128,84 A8,8 0 1 0 112,84 A8,8 0 1 0 128,84 Z"/><path class="fragment cog transient" d="M140.6,80.1 L147.9,81.4 L147.9,86.6 L140.6,87.9 L139.0,92.9 L144.1,98.3 L141.0,102.5 L134.4,99.3 L130.1,102.4 L131.1,109.7 L126.1,111.3 L122.6,104.8 L117.4,104.8 L113.9,111.3 L108.9,109.7 L109.9,102.4 L105.6,99.3 L99.0,102.5 L95.9,98.3 L101.0,92.9 L99.4,87.9 L92.1,86.6 L92.1,81.4 L99.4,80.1 L101.0,75.1 L95.9,69.7 L99.0,65.5 L105.6,68.7 L109.9,65.6 L108.9,58.3 L113.9,56.7 L117.4,63.2 L122.6,63.2 L126.1,56.7 L131.1,58.3 L130.1,65.6 L134.4,68.7 L141.0,65.5 L144.1,69.7 L139.0,75.1 Z M128,84 A8,8 0 1 0 112,84 A8,8 0 1 0 128,84 Z" data-fragment-index="0"/>
 </g>
-<path id="diagram-machine-boot-opaque-path-processor-address-bus" class="address-path" d="M231 133 H329"/>
-<path id="diagram-machine-boot-opaque-path-processor-data-bus" class="data-path" d="M231 97 H291"/>
-<path id="diagram-machine-boot-opaque-path-data-bus-firmware" class="data-path" d="M291 34 H382"/>
-<path id="diagram-machine-boot-opaque-path-data-bus-memory" class="data-path" d="M291 210 H382"/>
-<path id="diagram-machine-boot-opaque-path-data-bus-disk-controller" class="data-path" d="M291 465 H382"/>
-<path id="diagram-machine-boot-opaque-path-data-bus-device-controllers" class="data-path" d="M291 320 H237"/>
+<path id="diagram-machine-boot-opaque-path-processor-address-bus" class="address-path" d="M231 133 H329" data-faded-at="2"/>
+<path id="diagram-machine-boot-opaque-path-processor-data-bus" class="data-path" d="M231 97 H291" data-faded-at="2"/>
+<path id="diagram-machine-boot-opaque-path-data-bus-firmware" class="data-path" d="M291 34 H382" data-faded-at="1 2 3"/>
+<path id="diagram-machine-boot-opaque-path-data-bus-memory" class="data-path" d="M291 210 H382" data-faded-at="0 1"/>
+<path id="diagram-machine-boot-opaque-path-data-bus-disk-controller" class="data-path" d="M291 465 H382" data-faded-at="0 3"/>
+<path id="diagram-machine-boot-opaque-path-data-bus-device-controllers" class="data-path" d="M291 320 H237" data-faded-at="0 1 2 3"/>
 <g id="diagram-machine-boot-opaque-data-bus">
 <rect id="diagram-machine-boot-opaque-data-bus-rail" class="data-bus" x="280" y="23" width="22" height="453"/>
 <text id="diagram-machine-boot-opaque-data-bus-label" class="bus-label" x="291" y="330" transform="rotate(-90 291 330)">Data buses · 64 bits</text>
 </g>
+<path id="diagram-machine-boot-opaque-path-address-bus-firmware" class="address-path" d="M329 70 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)" data-faded-at="1 2 3"/>
+<path id="diagram-machine-boot-opaque-path-address-bus-memory" class="address-path" d="M329 150 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)" data-faded-at="0 1"/>
+<path id="diagram-machine-boot-opaque-path-address-bus-disk-controller" class="address-path" d="M329 427 H382" data-faded-at="0 3"/>
 <g id="diagram-machine-boot-opaque-address-bus">
 <rect id="diagram-machine-boot-opaque-address-bus-rail" class="address-bus" x="318" y="59" width="22" height="379"/>
 </g>
-<path id="diagram-machine-boot-opaque-path-address-bus-firmware" class="address-path" d="M329 70 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
-<path id="diagram-machine-boot-opaque-path-address-bus-memory" class="address-path" d="M329 150 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
-<path id="diagram-machine-boot-opaque-path-address-bus-disk-controller" class="address-path" d="M329 427 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
 <polygon id="diagram-machine-boot-opaque-firmware-read-only" points="377,27 377,41 365,34" fill="#ffffff"/>
 <text id="diagram-machine-boot-opaque-address-bus-label" class="bus-label" x="329" y="325" transform="rotate(-90 329 325)">Address buses · 64 bits</text>
-<g id="diagram-machine-boot-opaque-firmware">
+<g id="diagram-machine-boot-opaque-firmware" data-faded-at="2 3">
 <rect id="diagram-machine-boot-opaque-firmware-box" class="box" x="380" y="20" width="608" height="72" rx="8"/>
 <text id="diagram-machine-boot-opaque-firmware-label" class="label" x="470" y="44">Firmware</text>
 <text id="diagram-machine-boot-opaque-firmware-chip" class="small" x="470" y="70">ROM chip: UEFI</text>
 <g id="diagram-machine-boot-opaque-firmware-instructions">
-<rect class="cell" x="574" y="38" width="50" height="14"/><rect class="cell" x="630" y="38" width="50" height="14"/><rect class="cell" x="686" y="38" width="50" height="14"/><rect class="cell" x="742" y="38" width="50" height="14"/><rect class="cell" x="798" y="38" width="50" height="14"/><rect class="cell" x="854" y="38" width="50" height="14"/><rect class="cell" x="910" y="38" width="50" height="14"/>
-<rect class="cell" x="574" y="58" width="50" height="14"/><rect class="cell" x="630" y="58" width="50" height="14"/><rect class="cell" x="686" y="58" width="50" height="14"/><rect class="cell" x="742" y="58" width="50" height="14"/><rect class="cell" x="798" y="58" width="50" height="14"/><rect class="cell" x="854" y="58" width="50" height="14"/><rect class="cell" x="910" y="58" width="50" height="14"/>
+<rect id="diagram-machine-boot-opaque-firmware-cell-0" class="cell" x="574" y="38" width="50" height="14"/><rect class="fragment transient lit walk cell" x="574" y="38" width="50" height="14" style="--delay: 0s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-1" class="cell" x="630" y="38" width="50" height="14"/><rect class="fragment transient lit walk cell" x="630" y="38" width="50" height="14" style="--delay: 0.16s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-2" class="cell" x="686" y="38" width="50" height="14"/><rect class="fragment transient lit walk cell" x="686" y="38" width="50" height="14" style="--delay: 0.32s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-3" class="cell" x="742" y="38" width="50" height="14"/><rect class="fragment transient lit walk cell" x="742" y="38" width="50" height="14" style="--delay: 0.48s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-4" class="cell" x="798" y="38" width="50" height="14"/><rect class="fragment transient lit walk cell" x="798" y="38" width="50" height="14" style="--delay: 0.64s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-5" class="cell" x="854" y="38" width="50" height="14"/><rect class="fragment transient lit walk cell" x="854" y="38" width="50" height="14" style="--delay: 0.8s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-6" class="cell" x="910" y="38" width="50" height="14"/><rect class="fragment transient lit walk cell" x="910" y="38" width="50" height="14" style="--delay: 0.96s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/>
+<rect id="diagram-machine-boot-opaque-firmware-cell-7" class="cell" x="574" y="58" width="50" height="14"/><rect class="fragment transient lit walk cell" x="574" y="58" width="50" height="14" style="--delay: 1.12s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-8" class="cell" x="630" y="58" width="50" height="14"/><rect class="fragment transient lit walk cell" x="630" y="58" width="50" height="14" style="--delay: 1.28s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-9" class="cell" x="686" y="58" width="50" height="14"/><rect class="fragment transient lit walk cell" x="686" y="58" width="50" height="14" style="--delay: 1.44s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-10" class="cell" x="742" y="58" width="50" height="14"/><rect class="fragment transient lit walk cell" x="742" y="58" width="50" height="14" style="--delay: 1.6s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-11" class="cell" x="798" y="58" width="50" height="14"/><rect class="fragment transient lit walk cell" x="798" y="58" width="50" height="14" style="--delay: 1.76s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-12" class="cell" x="854" y="58" width="50" height="14"/><rect class="fragment transient lit walk cell" x="854" y="58" width="50" height="14" style="--delay: 1.92s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect id="diagram-machine-boot-opaque-firmware-cell-13" class="cell" x="910" y="58" width="50" height="14"/><rect class="fragment transient lit walk last cell" x="910" y="58" width="50" height="14" style="--delay: 2.08s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/><rect class="fragment transient lit cell" x="910" y="58" width="50" height="14" data-fragment-index="1" data-gone-from="3"/>
 </g>
 </g>
-<g id="diagram-machine-boot-opaque-memory">
+<g id="diagram-machine-boot-opaque-memory" data-faded-at="0 1">
 <rect id="diagram-machine-boot-opaque-memory-box" class="box" x="380" y="108" width="608" height="283" rx="8"/>
 <text id="diagram-machine-boot-opaque-memory-label" class="label" x="684" y="132">Memory</text>
-<text id="diagram-machine-boot-opaque-memory-note" class="small detail" x="684" y="156">RAM: no program yet</text>
-<text class="small at-rest" x="684" y="156">RAM</text>
+<text id="diagram-machine-boot-opaque-memory-note" class="small" x="684" y="156">RAM</text>
+<text id="diagram-machine-boot-opaque-memory-empty" class="small detail" x="684" y="250" data-gone-from="2">No program/data yet</text>
+</g>
+<g id="diagram-machine-boot-opaque-band-bootloader" class="fragment fill transient" clip-path="url(#diagram-machine-boot-opaque-memory-inside)" data-fragment-index="2">
+<rect class="band program" x="380" y="351" width="608" height="40"/>
+<text class="band-label" x="396" y="371">bootloader</text>
+<g class="band-cells">
+<rect id="diagram-machine-boot-opaque-bootloader-cell-0" class="cell" x="490" y="364" width="50" height="14"/><rect class="fragment transient lit cell" x="490" y="364" width="50" height="14" data-fragment-index="3"/><rect id="diagram-machine-boot-opaque-bootloader-cell-1" class="cell" x="546" y="364" width="50" height="14"/><rect id="diagram-machine-boot-opaque-bootloader-cell-2" class="cell" x="602" y="364" width="50" height="14"/><rect id="diagram-machine-boot-opaque-bootloader-cell-3" class="cell" x="658" y="364" width="50" height="14"/>
+</g>
 </g>
 <g id="diagram-machine-boot-opaque-bands" class="at-rest" clip-path="url(#diagram-machine-boot-opaque-memory-inside)">
 <g id="diagram-machine-boot-opaque-band-init">
-<rect class="band program" x="380" y="311" width="608" height="40"/>
-<text class="band-label" x="396" y="331">init</text>
-<rect class="cell" x="470" y="324" width="50" height="14"/><rect class="cell" x="526" y="324" width="50" height="14"/><rect class="cell" x="582" y="324" width="50" height="14"/>
+<rect class="band program" x="380" y="271" width="608" height="40"/>
+<text class="band-label" x="396" y="291">init</text>
+<rect class="cell" x="490" y="284" width="50" height="14"/><rect class="cell" x="546" y="284" width="50" height="14"/><rect class="cell" x="602" y="284" width="50" height="14"/>
 </g>
 <g id="diagram-machine-boot-opaque-band-kernel">
-<rect class="band" x="380" y="351" width="608" height="40"/>
-<text class="band-label" x="396" y="371">kernel</text>
-<rect class="cell" x="470" y="364" width="50" height="14"/><rect class="cell" x="526" y="364" width="50" height="14"/><rect class="cell" x="582" y="364" width="50" height="14"/><rect class="cell" x="638" y="364" width="50" height="14"/><rect class="cell" x="694" y="364" width="50" height="14"/><rect class="cell" x="750" y="364" width="50" height="14"/>
+<rect class="band" x="380" y="311" width="608" height="40"/>
+<text class="band-label" x="396" y="331">kernel</text>
+<rect class="cell" x="490" y="324" width="50" height="14"/><rect class="cell" x="546" y="324" width="50" height="14"/><rect class="cell" x="602" y="324" width="50" height="14"/><rect class="cell" x="658" y="324" width="50" height="14"/><rect class="cell" x="714" y="324" width="50" height="14"/><rect class="cell" x="770" y="324" width="50" height="14"/>
 </g>
 </g>
-<rect id="diagram-machine-boot-opaque-memory-border" class="box hollow" x="380" y="108" width="608" height="283" rx="8"/>
-<path id="diagram-machine-boot-opaque-path-disk-controller-storage" class="data-path" d="M504 474 V500"/>
-<g id="diagram-machine-boot-opaque-disk-controller">
+<rect id="diagram-machine-boot-opaque-memory-border" class="box hollow" x="380" y="108" width="608" height="283" rx="8" data-faded-at="0 1"/>
+<path id="diagram-machine-boot-opaque-path-disk-controller-storage" class="data-path" d="M504 474 V500" data-faded-at="0 1 3"/>
+<g id="diagram-machine-boot-opaque-disk-controller" data-faded-at="0 3">
 <rect class="box" x="380" y="407" width="248" height="72" rx="8"/>
 <text class="label" x="504" y="443">Disk controller</text>
 </g>
-<g id="diagram-machine-boot-opaque-storage">
+<g id="diagram-machine-boot-opaque-storage" data-faded-at="0 1 3">
 <rect id="diagram-machine-boot-opaque-storage-box" class="box" x="380" y="495" width="608" height="91" rx="8"/>
 <text id="diagram-machine-boot-opaque-storage-label" class="label" x="470" y="528">Storage</text>
 <text id="diagram-machine-boot-opaque-storage-disk" class="small" x="470" y="554">Disk</text>
 <g id="diagram-machine-boot-opaque-storage-files">
-<rect class="file" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text>
+<g id="diagram-machine-boot-opaque-file-bootloader"><rect class="file" x="574" y="527" width="96" height="28" rx="4"/><rect class="fragment transient lit file" x="574" y="527" width="96" height="28" rx="4" data-fragment-index="2" data-gone-from="3"/><text class="tiny" x="622" y="541">bootloader</text></g>
 <rect class="file" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text>
 <rect class="file" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text>
 <text class="label" x="834" y="537">…</text>
 </g>
 </g>
-<g id="diagram-machine-boot-opaque-device-controllers">
+<g id="diagram-machine-boot-opaque-device-controllers" data-faded-at="0 1 2 3">
 <rect class="box" x="30" y="250" width="209" height="90" rx="8"/>
 <text class="label" x="134" y="295">Device controllers</text>
 </g>
-<g id="diagram-machine-boot-opaque-devices">
+<g id="diagram-machine-boot-opaque-devices" data-faded-at="0 1 2 3">
 <rect class="box" x="30" y="380" width="209" height="206" rx="8"/>
 <text class="label" x="134" y="404">Devices</text>
 <rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text>
 <rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text>
 <rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text>
 </g>
-<path id="diagram-machine-boot-opaque-wire-interrupt" class="wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-opaque-wire-arrow)"/>
-<text id="diagram-machine-boot-opaque-interrupt-label" class="tiny signal start" x="52" y="230">interrupts</text>
+<path id="diagram-machine-boot-opaque-wire-interrupt" class="wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-opaque-wire-arrow)" data-faded-at="0 1 2 3"/>
+<text id="diagram-machine-boot-opaque-interrupt-label" class="tiny signal start" x="52" y="224" data-faded-at="0 1 2 3">interrupts</text>
+<g id="diagram-machine-boot-opaque-wire-interrupt-others" data-faded-at="0 1 2 3">
+<path class="wire" d="M73 239 H45"/><path class="wire-dots" d="M80 239 H101"/>
+</g>
+<g id="diagram-machine-boot-opaque-wire-interrupt-disk-controller" data-faded-at="0 1 2 3">
+<path class="wire" d="M628 443 H656"/><path class="wire-dots" d="M663 443 H684"/>
+<text class="tiny signal start" x="636" y="428">interrupts</text>
+</g>
+<g id="diagram-machine-boot-opaque-live-wires"><g class="fragment transient live" data-fragment-index="0" data-gone-from="1"><path class="live-casing" d="M231 133 H329 V70 H380"/><path class="live-wire" d="M231 133 H329 V70 H380"/><path class="live-current" d="M231 133 H329 V70 H380"/></g><g class="fragment transient live" data-fragment-index="0" data-gone-from="1"><path class="live-casing" d="M380 34 H291 V97 H231"/><path class="live-wire" d="M380 34 H291 V97 H231"/><path class="live-current" d="M380 34 H291 V97 H231"/></g><g class="fragment transient live" data-fragment-index="1" data-gone-from="2"><path class="live-casing" d="M231 133 H329 V427 H380"/><path class="live-wire" d="M231 133 H329 V427 H380"/><path class="live-current" d="M231 133 H329 V427 H380"/></g><g class="fragment transient live" data-fragment-index="1" data-gone-from="2"><path class="live-casing" d="M231 97 H291 V465 H380"/><path class="live-wire" d="M231 97 H291 V465 H380"/><path class="live-current" d="M231 97 H291 V465 H380"/></g><g class="fragment transient live" data-fragment-index="2" data-gone-from="3"><path class="live-casing" d="M380 427 H329 V150 H380"/><path class="live-wire" d="M380 427 H329 V150 H380"/><path class="live-current" d="M380 427 H329 V150 H380"/></g><g class="fragment transient live" data-fragment-index="2" data-gone-from="3"><path class="live-casing" d="M622 527 V511 H504 V465 H291 V210 H380"/><path class="live-wire" d="M622 527 V511 H504 V465 H291 V210 H380"/><path class="live-current" d="M622 527 V511 H504 V465 H291 V210 H380"/></g><g class="fragment transient live" data-fragment-index="3"><path class="live-casing" d="M231 133 H329 V150 H380"/><path class="live-wire" d="M231 133 H329 V150 H380"/><path class="live-current" d="M231 133 H329 V150 H380"/></g><g class="fragment transient live" data-fragment-index="3"><path class="live-casing" d="M380 210 H291 V97 H231"/><path class="live-wire" d="M380 210 H291 V97 H231"/><path class="live-current" d="M380 210 H291 V97 H231"/></g></g>
 </svg>
 </div>
-<template class="diagram-captions"><p data-caption="rest">The processor drawn as a stack of cores, connected by the buses to the firmware, the memory, the disk controller and the device controllers. The storage and the devices are behind their controllers, and a device can interrupt the processor.</p><p data-caption="0">The processor, drawn as a box: what is inside it is no longer shown.</p></template>
+<template class="diagram-captions"><p data-caption="rest">The processor drawn as a stack of cores, connected by the buses to the firmware, the memory, the disk controller and the device controllers. The storage and the devices are behind their controllers, and a device can interrupt the processor.</p><p data-caption="0">The machine is powered on. There is no program or data in memory yet.</p><p data-caption="1">The processor starts at an address that leads to the firmware, and runs its instructions one after the other.</p><p data-caption="2">The firmware asks the disk controller to copy the bootloader from the storage into memory, by writing to the controller’s registers.</p><p data-caption="3">The disk controller copies the bootloader into memory over the buses, giving the addresses to write at itself, without the processor.</p><p data-caption="4">The processor jumps to the bootloader’s first instruction, in memory: it now runs the bootloader.</p></template>
 </div>
