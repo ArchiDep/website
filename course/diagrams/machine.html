@@ -87,6 +87,9 @@ svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { s
 svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #cfcfd4; }
 svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
+svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
+svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
+svg.diagram[data-family='machine'] :is(.faded .chip-tab) { fill: #f7f7f8; }
 svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
 svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -256,6 +259,13 @@ svg.diagram .packet .leg.fragment.visible:not(.current-fragment) {
 animation: none;
 opacity: 0;
 }
+/* A part of the drawing a diagram becomes, arrived: drawn as that drawing
+draws it, which reveal.js's `will-change` on its steps would not, keeping it
+on a layer of its own. */
+svg.diagram .arrive.visible {
+/* Important: reveal.js's rules for fragments are more specific. */
+will-change: auto !important;
+}
 /* --- Torn down ----------------------------------------------------------- */
 /* Gone from a step on, such as a session closing; the fully drawn diagram still
 shows it. The motion script sets `gone`. */
@@ -282,6 +292,12 @@ animation: diagram-fade-in 0.3s ease-out calc(var(--delay, 0s) + 0.5s) both;
 /* A control edge appears, then the process it starts. */
 svg.diagram .fade-on.visible {
 animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) both;
+}
+/* A part of the drawing a diagram becomes, once the rest is in place. The
+animation lets go of it once over, so that it is then drawn exactly as in
+that drawing. */
+svg.diagram .arrive.visible {
+animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) backwards;
 }
 /* The cursor types, then disappears on Enter. */
 svg.diagram :is(.spawn, .input).visible .prompt .cursor {

@@ -815,6 +815,19 @@ them next to diagrams that use the same class names. Without a legend, nothing
 is hidden in a deck or while stepping. The conventions below are those of the
 architecture diagrams.
 
+A diagram can end by **becoming the one on the next slide**, drawn in a file of
+its own, so that one animation runs across the two, such as the machine at boot
+whose processor turns opaque. Its last step is the core's `becomes`, given the
+other drawing and three lists of ids: the parts both drawings have, under the
+same id, which move to where the other draws them; the parts only this one has,
+which fade out; and the parts only the other has, which fade in once the rest is
+in place. The step ends on the other drawing exactly as stepping through it
+starts, which the generator checks: every part either one shows by then must be
+in a list, or inside a group that is. What a class draws and the move changes,
+such as a frame's dashes turning solid, is written as an inline style on both
+drawings, which the move goes from one to the other of. The next slide is
+marked `data-transition="none"`, so that the cut does not show.
+
 The steps find what they reveal by its `id` in the drawing, so the drawing keeps
 to a few conventions:
 

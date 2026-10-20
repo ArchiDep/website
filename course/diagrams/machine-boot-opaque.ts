@@ -10,7 +10,8 @@ export default diagram({
       'firmware, the memory, the disk controller and the device controllers. ' +
       'The storage and the devices are behind their controllers, and a device ' +
       'can interrupt the processor.',
-    start: 'The processor, drawn as a box: what is inside it is no longer shown.'
+    start:
+      'The processor, drawn as a box: what is inside it is no longer shown.'
   },
   steps: []
 });

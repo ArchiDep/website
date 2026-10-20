@@ -87,6 +87,9 @@ svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { s
 svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #cfcfd4; }
 svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
+svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
+svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
+svg.diagram[data-family='machine'] :is(.faded .chip-tab) { fill: #f7f7f8; }
 svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
 svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -256,6 +259,13 @@ svg.diagram .packet .leg.fragment.visible:not(.current-fragment) {
 animation: none;
 opacity: 0;
 }
+/* A part of the drawing a diagram becomes, arrived: drawn as that drawing
+draws it, which reveal.js's `will-change` on its steps would not, keeping it
+on a layer of its own. */
+svg.diagram .arrive.visible {
+/* Important: reveal.js's rules for fragments are more specific. */
+will-change: auto !important;
+}
 /* --- Torn down ----------------------------------------------------------- */
 /* Gone from a step on, such as a session closing; the fully drawn diagram still
 shows it. The motion script sets `gone`. */
@@ -282,6 +292,12 @@ animation: diagram-fade-in 0.3s ease-out calc(var(--delay, 0s) + 0.5s) both;
 /* A control edge appears, then the process it starts. */
 svg.diagram .fade-on.visible {
 animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) both;
+}
+/* A part of the drawing a diagram becomes, once the rest is in place. The
+animation lets go of it once over, so that it is then drawn exactly as in
+that drawing. */
+svg.diagram .arrive.visible {
+animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) backwards;
 }
 /* The cursor types, then disappears on Enter. */
 svg.diagram :is(.spawn, .input).visible .prompt .cursor {
@@ -631,48 +647,53 @@ break-inside: avoid;
 </marker>
 </defs>
 <clipPath id="diagram-machine-boot-opaque-memory-inside"><rect x="380" y="108" width="608" height="283" rx="8"/></clipPath>
-<path id="diagram-machine-boot-opaque-path-cores-address-bus" class="address-path" d="M110 118 H329"/>
-<path id="diagram-machine-boot-opaque-path-cores-data-bus" class="data-path" d="M110 82 H291"/>
-<path id="diagram-machine-boot-opaque-path-address-bus-device-controllers" class="address-path" d="M329 252 H274" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
-<path id="diagram-machine-boot-opaque-path-device-controllers-devices" class="data-path" d="M134 315 V365"/>
+<path id="diagram-machine-boot-opaque-path-processor-address-bus" class="address-path" d="M171 118 H329"/>
+<path id="diagram-machine-boot-opaque-path-processor-data-bus" class="data-path" d="M171 82 H291"/>
+<path id="diagram-machine-boot-opaque-path-address-bus-device-controllers" class="address-path at-rest" d="M329 252 H274" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
+<path id="diagram-machine-boot-opaque-path-device-controllers-devices" class="data-path at-rest" d="M134 315 V365"/>
 <g id="diagram-machine-boot-opaque-cores">
+<g id="diagram-machine-boot-opaque-cores-behind" class="at-rest">
 <rect class="core" x="70" y="50" width="130" height="130" rx="16"/>
 <rect class="core" x="60" y="40" width="130" height="130" rx="16"/>
 <rect class="core" x="50" y="30" width="130" height="130" rx="16"/>
-<rect class="core" x="40" y="20" width="130" height="130" rx="16"/>
-<path class="chip-tab" d="M170 116 V134 A16 16 0 0 1 154 150 H66 V132 A16 16 0 0 1 82 116 Z"/>
-<path class="core" fill="none" d="M170 116 H82 A16 16 0 0 0 66 132 V150"/>
-<text class="label chip-name" x="118" y="134">CPU core</text>
+</g>
+<rect id="diagram-machine-boot-opaque-processor" class="core" x="40" y="20" width="130" height="130" rx="16" style="fill: #ffffff; fill-opacity: 1; stroke-dasharray: 8 0"/>
+<path id="diagram-machine-boot-opaque-processor-tab" class="chip-tab" d="M170 116 V134 A16 16 0 0 1 154 150 H66 V132 A16 16 0 0 1 82 116 Z"/>
+<path id="diagram-machine-boot-opaque-processor-pill" class="core" d="M170 116 H82 A16 16 0 0 0 66 132 V150" style="fill: none; stroke-dasharray: 8 0"/>
+<text id="diagram-machine-boot-opaque-core-name" class="label chip-name" x="118" y="134">CPU core</text>
 </g>
 <path id="diagram-machine-boot-opaque-path-data-bus-firmware" class="data-path" d="M291 34 H382"/>
 <path id="diagram-machine-boot-opaque-path-data-bus-memory" class="data-path" d="M291 210 H382"/>
 <path id="diagram-machine-boot-opaque-path-data-bus-disk-controller" class="data-path" d="M291 465 H382"/>
-<path id="diagram-machine-boot-opaque-path-data-bus-device-controllers" class="data-path" d="M291 300 H237"/>
+<path id="diagram-machine-boot-opaque-path-data-bus-device-controllers" class="data-path at-rest" d="M291 300 H237"/>
 <g id="diagram-machine-boot-opaque-data-bus">
-<rect class="data-bus" x="280" y="23" width="22" height="453"/>
-<text class="bus-label" x="291" y="330" transform="rotate(-90 291 330)">Data bus · 64 bits</text>
+<rect id="diagram-machine-boot-opaque-data-bus-rail" class="data-bus" x="280" y="23" width="22" height="453"/>
+<text id="diagram-machine-boot-opaque-data-bus-label" class="bus-label" x="291" y="330" transform="rotate(-90 291 330)">Data bus · 64 bits</text>
 </g>
 <g id="diagram-machine-boot-opaque-address-bus">
-<rect class="address-bus" x="318" y="59" width="22" height="379"/>
+<rect id="diagram-machine-boot-opaque-address-bus-rail" class="address-bus" x="318" y="59" width="22" height="379"/>
 </g>
 <path id="diagram-machine-boot-opaque-path-address-bus-firmware" class="address-path" d="M329 70 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
 <path id="diagram-machine-boot-opaque-path-address-bus-memory" class="address-path" d="M329 150 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
 <path id="diagram-machine-boot-opaque-path-address-bus-disk-controller" class="address-path" d="M329 427 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
-<polygon points="377,27 377,41 365,34" fill="#ffffff"/>
-<text class="bus-label" x="329" y="325" transform="rotate(-90 329 325)">Address bus · 64 bits</text>
+<polygon id="diagram-machine-boot-opaque-firmware-read-only" points="377,27 377,41 365,34" fill="#ffffff"/>
+<text id="diagram-machine-boot-opaque-address-bus-label" class="bus-label" x="329" y="325" transform="rotate(-90 329 325)">Address bus · 64 bits</text>
 <g id="diagram-machine-boot-opaque-firmware">
-<rect class="box" x="380" y="20" width="608" height="72" rx="8"/>
-<text class="label" x="470" y="44">Firmware</text>
-<text class="small" x="470" y="70">ROM chip: UEFI</text>
+<rect id="diagram-machine-boot-opaque-firmware-box" class="box" x="380" y="20" width="608" height="72" rx="8"/>
+<text id="diagram-machine-boot-opaque-firmware-label" class="label" x="470" y="44">Firmware</text>
+<text id="diagram-machine-boot-opaque-firmware-chip" class="small" x="470" y="70">ROM chip: UEFI</text>
+<g id="diagram-machine-boot-opaque-firmware-instructions">
 <rect class="cell" x="574" y="38" width="50" height="14"/><rect class="cell" x="630" y="38" width="50" height="14"/><rect class="cell" x="686" y="38" width="50" height="14"/><rect class="cell" x="742" y="38" width="50" height="14"/><rect class="cell" x="798" y="38" width="50" height="14"/><rect class="cell" x="854" y="38" width="50" height="14"/><rect class="cell" x="910" y="38" width="50" height="14"/>
 <rect class="cell" x="574" y="58" width="50" height="14"/><rect class="cell" x="630" y="58" width="50" height="14"/><rect class="cell" x="686" y="58" width="50" height="14"/><rect class="cell" x="742" y="58" width="50" height="14"/><rect class="cell" x="798" y="58" width="50" height="14"/><rect class="cell" x="854" y="58" width="50" height="14"/><rect class="cell" x="910" y="58" width="50" height="14"/>
 </g>
-<g id="diagram-machine-boot-opaque-memory">
-<rect class="box" x="380" y="108" width="608" height="283" rx="8"/>
-<text class="label" x="684" y="132">Memory</text>
-<text class="small" x="684" y="156">RAM</text>
 </g>
-<g id="diagram-machine-boot-opaque-bands" clip-path="url(#diagram-machine-boot-opaque-memory-inside)">
+<g id="diagram-machine-boot-opaque-memory">
+<rect id="diagram-machine-boot-opaque-memory-box" class="box" x="380" y="108" width="608" height="283" rx="8"/>
+<text id="diagram-machine-boot-opaque-memory-label" class="label" x="684" y="132">Memory</text>
+<text id="diagram-machine-boot-opaque-memory-note" class="small detail" x="684" y="156">RAM: no program yet</text>
+<text class="small at-rest" x="684" y="156">RAM</text>
+</g>
+<g id="diagram-machine-boot-opaque-bands" class="at-rest" clip-path="url(#diagram-machine-boot-opaque-memory-inside)">
 <g id="diagram-machine-boot-opaque-band-init">
 <rect class="band program" x="380" y="311" width="608" height="40"/>
 <text class="band-label" x="396" y="331">init</text>
@@ -684,34 +705,36 @@ break-inside: avoid;
 <rect class="cell" x="470" y="364" width="50" height="14"/><rect class="cell" x="526" y="364" width="50" height="14"/><rect class="cell" x="582" y="364" width="50" height="14"/><rect class="cell" x="638" y="364" width="50" height="14"/><rect class="cell" x="694" y="364" width="50" height="14"/><rect class="cell" x="750" y="364" width="50" height="14"/>
 </g>
 </g>
-<rect class="box hollow" x="380" y="108" width="608" height="283" rx="8"/>
+<rect id="diagram-machine-boot-opaque-memory-border" class="box hollow" x="380" y="108" width="608" height="283" rx="8"/>
 <path id="diagram-machine-boot-opaque-path-disk-controller-storage" class="data-path" d="M504 474 V500"/>
 <g id="diagram-machine-boot-opaque-disk-controller">
 <rect class="box" x="380" y="407" width="248" height="72" rx="8"/>
 <text class="label" x="504" y="443">Disk controller</text>
 </g>
 <g id="diagram-machine-boot-opaque-storage">
-<rect class="box" x="380" y="495" width="608" height="91" rx="8"/>
-<text class="label" x="470" y="528">Storage</text>
-<text class="small" x="470" y="554">Disk</text>
+<rect id="diagram-machine-boot-opaque-storage-box" class="box" x="380" y="495" width="608" height="91" rx="8"/>
+<text id="diagram-machine-boot-opaque-storage-label" class="label" x="470" y="528">Storage</text>
+<text id="diagram-machine-boot-opaque-storage-disk" class="small" x="470" y="554">Disk</text>
+<g id="diagram-machine-boot-opaque-storage-files">
 <rect class="file" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text>
 <rect class="file" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text>
 <rect class="file" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text>
 <text class="label" x="834" y="537">…</text>
 </g>
-<g id="diagram-machine-boot-opaque-device-controllers">
+</g>
+<g id="diagram-machine-boot-opaque-device-controllers" class="at-rest">
 <rect class="box" x="30" y="230" width="209" height="90" rx="8"/>
 <text class="label" x="134" y="275">Device controllers</text>
 </g>
-<g id="diagram-machine-boot-opaque-devices">
+<g id="diagram-machine-boot-opaque-devices" class="at-rest">
 <rect class="box" x="30" y="360" width="209" height="226" rx="8"/>
 <text class="label" x="134" y="384">Devices</text>
 <rect class="file" x="50" y="406" width="169" height="44" rx="4"/><text class="small" x="134" y="428">Network</text>
 <rect class="file" x="50" y="460" width="169" height="44" rx="4"/><text class="small" x="134" y="482">Keyboard</text>
 <rect class="file" x="50" y="514" width="169" height="44" rx="4"/><text class="small" x="134" y="536">Graphics card</text>
 </g>
-<path id="diagram-machine-boot-opaque-wire-interrupt" class="wire" d="M45 230 V153" marker-end="url(#diagram-machine-boot-opaque-wire-arrow)"/>
-<text class="tiny signal start" x="52" y="198">interrupt</text>
+<path id="diagram-machine-boot-opaque-wire-interrupt" class="wire at-rest" d="M45 230 V153" marker-end="url(#diagram-machine-boot-opaque-wire-arrow)"/>
+<text class="tiny signal start at-rest" x="52" y="198">interrupt</text>
 </svg>
 </div>
 <template class="diagram-captions"><p data-caption="rest">The processor drawn as a stack of cores, connected by the buses to the firmware, the memory, the disk controller and the device controllers. The storage and the devices are behind their controllers, and a device can interrupt the processor.</p><p data-caption="0">The processor, drawn as a box: what is inside it is no longer shown.</p></template>

@@ -18,17 +18,21 @@
 //   step.
 // - A change of focus: a part with `data-faded-at` is faded, given the `faded`
 //   class, while a step at one of those indices is the last one reached.
+// - A reshape: once the `.reshape` step is reached, each part with
+//   `data-reshaped-<attribute>` attributes moves to those values, after the
+//   step's `--delay` and over its `--duration`, such as a diagram becoming the
+//   one drawn on the next slide.
 //
 // Safari cannot set or animate a path's shape from CSS (the `d` property), so
 // shapes are rewritten here, and positions set as transform attributes.
 
+import { between, round } from './shapes';
 import { fadedAt, reachedIndex } from './steps';
 
 const MOVE_MS = 900;
 // Points a shape is sampled at, when the two shapes it moves between are not
 // drawn with the same commands.
 const SAMPLES = 64;
-const NUMBER = /-?\d*\.?\d+(?:e[-+]?\d+)?/giu;
 
 type Shape = 'final' | 'unfolded' | 'listener';
 
@@ -68,6 +72,7 @@ export function animate(svg: SVGSVGElement): void {
 
   svg.dataset['animated'] = '';
   followShapes(svg);
+  followReshape(svg);
   followTeardowns(svg);
   followFocus(svg);
 }
@@ -226,25 +231,9 @@ function morph(
   from: string,
   to: string
 ): (t: number) => string {
-  if (from === to) {
-    return () => to;
-  }
-
-  const a = from.match(NUMBER)?.map(Number) ?? [];
-  const b = to.match(NUMBER)?.map(Number) ?? [];
-  if (
-    a.length === b.length &&
-    from.replace(NUMBER, '') === to.replace(NUMBER, '')
-  ) {
-    const parts = to.split(NUMBER);
-    return t =>
-      t >= 1
-        ? to
-        : parts
-            .map((part, i) =>
-              i < b.length ? part + round(a[i]! + (b[i]! - a[i]!) * t) : part
-            )
-            .join('');
+  const alike = between(from, to);
+  if (alike !== null) {
+    return alike;
   }
 
   const pa = sample(path, from);
@@ -272,8 +261,78 @@ function sample(path: SVGPathElement, d: string): DOMPoint[] {
   return points;
 }
 
-function round(value: number): number {
-  return Math.round(value * 100) / 100;
+interface Reshaped {
+  readonly element: Element;
+  readonly name: string;
+  readonly at: (t: number) => string;
+}
+
+/**
+ * Parts moved to what their `data-reshaped-<attribute>` attributes say once
+ * the `.reshape` step is reached. Only reaching it moves them; anything else,
+ * such as stepping back, puts them where they belong at once.
+ */
+function followReshape(svg: SVGSVGElement): void {
+  const marker = svg.querySelector('.fragment.reshape');
+  if (marker === null) {
+    return;
+  }
+
+  const prefix = 'data-reshaped-';
+  const reshaped: Reshaped[] = [...svg.querySelectorAll('*')].flatMap(element =>
+    [...element.attributes]
+      .filter(({ name }) => name.startsWith(prefix))
+      .map(({ name, value: to }) => {
+        const attribute = name.slice(prefix.length);
+        const from = element.getAttribute(attribute) ?? '';
+        const at = between(from, to) ?? ((t: number) => (t < 1 ? from : to));
+        return { element, name: attribute, at };
+      })
+  );
+
+  const place = (t: number): void => {
+    for (const { element, name, at } of reshaped) {
+      element.setAttribute(name, at(t));
+    }
+  };
+
+  const timing = (property: string): number =>
+    (parseFloat(getComputedStyle(marker).getPropertyValue(property)) || 0) *
+    1000;
+
+  let current: boolean | null = null;
+  let frame = 0;
+  let timer = 0;
+
+  observeSteps(svg, () => {
+    const next = reached(marker);
+    if (next === current) {
+      return;
+    }
+
+    const from = current;
+    current = next;
+    cancelAnimationFrame(frame);
+    window.clearTimeout(timer);
+
+    if (from === null || !next || reducedMotion()) {
+      place(next ? 1 : 0);
+      return;
+    }
+
+    const duration = timing('--duration');
+    timer = window.setTimeout(() => {
+      const start = performance.now();
+      const tick = (now: number): void => {
+        const t = duration > 0 ? Math.min((now - start) / duration, 1) : 1;
+        place(ease(t));
+        if (t < 1) {
+          frame = requestAnimationFrame(tick);
+        }
+      };
+      frame = requestAnimationFrame(tick);
+    }, timing('--delay'));
+  });
 }
 
 /**

@@ -88,6 +88,9 @@
     svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #cfcfd4; }
     svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
+    svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
+    svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
+    svg.diagram[data-family='machine'] :is(.faded .chip-tab) { fill: #f7f7f8; }
     svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
     svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -144,11 +147,13 @@
     </marker>
   </defs>
 
-  <!-- The processor, titled by a pill in its bottom-right corner -->
-  <path class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z"/>
-  <rect class="frame" x="10" y="10" width="590" height="580" rx="16"/>
-  <path class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590"/>
-  <text class="label chip-name" x="538" y="574">64-bit CPU</text>
+  <!-- The processor, titled by a pill in its bottom-right corner. Its frame
+       is drawn empty and dashed, as its style says, so that it can fill and
+       turn solid into the core it becomes once opaque. -->
+  <rect id="processor" class="frame" x="10" y="10" width="590" height="580" rx="16" style="fill: #ffffff; fill-opacity: 0; stroke-dasharray: 8 6"/>
+  <path id="processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z"/>
+  <path id="processor-pill" class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-dasharray: 8 6"/>
+  <text id="processor-name" class="label chip-name" x="538" y="574">64-bit CPU</text>
 
   <g id="control-unit">
     <rect class="box" x="40" y="145" width="460" height="140" rx="8"/>
@@ -179,14 +184,14 @@
   </g>
 
   <!-- Buses -->
-  <path id="path-selector-address-bus" class="address-path" d="M526 75 H669"/>
+  <path id="path-processor-address-bus" class="address-path" d="M526 75 H669"/>
   <path id="path-data-bus-firmware" class="data-path" d="M631 34 H742"/>
   <path id="path-data-bus-memory" class="data-path" d="M631 210 H742"/>
-  <path id="path-data-bus-controller" class="data-path" d="M631 465 H742"/>
+  <path id="path-data-bus-disk-controller" class="data-path" d="M631 465 H742"/>
   <g id="data-bus">
-    <rect class="data-bus" x="620" y="23" width="22" height="479"/>
-    <rect class="data-bus" x="80" y="480" width="562" height="22"/>
-    <text class="bus-label" x="631" y="230" transform="rotate(-90 631 230)">Data bus · 64 bits</text>
+    <path id="path-processor-data-bus" class="data-path" d="M80 491 H642"/>
+    <rect id="data-bus-rail" class="data-bus" x="620" y="23" width="22" height="479"/>
+    <text id="data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)">Data bus · 64 bits</text>
   </g>
   <!-- Caches: copies of recently used memory, on the data bus where it leaves
        the processor, each larger and slower than the one before. L1 and L2
@@ -198,15 +203,15 @@
     <text class="small" x="445" y="525">Caches</text>
   </g>
   <g id="address-bus">
-    <rect class="address-bus" x="658" y="59" width="22" height="379"/>
+    <rect id="address-bus-rail" class="address-bus" x="658" y="59" width="22" height="379"/>
   </g>
   <path id="path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#address-arrow)"/>
   <path id="path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#address-arrow)"/>
-  <path id="path-address-bus-controller" class="address-path" d="M669 427 H705" marker-end="url(#address-arrow)"/>
+  <path id="path-address-bus-disk-controller" class="address-path" d="M669 427 H705" marker-end="url(#address-arrow)"/>
   <!-- The firmware is only read: a small arrow inside its data path, since an
        arrowhead at its end would cut it off from the firmware -->
-  <polygon points="739,27 739,41 727,34" fill="#ffffff"/>
-  <text class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 64 bits</text>
+  <polygon id="firmware-read-only" points="739,27 739,41 727,34" fill="#ffffff"/>
+  <text id="address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 64 bits</text>
 
   <!-- Selector: chooses whether the program counter or the instruction gives
        the address -->
@@ -228,7 +233,7 @@
   <!-- Instruction register: an x86-64 instruction is 1 to 15 bytes long,
        with no fixed split -->
   <g id="instruction-register"><rect class="bit" x="80" y="210" width="224" height="34"/><text class="tiny" x="192" y="227">1 to 15 bytes</text></g>
-  <text class="small" x="192" y="262">Instruction</text>
+  <text id="instruction-label" class="small" x="192" y="262">Instruction</text>
 
   <!-- Registers: x86-64 has 16 general-purpose registers of 64 bits -->
   <g id="registers">
@@ -246,12 +251,12 @@
 
   <!-- The zero flag: a single wire -->
   <path id="wire-zero" class="wire" d="M425 322 V290" marker-end="url(#wire-arrow)"/>
-  <text class="small end" x="414" y="305">zero</text>
+  <text id="zero-label" class="small end" x="414" y="305">zero</text>
 
   <!-- The one control signal drawn in full: it tells the ALU which operation
        to compute -->
   <path id="wire-operation" class="wire" d="M465 285 V333" marker-end="url(#wire-arrow)"/>
-  <text class="small start" x="474" y="305">operation</text>
+  <text id="operation-label" class="small start" x="474" y="305">operation</text>
 
   <!-- The control unit's other signals, which only start -->
   <g id="control-signals">
@@ -269,25 +274,25 @@
     <path class="clock-wave" d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180"/>
   </g>
   <g id="wire-clock"><path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/></g>
-  <text class="tiny signal start" x="207" y="536">to every register</text>
+  <text id="clock-label" class="tiny signal start" x="207" y="536">to every register</text>
 
   <!-- Firmware: where the processor starts -->
   <g id="firmware">
-    <rect class="box" x="740" y="20" width="248" height="72" rx="8"/>
-    <text class="label" x="864" y="44">Firmware</text>
-    <text class="small" x="864" y="70">ROM chip: UEFI</text>
+    <rect id="firmware-box" class="box" x="740" y="20" width="248" height="72" rx="8"/>
+    <text id="firmware-label" class="label" x="864" y="44">Firmware</text>
+    <text id="firmware-chip" class="small" x="864" y="70">ROM chip: UEFI</text>
   </g>
 
   <!-- Memory: no program in it yet at power-on -->
   <g id="memory">
-    <rect class="box" x="740" y="108" width="248" height="283" rx="8"/>
-    <text class="label" x="864" y="132">Memory</text>
-    <text class="small" x="864" y="156">RAM: no program yet</text>
+    <rect id="memory-box" class="box" x="740" y="108" width="248" height="283" rx="8"/>
+    <text id="memory-label" class="label" x="864" y="132">Memory</text>
+    <text id="memory-note" class="small" x="864" y="156">RAM: no program yet</text>
   </g>
 
   <!-- Disk controller: on the buses, unlike the storage behind it, which the
        processor cannot address -->
-  <path id="path-controller-storage" class="data-path" d="M864 474 V500"/>
+  <path id="path-disk-controller-storage" class="data-path" d="M864 474 V500"/>
   <g id="disk-controller">
     <rect class="box" x="740" y="407" width="248" height="72" rx="8"/>
     <text class="label" x="864" y="443">Disk controller</text>
@@ -295,9 +300,11 @@
 
   <!-- Storage: holds the bootloader, the kernel and every other program -->
   <g id="storage">
-    <rect class="box" x="740" y="495" width="248" height="91" rx="8"/>
-    <text class="label" x="864" y="518">Storage</text>
-    <text class="small" x="864" y="546">Disk: bootloader, kernel,</text>
-    <text class="small" x="864" y="568">programs, files</text>
+    <rect id="storage-box" class="box" x="740" y="495" width="248" height="91" rx="8"/>
+    <text id="storage-label" class="label" x="864" y="518">Storage</text>
+    <g id="storage-contents">
+      <text class="small" x="864" y="546">Disk: bootloader, kernel,</text>
+      <text class="small" x="864" y="568">programs, files</text>
+    </g>
   </g>
 </svg>

@@ -152,6 +152,14 @@ svg.diagram .packet .leg.fragment.visible:not(.current-fragment) {
   opacity: 0;
 }
 
+/* A part of the drawing a diagram becomes, arrived: drawn as that drawing
+   draws it, which reveal.js's `will-change` on its steps would not, keeping it
+   on a layer of its own. */
+svg.diagram .arrive.visible {
+  /* Important: reveal.js's rules for fragments are more specific. */
+  will-change: auto !important;
+}
+
 /* --- Torn down ----------------------------------------------------------- */
 
 /* Gone from a step on, such as a session closing; the fully drawn diagram still
@@ -181,6 +189,12 @@ svg.diagram .gone {
   /* A control edge appears, then the process it starts. */
   svg.diagram .fade-on.visible {
     animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) both;
+  }
+  /* A part of the drawing a diagram becomes, once the rest is in place. The
+     animation lets go of it once over, so that it is then drawn exactly as in
+     that drawing. */
+  svg.diagram .arrive.visible {
+    animation: diagram-fade-in 0.4s ease-out var(--delay, 0s) backwards;
   }
 
   /* The cursor types, then disappears on Enter. */

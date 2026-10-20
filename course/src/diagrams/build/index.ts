@@ -15,6 +15,8 @@ export {
   teardown
 } from './actions';
 export type { Run } from './actions';
+export { becomes, drawingOf } from './becomes';
+export type { Becoming } from './becomes';
 export { START } from './builder';
 export type { Action, Builder, DiagramDefinition, Step } from './builder';
 
