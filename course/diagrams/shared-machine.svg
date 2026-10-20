@@ -80,7 +80,7 @@
     svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
     svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
     /* A control signal the control unit gives, in red */
-    svg.diagram[data-family='machine'] .wire.lit { stroke: #e03131; }
+    svg.diagram[data-family='machine'] :is(.wire, .wire-dots).lit { stroke: #e03131; }
     svg.diagram[data-family='machine'] .wire.lit[marker-end] { marker-end: url(#wire-arrow-lit); }
     svg.diagram[data-family='machine'] .marker-wire.lit-marker { fill: #e03131; }
     /* The clock's tick: its wave and its wire in red, flashing as the step

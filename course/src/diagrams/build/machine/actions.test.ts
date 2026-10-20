@@ -272,18 +272,35 @@ describe('fills', () => {
 });
 
 describe('reads and writes', () => {
-  it("light the R or the W of the memory's controls", () => {
+  it("light the R or the W of the memory's controls, and the control signal that tells the memory, from the control unit to the controls, while either is", () => {
     assert.equal(
       generated(
-        '<text id="read-write" class="read-write" x="1" y="2">R/W</text>',
-        [[reads()], [writes()]]
+        '<g id="control-signal-memory"><path class="wire" d="M0 0 H2"/><path class="wire-dots" d="M3 0 H5"/></g>' +
+          '<g id="wire-read-write"><path class="wire" d="M0 9 H1"/><text id="read-write" class="read-write" x="1" y="2">R/W</text></g>',
+        // Two stretches, so that the second does not copy the first's copies
+        [[reads()], [writes()], [], [reads()]]
       ),
       partial(
-        '<g class="fragment teardown" data-fragment-index="1"/>' +
+        '<g class="fragment teardown" data-fragment-index="2"/>' +
+          '<g class="fragment teardown" data-fragment-index="1"/>' +
+          '<g id="diagram-m-control-signal-memory">' +
+          '<path class="wire" d="M0 0 H2"/>' +
+          '<path class="fragment transient lit wire" d="M0 0 H2" data-fragment-index="3"/>' +
+          '<path class="fragment transient lit wire" d="M0 0 H2" data-fragment-index="0" data-gone-from="2"/>' +
+          '<path class="wire-dots" d="M3 0 H5"/>' +
+          '<path class="fragment transient lit wire-dots" d="M3 0 H5" data-fragment-index="3"/>' +
+          '<path class="fragment transient lit wire-dots" d="M3 0 H5" data-fragment-index="0" data-gone-from="2"/>' +
+          '</g>' +
+          '<g id="diagram-m-wire-read-write">' +
+          '<path class="wire" d="M0 9 H1"/>' +
+          '<path class="fragment transient lit wire" d="M0 9 H1" data-fragment-index="3"/>' +
+          '<path class="fragment transient lit wire" d="M0 9 H1" data-fragment-index="0" data-gone-from="2"/>' +
           '<text id="diagram-m-read-write" class="read-write" x="1" y="2">R/W</text>' +
-          '<text class="fragment transient lit read-write" x="1" y="2" data-fragment-index="1"><tspan class="unlit">R/</tspan>W</text>' +
-          '<text class="fragment transient lit read-write" x="1" y="2" data-fragment-index="0" data-gone-from="1">R<tspan class="unlit">/W</tspan></text>',
-        2
+          '<text class="fragment transient lit read-write" x="1" y="2" data-fragment-index="1" data-gone-from="2"><tspan class="unlit">R/</tspan>W</text>' +
+          '<text class="fragment transient lit read-write" x="1" y="2" data-fragment-index="3">R<tspan class="unlit">/W</tspan></text>' +
+          '<text class="fragment transient lit read-write" x="1" y="2" data-fragment-index="0" data-gone-from="1">R<tspan class="unlit">/W</tspan></text>' +
+          '</g>',
+        4
       )
     );
   });

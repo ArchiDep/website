@@ -250,6 +250,7 @@ function draw(builder: Builder, state: Machine): void {
 
   drawAccess(builder, 'read', state.access.read);
   drawAccess(builder, 'write', state.access.write);
+  drawMemorySignal(builder, [...state.access.read, ...state.access.write]);
 
   for (const [path, indices] of state.live) {
     drawLive(builder, path, indices);
@@ -341,6 +342,32 @@ function drawWalk(builder: Builder, index: number, ids: readonly string[]) {
     insertAfter(shape, copy);
     during(builder, copy, run);
   });
+}
+
+/**
+ * The control signal that tells the memory to read or write, lit while it
+ * does either: where it leaves the control unit, `control-signal-memory`, and
+ * where it arrives at the memory, `wire-read-write`, each of their wires.
+ */
+function drawMemorySignal(builder: Builder, indices: number[]): void {
+  if (indices.length === 0) {
+    return;
+  }
+
+  // The drawing's wires, found before any copy of them is added next to them.
+  const wires = ['control-signal-memory', 'wire-read-write'].flatMap(id =>
+    childElements(builder.element(id)).filter(
+      child => hasClass(child, 'wire') || hasClass(child, 'wire-dots')
+    )
+  );
+  for (const run of runs(indices, builder.steps)) {
+    for (const wire of wires) {
+      const copy = copyOf(wire);
+      addClasses(copy, 'lit');
+      insertAfter(wire, copy);
+      during(builder, copy, run);
+    }
+  }
 }
 
 /**
