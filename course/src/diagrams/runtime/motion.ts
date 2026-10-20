@@ -18,10 +18,12 @@
 //   step.
 // - A change of focus: a part with `data-faded-at` is faded, given the `faded`
 //   class, while a step at one of those indices is the last one reached.
-// - A reshape: once the `.reshape` step is reached, each part with
-//   `data-reshaped-<attribute>` attributes moves to those values, after the
-//   step's `--delay` and over its `--duration`, such as a diagram becoming the
-//   one drawn on the next slide.
+// - A reshape: a part with `data-reshaped-<index>-<attribute>` attributes takes
+//   each value from the step at that index on, moving to it when that step, a
+//   `.reshape` step, is reached from the one before, after the step's `--delay`
+//   and over its `--duration`: such as a diagram becoming the one drawn on the
+//   next slide. A part `data-unseen-at` a step fades out as it starts moving,
+//   and back in once in place.
 //
 // Safari cannot set or animate a path's shape from CSS (the `d` property), so
 // shapes are rewritten here, and positions set as transform attributes.
@@ -261,51 +263,83 @@ function sample(path: SVGPathElement, d: string): DOMPoint[] {
   return points;
 }
 
-interface Reshaped {
+interface Track {
   readonly element: Element;
-  readonly name: string;
-  readonly at: (t: number) => string;
+  readonly attribute: string;
+  readonly drawn: string;
+  /**
+   * The values it takes, from the step at each index on, in their order.
+   */
+  readonly values: readonly (readonly [number, string])[];
 }
 
+const RESHAPED = /^data-reshaped-(\d+)-(.+)$/u;
+
 /**
- * Parts moved to what their `data-reshaped-<attribute>` attributes say once
- * the `.reshape` step is reached. Only reaching it moves them; anything else,
- * such as stepping back, puts them where they belong at once.
+ * Parts given new values at `.reshape` steps. Only reaching such a step from
+ * the one before moves them; anything else, such as stepping back, puts them
+ * where they belong at once.
  */
 function followReshape(svg: SVGSVGElement): void {
-  const marker = svg.querySelector('.fragment.reshape');
-  if (marker === null) {
+  const markers = new Map(
+    [...svg.querySelectorAll('.fragment.reshape')].map(marker => [
+      Number(marker.getAttribute('data-fragment-index')),
+      marker
+    ])
+  );
+  if (markers.size === 0) {
     return;
   }
 
-  const prefix = 'data-reshaped-';
-  const reshaped: Reshaped[] = [...svg.querySelectorAll('*')].flatMap(element =>
-    [...element.attributes]
-      .filter(({ name }) => name.startsWith(prefix))
-      .map(({ name, value: to }) => {
-        const attribute = name.slice(prefix.length);
-        const from = element.getAttribute(attribute) ?? '';
-        const at = between(from, to) ?? ((t: number) => (t < 1 ? from : to));
-        return { element, name: attribute, at };
-      })
-  );
+  const tracks: Track[] = [...svg.querySelectorAll('*')].flatMap(element => {
+    const values = new Map<string, [number, string][]>();
+    for (const { name, value } of element.attributes) {
+      const [, index, attribute] = RESHAPED.exec(name) ?? [];
+      if (index !== undefined && attribute !== undefined) {
+        values.set(attribute, [
+          ...(values.get(attribute) ?? []),
+          [Number(index), value]
+        ]);
+      }
+    }
 
-  const place = (t: number): void => {
-    for (const { element, name, at } of reshaped) {
-      element.setAttribute(name, at(t));
+    return [...values].map(([attribute, changes]) => ({
+      element,
+      attribute,
+      drawn: element.getAttribute(attribute) ?? '',
+      values: changes.sort(([a], [b]) => a - b)
+    }));
+  });
+  const unseen = [...svg.querySelectorAll<SVGElement>('[data-unseen-at]')];
+
+  const valueAt = (track: Track, reached: number): string => {
+    let value = track.drawn;
+    for (const [index, changed] of track.values) {
+      if (index <= reached) {
+        value = changed;
+      }
+    }
+
+    return value;
+  };
+
+  const place = (reached: number): void => {
+    for (const track of tracks) {
+      track.element.setAttribute(track.attribute, valueAt(track, reached));
+    }
+
+    for (const element of unseen) {
+      element.style.removeProperty('opacity');
     }
   };
 
-  const timing = (property: string): number =>
-    (parseFloat(getComputedStyle(marker).getPropertyValue(property)) || 0) *
-    1000;
-
-  let current: boolean | null = null;
+  const fragments = [...svg.querySelectorAll('.fragment')];
+  let current: number | null = null;
   let frame = 0;
   let timer = 0;
 
   observeSteps(svg, () => {
-    const next = reached(marker);
+    const next = reachedOf(fragments);
     if (next === current) {
       return;
     }
@@ -315,23 +349,57 @@ function followReshape(svg: SVGSVGElement): void {
     cancelAnimationFrame(frame);
     window.clearTimeout(timer);
 
-    if (from === null || !next || reducedMotion()) {
-      place(next ? 1 : 0);
+    const marker = markers.get(next);
+    if (
+      from === null ||
+      next !== from + 1 ||
+      marker === undefined ||
+      reducedMotion()
+    ) {
+      place(next);
       return;
     }
 
+    const moves = tracks.map(track => {
+      const a = valueAt(track, from);
+      const b = valueAt(track, next);
+      return { track, at: between(a, b) ?? ((t: number) => (t < 1 ? a : b)) };
+    });
+    const hidden = unseen.filter(element =>
+      (element.dataset['unseenAt'] ?? '').split(/\s+/u).includes(String(next))
+    );
+    const timing = (property: string): number =>
+      (parseFloat(getComputedStyle(marker).getPropertyValue(property)) || 0) *
+      1000;
+    const delay = timing('--delay');
     const duration = timing('--duration');
+
+    const show = (t: number): void => {
+      for (const { track, at } of moves) {
+        track.element.setAttribute(track.attribute, at(ease(t)));
+      }
+
+      // Out over the first quarter of the move, back in over the last.
+      const opacity = String(
+        Math.min(1, Math.max(0, Math.abs(t - 0.5) * 4 - 1))
+      );
+      for (const element of hidden) {
+        element.style.opacity = t >= 1 ? '' : opacity;
+      }
+    };
+
+    show(0);
     timer = window.setTimeout(() => {
       const start = performance.now();
       const tick = (now: number): void => {
         const t = duration > 0 ? Math.min((now - start) / duration, 1) : 1;
-        place(ease(t));
+        show(t);
         if (t < 1) {
           frame = requestAnimationFrame(tick);
         }
       };
       frame = requestAnimationFrame(tick);
-    }, timing('--delay'));
+    }, delay);
   });
 }
 

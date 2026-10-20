@@ -90,6 +90,54 @@ const cornerTitle = () => ({
   }
 });
 
+// A slide marked `data-transition="none"` follows on from the one before it,
+// such as a diagram becoming the one drawn on the next slide, and going back to
+// that one must not show a transition either. But reveal moves a slide in with
+// its own transition, which the slide before cannot give up without also
+// losing it from the slide before that. So it takes "none" only while the slide
+// following on from it is shown, and gets its own back once it is shown again,
+// after the frame that puts it in place.
+const followingOn = () => ({
+  id: 'archidep-following-on',
+  init: (reveal: Reveal.Api) => {
+    const own = new Map<Element, string | null>();
+    const before = (): Element | null => {
+      const current = reveal.getCurrentSlide();
+      return current?.getAttribute('data-transition') === 'none'
+        ? current.previousElementSibling
+        : null;
+    };
+
+    const update = () => {
+      const slide = before();
+      if (slide !== null && !own.has(slide)) {
+        own.set(slide, slide.getAttribute('data-transition'));
+        slide.setAttribute('data-transition', 'none');
+      }
+
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          for (const [other, transition] of own) {
+            if (other === before()) {
+              continue;
+            }
+
+            own.delete(other);
+            if (transition === null) {
+              other.removeAttribute('data-transition');
+            } else {
+              other.setAttribute('data-transition', transition);
+            }
+          }
+        })
+      );
+    };
+
+    reveal.on('ready', update);
+    reveal.on('slidechanged', update);
+  }
+});
+
 const deck = new Reveal({
   hash: true,
   // A deck's fragments pace an explanation as it is given, which a reader of
@@ -112,7 +160,7 @@ const deck = new Reveal({
     // Resets the logic diagrams of the current slide on R, so that their embeds
     // can do without a control bar and use its height to be larger.
     RevealLogicDiagrams,
-    ...(printPdfMode || scrollMode ? [] : [cornerTitle]),
+    ...(printPdfMode || scrollMode ? [] : [cornerTitle, followingOn]),
     Notes,
     Search
   ],

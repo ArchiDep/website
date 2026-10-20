@@ -1,8 +1,16 @@
 // A diagram turning into another, drawn in a file of its own, such as a slide
-// handing over to the next one: the parts both drawings have move to where the
-// other draws them, the parts only this one has fade out, and the parts only
-// the other has fade in. The step ends on the other drawing as it starts, so
-// that cutting to it shows no change.
+// handing over to the next one, over as many steps as it takes. At each step,
+// parts of this drawing fade out, take a new shape, or move to where the other
+// drawing draws them, and parts of the other fade in once the rest is in place.
+// The last step ends on the other drawing as stepping through it starts, so
+// that cutting to it shows no change, which is checked once every step is
+// built: every part either drawing shows by then must have left, moved into the
+// other's place, or arrived from it, itself or by a group around it.
+//
+// Parts both drawings have share an id. What a class draws and a move changes,
+// such as a frame's dashes turning solid, is written as an inline style on both
+// drawings, so that the move can go from one to the other. The next slide is
+// marked `data-transition="none"`, so that the cut does not show.
 import { readFileSync } from 'node:fs';
 
 import type { Document, Element } from '@xmldom/xmldom';
@@ -21,12 +29,10 @@ import {
 } from './svg';
 import { seconds } from './timing';
 
-// When each part of the change happens, from the start of the step: what leaves
-// fades out as the rest starts moving, and what arrives fades in once the rest
-// is in place.
+// When each part of a step happens, from its start: what leaves fades out as
+// the rest starts moving, and what arrives fades in once the rest is in place.
 const MOVE_DELAY = 0.3;
 const MOVE = 0.9;
-const ARRIVE_DELAY = MOVE_DELAY + MOVE;
 
 /**
  * What a shape's place and look are made of, by its kind: what a part moved
@@ -42,73 +48,213 @@ const SHAPED: Readonly<Record<string, readonly string[]>> = {
 // What draws nothing of its own.
 const UNDRAWN = new Set(['title', 'desc', 'style', 'defs', 'clipPath']);
 
+/**
+ * The new values of a part's attributes, by its id.
+ */
+export type Shapes = Readonly<Record<string, Readonly<Record<string, string>>>>;
+
 export interface Becoming {
   /**
-   * Parts both drawings have, by the same id: each moves to where the other
-   * draws it, and takes its shape.
+   * Parts of this drawing that fade out at this step.
    */
-  readonly moved: readonly string[];
+  leaving(...ids: string[]): Action;
   /**
-   * Parts only this drawing has: they fade out.
+   * Parts of this drawing that take new values at this step, on the way. The
+   * `unseen` ones fade out as they start moving, and back in once in place.
    */
-  readonly leaving: readonly string[];
+  reshaped(
+    shapes: Shapes,
+    options?: { readonly unseen?: readonly string[] }
+  ): Action;
   /**
-   * Parts only the other drawing has: copied in, they fade in once the others
-   * are in place.
+   * Parts both drawings have that move to where the other draws them, and take
+   * its shape: a group by as much as its first box.
    */
-  readonly arriving: readonly string[];
+  into(...ids: string[]): Action;
+  /**
+   * Parts only the other drawing has, copied in, that fade in once the rest is
+   * in place: over everything, or just under the part named `under`.
+   */
+  arriving(
+    ids: readonly string[],
+    options?: { readonly under?: string }
+  ): Action;
 }
 
 /**
- * A drawing of the diagrams' directory, read as a step turns into it.
+ * A drawing of the diagrams' directory, read as a diagram becomes it.
  */
 export function drawingOf(file: string): Document {
   return parseSvg(readFileSync(file, 'utf8'), file);
 }
 
-/**
- * This step turns the diagram into `other`, as it shows when stepping through
- * it starts. Every part either drawing shows by then must be moved, leaving or
- * arriving, or inside one that is: a part left out would appear or disappear
- * when cutting from one to the other.
- */
-export function becomes(
-  other: Document,
-  { moved, leaving, arriving }: Becoming
-): Action {
-  return (builder, index) => {
-    check(builder, builder.drawing, [...moved, ...leaving], 'at its end');
-    check(builder, other, [...moved, ...arriving], 'as the other starts');
+interface Step {
+  moves: boolean;
+  leaves: boolean;
+  readonly arrivals: Element[];
+}
 
-    const marker = builder.mark('reshape', index);
-    setVariables(marker, {
-      delay: seconds(MOVE_DELAY),
-      duration: seconds(MOVE)
-    });
-
-    for (const id of moved) {
-      reshape(builder.element(id), byId(other, id), id);
-    }
-
-    teardown(leaving)(builder, index);
-
-    for (const id of arriving) {
-      const copy = copyOf(
-        builder.doc.importNode(byId(other, id), true) as Element
-      );
-      reveal(copy, index, 'transient', 'arrive');
-      setVariables(copy, { delay: seconds(ARRIVE_DELAY) });
-      builder.overlays.push(copy);
-    }
-  };
+interface State {
+  /**
+   * Each part's attributes as the steps built so far leave them, by its id.
+   */
+  readonly latest: Map<string, Map<string, string>>;
+  /**
+   * The step each part last changed at, and the step it last moved into the
+   * other drawing at.
+   */
+  readonly changed: Map<string, number>;
+  readonly moved: Map<string, number>;
+  readonly left: Set<string>;
+  readonly arrived: Set<string>;
+  readonly steps: Map<number, Step>;
 }
 
 /**
- * Gives a part what it becomes as `data-reshaped-<attribute>` attributes, which
- * the motion script moves it to: a shape takes the other's place and shape, a
- * group is moved by as much as its first box is.
+ * The steps through which this diagram becomes `other`.
  */
-function reshape(element: Element, target: Element, id: string): void {
+export function becoming(other: Document): Becoming {
+  const key = Symbol('becoming');
+  const stateOf = (builder: Builder): State =>
+    builder.state<State>(key, () => {
+      const state: State = {
+        latest: new Map(),
+        changed: new Map(),
+        moved: new Map(),
+        left: new Set(),
+        arrived: new Set(),
+        steps: new Map()
+      };
+      builder.whenBuilt(() => finish(builder, other, state));
+      return state;
+    });
+
+  return {
+    leaving:
+      (...ids) =>
+      (builder, index) => {
+        const state = stateOf(builder);
+        stepOf(state, index).leaves = true;
+        ids.forEach(id => state.left.add(id));
+        teardown(ids)(builder, index);
+      },
+
+    reshaped:
+      (shapes, { unseen = [] } = {}) =>
+      (builder, index) => {
+        const state = stateOf(builder);
+        for (const [id, attributes] of Object.entries(shapes)) {
+          for (const [attribute, value] of Object.entries(attributes)) {
+            change(builder, state, index, id, attribute, value);
+          }
+        }
+
+        for (const id of unseen) {
+          const element = builder.element(id);
+          const at = element.getAttribute('data-unseen-at');
+          element.setAttribute(
+            'data-unseen-at',
+            at ? `${at} ${index}` : String(index)
+          );
+        }
+      },
+
+    into:
+      (...ids) =>
+      (builder, index) => {
+        const state = stateOf(builder);
+        for (const id of ids) {
+          for (const [attribute, value] of Object.entries(
+            targetOf(builder.drawing, other, id)
+          )) {
+            change(builder, state, index, id, attribute, value);
+          }
+
+          state.moved.set(id, index);
+          // Its last change, even if it is already in place.
+          state.changed.set(id, index);
+        }
+      },
+
+    arriving:
+      (ids, { under } = {}) =>
+      (builder, index) => {
+        const state = stateOf(builder);
+        for (const id of ids) {
+          state.arrived.add(id);
+          const copy = copyOf(
+            builder.doc.importNode(byId(other, id), true) as Element
+          );
+          reveal(copy, index, 'transient', 'arrive');
+          stepOf(state, index).arrivals.push(copy);
+          if (under === undefined) {
+            builder.overlays.push(copy);
+          } else {
+            const reference = builder.element(under);
+            reference.parentNode?.insertBefore(copy, reference);
+          }
+        }
+      }
+  };
+}
+
+function stepOf(state: State, index: number): Step {
+  const step = state.steps.get(index) ?? {
+    moves: false,
+    leaves: false,
+    arrivals: []
+  };
+  state.steps.set(index, step);
+  return step;
+}
+
+/**
+ * Gives a part a new value for an attribute from the step at `index`, as a
+ * `data-reshaped-<index>-<attribute>` attribute, which the motion script moves
+ * it to.
+ */
+function change(
+  builder: Builder,
+  state: State,
+  index: number,
+  id: string,
+  attribute: string,
+  value: string
+): void {
+  const element = builder.element(id);
+  const values = state.latest.get(id) ?? new Map<string, string>();
+  state.latest.set(id, values);
+  let from = values.get(attribute) ?? element.getAttribute(attribute);
+  if (from === null && attribute === 'transform') {
+    // A group moves from where it is drawn.
+    from = 'translate(0 0)';
+    element.setAttribute('transform', from);
+  }
+
+  if (from === null) {
+    throw new Error(`"${id}" has no "${attribute}" to change`);
+  }
+
+  if (from === value) {
+    return;
+  }
+
+  values.set(attribute, value);
+  state.changed.set(id, index);
+  stepOf(state, index).moves = true;
+  element.setAttribute(`data-reshaped-${index}-${attribute}`, value);
+}
+
+/**
+ * The attributes a part takes in the other drawing, by its kind.
+ */
+function targetOf(
+  drawing: Document,
+  other: Document,
+  id: string
+): Record<string, string> {
+  const element = byId(drawing, id);
+  const target = byId(other, id);
   if (element.localName !== target.localName) {
     throw new Error(
       `"${id}" is a <${element.localName}> here and a <${target.localName}> in the drawing it becomes`
@@ -122,12 +268,9 @@ function reshape(element: Element, target: Element, id: string): void {
 
     const from = firstBox(element, id);
     const to = firstBox(target, id);
-    element.setAttribute('transform', 'translate(0 0)');
-    element.setAttribute(
-      'data-reshaped-transform',
-      `translate(${number(to, 'x') - number(from, 'x')} ${number(to, 'y') - number(from, 'y')})`
-    );
-    return;
+    return {
+      transform: `translate(${number(to, 'x') - number(from, 'x')} ${number(to, 'y') - number(from, 'y')})`
+    };
   }
 
   const attributes = SHAPED[element.localName ?? ''];
@@ -135,21 +278,21 @@ function reshape(element: Element, target: Element, id: string): void {
     throw new Error(`"${id}" is a <${element.localName}>, which cannot move`);
   }
 
+  const values: Record<string, string> = {};
   for (const attribute of attributes) {
-    const from = element.getAttribute(attribute);
     const to = target.getAttribute(attribute);
-    if (from === to) {
-      continue;
-    }
-
-    if (from === null || to === null) {
+    if ((element.getAttribute(attribute) === null) !== (to === null)) {
       throw new Error(
         `"${id}" has a "${attribute}" in only one of the two drawings`
       );
     }
 
-    element.setAttribute(`data-reshaped-${attribute}`, to);
+    if (to !== null) {
+      values[attribute] = to;
+    }
   }
+
+  return values;
 }
 
 function firstBox(group: Element, id: string): Element {
@@ -159,6 +302,39 @@ function firstBox(group: Element, id: string): Element {
   }
 
   return rect;
+}
+
+/**
+ * Times each step, and checks that the last one ends on the other drawing.
+ */
+function finish(builder: Builder, other: Document, state: State): void {
+  for (const [index, step] of state.steps) {
+    const delay = step.leaves ? MOVE_DELAY : 0;
+    if (step.moves) {
+      setVariables(builder.mark('reshape', index), {
+        delay: seconds(delay),
+        duration: seconds(MOVE)
+      });
+    }
+
+    for (const arrival of step.arrivals) {
+      setVariables(arrival, {
+        delay: seconds(delay + (step.moves ? MOVE : 0))
+      });
+    }
+  }
+
+  for (const [id, index] of state.moved) {
+    if (state.changed.get(id) !== index) {
+      throw new Error(
+        `${builder.name}.svg: "${id}" changes after it moves into the drawing it becomes`
+      );
+    }
+  }
+
+  const moved = [...state.moved.keys()];
+  check(builder, builder.drawing, [...moved, ...state.left], 'at its end');
+  check(builder, other, [...moved, ...state.arrived], 'as the other starts');
 }
 
 /**
@@ -188,8 +364,12 @@ function check(
   for (const element of childElements(rootOf(doc))) {
     const missing = unaccounted(element, accounted);
     if (missing !== undefined) {
+      const id = missing.getAttribute('id');
+      const part = id
+        ? `<${missing.localName}> "${id}"`
+        : `<${missing.localName}>`;
       throw new Error(
-        `${builder.name}.svg: a <${missing.localName}>${missing.getAttribute('id') ? ` "${missing.getAttribute('id')}"` : ''} shown ${when} is neither moved, leaving nor arriving`
+        `${builder.name}.svg: a ${part} shown ${when} has neither left, moved nor arrived`
       );
     }
   }

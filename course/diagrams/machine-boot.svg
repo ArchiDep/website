@@ -147,12 +147,14 @@
     </marker>
   </defs>
 
-  <!-- The processor, titled by a pill in its bottom-right corner. Its frame
-       is drawn empty and dashed, as its style says, so that it can fill and
-       turn solid into the core it becomes once opaque. -->
-  <rect id="processor" class="frame" x="10" y="10" width="590" height="580" rx="16" style="fill: #ffffff; fill-opacity: 0; stroke-dasharray: 8 6"/>
+  <!-- The processor, titled by a pill in its bottom-right corner. Its dashed
+       frame is drawn over a solid one, empty and unseen, as its style says, so
+       that it can fill and fade into the core it becomes once opaque. -->
+  <rect id="processor" class="core" x="10" y="10" width="590" height="580" rx="16" style="fill: #ffffff; fill-opacity: 0; stroke-opacity: 0"/>
+  <rect id="processor-dashes" class="frame" x="10" y="10" width="590" height="580" rx="16"/>
   <path id="processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z"/>
-  <path id="processor-pill" class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-dasharray: 8 6"/>
+  <path id="processor-pill" class="core" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-opacity: 0"/>
+  <path id="processor-pill-dashes" class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590"/>
   <text id="processor-name" class="label chip-name" x="538" y="574">64-bit CPU</text>
 
   <g id="control-unit">
@@ -190,7 +192,10 @@
   <path id="path-data-bus-disk-controller" class="data-path" d="M631 465 H742"/>
   <g id="data-bus">
     <path id="path-processor-data-bus" class="data-path" d="M80 491 H642"/>
-    <rect id="data-bus-rail" class="data-bus" x="620" y="23" width="22" height="479"/>
+    <rect id="data-bus-rail" class="data-bus" x="620" y="23" width="22" height="453"/>
+    <!-- Where it turns into the processor, which the rail ends at once the
+         processor is opaque -->
+    <rect id="data-bus-turn" class="data-bus" x="620" y="476" width="22" height="26"/>
     <text id="data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)">Data bus · 64 bits</text>
   </g>
   <!-- Caches: copies of recently used memory, on the data bus where it leaves
