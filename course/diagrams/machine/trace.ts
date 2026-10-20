@@ -38,12 +38,12 @@ export type Operation = keyof typeof OPERATIONS;
  * instructions in cells 0 to 8, its data in 12 to 15.
  */
 export const PROGRAM: readonly number[] = [
-  0b0001_1110, // LOAD 14   acc ← result
-  0b0010_1100, // ADD 12    acc ← acc + A
-  0b0100_1110, // STORE 14  result ← acc
-  0b0001_1101, // LOAD 13   acc ← counter
-  0b0011_1111, // SUB 15    acc ← acc − 1
-  0b0100_1101, // STORE 13  counter ← acc
+  0b0001_1110, // LOAD 14   result → acc
+  0b0010_1100, // ADD 12    acc + A → acc
+  0b0100_1110, // STORE 14  acc → result
+  0b0001_1101, // LOAD 13   counter → acc
+  0b0011_1111, // SUB 15    acc − 1 → acc
+  0b0100_1101, // STORE 13  acc → counter
   0b1000_1000, // JUMPZ 8   if acc = 0, go to 8
   0b0110_0000, // JUMP 0    otherwise, back to 0
   0b1111_0000, // HALT
