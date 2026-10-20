@@ -37,6 +37,13 @@
     /* The part of memory a program is copied into */
     svg.diagram[data-family='machine'] .band { fill: #e5dbff; stroke: #9775fa; stroke-width: 1.5; }
     svg.diagram[data-family='machine'] .band.program { fill: #d3f9d8; stroke: #51cf66; }
+    /* The bootloader, which runs before the kernel, as the firmware does, and
+       is not one of the programs the kernel runs */
+    svg.diagram[data-family='machine'] .band.bootloader { fill: #ffdeeb; stroke: #f06595; }
+    /* A program's file, coloured as the band it is copied into */
+    svg.diagram[data-family='machine'] .file.program { fill: #d3f9d8; stroke: #51cf66; }
+    svg.diagram[data-family='machine'] .file.kernel { fill: #e5dbff; stroke: #9775fa; }
+    svg.diagram[data-family='machine'] .file.bootloader { fill: #ffdeeb; stroke: #f06595; }
     svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
     /* A connection the control signals open between two components, drawn
        like a live wire in the circuits, its white casing keeping it apart
@@ -56,9 +63,10 @@
 
     /* --- What the steps show ------------------------------------------- */
 
-    /* A pill of the cycle, the cell being read or written, or the file being
-       copied, lit like a lamp */
-    svg.diagram[data-family='machine'] :is(.cell, .step, .file).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* A pill of the cycle, or the cell being read or written, lit like a lamp */
+    svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* The file being copied: only its border, keeping its program's colour */
+    svg.diagram[data-family='machine'] .file.lit { stroke: #f59f00; stroke-width: 2.5; }
     /* As the highlight walks through cells, each is lit in turn for a moment,
        the last one from then on: only the last one without motion */
     svg.diagram[data-family='machine'] .walk:not(.last) { fill-opacity: 0; stroke-opacity: 0; }
@@ -100,7 +108,8 @@
     svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
     /* Still lit, but paler, such as an instruction the processor loops on
        while the step is about something else */
-    svg.diagram[data-family='machine'] :is(.faded .cell.lit, .faded .file.lit) { fill: #fffaeb; stroke: #fce3a6; }
+    svg.diagram[data-family='machine'] .faded .cell.lit { fill: #fffaeb; stroke: #fce3a6; }
+    svg.diagram[data-family='machine'] .faded .file.lit { stroke: #fce3a6; }
     svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
     svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
     svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -130,6 +139,11 @@
          label and cells appear */
       svg.diagram[data-family='machine'] .fill.visible &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-fill 1.6s ease-in-out both; }
       svg.diagram[data-family='machine'] .fill.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.6s both; }
+      /* Freed, its label and instructions go, then it empties, and is gone
+         once empty rather than fading as it empties */
+      svg.diagram[data-family='machine'] .fill.gone { transition: opacity 0.1s 1.1s, visibility 0s 1.2s !important; }
+      svg.diagram[data-family='machine'] .fill.gone &gt; :not(.band) { animation: machine-vanish 0.3s ease-in both; }
+      svg.diagram[data-family='machine'] .fill.gone &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-empty 0.9s ease-in-out 0.2s both; }
     }
     @keyframes machine-tick {
       50% { opacity: 0.15; }
@@ -145,6 +159,12 @@
     }
     @keyframes machine-fill {
       from { transform: scaleY(0); }
+    }
+    @keyframes machine-vanish {
+      to { opacity: 0; }
+    }
+    @keyframes machine-empty {
+      to { transform: scaleY(0); }
     }
     @keyframes machine-appear {
       from { opacity: 0; }
