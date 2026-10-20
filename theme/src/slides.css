@@ -47,9 +47,18 @@ body {
    title in the slide is not displayed, though it still paces the fragments. In
    a PDF or a scrolled deck, it is in the slide's corner, and the slide is kept
    at the top rather than centred vertically, so that the corner is the slide's
-   and not its content's: such a diagram fills the slide's height anyway. */
+   and not its content's.
+
+   In a PDF, the slide then fills its page's height and centres its content in
+   it instead, as reveal.js centres every other slide by moving the slide down
+   (`top`), which would take the corner down with it. */
 .reveal:not(.corner-title-in-window) .slides section:has(> h3.corner-title) {
   top: 0 !important;
+}
+
+html.reveal-print .reveal .slides section:has(> h3.corner-title) {
+  height: 100%;
+  align-content: center;
 }
 
 .reveal.corner-title-in-window .slides section > h3.corner-title {
@@ -74,6 +83,11 @@ body {
   top: 0;
   left: 0;
   font-size: 40px;
+
+  /* A sheet of paper is read from up close, not across a room. */
+  @media print {
+    font-size: 24px;
+  }
 }
 
 .corner-title-window {
