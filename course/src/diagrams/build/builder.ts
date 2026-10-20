@@ -55,6 +55,7 @@ export class Builder {
   readonly overlays: Element[] = [];
   readonly #whenBuilt: (() => void)[] = [];
   readonly #states = new Map<symbol, unknown>();
+  readonly #copies = new Map<string, Element[]>();
 
   constructor(
     readonly name: string,
@@ -68,6 +69,31 @@ export class Builder {
 
   element(id: string): Element {
     return byId(this.doc, id);
+  }
+
+  /**
+   * Records that a copy, which has no id of its own, stands for the part `id`,
+   * such as a part of another drawing brought in.
+   */
+  copied(id: string, copy: Element): void {
+    this.#copies.set(id, [...(this.#copies.get(id) ?? []), copy]);
+  }
+
+  /**
+   * Every element a part is drawn as: the drawing's, if it has one, and the
+   * copies standing for it.
+   */
+  drawnAs(id: string): Element[] {
+    const element = this.doc.getElementById(id);
+    const all = [
+      ...(element === null ? [] : [element]),
+      ...(this.#copies.get(id) ?? [])
+    ];
+    if (all.length === 0) {
+      return [this.element(id)];
+    }
+
+    return all;
   }
 
   /**

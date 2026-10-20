@@ -85,11 +85,11 @@ transparent, which would show the paths drawn under the boxes. Values
 stay as they are, the room following them from step to step. */
 svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #dcdce0; }
 svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #ebebee; }
-svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address) { fill: #cfcfd4; }
+svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address, text.faded) { fill: #cfcfd4; }
 svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
 svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
-svg.diagram[data-family='machine'] :is(.faded .chip-tab) { fill: #f7f7f8; }
+svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
 svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
 svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
 svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
@@ -645,26 +645,26 @@ break-inside: avoid;
 <marker id="diagram-machine-boot-wire-arrow-faded" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
 <path class="marker-wire faded-marker" d="M0 0 L10 5 L0 10 z"/>
 </marker>
-</defs><g class="fragment reshape" data-fragment-index="3" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="2" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="1" style="--delay: 0s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="0" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment teardown" data-fragment-index="3"/><g class="fragment teardown" data-fragment-index="2"/><g class="fragment teardown" data-fragment-index="0"/>
-<g class="fragment transient arrive" data-fragment-index="2" style="--delay: 1.2s">
+</defs><g class="fragment reshape" data-fragment-index="7" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="6" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="5" style="--delay: 0s; --duration: 0.9s"/><g class="fragment reshape" data-fragment-index="4" style="--delay: 0.3s; --duration: 0.9s"/><g class="fragment focus" data-fragment-index="15"/><g class="fragment focus" data-fragment-index="14"/><g class="fragment focus" data-fragment-index="13"/><g class="fragment focus" data-fragment-index="12"/><g class="fragment focus" data-fragment-index="11"/><g class="fragment focus" data-fragment-index="10"/><g class="fragment focus" data-fragment-index="9"/><g class="fragment teardown" data-fragment-index="7"/><g class="fragment teardown" data-fragment-index="6"/><g class="fragment teardown" data-fragment-index="4"/><g class="fragment focus" data-fragment-index="3"/><g class="fragment focus" data-fragment-index="2"/><g class="fragment focus" data-fragment-index="1"/><g class="fragment focus" data-fragment-index="0"/>
+<g class="fragment transient arrive" data-fragment-index="6" data-faded-at="0 1 2 10 11 12 13 14" style="--delay: 1.2s">
 <rect class="core" x="70" y="50" width="160" height="160" rx="16"/>
 <rect class="core" x="60" y="40" width="160" height="160" rx="16"/>
 <rect class="core" x="50" y="30" width="160" height="160" rx="16"/>
-</g><rect id="diagram-machine-boot-processor" class="core" x="10" y="10" width="590" height="580" rx="16" style="fill: #ffffff; fill-opacity: 0; stroke-opacity: 0" data-reshaped-0-style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1" data-reshaped-1-x="40" data-reshaped-1-y="20" data-reshaped-1-width="160" data-reshaped-1-height="160"/>
-<rect id="diagram-machine-boot-processor-dashes" class="frame" x="10" y="10" width="590" height="580" rx="16" data-gone-from="0"/>
-<path id="diagram-machine-boot-processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z" data-reshaped-1-d="M200 146 V164 A16 16 0 0 1 184 180 H76 V162 A16 16 0 0 1 92 146 Z" data-reshaped-2-d="M200 146 V164 A16 16 0 0 1 184 180 H96 V162 A16 16 0 0 1 112 146 Z"/>
-<path id="diagram-machine-boot-processor-pill" class="core" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-opacity: 0" data-reshaped-0-style="fill: none; stroke-opacity: 1" data-reshaped-1-d="M200 146 H92 A16 16 0 0 0 76 162 V180" data-reshaped-2-d="M200 146 H112 A16 16 0 0 0 96 162 V180"/>
-<path id="diagram-machine-boot-processor-pill-dashes" class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590" data-gone-from="0"/>
-<text id="diagram-machine-boot-processor-name" class="label chip-name" x="538" y="574" data-reshaped-1-x="138" data-reshaped-1-y="164" data-unseen-at="1" data-gone-from="2">64-bit CPU</text>
-<g id="diagram-machine-boot-control-unit" data-gone-from="0">
+</g><rect id="diagram-machine-boot-processor" class="core" x="10" y="10" width="590" height="580" rx="16" style="fill: #ffffff; fill-opacity: 0; stroke-opacity: 0" data-reshaped-4-style="fill: #ffffff; fill-opacity: 1; stroke-opacity: 1" data-reshaped-5-x="40" data-reshaped-5-y="20" data-reshaped-5-width="160" data-reshaped-5-height="160" data-faded-at="10 11 12 13 14"/>
+<rect id="diagram-machine-boot-processor-dashes" class="frame" x="10" y="10" width="590" height="580" rx="16" data-gone-from="4"/>
+<path id="diagram-machine-boot-processor-tab" class="chip-tab" d="M600 556 V574 A16 16 0 0 1 584 590 H476 V572 A16 16 0 0 1 492 556 Z" data-reshaped-5-d="M200 146 V164 A16 16 0 0 1 184 180 H76 V162 A16 16 0 0 1 92 146 Z" data-reshaped-6-d="M200 146 V164 A16 16 0 0 1 184 180 H96 V162 A16 16 0 0 1 112 146 Z" data-faded-at="10 11 12 13 14"/>
+<path id="diagram-machine-boot-processor-pill" class="core" d="M600 556 H492 A16 16 0 0 0 476 572 V590" style="fill: none; stroke-opacity: 0" data-reshaped-4-style="fill: none; stroke-opacity: 1" data-reshaped-5-d="M200 146 H92 A16 16 0 0 0 76 162 V180" data-reshaped-6-d="M200 146 H112 A16 16 0 0 0 96 162 V180" data-faded-at="10 11 12 13 14"/>
+<path id="diagram-machine-boot-processor-pill-dashes" class="frame" d="M600 556 H492 A16 16 0 0 0 476 572 V590" data-gone-from="4"/>
+<text id="diagram-machine-boot-processor-name" class="label chip-name" x="538" y="574" data-reshaped-5-x="138" data-reshaped-5-y="164" data-unseen-at="5" data-gone-from="6">64-bit CPU</text>
+<g id="diagram-machine-boot-control-unit" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
 <rect class="box" x="40" y="145" width="460" height="140" rx="8"/>
 <text class="label" x="420" y="215">Control unit</text>
 </g>
-<g id="diagram-machine-boot-alu-others" data-gone-from="0">
+<g id="diagram-machine-boot-alu-others" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
 <polygon class="box" points="416,332 416,358 430,372 416,386 416,412 496,388 496,356"/>
 <polygon class="box" points="408,324 408,350 422,364 408,378 408,404 488,380 488,348"/>
 </g>
-<g id="diagram-machine-boot-paths" data-gone-from="0">
+<g id="diagram-machine-boot-paths" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
 <path id="diagram-machine-boot-path-pc-selector" class="address-path" d="M216 55 H435" marker-end="url(#diagram-machine-boot-address-arrow)"/>
 <path id="diagram-machine-boot-path-ir-selector" class="address-path" d="M255 214 V95 H435" marker-end="url(#diagram-machine-boot-address-arrow)"/>
 <path id="diagram-machine-boot-path-ir-pc" class="address-path" d="M205 214 V157" marker-end="url(#diagram-machine-boot-address-arrow)"/>
@@ -675,110 +675,110 @@ break-inside: avoid;
 <path id="diagram-machine-boot-path-registers-alu-b" class="data-path" d="M336 380 H365" marker-end="url(#diagram-machine-boot-data-arrow)"/>
 <path id="diagram-machine-boot-path-alu-registers" class="data-path" d="M476 356 H550 V452 H290 V427" marker-end="url(#diagram-machine-boot-data-arrow)"/>
 </g>
-<path id="diagram-machine-boot-path-processor-address-bus" class="address-path" d="M526 75 H669" data-gone-from="0"/>
-<path id="diagram-machine-boot-path-data-bus-firmware" class="data-path" d="M631 34 H742" data-reshaped-3-d="M291 34 H382"/>
-<path id="diagram-machine-boot-path-data-bus-memory" class="data-path" d="M631 210 H742" data-reshaped-3-d="M291 210 H382"/>
-<path id="diagram-machine-boot-path-data-bus-disk-controller" class="data-path" d="M631 465 H742" data-reshaped-3-d="M291 465 H382"/>
-<g id="diagram-machine-boot-data-bus">
-<path id="diagram-machine-boot-path-processor-data-bus" class="data-path" d="M80 491 H642" data-gone-from="0"/>
-<path class="fragment transient arrive address-path" d="M231 133 H329" data-fragment-index="3" style="--delay: 1.2s"/><path class="fragment transient arrive data-path" d="M231 97 H291" data-fragment-index="3" style="--delay: 1.2s"/><path class="fragment transient arrive address-path" d="M329 272 H274" marker-end="url(#diagram-machine-boot-address-arrow)" data-fragment-index="4" style="--delay: 0s"/><path class="fragment transient arrive data-path" d="M291 320 H237" data-fragment-index="4" style="--delay: 0s"/><rect id="diagram-machine-boot-data-bus-rail" class="data-bus" x="620" y="23" width="22" height="453" data-reshaped-3-x="280"/>
-<rect id="diagram-machine-boot-data-bus-turn" class="data-bus" x="620" y="476" width="22" height="26" data-gone-from="0"/>
-<text id="diagram-machine-boot-data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)" data-reshaped-3-x="291" data-reshaped-3-y="330" data-reshaped-3-transform="rotate(-90 291 330)">Data buses · 64 bits</text>
+<path id="diagram-machine-boot-path-processor-address-bus" class="address-path" d="M526 75 H669" data-gone-from="4" data-faded-at="0 2 9 10 11 12 14"/>
+<path id="diagram-machine-boot-path-data-bus-firmware" class="data-path" d="M631 34 H742" data-reshaped-7-d="M291 34 H382" data-faded-at="0 2 9 10 11 12 14"/>
+<path id="diagram-machine-boot-path-data-bus-memory" class="data-path" d="M631 210 H742" data-reshaped-7-d="M291 210 H382" data-faded-at="0 2 9 11 12 14"/>
+<path id="diagram-machine-boot-path-data-bus-disk-controller" class="data-path" d="M631 465 H742" data-reshaped-7-d="M291 465 H382" data-faded-at="0 2 9 10 11 14"/>
+<g id="diagram-machine-boot-data-bus" data-faded-at="0 2 9 10 11 12 14">
+<path id="diagram-machine-boot-path-processor-data-bus" class="data-path" d="M80 491 H642" data-gone-from="4" data-faded-at="0 2 9 10 11 12 14"/>
+<path class="fragment transient arrive address-path" d="M231 133 H329" data-fragment-index="7" data-faded-at="0 2 9 10 11 12 14" style="--delay: 1.2s"/><path class="fragment transient arrive data-path" d="M231 97 H291" data-fragment-index="7" data-faded-at="0 2 9 10 11 12 14" style="--delay: 1.2s"/><path class="fragment transient arrive address-path" d="M329 272 H274" marker-end="url(#diagram-machine-boot-address-arrow)" data-fragment-index="8" data-faded-at="0 2 9 10 11 12 14" style="--delay: 0s"/><path class="fragment transient arrive data-path" d="M291 320 H237" data-fragment-index="8" data-faded-at="0 2 9 10 11 12 14" style="--delay: 0s"/><rect id="diagram-machine-boot-data-bus-rail" class="data-bus" x="620" y="23" width="22" height="453" data-reshaped-7-x="280"/>
+<rect id="diagram-machine-boot-data-bus-turn" class="data-bus" x="620" y="476" width="22" height="26" data-gone-from="4"/>
+<text id="diagram-machine-boot-data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)" data-reshaped-7-x="291" data-reshaped-7-y="330" data-reshaped-7-transform="rotate(-90 291 330)">Data buses · 64 bits</text>
 </g>
-<g id="diagram-machine-boot-caches" data-gone-from="0">
+<g id="diagram-machine-boot-caches" data-gone-from="4" data-faded-at="0 1 9 10 11 12 13 14">
 <g id="diagram-machine-boot-cache-l1"><rect class="box" x="300" y="474" width="56" height="34" rx="6"/><text class="label minor" x="328" y="491">L1</text></g>
 <g id="diagram-machine-boot-cache-l2"><rect class="box" x="368" y="474" width="80" height="34" rx="6"/><text class="label minor" x="408" y="491">L2</text></g>
 <g id="diagram-machine-boot-cache-l3"><rect class="box" x="460" y="474" width="130" height="34" rx="6"/><text class="label minor" x="525" y="491">L3</text></g>
 <text class="small" x="445" y="525">Caches</text>
 </g>
-<g id="diagram-machine-boot-address-bus">
-<rect id="diagram-machine-boot-address-bus-rail" class="address-bus" x="658" y="59" width="22" height="379" data-reshaped-3-x="318"/>
+<g id="diagram-machine-boot-address-bus" data-faded-at="0 2 9 10 11 12 14">
+<rect id="diagram-machine-boot-address-bus-rail" class="address-bus" x="658" y="59" width="22" height="379" data-reshaped-7-x="318"/>
 </g>
-<path id="diagram-machine-boot-path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-3-d="M329 70 H345"/>
-<path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-3-d="M329 150 H345"/>
-<path id="diagram-machine-boot-path-address-bus-disk-controller" class="address-path" d="M669 427 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-3-d="M329 427 H345"/>
-<polygon id="diagram-machine-boot-firmware-read-only" points="739,27 739,41 727,34" fill="#ffffff" data-reshaped-3-points="377,27 377,41 365,34"/>
-<text id="diagram-machine-boot-address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)" data-reshaped-3-x="329" data-reshaped-3-y="325" data-reshaped-3-transform="rotate(-90 329 325)">Address buses · 64 bits</text>
-<g id="diagram-machine-boot-selector" data-gone-from="0">
+<path id="diagram-machine-boot-path-address-bus-firmware" class="address-path" d="M669 70 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 70 H345" data-faded-at="0 2 9 10 11 12 14"/>
+<path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 150 H345" data-faded-at="0 2 9 11 12 14"/>
+<path id="diagram-machine-boot-path-address-bus-disk-controller" class="address-path" d="M669 427 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-7-d="M329 427 H345" data-faded-at="0 2 9 10 11 14"/>
+<polygon id="diagram-machine-boot-firmware-read-only" points="739,27 739,41 727,34" fill="#ffffff" data-reshaped-7-points="377,27 377,41 365,34"/>
+<text id="diagram-machine-boot-address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)" data-reshaped-7-x="329" data-reshaped-7-y="325" data-reshaped-7-transform="rotate(-90 329 325)" data-faded-at="0 2 9 10 11 12 14">Address buses · 64 bits</text>
+<g id="diagram-machine-boot-selector" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
 <polygon class="box" points="470,30 530,50 530,100 470,120"/>
 <text class="small" x="500" y="22">Selector</text>
 </g>
-<path id="diagram-machine-boot-wire-select" class="wire" d="M490 145 V117" marker-end="url(#diagram-machine-boot-wire-arrow)" data-gone-from="0"/>
-<g id="diagram-machine-boot-program-counter" data-gone-from="0">
+<path id="diagram-machine-boot-wire-select" class="wire" d="M490 145 V117" marker-end="url(#diagram-machine-boot-wire-arrow)" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14"/>
+<g id="diagram-machine-boot-program-counter" data-gone-from="4" data-faded-at="0 2 9 10 11 12 13 14">
 <rect class="box" x="30" y="36" width="190" height="86" rx="8"/>
 <text class="label" x="125" y="58">Program counter</text>
 <rect class="bit" x="69" y="76" width="112" height="34"/><text class="tiny" x="125" y="93">64 bits</text>
 </g>
-<g id="diagram-machine-boot-instruction-register" data-gone-from="0"><rect class="bit" x="80" y="210" width="224" height="34"/><text class="tiny" x="192" y="227">1 to 15 bytes</text></g>
-<text id="diagram-machine-boot-instruction-label" class="small" x="192" y="262" data-gone-from="0">Instruction</text>
-<g id="diagram-machine-boot-registers" data-gone-from="0">
+<g id="diagram-machine-boot-instruction-register" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14"><rect class="bit" x="80" y="210" width="224" height="34"/><text class="tiny" x="192" y="227">1 to 15 bytes</text></g>
+<text id="diagram-machine-boot-instruction-label" class="small" x="192" y="262" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">Instruction</text>
+<g id="diagram-machine-boot-registers" data-gone-from="4" data-faded-at="0 2 9 10 11 12 13 14">
 <rect class="box" x="120" y="296" width="220" height="96" rx="8"/>
 <text class="small" x="230" y="312"><tspan class="label minor">Registers</tspan> · 16 × 64 bits</text>
 <rect class="bit" x="136" y="326" width="188" height="16"/><rect class="bit" x="136" y="348" width="188" height="16"/>
 <text class="label" x="230" y="374">…</text>
 </g>
-<g id="diagram-machine-boot-alu" data-gone-from="0">
+<g id="diagram-machine-boot-alu" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
 <polygon class="box" points="400,316 400,342 414,356 400,370 400,396 480,372 480,340"/>
 <text class="label" x="443" y="357">ALU</text>
 </g>
-<path id="diagram-machine-boot-wire-zero" class="wire" d="M425 322 V290" marker-end="url(#diagram-machine-boot-wire-arrow)" data-gone-from="0"/>
-<text id="diagram-machine-boot-zero-label" class="small end" x="414" y="305" data-gone-from="0">zero</text>
-<path id="diagram-machine-boot-wire-operation" class="wire" d="M465 285 V333" marker-end="url(#diagram-machine-boot-wire-arrow)" data-gone-from="0"/>
-<text id="diagram-machine-boot-operation-label" class="small start" x="474" y="305" data-gone-from="0">operation</text>
-<g id="diagram-machine-boot-control-signals" data-gone-from="0">
+<path id="diagram-machine-boot-wire-zero" class="wire" d="M425 322 V290" marker-end="url(#diagram-machine-boot-wire-arrow)" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14"/>
+<text id="diagram-machine-boot-zero-label" class="small end" x="414" y="305" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">zero</text>
+<path id="diagram-machine-boot-wire-operation" class="wire" d="M465 285 V333" marker-end="url(#diagram-machine-boot-wire-arrow)" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14"/>
+<text id="diagram-machine-boot-operation-label" class="small start" x="474" y="305" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">operation</text>
+<g id="diagram-machine-boot-control-signals" data-gone-from="4" data-faded-at="0 1 2 9 10 11 12 13 14">
 <path class="wire" d="M500 205 H528"/><path class="wire-dots" d="M535 205 H556"/>
 <path class="wire" d="M500 230 H528"/><path class="wire-dots" d="M535 230 H556"/>
 <path class="wire" d="M500 255 H528"/><path class="wire-dots" d="M535 255 H556"/>
 <text class="tiny signal" x="550" y="185">control signals</text>
 </g>
-<g id="diagram-machine-boot-clock" data-gone-from="0">
+<g id="diagram-machine-boot-clock" data-gone-from="4" data-faded-at="1 2 9 10 11 12 13 14">
 <rect class="box" x="40" y="520" width="160" height="62" rx="8"/>
 <text class="label" x="120" y="540">Clock</text>
 <path class="clock-wave" d="M64 572 H82 V554 H104 V572 H126 V554 H148 V572 H170 V554 H180"/>
 </g>
-<g id="diagram-machine-boot-wire-clock" data-gone-from="0"><path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/></g>
-<text id="diagram-machine-boot-clock-label" class="tiny signal start" x="207" y="536" data-gone-from="0">to every register</text>
-<g id="diagram-machine-boot-firmware">
-<rect id="diagram-machine-boot-firmware-box" class="box" x="740" y="20" width="248" height="72" rx="8" data-reshaped-3-x="380" data-reshaped-3-width="608"/>
-<text id="diagram-machine-boot-firmware-label" class="label" x="864" y="44" data-reshaped-3-x="470">Firmware</text>
-<text id="diagram-machine-boot-firmware-chip" class="small" x="864" y="70" data-reshaped-3-x="470">ROM chip: UEFI</text>
+<g id="diagram-machine-boot-wire-clock" data-gone-from="4" data-faded-at="1 2 9 10 11 12 13 14"><path class="wire" d="M200 551 H228"/><path class="wire-dots" d="M235 551 H256"/></g>
+<text id="diagram-machine-boot-clock-label" class="tiny signal start" x="207" y="536" data-gone-from="4" data-faded-at="1 2 9 10 11 12 13 14">to every register</text>
+<g id="diagram-machine-boot-firmware" data-faded-at="0 1 2 9 10 12 13 14">
+<rect id="diagram-machine-boot-firmware-box" class="box" x="740" y="20" width="248" height="72" rx="8" data-reshaped-7-x="380" data-reshaped-7-width="608"/>
+<text id="diagram-machine-boot-firmware-label" class="label" x="864" y="44" data-reshaped-7-x="470">Firmware</text>
+<text id="diagram-machine-boot-firmware-chip" class="small" x="864" y="70" data-reshaped-7-x="470">ROM chip: UEFI</text>
 </g>
-<g id="diagram-machine-boot-memory">
-<rect id="diagram-machine-boot-memory-box" class="box" x="740" y="108" width="248" height="283" rx="8" data-reshaped-3-x="380" data-reshaped-3-width="608"/>
-<text id="diagram-machine-boot-memory-label" class="label" x="864" y="132" data-reshaped-3-x="684">Memory</text>
-<text id="diagram-machine-boot-memory-note" class="small" x="864" y="156" data-reshaped-3-x="684">RAM: no program yet</text>
+<g id="diagram-machine-boot-memory" data-faded-at="0 1 2 9 11 12 13 14">
+<rect id="diagram-machine-boot-memory-box" class="box" x="740" y="108" width="248" height="283" rx="8" data-reshaped-7-x="380" data-reshaped-7-width="608"/>
+<text id="diagram-machine-boot-memory-label" class="label" x="864" y="132" data-reshaped-7-x="684">Memory</text>
+<text id="diagram-machine-boot-memory-note" class="small" x="864" y="156" data-reshaped-7-x="684">RAM: no program yet</text>
 </g>
-<path id="diagram-machine-boot-path-disk-controller-storage" class="data-path" d="M864 474 V500" data-reshaped-3-d="M504 474 V500"/>
-<g id="diagram-machine-boot-disk-controller" transform="translate(0 0)" data-reshaped-3-transform="translate(-360 0)">
+<path id="diagram-machine-boot-path-disk-controller-storage" class="data-path" d="M864 474 V500" data-reshaped-7-d="M504 474 V500" data-faded-at="0 1 2 9 10 11 13 14"/>
+<g id="diagram-machine-boot-disk-controller" transform="translate(0 0)" data-reshaped-7-transform="translate(-360 0)" data-faded-at="0 1 2 9 10 11 13 14">
 <rect class="box" x="740" y="407" width="248" height="72" rx="8"/>
 <text class="label" x="864" y="443">Disk controller</text>
 </g>
-<g id="diagram-machine-boot-storage">
-<rect id="diagram-machine-boot-storage-box" class="box" x="740" y="495" width="248" height="91" rx="8" data-reshaped-3-x="380" data-reshaped-3-width="608"/>
-<text id="diagram-machine-boot-storage-label" class="label" x="864" y="518" data-reshaped-3-x="470" data-reshaped-3-y="528">Storage</text>
-<g id="diagram-machine-boot-storage-contents" data-gone-from="3">
+<g id="diagram-machine-boot-storage" data-faded-at="0 1 2 9 10 11 13 14">
+<rect id="diagram-machine-boot-storage-box" class="box" x="740" y="495" width="248" height="91" rx="8" data-reshaped-7-x="380" data-reshaped-7-width="608"/>
+<text id="diagram-machine-boot-storage-label" class="label" x="864" y="518" data-reshaped-7-x="470" data-reshaped-7-y="528">Storage</text>
+<g id="diagram-machine-boot-storage-contents" data-gone-from="7">
 <text class="small" x="864" y="546">Disk: bootloader, kernel,</text>
 <text class="small" x="864" y="568">programs, files</text>
 </g>
 </g>
-<text class="fragment transient arrive label chip-name" x="148" y="164" data-fragment-index="2" style="--delay: 1.2s">CPU core</text><g class="fragment transient arrive" data-fragment-index="3" style="--delay: 1.2s">
+<text class="fragment transient arrive label chip-name" x="148" y="164" data-fragment-index="6" data-faded-at="0 1 2 10 11 12 13 14" style="--delay: 1.2s">CPU core</text><g class="fragment transient arrive" data-fragment-index="7" data-faded-at="0 1 2 9 10 12 13 14" style="--delay: 1.2s">
 <rect class="cell" x="574" y="38" width="50" height="14"/><rect class="cell" x="630" y="38" width="50" height="14"/><rect class="cell" x="686" y="38" width="50" height="14"/><rect class="cell" x="742" y="38" width="50" height="14"/><rect class="cell" x="798" y="38" width="50" height="14"/><rect class="cell" x="854" y="38" width="50" height="14"/><rect class="cell" x="910" y="38" width="50" height="14"/>
 <rect class="cell" x="574" y="58" width="50" height="14"/><rect class="cell" x="630" y="58" width="50" height="14"/><rect class="cell" x="686" y="58" width="50" height="14"/><rect class="cell" x="742" y="58" width="50" height="14"/><rect class="cell" x="798" y="58" width="50" height="14"/><rect class="cell" x="854" y="58" width="50" height="14"/><rect class="cell" x="910" y="58" width="50" height="14"/>
-</g><rect class="fragment transient arrive box hollow" x="380" y="108" width="608" height="283" rx="8" data-fragment-index="3" style="--delay: 1.2s"/><text class="fragment transient arrive small" x="470" y="554" data-fragment-index="3" style="--delay: 1.2s">Disk</text><g class="fragment transient arrive" data-fragment-index="3" style="--delay: 1.2s">
+</g><rect class="fragment transient arrive box hollow" x="380" y="108" width="608" height="283" rx="8" data-fragment-index="7" data-faded-at="0 1 2 9 11 12 13 14" style="--delay: 1.2s"/><text class="fragment transient arrive small" x="470" y="554" data-fragment-index="7" data-faded-at="0 1 2 9 10 11 13 14" style="--delay: 1.2s">Disk</text><g class="fragment transient arrive" data-fragment-index="7" data-faded-at="0 1 2 9 10 11 13 14" style="--delay: 1.2s">
 <rect class="file" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text>
 <rect class="file" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text>
 <rect class="file" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text>
 <text class="label" x="834" y="537">…</text>
-</g><path class="fragment transient arrive data-path" d="M134 335 V385" data-fragment-index="4" style="--delay: 0s"/><g class="fragment transient arrive" data-fragment-index="4" style="--delay: 0s">
+</g><path class="fragment transient arrive data-path" d="M134 335 V385" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s"/><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s">
 <rect class="box" x="30" y="250" width="209" height="90" rx="8"/>
 <text class="label" x="134" y="295">Device controllers</text>
-</g><g class="fragment transient arrive" data-fragment-index="4" style="--delay: 0s">
+</g><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s">
 <rect class="box" x="30" y="380" width="209" height="206" rx="8"/>
 <text class="label" x="134" y="404">Devices</text>
 <rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text>
 <rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text>
 <rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text>
-</g><path class="fragment transient arrive wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-wire-arrow)" data-fragment-index="4" style="--delay: 0s"/><text class="fragment transient arrive tiny signal start" x="52" y="230" data-fragment-index="4" style="--delay: 0s">interrupts</text></svg>
+</g><path class="fragment transient arrive wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-wire-arrow)" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s"/><text class="fragment transient arrive tiny signal start" x="52" y="230" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">interrupts</text></svg>
 </div>
-<template class="diagram-captions"><p data-caption="rest">A 64-bit processor, connected by data and address buses to the firmware, the memory and the disk controller. The storage is behind the disk controller, which the processor asks to copy from it into memory.</p><p data-caption="0">The machine is powered on. There is no program in memory yet.</p><p data-caption="1">From now on, the processor is drawn as a box: what is inside it is no longer shown.</p><p data-caption="2">The processor is drawn smaller: what follows happens outside it.</p><p data-caption="3">It is one core of the processor, which has several, each following a program of its own.</p><p data-caption="4">The firmware, the memory and the storage take the room the processor leaves.</p><p data-caption="5">Everything else is a device behind a controller on the buses, which can interrupt the processor when something must be handled.</p></template>
+<template class="diagram-captions"><p data-caption="rest">A 64-bit processor, connected by data and address buses to the firmware, the memory and the disk controller. The storage is behind the disk controller, which the processor asks to copy from it into memory.</p><p data-caption="0">A modern computer, drawn like the toy machine. The machine is powered on, and there is no program in memory yet.</p><p data-caption="1">4.5 GHz: the clock ticks 4.5 billion times a second.</p><p data-caption="2">64-bit: the registers hold 64 bits each, and the buses carry 64 bits at once, of data or of an address.</p><p data-caption="3">32 MB of L3 cache: the largest of the processor’s caches, which keep copies of recently used memory. L1 and L2 belong to a core, and L3 is shared by all of them.</p><p data-caption="4">The whole processor again.</p><p data-caption="5">From now on, the processor is drawn as a box: what is inside it is no longer shown.</p><p data-caption="6">The processor is drawn smaller: what follows happens outside it.</p><p data-caption="7">It is one core of the processor, which has several, each following a program of its own.</p><p data-caption="8">The firmware, the memory and the storage take the room the processor leaves.</p><p data-caption="9">Everything else is a device behind a controller on the buses, which can interrupt the processor when something must be handled.</p><p data-caption="10">4 cores: four processors in one chip, each following a program of its own at the same time, sharing the buses and the memory.</p><p data-caption="11">32 GB of RAM, in two sticks of 16 GB: still one memory, of about 32 billion cells, its addresses running on from one stick to the other. DDR5 6000 MHz: up to 6000 million transfers a second, which says nothing of how long a value takes to arrive.</p><p data-caption="12">UEFI: the firmware, which the processor runs first at power-on, from a chip that is only read.</p><p data-caption="13">A 2 TB NVMe SSD: the storage, where programs and files stay with the power off, its controller on the drive itself. PCIe 4.0 connects the disk controller to the rest, and up to 7450 MB/s is how fast it copies from the storage into memory.</p><p data-caption="14">B650: the motherboard, which everything plugs into, and which carries the buses between the parts.</p><p data-caption="15">A graphics card, Wi-Fi and Ethernet: devices, each behind a controller whose registers the processor reaches at addresses of their own.</p><p data-caption="16">The whole machine again, ready to boot.</p></template>
 </div>

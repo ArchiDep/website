@@ -185,6 +185,7 @@ export function becoming(other: Document): Becoming {
           const copy = copyOf(
             builder.doc.importNode(byId(other, id), true) as Element
           );
+          builder.copied(id, copy);
           reveal(copy, index, 'transient', 'arrive');
           stepOf(state, index).arrivals.push(copy);
           if (under === undefined) {

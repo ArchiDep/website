@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { copyOf } from '../actions';
 import { generate } from '../generate';
 import {
   diagram,
@@ -266,6 +267,30 @@ describe('focusOn', () => {
           '<g id="diagram-m-left" data-faded-at="2"/>' +
           '<g id="diagram-m-right" data-faded-at="0"/>',
         3
+      )
+    );
+  });
+
+  it('fades the copies standing for a part too, such as one brought in from another drawing', () => {
+    const focus = focusOn(['left', 'shade']);
+    const bringShade: Action = builder => {
+      const copy = copyOf(builder.element('template'));
+      builder.element('template').parentNode?.appendChild(copy);
+      builder.copied('shade', copy);
+    };
+
+    assert.equal(
+      generated('<g id="left"/><circle id="template" r="1"/>', [
+        [bringShade, focus('left')],
+        [focus('shade')]
+      ]),
+      partial(
+        '<g class="fragment focus" data-fragment-index="1"/>' +
+          '<g class="fragment focus" data-fragment-index="0"/>' +
+          '<g id="diagram-m-left" data-faded-at="1"/>' +
+          '<circle id="diagram-m-template" r="1"/>' +
+          '<circle r="1" data-faded-at="0"/>',
+        2
       )
     );
   });

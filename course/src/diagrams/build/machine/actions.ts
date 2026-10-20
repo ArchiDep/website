@@ -453,7 +453,9 @@ function drawFocus(
       .map(([index]) => index)
       .sort((a, b) => a - b);
     if (faded.length > 0) {
-      builder.element(part).setAttribute('data-faded-at', faded.join(' '));
+      for (const element of builder.drawnAs(part)) {
+        element.setAttribute('data-faded-at', faded.join(' '));
+      }
     }
   }
 }
