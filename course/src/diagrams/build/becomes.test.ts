@@ -29,14 +29,15 @@ const MOVED =
 
 function generated(
   steps: (moved: ReturnType<typeof becoming>) => Step[],
-  svg = LAMP
+  svg = LAMP,
+  other = MOVED
 ): string {
   return generate({
     name: 'lamp',
     svg,
     definition: diagram({
       captions: { rest: 'A lamp.', start: 'A lamp, here.' },
-      steps: steps(becoming(parseSvg(MOVED, 'moved.svg')))
+      steps: steps(becoming(parseSvg(other, 'moved.svg')))
     }),
     motion: ''
   });
@@ -137,6 +138,20 @@ describe('becoming', () => {
         ]),
       new Error(
         'lamp.svg: "lamp" changes after it moves into the drawing it becomes'
+      )
+    );
+  });
+
+  it('fails on a text moved that reads differently in the other drawing, which would change when cutting to it', () => {
+    assert.throws(
+      () =>
+        generated(
+          moved => [step('It moves.', moved.into('sign'))],
+          HEAD + '<text id="sign" x="0" y="0">Lamp</text></svg>',
+          HEAD + '<text id="sign" x="30" y="0">Lamps</text></svg>'
+        ),
+      new Error(
+        '"sign" reads "Lamp" here and "Lamps" in the drawing it becomes'
       )
     );
   });

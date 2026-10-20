@@ -2,7 +2,7 @@
 <div class="diagram-figure" data-diagram="machine-boot-opaque">
 <div class="diagram-canvas">
 <svg xmlns="http://www.w3.org/2000/svg" class="diagram" data-family="machine" viewBox="0 0 1000 600" role="img" aria-labelledby="diagram-machine-boot-opaque-title">
-<title id="diagram-machine-boot-opaque-title">The machine at boot, its processor drawn as a stack of cores, connected by a 64-bit data bus and a 64-bit address bus to a firmware chip, memory, a disk controller with the storage behind it, and device controllers with the devices behind them, which can interrupt the processor</title>
+<title id="diagram-machine-boot-opaque-title">The machine at boot, its processor drawn as a stack of cores, connected by 64-bit data and address buses to a firmware chip, memory, a disk controller with the storage behind it, and device controllers with the devices behind them, which can interrupt the processor</title>
 <style id="diagram-machine-boot-opaque-diagram-styles">
 svg.diagram[data-family='machine'] .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
 svg.diagram[data-family='machine'] .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
@@ -668,7 +668,7 @@ break-inside: avoid;
 <path id="diagram-machine-boot-opaque-path-data-bus-device-controllers" class="data-path" d="M291 320 H237"/>
 <g id="diagram-machine-boot-opaque-data-bus">
 <rect id="diagram-machine-boot-opaque-data-bus-rail" class="data-bus" x="280" y="23" width="22" height="453"/>
-<text id="diagram-machine-boot-opaque-data-bus-label" class="bus-label" x="291" y="330" transform="rotate(-90 291 330)">Data bus · 64 bits</text>
+<text id="diagram-machine-boot-opaque-data-bus-label" class="bus-label" x="291" y="330" transform="rotate(-90 291 330)">Data buses · 64 bits</text>
 </g>
 <g id="diagram-machine-boot-opaque-address-bus">
 <rect id="diagram-machine-boot-opaque-address-bus-rail" class="address-bus" x="318" y="59" width="22" height="379"/>
@@ -677,7 +677,7 @@ break-inside: avoid;
 <path id="diagram-machine-boot-opaque-path-address-bus-memory" class="address-path" d="M329 150 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
 <path id="diagram-machine-boot-opaque-path-address-bus-disk-controller" class="address-path" d="M329 427 H345" marker-end="url(#diagram-machine-boot-opaque-address-arrow)"/>
 <polygon id="diagram-machine-boot-opaque-firmware-read-only" points="377,27 377,41 365,34" fill="#ffffff"/>
-<text id="diagram-machine-boot-opaque-address-bus-label" class="bus-label" x="329" y="325" transform="rotate(-90 329 325)">Address bus · 64 bits</text>
+<text id="diagram-machine-boot-opaque-address-bus-label" class="bus-label" x="329" y="325" transform="rotate(-90 329 325)">Address buses · 64 bits</text>
 <g id="diagram-machine-boot-opaque-firmware">
 <rect id="diagram-machine-boot-opaque-firmware-box" class="box" x="380" y="20" width="608" height="72" rx="8"/>
 <text id="diagram-machine-boot-opaque-firmware-label" class="label" x="470" y="44">Firmware</text>
@@ -734,7 +734,7 @@ break-inside: avoid;
 <rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text>
 </g>
 <path id="diagram-machine-boot-opaque-wire-interrupt" class="wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-opaque-wire-arrow)"/>
-<text id="diagram-machine-boot-opaque-interrupt-label" class="tiny signal start" x="52" y="230">interrupt</text>
+<text id="diagram-machine-boot-opaque-interrupt-label" class="tiny signal start" x="52" y="230">interrupts</text>
 </svg>
 </div>
 <template class="diagram-captions"><p data-caption="rest">The processor drawn as a stack of cores, connected by the buses to the firmware, the memory, the disk controller and the device controllers. The storage and the devices are behind their controllers, and a device can interrupt the processor.</p><p data-caption="0">The processor, drawn as a box: what is inside it is no longer shown.</p></template>

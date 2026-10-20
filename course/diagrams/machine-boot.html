@@ -2,7 +2,7 @@
 <div class="diagram-figure" data-diagram="machine-boot">
 <div class="diagram-canvas">
 <svg xmlns="http://www.w3.org/2000/svg" class="diagram" data-family="machine" viewBox="0 0 1000 600" role="img" aria-labelledby="diagram-machine-boot-title">
-<title id="diagram-machine-boot-title">The machine at boot: a 64-bit processor with sixteen registers, several ALUs and three levels of cache, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller</title>
+<title id="diagram-machine-boot-title">The machine at boot: a 64-bit processor with sixteen registers, several ALUs and three levels of cache, connected to a firmware chip, memory and a disk controller by 64-bit data and address buses, with the storage behind the disk controller</title>
 <style id="diagram-machine-boot-diagram-styles">
 svg.diagram[data-family='machine'] .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
 svg.diagram[data-family='machine'] .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
@@ -683,7 +683,7 @@ break-inside: avoid;
 <path id="diagram-machine-boot-path-processor-data-bus" class="data-path" d="M80 491 H642" data-gone-from="0"/>
 <path class="fragment transient arrive address-path" d="M231 133 H329" data-fragment-index="3" style="--delay: 1.2s"/><path class="fragment transient arrive data-path" d="M231 97 H291" data-fragment-index="3" style="--delay: 1.2s"/><path class="fragment transient arrive address-path" d="M329 272 H274" marker-end="url(#diagram-machine-boot-address-arrow)" data-fragment-index="4" style="--delay: 0s"/><path class="fragment transient arrive data-path" d="M291 320 H237" data-fragment-index="4" style="--delay: 0s"/><rect id="diagram-machine-boot-data-bus-rail" class="data-bus" x="620" y="23" width="22" height="453" data-reshaped-3-x="280"/>
 <rect id="diagram-machine-boot-data-bus-turn" class="data-bus" x="620" y="476" width="22" height="26" data-gone-from="0"/>
-<text id="diagram-machine-boot-data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)" data-reshaped-3-x="291" data-reshaped-3-y="330" data-reshaped-3-transform="rotate(-90 291 330)">Data bus · 64 bits</text>
+<text id="diagram-machine-boot-data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)" data-reshaped-3-x="291" data-reshaped-3-y="330" data-reshaped-3-transform="rotate(-90 291 330)">Data buses · 64 bits</text>
 </g>
 <g id="diagram-machine-boot-caches" data-gone-from="0">
 <g id="diagram-machine-boot-cache-l1"><rect class="box" x="300" y="474" width="56" height="34" rx="6"/><text class="label minor" x="328" y="491">L1</text></g>
@@ -698,7 +698,7 @@ break-inside: avoid;
 <path id="diagram-machine-boot-path-address-bus-memory" class="address-path" d="M669 150 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-3-d="M329 150 H345"/>
 <path id="diagram-machine-boot-path-address-bus-disk-controller" class="address-path" d="M669 427 H705" marker-end="url(#diagram-machine-boot-address-arrow)" data-reshaped-3-d="M329 427 H345"/>
 <polygon id="diagram-machine-boot-firmware-read-only" points="739,27 739,41 727,34" fill="#ffffff" data-reshaped-3-points="377,27 377,41 365,34"/>
-<text id="diagram-machine-boot-address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)" data-reshaped-3-x="329" data-reshaped-3-y="325" data-reshaped-3-transform="rotate(-90 329 325)">Address bus · 64 bits</text>
+<text id="diagram-machine-boot-address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)" data-reshaped-3-x="329" data-reshaped-3-y="325" data-reshaped-3-transform="rotate(-90 329 325)">Address buses · 64 bits</text>
 <g id="diagram-machine-boot-selector" data-gone-from="0">
 <polygon class="box" points="470,30 530,50 530,100 470,120"/>
 <text class="small" x="500" y="22">Selector</text>
@@ -778,7 +778,7 @@ break-inside: avoid;
 <rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text>
 <rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text>
 <rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text>
-</g><path class="fragment transient arrive wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-wire-arrow)" data-fragment-index="4" style="--delay: 0s"/><text class="fragment transient arrive tiny signal start" x="52" y="230" data-fragment-index="4" style="--delay: 0s">interrupt</text></svg>
+</g><path class="fragment transient arrive wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-wire-arrow)" data-fragment-index="4" style="--delay: 0s"/><text class="fragment transient arrive tiny signal start" x="52" y="230" data-fragment-index="4" style="--delay: 0s">interrupts</text></svg>
 </div>
-<template class="diagram-captions"><p data-caption="rest">A 64-bit processor, connected by a data bus and an address bus to the firmware, the memory and the disk controller. The storage is behind the disk controller, which the processor asks to copy from it into memory.</p><p data-caption="0">The machine is powered on. There is no program in memory yet.</p><p data-caption="1">From now on, the processor is drawn as a box: what is inside it is no longer shown.</p><p data-caption="2">The processor is drawn smaller: what follows happens outside it.</p><p data-caption="3">It is one core of the processor, which has several, each following a program of its own.</p><p data-caption="4">The firmware, the memory and the storage take the room the processor leaves.</p><p data-caption="5">Everything else is a device behind a controller on the buses, which can interrupt the processor when something must be handled.</p></template>
+<template class="diagram-captions"><p data-caption="rest">A 64-bit processor, connected by data and address buses to the firmware, the memory and the disk controller. The storage is behind the disk controller, which the processor asks to copy from it into memory.</p><p data-caption="0">The machine is powered on. There is no program in memory yet.</p><p data-caption="1">From now on, the processor is drawn as a box: what is inside it is no longer shown.</p><p data-caption="2">The processor is drawn smaller: what follows happens outside it.</p><p data-caption="3">It is one core of the processor, which has several, each following a program of its own.</p><p data-caption="4">The firmware, the memory and the storage take the room the processor leaves.</p><p data-caption="5">Everything else is a device behind a controller on the buses, which can interrupt the processor when something must be handled.</p></template>
 </div>

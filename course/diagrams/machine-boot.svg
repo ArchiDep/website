@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="diagram" data-family="machine" viewBox="0 0 1000 600" width="1000" height="600">
-  <title>The machine at boot: a 64-bit processor with sixteen registers, several ALUs and three levels of cache, connected to a firmware chip, memory and a disk controller by a 64-bit data bus and a 64-bit address bus, with the storage behind the disk controller</title>
+  <title>The machine at boot: a 64-bit processor with sixteen registers, several ALUs and three levels of cache, connected to a firmware chip, memory and a disk controller by 64-bit data and address buses, with the storage behind the disk controller</title>
   <style id="diagram-styles">
     svg.diagram[data-family='machine'] .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
     svg.diagram[data-family='machine'] .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
@@ -196,7 +196,7 @@
     <!-- Where it turns into the processor, which the rail ends at once the
          processor is opaque -->
     <rect id="data-bus-turn" class="data-bus" x="620" y="476" width="22" height="26"/>
-    <text id="data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)">Data bus · 64 bits</text>
+    <text id="data-bus-label" class="bus-label" x="631" y="230" transform="rotate(-90 631 230)">Data buses · 64 bits</text>
   </g>
   <!-- Caches: copies of recently used memory, on the data bus where it leaves
        the processor, each larger and slower than the one before. L1 and L2
@@ -216,7 +216,7 @@
   <!-- The firmware is only read: a small arrow inside its data path, since an
        arrowhead at its end would cut it off from the firmware -->
   <polygon id="firmware-read-only" points="739,27 739,41 727,34" fill="#ffffff"/>
-  <text id="address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address bus · 64 bits</text>
+  <text id="address-bus-label" class="bus-label" x="669" y="300" transform="rotate(-90 669 300)">Address buses · 64 bits</text>
 
   <!-- Selector: chooses whether the program counter or the instruction gives
        the address -->

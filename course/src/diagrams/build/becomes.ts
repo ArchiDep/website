@@ -278,6 +278,17 @@ function targetOf(
     throw new Error(`"${id}" is a <${element.localName}>, which cannot move`);
   }
 
+  // A text moves, but does not change what it says: one that does must leave,
+  // and the other's arrive.
+  if (
+    element.localName === 'text' &&
+    element.textContent !== target.textContent
+  ) {
+    throw new Error(
+      `"${id}" reads "${element.textContent}" here and "${target.textContent}" in the drawing it becomes`
+    );
+  }
+
   const values: Record<string, string> = {};
   for (const attribute of attributes) {
     const to = target.getAttribute(attribute);
