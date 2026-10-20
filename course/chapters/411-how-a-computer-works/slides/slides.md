@@ -1429,6 +1429,12 @@ step uses it. The ALU and the selector hold nothing: their output follows their
 inputs. That is why the accumulator can feed the ALU and take its result back:
 it only takes the new value on the tick, then holds it.
 
+This machine simplifies one thing that every real processor does differently:
+its ALU takes a number straight from memory, over the data bus. A real processor
+never computes on a value in memory. It first copies the value into a register,
+even when a single instruction does both, and its ALU only ever works on
+registers.
+
 To learn more: this machine is close to the SAP-1 ("Simple-As-Possible")
 teaching computer, which Ben Eater builds on breadboards, control signals
 included, in his [8-bit computer](https://eater.net/8bit) video series.
