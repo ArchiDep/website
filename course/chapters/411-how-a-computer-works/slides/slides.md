@@ -33,7 +33,7 @@ TODO.
 
 ### Eight bits
 
-<p class="text-center font-mono text-6xl">01000001</p>
+<p class="text-center font-mono text-6xl">01010011</p>
 
 **Notes:**
 
@@ -51,12 +51,32 @@ comes from the program that reads them, not from the bits.
 
 ### Numbers as binary
 
-| Binary digit   | <span class="font-mono">0</span>                        | <span class="font-mono">1</span>                                     | <span class="font-mono">0</span>                       | <span class="font-mono">0</span>                       | <span class="font-mono">0</span>                      | <span class="font-mono">0</span>                      | <span class="font-mono">0</span>                      | <span class="font-mono">1</span>                                    |
-| :------------- | :------------------------------------------------------ | :------------------------------------------------------------------- | :----------------------------------------------------- | :----------------------------------------------------- | :---------------------------------------------------- | :---------------------------------------------------- | :---------------------------------------------------- | :------------------------------------------------------------------ |
-| Position value | 2<sup>7</sup>                                           | 2<sup>6</sup>                                                        | 2<sup>5</sup>                                          | 2<sup>4</sup>                                          | 2<sup>3</sup>                                         | 2<sup>2</sup>                                         | 2<sup>1</sup>                                         | 2<sup>0</sup>                                                       |
-| Value          | <span class="text-2xl whitespace-nowrap">0 × 128</span> | <span class="text-2xl whitespace-nowrap text-blue-500">1 × 64</span> | <span class="text-2xl whitespace-nowrap">0 × 32</span> | <span class="text-2xl whitespace-nowrap">0 × 16</span> | <span class="text-2xl whitespace-nowrap">0 × 8</span> | <span class="text-2xl whitespace-nowrap">0 × 4</span> | <span class="text-2xl whitespace-nowrap">0 × 2</span> | <span class="text-2xl whitespace-nowrap text-blue-500">1 × 1</span> |
+<table class="font-mono text-5xl">
+  <tbody>
+    <tr>
+      <td class="border-b-0! px-2! text-center!">0</td>
+      <td class="border-b-0! px-2! text-center!">1</td>
+      <td class="border-b-0! px-2! text-center!">0</td>
+      <td class="border-b-0! px-2! text-center!">1</td>
+      <td class="border-b-0! px-2! text-center!">0</td>
+      <td class="border-b-0! px-2! text-center!">0</td>
+      <td class="border-b-0! px-2! text-center!">1</td>
+      <td class="border-b-0! px-2! text-center!">1</td>
+    </tr>
+    <tr class="text-2xl text-blue-500">
+      <td class="border-b-0! px-2! text-center!">2<sup>7</sup><br />128</td>
+      <td class="border-b-0! px-2! text-center!">2<sup>6</sup><br />64</td>
+      <td class="border-b-0! px-2! text-center!">2<sup>5</sup><br />32</td>
+      <td class="border-b-0! px-2! text-center!">2<sup>4</sup><br />16</td>
+      <td class="border-b-0! px-2! text-center!">2<sup>3</sup><br />8</td>
+      <td class="border-b-0! px-2! text-center!">2<sup>2</sup><br />4</td>
+      <td class="border-b-0! px-2! text-center!">2<sup>1</sup><br />2</td>
+      <td class="border-b-0! px-2! text-center!">2<sup>0</sup><br />1</td>
+    </tr>
+  </tbody>
+</table>
 
-<p class="text-center text-4xl">01000001<sub>2</sub> = 64<sub>10</sub> + 1<sub>10</sub> = 65<sub>10</sub></p>
+<p class="text-center text-4xl">01010011<sub>2</sub> = 83<sub>10</sub></p>
 
 **Notes:**
 
@@ -65,9 +85,10 @@ position to its right, as each position of a decimal number is worth ten times
 the position to its right. The rightmost position is worth 2<sup>0</sup> = 1,
 and the leftmost 2<sup>7</sup> = 128.
 
-`01000001` has a 1 in only two positions, worth 64 and 1, so it is the decimal
-number 64 + 1 = **65**. The small number after each number says which base it is
-written in: 01000001<sub>2</sub> is in base 2, and 65<sub>10</sub> in base 10.
+`01010011` has a 1 in four positions, worth 64, 16, 2 and 1, so it is the
+decimal number 64 + 16 + 2 + 1 = **83**. The small number after each number says
+which base it is written in: 01010011<sub>2</sub> is in base 2, and
+83<sub>10</sub> in base 10.
 
 A byte read this way holds any whole number from 0 (`00000000`) to 255
 (`11111111`): 256 numbers, one for each way of setting its eight bits.
@@ -78,7 +99,7 @@ A byte read this way holds any whole number from 0 (`00000000`) to 255
 
 <img src="images/gray-levels.svg" alt="The 256 gray levels of a byte, from black to white" class="mx-auto h-110">
 
-<p class="text-center text-3xl"><code>01000001</code> = 65 of 255: about 75% black</p>
+<p class="text-center text-3xl"><code>01010011</code> = 83 of 255: about 67% black</p>
 
 **Notes:**
 
@@ -86,8 +107,8 @@ One way to use a byte is as a shade of gray: 0 is black, 255 is white, and the
 254 integers in between are increasingly lighter grays. The grid shows all 256
 of them, in order, 16 per row: 0 at the top left, 255 at the bottom right.
 
-The highlighted cell is 65, in the fifth row (64 to 79), second column. It is
-65 / 255 ≈ 25% of the way from black to white, so it is a dark gray, about 75%
+The highlighted cell is 83, in the sixth row (80 to 95), fourth column. It is
+83 / 255 ≈ 33% of the way from black to white, so it is a dark gray, about 67%
 black.
 
 An image stored with one byte per pixel this way is an 8-bit grayscale image.
@@ -98,7 +119,7 @@ An image stored with one byte per pixel this way is an 8-bit grayscale image.
 
 <img src="images/colors.svg" alt="The 256 colors of a byte with 3 bits of red, 3 of green and 2 of blue" class="mx-auto h-110">
 
-<p class="text-center text-3xl"><code class="text-4xl"><span class="text-red-600">010</span><span class="text-green-600">000</span><span class="text-blue-600">01</span></code> = about 29% red, 0% green, 33% blue</p>
+<p class="text-center text-3xl"><code class="text-4xl"><span class="text-red-600">010</span><span class="text-green-600">100</span><span class="text-blue-600">11</span></code> = about 29% red, 57% green, 100% blue</p>
 
 **Notes:**
 
@@ -111,15 +132,15 @@ Eight bits do not divide by three, so one common scheme, **8-bit color**, gives
 eye is least sensitive to it. Red and green each have 2³ = 8 levels, from 0 to
 7, and blue has 2² = 4 levels, from 0 to 3.
 
-Read that way, `01000001` is:
+Read that way, `01010011` is:
 
 - red `010`, 2 of 7, about 29%: a little red;
-- green `000`, 0 of 7, 0%: no green at all;
-- blue `01`, 1 of 3, about 33%: a little blue.
+- green `100`, 4 of 7, about 57%: some green;
+- blue `11`, 3 of 3, 100%: all the blue there is.
 
-A little red and a little blue make a dark purple. The grid shows all 256
-colors in the same order as the gray levels, and the highlighted cell is in the
-same place: it is the same byte, 65, read differently.
+A little red, some green and full blue make a light sky blue. The grid shows
+all 256 colors in the same order as the gray levels, and the highlighted cell
+is in the same place: it is the same byte, 83, read differently.
 
 ---
 
@@ -127,7 +148,7 @@ same place: it is the same byte, 65, read differently.
 
 <img src="images/mario.svg" alt="Mario, 12 pixels by 16" class="mx-auto h-110">
 
-<p class="text-center text-3xl"><code class="text-4xl"><span class="text-red-600">101</span><span class="text-green-600">001</span><span class="text-blue-600">00</span></code> = red 5, green 1, blue 0</p>
+<p class="text-center text-3xl"><code class="text-4xl"><span class="text-red-600">010</span><span class="text-green-600">100</span><span class="text-blue-600">11</span></code> = red 2, green 4, blue 3</p>
 
 **Notes:**
 
@@ -140,13 +161,13 @@ This is Mario, the character of _Super Mario Bros._, released by Nintendo in
 era. He is 12 pixels wide and 16 high: 192 pixels, so 192 bytes. He is redrawn
 here with the 8-bit colors of the previous slide.
 
-The highlighted pixel, in his cap, is the byte `10100100`: red 5 of 7, green 1
-of 7 and blue 0 of 3, a strong red.
+The highlighted pixel, in the sky next to his cap, is the byte `01010011` of the
+previous slides: red 2 of 7, green 4 of 7 and blue 3 of 3, a light sky blue.
 
 Today's images and screens use more bits per pixel: one byte for each of red,
 green and blue, 24 bits per pixel, which gives 256 levels each and over 16
-million colors. It is the `rgb()` notation of CSS: the red of Mario's cap is
-`rgb(182, 36, 0)` (5/7, 1/7 and 0/3 of 255), or `#b62400` in hexadecimal. A
+million colors. It is the `rgb()` notation of CSS: the blue of the sky is
+`rgb(73, 146, 255)` (2/7, 4/7 and 3/3 of 255), or `#4992ff` in hexadecimal. A
 photo from a modern camera is the same grid of numbers at a much larger scale:
 a 1920 × 1080 image has over 2 million pixels, and at 3 bytes per pixel, it
 takes about 6 MB before it is compressed.
@@ -171,7 +192,8 @@ second: 8 frames per second. At one byte per pixel, each frame is 256 bytes, and
 the whole animation is 3 × 256 = 768 bytes, played over and over.
 
 The highlighted pixel stays in the same place, but its byte changes from one
-frame to the next: `01010011`, the blue of the sky, then `11010000`, the skin
+frame to the next: `01010011`, the blue of the sky and the byte of the
+previous slides, then `11010000`, the skin
 of his hand, then `10100100`, the red of his overalls. Nothing moves on a
 screen: each pixel only changes color.
 
@@ -187,7 +209,7 @@ changes from one frame to the next.
 
 <table class="mx-auto font-mono text-sm [&_td]:px-[0.5ch]!">
   <tr>
-    <td></td><td></td>
+    <td></td><td></td><td></td>
     <td colspan="3">
       <div class="fragment relative aspect-230/56">
         <svg viewBox="0 0 230 56" class="absolute inset-0 h-full w-full" aria-label="Plus 32">
@@ -197,19 +219,18 @@ changes from one frame to the next.
         </svg>
       </div>
     </td>
-    <td></td>
   </tr>
   <tr>
     <td><span class="inline-block w-[4ch] text-center">SP</span><span class="inline-block w-[3ch] text-right opacity-50">32</span></td><td><span class="inline-block w-[4ch] text-center">0</span><span class="inline-block w-[3ch] text-right opacity-50">48</span></td><td><span class="inline-block w-[4ch] text-center">&#64;</span><span class="inline-block w-[3ch] text-right opacity-50">64</span></td><td><span class="inline-block w-[4ch] text-center">P</span><span class="inline-block w-[3ch] text-right opacity-50">80</span></td><td><span class="inline-block w-[4ch] text-center">&#96;</span><span class="inline-block w-[3ch] text-right opacity-50">96</span></td><td><span class="inline-block w-[4ch] text-center">p</span><span class="inline-block w-[3ch] text-right opacity-50">112</span></td>
   </tr>
   <tr>
-    <td><span class="inline-block w-[4ch] text-center">&#33;</span><span class="inline-block w-[3ch] text-right opacity-50">33</span></td><td><span class="inline-block w-[4ch] text-center">1</span><span class="inline-block w-[3ch] text-right opacity-50">49</span></td><td class="bg-yellow-200 font-bold"><span class="inline-block w-[4ch] text-center">A</span><span class="inline-block w-[3ch] text-right opacity-50">65</span></td><td><span class="inline-block w-[4ch] text-center">Q</span><span class="inline-block w-[3ch] text-right opacity-50">81</span></td><td class="bg-yellow-200 font-bold"><span class="inline-block w-[4ch] text-center">a</span><span class="inline-block w-[3ch] text-right opacity-50">97</span></td><td><span class="inline-block w-[4ch] text-center">q</span><span class="inline-block w-[3ch] text-right opacity-50">113</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#33;</span><span class="inline-block w-[3ch] text-right opacity-50">33</span></td><td><span class="inline-block w-[4ch] text-center">1</span><span class="inline-block w-[3ch] text-right opacity-50">49</span></td><td><span class="inline-block w-[4ch] text-center">A</span><span class="inline-block w-[3ch] text-right opacity-50">65</span></td><td><span class="inline-block w-[4ch] text-center">Q</span><span class="inline-block w-[3ch] text-right opacity-50">81</span></td><td><span class="inline-block w-[4ch] text-center">a</span><span class="inline-block w-[3ch] text-right opacity-50">97</span></td><td><span class="inline-block w-[4ch] text-center">q</span><span class="inline-block w-[3ch] text-right opacity-50">113</span></td>
   </tr>
   <tr>
     <td><span class="inline-block w-[4ch] text-center">&#34;</span><span class="inline-block w-[3ch] text-right opacity-50">34</span></td><td><span class="inline-block w-[4ch] text-center">2</span><span class="inline-block w-[3ch] text-right opacity-50">50</span></td><td><span class="inline-block w-[4ch] text-center">B</span><span class="inline-block w-[3ch] text-right opacity-50">66</span></td><td><span class="inline-block w-[4ch] text-center">R</span><span class="inline-block w-[3ch] text-right opacity-50">82</span></td><td><span class="inline-block w-[4ch] text-center">b</span><span class="inline-block w-[3ch] text-right opacity-50">98</span></td><td><span class="inline-block w-[4ch] text-center">r</span><span class="inline-block w-[3ch] text-right opacity-50">114</span></td>
   </tr>
   <tr>
-    <td><span class="inline-block w-[4ch] text-center">&#35;</span><span class="inline-block w-[3ch] text-right opacity-50">35</span></td><td><span class="inline-block w-[4ch] text-center">3</span><span class="inline-block w-[3ch] text-right opacity-50">51</span></td><td><span class="inline-block w-[4ch] text-center">C</span><span class="inline-block w-[3ch] text-right opacity-50">67</span></td><td><span class="inline-block w-[4ch] text-center">S</span><span class="inline-block w-[3ch] text-right opacity-50">83</span></td><td><span class="inline-block w-[4ch] text-center">c</span><span class="inline-block w-[3ch] text-right opacity-50">99</span></td><td><span class="inline-block w-[4ch] text-center">s</span><span class="inline-block w-[3ch] text-right opacity-50">115</span></td>
+    <td><span class="inline-block w-[4ch] text-center">&#35;</span><span class="inline-block w-[3ch] text-right opacity-50">35</span></td><td><span class="inline-block w-[4ch] text-center">3</span><span class="inline-block w-[3ch] text-right opacity-50">51</span></td><td><span class="inline-block w-[4ch] text-center">C</span><span class="inline-block w-[3ch] text-right opacity-50">67</span></td><td class="bg-yellow-200 font-bold"><span class="inline-block w-[4ch] text-center">S</span><span class="inline-block w-[3ch] text-right opacity-50">83</span></td><td><span class="inline-block w-[4ch] text-center">c</span><span class="inline-block w-[3ch] text-right opacity-50">99</span></td><td class="bg-yellow-200 font-bold"><span class="inline-block w-[4ch] text-center">s</span><span class="inline-block w-[3ch] text-right opacity-50">115</span></td>
   </tr>
   <tr>
     <td><span class="inline-block w-[4ch] text-center">&#36;</span><span class="inline-block w-[3ch] text-right opacity-50">36</span></td><td><span class="inline-block w-[4ch] text-center">4</span><span class="inline-block w-[3ch] text-right opacity-50">52</span></td><td><span class="inline-block w-[4ch] text-center">D</span><span class="inline-block w-[3ch] text-right opacity-50">68</span></td><td><span class="inline-block w-[4ch] text-center">T</span><span class="inline-block w-[3ch] text-right opacity-50">84</span></td><td><span class="inline-block w-[4ch] text-center">d</span><span class="inline-block w-[3ch] text-right opacity-50">100</span></td><td><span class="inline-block w-[4ch] text-center">t</span><span class="inline-block w-[3ch] text-right opacity-50">116</span></td>
@@ -266,11 +287,13 @@ Some things worth noticing:
   not code point 0.
 - The uppercase letters start at 65, with `A`, and the lowercase ones at 97,
   with `a`: the lowercase letters come exactly 32 after the uppercase ones.
+- `S`, highlighted, is 83: the byte `01010011` of the previous slides, read as
+  a letter. Its lowercase `s`, also highlighted, is 83 + 32 = 115.
 
 **UTF-8**, the encoding of almost all text on the web today, can store over a
 million characters, from every writing system and emoji. Its first 128 code
 points are the ASCII table, and UTF-8 stores each of them as a single byte, the
-same as in ASCII. `A` is 65 and `a` is 97 in both, so text written only in
+same as in ASCII. `S` is 83 and `s` is 115 in both, so text written only in
 ASCII characters is also valid UTF-8.
 
 ---
@@ -279,12 +302,12 @@ ASCII characters is also valid UTF-8.
 
 | Letter | Code point |                         Binary                          |
 | :----: | :--------: | :-----------------------------------------------------: |
-|  `A`   |     65     | <code>01<span class="text-red-600">0</span>00001</code> |
-|  `a`   |     97     | <code>01<span class="text-red-600">1</span>00001</code> |
+|  `S`   |     83     | <code>01<span class="text-red-600">0</span>10011</code> |
+|  `s`   |    115     | <code>01<span class="text-red-600">1</span>10011</code> |
 
 **Notes:**
 
-`a` is `A` plus 32. In binary, 32 is the value of a single bit, the sixth from
+`s` is `S` plus 32. In binary, 32 is the value of a single bit, the sixth from
 the right (bit 5, counting from 0), and that is the only bit that differs
 between the two letters. The same is true of every other letter of the table:
 `B` (66) and `b` (98), all the way to `Z` (90) and `z` (122).
