@@ -1,0 +1,371 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" data-family="machine" viewBox="0 0 1000 600" width="1000" height="600">
+  <title>Two cores and two programs in memory, A and B, beside the kernel and init, everything but the cores and the memory drawn paler: each core runs one program, both at the same time; then program B ends, program A runs alone on one core, and program C, written for several cores, runs on both</title>
+  <style id="diagram-styles">
+    svg.diagram[data-family='machine'] .frame { fill: none; stroke: #a3a3a8; stroke-width: 2; stroke-dasharray: 8 6; }
+    svg.diagram[data-family='machine'] .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 3; }
+    svg.diagram[data-family='machine'] .label { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .small { font-family: Helvetica, Arial, sans-serif; font-size: 16px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .tiny { font-family: Helvetica, Arial, sans-serif; font-size: 14px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .label.minor { font-size: 18px; }
+    /* The processor's name, in the pill in its corner */
+    svg.diagram[data-family='machine'] .label.chip-name { font-size: 18px; fill: #6e6e73; }
+    svg.diagram[data-family='machine'] .chip-tab { fill: #f0f0f2; }
+    /* What a single wire is labelled with */
+    svg.diagram[data-family='machine'] .tiny.signal { font-size: 12px; }
+    /* The memory's read and write controls, which a step can light one of */
+    svg.diagram[data-family='machine'] .tiny.read-write { font-size: 11px; }
+    svg.diagram[data-family='machine'] text.start { text-anchor: start; }
+    svg.diagram[data-family='machine'] text.end { text-anchor: end; }
+    svg.diagram[data-family='machine'] .data-path { fill: none; stroke: #1971c2; stroke-width: 22; stroke-linejoin: miter; }
+    svg.diagram[data-family='machine'] .address-path { fill: none; stroke: #e8590c; stroke-width: 22; stroke-linejoin: miter; }
+    svg.diagram[data-family='machine'] .data-bus { fill: #1971c2; }
+    svg.diagram[data-family='machine'] .address-bus { fill: #e8590c; }
+    svg.diagram[data-family='machine'] .wire { fill: none; stroke: #1d1d1f; stroke-width: 3; }
+    svg.diagram[data-family='machine'] .wire.thin { stroke-width: 2; }
+    /* The clock's square wave */
+    svg.diagram[data-family='machine'] .clock-wave { fill: none; stroke: #1d1d1f; stroke-width: 2.5; }
+    /* A wire that goes on somewhere not drawn */
+    svg.diagram[data-family='machine'] .wire-dots { fill: none; stroke: #1d1d1f; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 0 7; }
+    svg.diagram[data-family='machine'] .bus-label { font-family: Helvetica, Arial, sans-serif; font-size: 15px; font-weight: bold; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .cell { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    /* A box or a core drawn over what it holds, only its border */
+    svg.diagram[data-family='machine'] :is(.box, .core).hollow { fill: none; }
+    /* A core of the processor drawn opaque, like the processor's frame */
+    svg.diagram[data-family='machine'] .core { fill: #ffffff; stroke: #a3a3a8; stroke-width: 2; }
+    /* A file on the storage, or a device behind its controller */
+    svg.diagram[data-family='machine'] .file { fill: #f0f0f2; stroke: #a3a3a8; stroke-width: 1.5; }
+    /* The part of memory a program is copied into */
+    svg.diagram[data-family='machine'] .band { fill: #e5dbff; stroke: #9775fa; stroke-width: 1.5; }
+    svg.diagram[data-family='machine'] .band.program { fill: #d3f9d8; stroke: #51cf66; }
+    /* The bootloader, which runs before the kernel, as the firmware does, and
+       is not one of the programs the kernel runs */
+    svg.diagram[data-family='machine'] .band.bootloader { fill: #ffdeeb; stroke: #f06595; }
+    /* What a program makes as it runs, its stack and heap, which the file
+       never held: a lighter shade of its band */
+    svg.diagram[data-family='machine'] .band.data { fill: #f3eeff; }
+    svg.diagram[data-family='machine'] .band.program.data { fill: #ebfbee; }
+    svg.diagram[data-family='machine'] .band.other.data { fill: #e3fafc; }
+    /* What that part holds, said in passing rather than named like a program */
+    svg.diagram[data-family='machine'] .band-label.data-label { font-size: 12px; font-weight: normal; fill: #6e6e73; }
+    /* A band's name over two lines, in a band too short for it on one */
+    svg.diagram[data-family='machine'] .band-label.two-lines { font-size: 12px; }
+    /* A program's file, coloured as the band it is copied into */
+    svg.diagram[data-family='machine'] .file.program { fill: #d3f9d8; stroke: #51cf66; }
+    svg.diagram[data-family='machine'] .file.kernel { fill: #e5dbff; stroke: #9775fa; }
+    svg.diagram[data-family='machine'] .file.bootloader { fill: #ffdeeb; stroke: #f06595; }
+    /* Every program started once booted, and the file standing for theirs */
+    svg.diagram[data-family='machine'] :is(.band, .file).other { fill: #c5f6fa; stroke: #22b8cf; }
+    /* A second program running beside the first, told apart by its colour */
+    svg.diagram[data-family='machine'] :is(.band, .file).other.second { fill: #dbe4ff; stroke: #5c7cfa; }
+    svg.diagram[data-family='machine'] .band.other.second.data { fill: #edf2ff; }
+    /* A third, written to run on several cores at once */
+    svg.diagram[data-family='machine'] :is(.band, .file).other.third { fill: #e9fac8; stroke: #82c91e; }
+    svg.diagram[data-family='machine'] .band.other.third.data { fill: #f4fce3; }
+    svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
+    /* A connection the control signals open between two components, drawn
+       like a live wire in the circuits, its white casing keeping it apart
+       from the paths it crosses */
+    svg.diagram[data-family='machine'] .live-casing { fill: none; stroke: #ffffff; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+    svg.diagram[data-family='machine'] .live-wire { fill: none; stroke: #d9480f; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    svg.diagram[data-family='machine'] .live-current { fill: none; stroke: #ffd43b; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 11; }
+    svg.diagram[data-family='machine'] .bit { fill: #ffffff; stroke: #1d1d1f; stroke-width: 1.5; }
+    svg.diagram[data-family='machine'] .step { fill: #ffffff; stroke: #a3a3a8; stroke-width: 1.5; }
+    svg.diagram[data-family='machine'] .cell-address { font-family: Menlo, Consolas, monospace; font-size: 16px; fill: #6e6e73; text-anchor: end; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .bits { font-family: Menlo, Consolas, monospace; font-size: 15px; fill: #1d1d1f; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .bits.unused { fill: #a3a3a8; }
+    svg.diagram[data-family='machine'] .annotation { font-family: Menlo, Consolas, monospace; font-size: 12px; fill: #1971c2; text-anchor: end; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .marker-data { fill: #1971c2; }
+    svg.diagram[data-family='machine'] .marker-address { fill: #e8590c; }
+    svg.diagram[data-family='machine'] .marker-wire { fill: #1d1d1f; }
+
+    /* --- What the steps show ------------------------------------------- */
+
+    /* A pill of the cycle, or the cell being read or written, lit like a lamp */
+    svg.diagram[data-family='machine'] :is(.cell, .step).lit { fill: #fff3bf; stroke: #f59f00; }
+    /* The file being copied: only its border, keeping its program's colour */
+    svg.diagram[data-family='machine'] .file.lit { stroke: #f59f00; stroke-width: 2.5; }
+    /* As the highlight walks through cells, each is lit in turn for a moment,
+       the last one from then on: only the last one without motion */
+    svg.diagram[data-family='machine'] .walk:not(.last) { fill-opacity: 0; stroke-opacity: 0; }
+    /* The core working */
+    svg.diagram[data-family='machine'] .cog { fill: #a3a3a8; fill-rule: evenodd; }
+    svg.diagram[data-family='machine'] .cell.lit { stroke-width: 3; }
+    svg.diagram[data-family='machine'] .step.lit { stroke-width: 2; }
+    /* A control signal the control unit gives, in red */
+    svg.diagram[data-family='machine'] :is(.wire, .wire-dots).lit { stroke: #e03131; }
+    svg.diagram[data-family='machine'] .wire.lit[marker-end] { marker-end: url(#wire-arrow-lit); }
+    svg.diagram[data-family='machine'] .marker-wire.lit-marker { fill: #e03131; }
+    /* The clock's tick: its wave and its wire in red, flashing as the step
+       starts */
+    svg.diagram[data-family='machine'] .clock-wave.lit { stroke: #e03131; }
+    /* R or W of the memory's controls, in red, the other letters paled, all
+       drawn over the controls with a halo hiding them */
+    svg.diagram[data-family='machine'] .read-write.lit { fill: #e03131; stroke: #ffffff; stroke-width: 3; stroke-linejoin: round; paint-order: stroke; }
+    svg.diagram[data-family='machine'] .read-write.lit .unlit { fill: #c7c7cc; }
+    /* A register's value, one binary digit in each of its boxes */
+    svg.diagram[data-family='machine'] .bit-value { font-family: Menlo, Consolas, monospace; font-size: 18px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+    /* What the room says aloud: a register's value in decimal, the decoded
+       instruction over the captions it replaces */
+    svg.diagram[data-family='machine'] :is(.decimal, .decoded) { font-family: Helvetica, Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1971c2; text-anchor: middle; dominant-baseline: middle; }
+    svg.diagram[data-family='machine'] .decoded { font-family: Menlo, Consolas, monospace; }
+    svg.diagram[data-family='machine'] .mask { fill: #ffffff; }
+
+    /* --- Focus --------------------------------------------------------- */
+
+    /* A part the current step is not about is drawn paler, rather than made
+       transparent, which would show the paths drawn under the boxes. Values
+       stay as they are, the room following them from step to step. */
+    svg.diagram[data-family='machine'] :is(.faded.box, .faded .box, .faded .bit) { stroke: #dcdce0; }
+    svg.diagram[data-family='machine'] :is(.faded .cell) { stroke: #ebebee; }
+    svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tiny, .faded .cell-address, text.faded) { fill: #cfcfd4; }
+    svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
+    svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
+    svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
+    /* A band of memory, whatever its colour, nothing being drawn under it */
+    svg.diagram[data-family='machine'] .faded .band { fill-opacity: 0.35; stroke-opacity: 0.35; }
+    svg.diagram[data-family='machine'] .faded .band-label { fill: #cfcfd4; }
+    svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
+    svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
+    /* Still lit, but paler, such as an instruction the processor loops on
+       while the step is about something else */
+    svg.diagram[data-family='machine'] .faded .cell.lit { fill: #fffaeb; stroke: #fce3a6; }
+    svg.diagram[data-family='machine'] .faded .file.lit { stroke: #fce3a6; }
+    svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path) { stroke: #dbe8f7; }
+    svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path) { stroke: #fbe5d7; }
+    svg.diagram[data-family='machine'] :is(.faded .data-bus) { fill: #dbe8f7; }
+    svg.diagram[data-family='machine'] :is(.faded .address-bus) { fill: #fbe5d7; }
+    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire, .faded .wire-dots, .faded .clock-wave) { stroke: #dcdce0; }
+    /* An arrowhead takes its colour from its marker, not from its path */
+    svg.diagram[data-family='machine'] :is(.faded.data-path, .faded .data-path)[marker-end] { marker-end: url(#data-arrow-faded); }
+    svg.diagram[data-family='machine'] :is(.faded.address-path, .faded .address-path)[marker-end] { marker-end: url(#address-arrow-faded); }
+    svg.diagram[data-family='machine'] :is(.faded.wire, .faded .wire)[marker-end] { marker-end: url(#wire-arrow-faded); }
+    svg.diagram[data-family='machine'] .marker-data.faded-marker { fill: #dbe8f7; }
+    svg.diagram[data-family='machine'] .marker-address.faded-marker { fill: #fbe5d7; }
+    svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #dcdce0; }
+
+    @media screen and (prefers-reduced-motion: no-preference) {
+      /* Current running along a live wire */
+      svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
+      svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
+      /* Focus changes in a moment rather than at once */
+      svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
+      /* The cog turns slowly, steadily */
+      svg.diagram[data-family='machine'] .cog.visible { transform-box: fill-box; transform-origin: center; animation: machine-spin 8s linear infinite; }
+      /* Each cell of a walk lit for its moment; the last one unlit until its
+         own */
+      svg.diagram[data-family='machine'] .walk.visible:not(.last) { animation: machine-lit var(--each) step-end var(--delay); }
+      svg.diagram[data-family='machine'] .walk.last.visible { animation: machine-unlit var(--delay) step-end; }
+      /* A band of memory fills from the bottom as it is copied into, then its
+         label and cells appear */
+      svg.diagram[data-family='machine'] .fill.visible &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-fill 1.6s ease-in-out both; }
+      svg.diagram[data-family='machine'] .fill.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.6s both; }
+      /* Freed, its label and instructions go, then it empties, and is gone
+         once empty rather than fading as it empties */
+      svg.diagram[data-family='machine'] .fill.gone { transition: opacity 0.1s 1.1s, visibility 0s 1.2s !important; }
+      svg.diagram[data-family='machine'] .fill.gone &gt; :not(.band) { animation: machine-vanish 0.3s ease-in both; }
+      svg.diagram[data-family='machine'] .fill.gone &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-empty 0.9s ease-in-out 0.2s both; }
+      /* What a program makes as it runs widens from what was copied, then its
+         label appears */
+      svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out var(--widen-delay, 0s) both; }
+      svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out calc(var(--widen-delay, 0s) + 1.2s) both; }
+    }
+    @keyframes machine-tick {
+      50% { opacity: 0.15; }
+    }
+    @keyframes machine-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes machine-lit {
+      from, to { fill-opacity: 1; stroke-opacity: 1; }
+    }
+    @keyframes machine-unlit {
+      from, to { fill-opacity: 0; stroke-opacity: 0; }
+    }
+    @keyframes machine-fill {
+      from { transform: scaleY(0); }
+    }
+    @keyframes machine-grow {
+      from { transform: scaleX(0); }
+    }
+    @keyframes machine-vanish {
+      to { opacity: 0; }
+    }
+    @keyframes machine-empty {
+      to { transform: scaleY(0); }
+    }
+    @keyframes machine-appear {
+      from { opacity: 0; }
+    }
+    @keyframes machine-current {
+      to { stroke-dashoffset: -12; }
+    }
+  </style>
+  <defs id="diagram-defs">
+    <!-- Block arrowheads, sized relative to the path's width: a path ending
+         in one stops 35 units short of its target. -->
+    <marker id="data-arrow" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-data" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <marker id="address-arrow" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-address" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <!-- Thin arrowhead, for a single wire -->
+    <marker id="wire-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path class="marker-wire" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+    <!-- The same, for a control signal given -->
+    <marker id="wire-arrow-lit" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path class="marker-wire lit-marker" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+    <!-- The same, for a part out of focus -->
+    <marker id="data-arrow-faded" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-data faded-marker" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <marker id="address-arrow-faded" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-address faded-marker" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <marker id="wire-arrow-faded" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path class="marker-wire faded-marker" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+  </defs>
+  <clipPath id="memory-inside"><rect x="380" y="108" width="608" height="283" rx="8"/></clipPath>
+
+  <!-- Only the cores and the memory are in focus: with no steps to change
+       focus, everything else is drawn `faded` here -->
+
+  <!-- A core, as wide as the room left of the buses allows, titled across
+       its bottom -->
+  <g id="cores">
+    <rect id="processor" class="core" x="30" y="20" width="200" height="200" rx="16"/>
+    <path id="processor-tab" class="chip-tab" d="M230 180 V204 A16 16 0 0 1 214 220 H46 A16 16 0 0 1 30 204 V180 Z"/>
+    <path id="processor-pill" class="core" d="M230 180 H30" style="fill: none"/>
+    <text id="core-name" class="label chip-name" x="130" y="200">CPU core</text>
+    <!-- Turns while the core works, centred in the room above its title -->
+    <path id="cog" class="cog transient" d="M155.8,95.1 L164.9,96.8 L164.9,103.2 L155.8,104.9 L153.8,111.1 L160.1,117.9 L156.2,123.1 L148.0,119.1 L142.6,123.0 L143.9,132.1 L137.6,134.1 L133.2,126.0 L126.8,126.0 L122.4,134.1 L116.1,132.1 L117.4,123.0 L112.0,119.1 L103.8,123.1 L99.9,117.9 L106.2,111.1 L104.2,104.9 L95.1,103.2 L95.1,96.8 L104.2,95.1 L106.2,88.9 L99.9,82.1 L103.8,76.9 L112.0,80.9 L117.4,77.0 L116.1,67.9 L122.4,65.9 L126.8,74.0 L133.2,74.0 L137.6,65.9 L143.9,67.9 L142.6,77.0 L148.0,80.9 L156.2,76.9 L160.1,82.1 L153.8,88.9 Z M140.0,100 A10.0,10.0 0 1 0 120.0,100 A10.0,10.0 0 1 0 140.0,100 Z"/>
+    <!-- The same, still, in the fully drawn diagram: what the core does,
+         execute programs -->
+    <path class="cog at-rest" d="M155.8,95.1 L164.9,96.8 L164.9,103.2 L155.8,104.9 L153.8,111.1 L160.1,117.9 L156.2,123.1 L148.0,119.1 L142.6,123.0 L143.9,132.1 L137.6,134.1 L133.2,126.0 L126.8,126.0 L122.4,134.1 L116.1,132.1 L117.4,123.0 L112.0,119.1 L103.8,123.1 L99.9,117.9 L106.2,111.1 L104.2,104.9 L95.1,103.2 L95.1,96.8 L104.2,95.1 L106.2,88.9 L99.9,82.1 L103.8,76.9 L112.0,80.9 L117.4,77.0 L116.1,67.9 L122.4,65.9 L126.8,74.0 L133.2,74.0 L137.6,65.9 L143.9,67.9 L142.6,77.0 L148.0,80.9 L156.2,76.9 L160.1,82.1 L153.8,88.9 Z M140.0,100 A10.0,10.0 0 1 0 120.0,100 A10.0,10.0 0 1 0 140.0,100 Z"/>
+  </g>
+  <!-- A second core, the same as the first, under it, on the same buses -->
+  <g id="core-2">
+    <rect class="core" x="30" y="240" width="200" height="200" rx="16"/>
+    <path class="chip-tab" d="M230 400 V424 A16 16 0 0 1 214 440 H46 A16 16 0 0 1 30 424 V400 Z"/>
+    <path class="core" d="M230 400 H30" style="fill: none"/>
+    <text class="label chip-name" x="130" y="420">CPU core</text>
+    <path id="cog-2" class="cog transient" d="M155.8,315.1 L164.9,316.8 L164.9,323.2 L155.8,324.9 L153.8,331.1 L160.1,337.9 L156.2,343.1 L148.0,339.1 L142.6,343.0 L143.9,352.1 L137.6,354.1 L133.2,346.0 L126.8,346.0 L122.4,354.1 L116.1,352.1 L117.4,343.0 L112.0,339.1 L103.8,343.1 L99.9,337.9 L106.2,331.1 L104.2,324.9 L95.1,323.2 L95.1,316.8 L104.2,315.1 L106.2,308.9 L99.9,302.1 L103.8,296.9 L112.0,300.9 L117.4,297.0 L116.1,287.9 L122.4,285.9 L126.8,294.0 L133.2,294.0 L137.6,285.9 L143.9,287.9 L142.6,297.0 L148.0,300.9 L156.2,296.9 L160.1,302.1 L153.8,308.9 Z M140.0,320.0 A10.0,10.0 0 1 0 120.0,320.0 A10.0,10.0 0 1 0 140.0,320.0 Z"/>
+    <path class="cog at-rest" d="M155.8,315.1 L164.9,316.8 L164.9,323.2 L155.8,324.9 L153.8,331.1 L160.1,337.9 L156.2,343.1 L148.0,339.1 L142.6,343.0 L143.9,352.1 L137.6,354.1 L133.2,346.0 L126.8,346.0 L122.4,354.1 L116.1,352.1 L117.4,343.0 L112.0,339.1 L103.8,343.1 L99.9,337.9 L106.2,331.1 L104.2,324.9 L95.1,323.2 L95.1,316.8 L104.2,315.1 L106.2,308.9 L99.9,302.1 L103.8,296.9 L112.0,300.9 L117.4,297.0 L116.1,287.9 L122.4,285.9 L126.8,294.0 L133.2,294.0 L137.6,285.9 L143.9,287.9 L142.6,297.0 L148.0,300.9 L156.2,296.9 L160.1,302.1 L153.8,308.9 Z M140.0,320.0 A10.0,10.0 0 1 0 120.0,320.0 A10.0,10.0 0 1 0 140.0,320.0 Z"/>
+  </g>
+  <path id="path-processor-address-bus" class="address-path faded" d="M231 133 H329"/>
+  <path id="path-processor-data-bus" class="data-path faded" d="M231 97 H291"/>
+  <!-- The second core's, reaching the buses as the first's do, its address
+       path across the data bus, under it -->
+  <path id="path-core-2-address-bus" class="address-path faded" d="M231 353 H329"/>
+  <path id="path-core-2-data-bus" class="data-path faded" d="M231 317 H291"/>
+
+  <!-- Buses -->
+  <path id="path-data-bus-firmware" class="data-path faded" d="M291 34 H382"/>
+  <path id="path-data-bus-memory" class="data-path faded" d="M291 210 H382"/>
+  <path id="path-data-bus-disk-controller" class="data-path faded" d="M291 465 H382"/>
+  <g id="data-bus" class="faded">
+    <rect id="data-bus-rail" class="data-bus" x="280" y="23" width="22" height="453"/>
+    <text id="data-bus-label" class="bus-label" x="291" y="330" transform="rotate(-90 291 330)">Data buses · 64 bits</text>
+  </g>
+  <!-- Under the bus they branch off, as the data bus's are -->
+  <path id="path-address-bus-firmware" class="address-path faded" d="M329 70 H345" marker-end="url(#address-arrow)"/>
+  <path id="path-address-bus-memory" class="address-path faded" d="M329 150 H345" marker-end="url(#address-arrow)"/>
+  <!-- Two-way: the disk controller gives addresses too, of the memory it copies
+       into -->
+  <path id="path-address-bus-disk-controller" class="address-path faded" d="M329 427 H382"/>
+  <g id="address-bus" class="faded">
+    <rect id="address-bus-rail" class="address-bus" x="318" y="59" width="22" height="379"/>
+  </g>
+  <!-- The firmware is only read -->
+  <polygon id="firmware-read-only" points="377,27 377,41 365,34" fill="#ffffff"/>
+  <text id="address-bus-label" class="bus-label faded" x="329" y="325" transform="rotate(-90 329 325)">Address buses · 64 bits</text>
+
+  <!-- Firmware: where the processor starts, its instructions in ROM -->
+  <g id="firmware" class="faded">
+    <rect id="firmware-box" class="box" x="380" y="20" width="608" height="72" rx="8"/>
+    <text id="firmware-label" class="label" x="470" y="44">Firmware</text>
+    <text id="firmware-chip" class="small" x="470" y="70">ROM chip: UEFI</text>
+    <g id="firmware-instructions">
+    <rect class="cell" x="574" y="38" width="50" height="14"/><rect class="cell" x="630" y="38" width="50" height="14"/><rect class="cell" x="686" y="38" width="50" height="14"/><rect class="cell" x="742" y="38" width="50" height="14"/><rect class="cell" x="798" y="38" width="50" height="14"/><rect class="cell" x="854" y="38" width="50" height="14"/><rect class="cell" x="910" y="38" width="50" height="14"/>
+    <rect class="cell" x="574" y="58" width="50" height="14"/><rect class="cell" x="630" y="58" width="50" height="14"/><rect class="cell" x="686" y="58" width="50" height="14"/><rect class="cell" x="742" y="58" width="50" height="14"/><rect class="cell" x="798" y="58" width="50" height="14"/><rect class="cell" x="854" y="58" width="50" height="14"/><rect class="cell" x="910" y="58" width="50" height="14"/>
+    </g>
+  </g>
+
+  <!-- Memory: the booted machine's kernel and init, and two programs it runs,
+       A and B, each with its data beside what was copied -->
+  <g id="memory">
+    <rect id="memory-box" class="box" x="380" y="108" width="608" height="283" rx="8"/>
+    <text id="memory-label" class="label" x="684" y="132">Memory</text>
+    <text id="memory-note" class="small" x="684" y="156">RAM</text>
+  </g>
+  <g id="band-init" clip-path="url(#memory-inside)">
+    <rect class="band program" x="380" y="351" width="288" height="40"/>
+    <path class="band program data" d="M668 351 H988 V391 H668"/>
+    <text class="band-label" x="396" y="371">init</text>
+    <rect class="cell" x="490" y="364" width="50" height="14"/><rect class="cell" x="546" y="364" width="50" height="14"/><rect class="cell" x="602" y="364" width="50" height="14"/>
+  </g>
+  <g id="band-kernel" clip-path="url(#memory-inside)">
+    <rect class="band" x="380" y="311" width="400" height="40"/>
+    <path class="band data" d="M780 311 H988 V351 H780"/>
+    <text class="band-label" x="396" y="331">kernel</text>
+    <rect id="kernel-cell-0" class="cell" x="490" y="324" width="50" height="14"/><rect id="kernel-cell-1" class="cell" x="546" y="324" width="50" height="14"/><rect id="kernel-cell-2" class="cell" x="602" y="324" width="50" height="14"/><rect id="kernel-cell-3" class="cell" x="658" y="324" width="50" height="14"/><rect id="kernel-cell-4" class="cell" x="714" y="324" width="50" height="14"/>
+  </g>
+  <!-- Coloured as the two rows of the coffee queues on the slide before -->
+  <g id="band-a" clip-path="url(#memory-inside)">
+    <rect class="band other" x="380" y="271" width="200" height="40"/>
+    <path class="band other data" d="M580 271 H684 V311 H580"/>
+    <text class="band-label" x="396" y="291">program A</text>
+    <rect id="a-cell-0" class="cell" x="488" y="279" width="24" height="10"/><rect id="a-cell-1" class="cell" x="516" y="279" width="24" height="10"/><rect id="a-cell-2" class="cell" x="544" y="279" width="24" height="10"/><rect id="a-cell-3" class="cell" x="488" y="293" width="24" height="10"/><rect id="a-cell-4" class="cell" x="516" y="293" width="24" height="10"/><rect id="a-cell-5" class="cell" x="544" y="293" width="24" height="10"/>
+  </g>
+  <g id="band-b" clip-path="url(#memory-inside)">
+    <rect class="band other second" x="684" y="271" width="200" height="40"/>
+    <path class="band other second data" d="M884 271 H988 V311 H884"/>
+    <text class="band-label" x="700" y="291">program B</text>
+    <rect id="b-cell-0" class="cell" x="792" y="279" width="24" height="10"/><rect id="b-cell-1" class="cell" x="820" y="279" width="24" height="10"/><rect id="b-cell-2" class="cell" x="848" y="279" width="24" height="10"/><rect id="b-cell-3" class="cell" x="792" y="293" width="24" height="10"/><rect id="b-cell-4" class="cell" x="820" y="293" width="24" height="10"/><rect id="b-cell-5" class="cell" x="848" y="293" width="24" height="10"/>
+  </g>
+  <!-- Program C, written to run on several cores at once, started by the
+       steps in the memory B leaves -->
+  <g id="band-c" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other third" x="684" y="271" width="200" height="40"/>
+    <text class="band-label" x="700" y="291">program C</text>
+    <g class="band-cells"><rect id="c-cell-0" class="cell" x="792" y="279" width="24" height="10"/><rect id="c-cell-1" class="cell" x="820" y="279" width="24" height="10"/><rect id="c-cell-2" class="cell" x="848" y="279" width="24" height="10"/><rect id="c-cell-3" class="cell" x="792" y="293" width="24" height="10"/><rect id="c-cell-4" class="cell" x="820" y="293" width="24" height="10"/><rect id="c-cell-5" class="cell" x="848" y="293" width="24" height="10"/></g>
+  </g>
+  <g id="data-c" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other third data" d="M884 271 H988 V311 H884"/>
+  </g>
+  <rect id="memory-border" class="box hollow" x="380" y="108" width="608" height="283" rx="8"/>
+
+  <!-- Disk controller: on the buses, unlike the storage behind it, which the
+       processor cannot address -->
+  <path id="path-disk-controller-storage" class="data-path faded" d="M504 474 V500"/>
+  <g id="disk-controller" class="faded">
+    <rect class="box" x="380" y="407" width="248" height="72" rx="8"/>
+    <text class="label" x="504" y="443">Disk controller</text>
+  </g>
+
+  <!-- Storage: holds the bootloader, the kernel and every other program -->
+  <g id="storage" class="faded">
+    <rect id="storage-box" class="box" x="380" y="495" width="608" height="91" rx="8"/>
+    <text id="storage-label" class="label" x="470" y="528">Storage</text>
+    <text id="storage-disk" class="small" x="470" y="554">Disk</text>
+    <g id="storage-files">
+    <!-- Coloured as the bands they are copied into, each drawn as a file
+         icon, a page with its corner folded -->
+    <g id="file-bootloader"><path class="file bootloader" d="M574 527 H662 L670 535 V555 H574 Z M662 527 V535 H670"/><text class="tiny" x="622" y="541">bootloader</text></g>
+    <g id="file-kernel"><path class="file kernel" d="M680 527 H742 L750 535 V555 H680 Z M742 527 V535 H750"/><text class="tiny" x="715" y="541">kernel</text></g>
+    <g id="file-init"><path class="file program" d="M760 527 H802 L810 535 V555 H760 Z M802 527 V535 H810"/><text class="tiny" x="785" y="541">init</text></g>
+    <g id="file-programs"><path class="file other" d="M820 527 H932 L940 535 V555 H820 Z M932 527 V535 H940"/><text class="tiny" x="880" y="541">other programs</text></g>
+    </g>
+  </g>
+
+  <g id="wire-interrupt-disk-controller" class="faded">
+    <path class="wire" d="M628 443 H656"/><path class="wire-dots" d="M663 443 H684"/>
+    <text class="tiny signal start" x="636" y="428">interrupts</text>
+  </g>
+
+  <!-- The connections the steps open, over everything else -->
+  <g id="live-wires"/>
+</svg>

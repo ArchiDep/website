@@ -236,6 +236,23 @@ describe('works', () => {
       )
     );
   });
+
+  it('turns the cog of each core that works', () => {
+    assert.equal(
+      generated(
+        '<path id="cog" class="cog transient" d="M0 0 H9"/>' +
+          '<path id="cog-2" class="cog transient" d="M0 9 H9"/>',
+        [[works()], [works(), works('cog-2')]]
+      ),
+      partial(
+        '<path id="diagram-m-cog" class="cog transient" d="M0 0 H9"/>' +
+          '<path class="fragment cog transient" d="M0 0 H9" data-fragment-index="0"/>' +
+          '<path id="diagram-m-cog-2" class="cog transient" d="M0 9 H9"/>' +
+          '<path class="fragment cog transient" d="M0 9 H9" data-fragment-index="1"/>',
+        2
+      )
+    );
+  });
 });
 
 describe('walks', () => {
@@ -271,6 +288,24 @@ describe('walks', () => {
           '<rect class="fragment transient lit walk cell" x="0" y="0" width="5" height="2" style="--delay: 0s; --each: 0.5s" data-fragment-index="0" data-gone-from="1"/>' +
           '<rect id="diagram-m-b" class="cell" x="6" y="0" width="5" height="2"/>' +
           '<rect class="fragment transient lit walk cell" x="6" y="0" width="5" height="2" style="--delay: 0.5s; --each: 0.5s" data-fragment-index="0" data-gone-from="1"/>',
+        2
+      )
+    );
+  });
+
+  it('walks through several sets of cells at the same time in one step', () => {
+    assert.equal(
+      generated(
+        '<rect id="a" class="cell" x="0" y="0" width="5" height="2"/>' +
+          '<rect id="b" class="cell" x="6" y="0" width="5" height="2"/>',
+        [[walksAt(0.5, 'a'), walksAt(0.5, 'b')], []]
+      ),
+      partial(
+        '<g class="fragment teardown" data-fragment-index="1"/>' +
+          '<rect id="diagram-m-a" class="cell" x="0" y="0" width="5" height="2"/>' +
+          '<rect class="fragment transient lit walk last cell" x="0" y="0" width="5" height="2" style="--delay: 0s; --each: 0.5s" data-fragment-index="0" data-gone-from="1"/>' +
+          '<rect id="diagram-m-b" class="cell" x="6" y="0" width="5" height="2"/>' +
+          '<rect class="fragment transient lit walk last cell" x="6" y="0" width="5" height="2" style="--delay: 0s; --each: 0.5s" data-fragment-index="0" data-gone-from="1"/>',
         2
       )
     );

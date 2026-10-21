@@ -2036,21 +2036,13 @@ back into it where it had stopped in turn.
 
 ---
 
+<!-- .slide: class="full-diagram" data-transition="none" -->
+
 ### Several cores
 
-<div class="grid grid-cols-2 gap-16 text-left">
-  <div>
-    <p class="text-3xl font-bold text-blue-500">One core</p>
-    <p>Programs take turns: <strong>concurrent</strong></p>
-  </div>
-  <div>
-    <p class="text-3xl font-bold text-blue-500">Several cores</p>
-    <p>Programs run at the same time: <strong>parallel</strong></p>
-  </div>
-</div>
+<!-- .element: class="hidden" -->
 
-<p class="text-2xl">Processes and threads are the units the operating system
-puts on a core</p>
+{% include diagrams/machine-parallel.html %}
 
 **Notes:**
 
@@ -2066,6 +2058,14 @@ A program cannot choose a core itself. It asks the operating system for more
 processes or **threads** (several flows of instructions inside one process,
 sharing its memory), and the operating system decides which core runs each one
 and when.
+
+So a program does not get faster on a machine with more cores by itself.
+Program A, written as a single flow of instructions, runs on one core while the
+other stays idle. Program C is written to run on several cores: it has two
+threads, which the operating system runs on both cores at once. That only pays
+off if the language or its runtime supports it, if the program is written
+accordingly, and if its work can be split: two cores make program C twice as
+fast only if its work splits evenly between its threads.
 
 For a web developer, this means:
 

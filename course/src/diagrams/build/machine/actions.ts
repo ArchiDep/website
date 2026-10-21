@@ -62,13 +62,13 @@ interface Machine {
    */
   readonly ticks: Set<number>;
   /**
-   * The steps the processor works at.
+   * The steps each core works at, by the id of its cog.
    */
-  readonly works: number[];
+  readonly works: Map<string, number[]>;
   /**
    * What the highlight walks through at each step that has it walk, in order.
    */
-  readonly walks: Map<number, Walk>;
+  readonly walks: Map<number, Walk[]>;
   /**
    * The parts that can be faded, and what each step is about.
    */
@@ -96,7 +96,7 @@ function machine(builder: Builder): Machine {
       live: new Map(),
       values: new Map(),
       ticks: new Set(),
-      works: [],
+      works: new Map(),
       walks: new Map(),
       focus: null
     };
@@ -191,11 +191,12 @@ export function tick(): Action {
 
 /**
  * The processor works while this step is the current one: a copy of the
- * drawing's `cog` turns, without stopping between consecutive steps.
+ * drawing's `cog` turns, without stopping between consecutive steps. With
+ * several cores, each has a cog of its own, named by `cog`.
  */
-export function works(): Action {
+export function works(cog = 'cog'): Action {
   return (builder, index) => {
-    machine(builder).works.push(index);
+    record(machine(builder).works, cog, index);
   };
 }
 
@@ -212,10 +213,13 @@ export function walks(...ids: string[]): Action {
  * The highlight walks through cells as with `walks`, each lit for `each`
  * seconds rather than a moment: a walk long enough to follow, such as programs
  * taking turns on a core. A cell can be walked through more than once.
+ * Several walks in one step run at the same time, such as two cores each
+ * running a program.
  */
 export function walksAt(each: number, ...ids: string[]): Action {
   return (builder, index) => {
-    machine(builder).walks.set(index, { ids, each });
+    const { walks } = machine(builder);
+    walks.set(index, [...(walks.get(index) ?? []), { ids, each }]);
   };
 }
 
@@ -300,15 +304,19 @@ function draw(builder: Builder, state: Machine): void {
     drawTick(builder, index);
   }
 
-  for (const run of runs(state.works, builder.steps)) {
-    const cog = builder.element('cog');
-    const copy = copyOf(cog);
-    insertAfter(cog, copy);
-    during(builder, copy, run);
+  for (const [id, indices] of state.works) {
+    const cog = builder.element(id);
+    for (const run of runs(indices, builder.steps)) {
+      const copy = copyOf(cog);
+      insertAfter(cog, copy);
+      during(builder, copy, run);
+    }
   }
 
-  for (const [index, walk] of state.walks) {
-    drawWalk(builder, index, walk);
+  for (const [index, walks] of state.walks) {
+    for (const walk of walks) {
+      drawWalk(builder, index, walk);
+    }
   }
 
   if (state.focus !== null) {
