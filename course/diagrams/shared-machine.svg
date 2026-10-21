@@ -60,6 +60,9 @@
     svg.diagram[data-family='machine'] .file.bootloader { fill: #ffdeeb; stroke: #f06595; }
     /* Every program started once booted, and the file standing for theirs */
     svg.diagram[data-family='machine'] :is(.band, .file).other { fill: #c5f6fa; stroke: #22b8cf; }
+    /* A second program running beside the first, told apart by its colour */
+    svg.diagram[data-family='machine'] :is(.band, .file).other.second { fill: #dbe4ff; stroke: #5c7cfa; }
+    svg.diagram[data-family='machine'] .band.other.second.data { fill: #edf2ff; }
     svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
     /* A connection the control signals open between two components, drawn
        like a live wire in the circuits, its white casing keeping it apart

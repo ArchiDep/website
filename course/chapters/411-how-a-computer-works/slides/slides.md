@@ -2010,6 +2010,32 @@ machines, is [Joe Armstrong's][armstrong-coffee], the creator of Erlang.
 
 ---
 
+<!-- .slide: class="full-diagram" -->
+
+### One core
+
+<!-- .element: class="hidden" -->
+
+{% include diagrams/machine-concurrent.html %}
+
+**Notes:**
+
+TODO: the machine at boot once booted, with a single core and two programs in
+memory, A and B, coloured as the two rows of coffee queues. The core runs some
+of A's instructions, then the kernel, which switches it to B, then some of B's,
+and so on, each program picking up where it stopped. The programs take turns on
+one core: they are **concurrent**. The kernel switches between them hundreds of
+times a second, fast enough that both seem to run at once.
+
+A program never hands the core back by itself: the kernel takes it back with an
+**interrupt**, as a device does when a key is pressed or data arrives. A timer
+interrupts the core at regular intervals, a few hundred to a thousand times a
+second, and the core jumps to the kernel's code, wherever the program was. The
+kernel notes where the program stopped, picks the one to run next, and jumps
+back into it where it had stopped in turn.
+
+---
+
 ### Several cores
 
 <div class="grid grid-cols-2 gap-16 text-left">

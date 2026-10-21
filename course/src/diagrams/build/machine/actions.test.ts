@@ -15,6 +15,7 @@ import {
   tick,
   value,
   walks,
+  walksAt,
   works,
   writes,
   type Action
@@ -251,6 +252,25 @@ describe('walks', () => {
           '<rect class="fragment transient lit walk cell" x="0" y="0" width="5" height="2" style="--delay: 0s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/>' +
           '<rect id="diagram-m-b" class="cell" x="6" y="0" width="5" height="2"/>' +
           '<rect class="fragment transient lit walk last cell" x="6" y="0" width="5" height="2" style="--delay: 0.16s; --each: 0.16s" data-fragment-index="0" data-gone-from="1"/>',
+        2
+      )
+    );
+  });
+
+  it('lights each cell for as long as given, a cell walked through twice copied twice', () => {
+    assert.equal(
+      generated(
+        '<rect id="a" class="cell" x="0" y="0" width="5" height="2"/>' +
+          '<rect id="b" class="cell" x="6" y="0" width="5" height="2"/>',
+        [[walksAt(0.5, 'a', 'b', 'a')], []]
+      ),
+      partial(
+        '<g class="fragment teardown" data-fragment-index="1"/>' +
+          '<rect id="diagram-m-a" class="cell" x="0" y="0" width="5" height="2"/>' +
+          '<rect class="fragment transient lit walk last cell" x="0" y="0" width="5" height="2" style="--delay: 1s; --each: 0.5s" data-fragment-index="0" data-gone-from="1"/>' +
+          '<rect class="fragment transient lit walk cell" x="0" y="0" width="5" height="2" style="--delay: 0s; --each: 0.5s" data-fragment-index="0" data-gone-from="1"/>' +
+          '<rect id="diagram-m-b" class="cell" x="6" y="0" width="5" height="2"/>' +
+          '<rect class="fragment transient lit walk cell" x="6" y="0" width="5" height="2" style="--delay: 0.5s; --each: 0.5s" data-fragment-index="0" data-gone-from="1"/>',
         2
       )
     );

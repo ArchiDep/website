@@ -68,7 +68,7 @@ interface Machine {
   /**
    * What the highlight walks through at each step that has it walk, in order.
    */
-  readonly walks: Map<number, readonly string[]>;
+  readonly walks: Map<number, Walk>;
   /**
    * The parts that can be faded, and what each step is about.
    */
@@ -76,6 +76,14 @@ interface Machine {
     readonly parts: readonly string[];
     readonly focused: Map<number, ReadonlySet<string>>;
   } | null;
+}
+
+interface Walk {
+  readonly ids: readonly string[];
+  /**
+   * How long each cell stays lit, in seconds.
+   */
+  readonly each: number;
 }
 
 const MACHINE = Symbol('machine');
@@ -197,8 +205,17 @@ export function works(): Action {
  * without a jump. The last one stays lit until the next step.
  */
 export function walks(...ids: string[]): Action {
+  return walksAt(WALK, ...ids);
+}
+
+/**
+ * The highlight walks through cells as with `walks`, each lit for `each`
+ * seconds rather than a moment: a walk long enough to follow, such as programs
+ * taking turns on a core. A cell can be walked through more than once.
+ */
+export function walksAt(each: number, ...ids: string[]): Action {
   return (builder, index) => {
-    machine(builder).walks.set(index, ids);
+    machine(builder).walks.set(index, { ids, each });
   };
 }
 
@@ -290,8 +307,8 @@ function draw(builder: Builder, state: Machine): void {
     during(builder, copy, run);
   }
 
-  for (const [index, ids] of state.walks) {
-    drawWalk(builder, index, ids);
+  for (const [index, walk] of state.walks) {
+    drawWalk(builder, index, walk);
   }
 
   if (state.focus !== null) {
@@ -345,7 +362,7 @@ function drawTick(builder: Builder, index: number): void {
  * A lit copy of each cell, for the step, each timed to be lit after the one
  * before, the last one from then on.
  */
-function drawWalk(builder: Builder, index: number, ids: readonly string[]) {
+function drawWalk(builder: Builder, index: number, { ids, each }: Walk): void {
   const run: Run =
     index + 1 < builder.steps
       ? { from: index, to: index + 1 }
@@ -355,8 +372,8 @@ function drawWalk(builder: Builder, index: number, ids: readonly string[]) {
     const copy = copyOf(shape);
     addClasses(copy, 'lit', 'walk', ...(i === ids.length - 1 ? ['last'] : []));
     setVariables(copy, {
-      delay: seconds(i * WALK),
-      each: seconds(WALK)
+      delay: seconds(i * each),
+      each: seconds(each)
     });
     insertAfter(shape, copy);
     during(builder, copy, run);

@@ -13,6 +13,7 @@ export {
   tick,
   value,
   walks,
+  walksAt,
   works,
   writes
 } from './actions';
