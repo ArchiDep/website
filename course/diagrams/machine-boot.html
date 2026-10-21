@@ -839,12 +839,13 @@ break-inside: avoid;
 <rect class="cell" x="574" y="38" width="50" height="14"/><rect class="cell" x="630" y="38" width="50" height="14"/><rect class="cell" x="686" y="38" width="50" height="14"/><rect class="cell" x="742" y="38" width="50" height="14"/><rect class="cell" x="798" y="38" width="50" height="14"/><rect class="cell" x="854" y="38" width="50" height="14"/><rect class="cell" x="910" y="38" width="50" height="14"/>
 <rect class="cell" x="574" y="58" width="50" height="14"/><rect class="cell" x="630" y="58" width="50" height="14"/><rect class="cell" x="686" y="58" width="50" height="14"/><rect class="cell" x="742" y="58" width="50" height="14"/><rect class="cell" x="798" y="58" width="50" height="14"/><rect class="cell" x="854" y="58" width="50" height="14"/><rect class="cell" x="910" y="58" width="50" height="14"/>
 </g><rect class="fragment transient arrive box hollow" x="380" y="108" width="608" height="283" rx="8" data-fragment-index="7" data-faded-at="0 1 2 9 11 12 13 14" style="--delay: 1.2s"/><text class="fragment transient arrive small" x="470" y="554" data-fragment-index="7" data-faded-at="0 1 2 9 10 11 13 14" style="--delay: 1.2s">Disk</text><g class="fragment transient arrive" data-fragment-index="7" data-faded-at="0 1 2 9 10 11 13 14" style="--delay: 1.2s">
-<!-- Coloured as the bands they are copied into -->
-<g><rect class="file bootloader" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text></g>
-<g><rect class="file kernel" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text></g>
-<g><rect class="file program" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text></g>
+<!-- Coloured as the bands they are copied into, each drawn as a file
+icon, a page with its corner folded -->
+<g><path class="file bootloader" d="M574 527 H662 L670 535 V555 H574 Z M662 527 V535 H670"/><text class="tiny" x="622" y="541">bootloader</text></g>
+<g><path class="file kernel" d="M680 527 H742 L750 535 V555 H680 Z M742 527 V535 H750"/><text class="tiny" x="715" y="541">kernel</text></g>
+<g><path class="file program" d="M760 527 H802 L810 535 V555 H760 Z M802 527 V535 H810"/><text class="tiny" x="785" y="541">init</text></g>
 <!-- Every other program, which the steps copy from without naming each -->
-<g><rect class="file other" x="820" y="527" width="120" height="28" rx="4"/><text class="tiny" x="880" y="541">other programs</text></g>
+<g><path class="file other" d="M820 527 H932 L940 535 V555 H820 Z M932 527 V535 H940"/><text class="tiny" x="880" y="541">other programs</text></g>
 </g><path class="fragment transient arrive data-path" d="M134 335 V385" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s"/><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s">
 <rect class="box" x="30" y="250" width="209" height="90" rx="8"/>
 <text class="label" x="134" y="295">Device controllers</text>

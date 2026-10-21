@@ -429,12 +429,13 @@
     <text id="storage-label" class="label" x="470" y="528">Storage</text>
     <text id="storage-disk" class="small" x="470" y="554">Disk</text>
     <g id="storage-files">
-    <!-- Coloured as the bands they are copied into -->
-    <g id="file-bootloader"><rect class="file bootloader" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text></g>
-    <g id="file-kernel"><rect class="file kernel" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text></g>
-    <g id="file-init"><rect class="file program" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text></g>
+    <!-- Coloured as the bands they are copied into, each drawn as a file
+         icon, a page with its corner folded -->
+    <g id="file-bootloader"><path class="file bootloader" d="M574 527 H662 L670 535 V555 H574 Z M662 527 V535 H670"/><text class="tiny" x="622" y="541">bootloader</text></g>
+    <g id="file-kernel"><path class="file kernel" d="M680 527 H742 L750 535 V555 H680 Z M742 527 V535 H750"/><text class="tiny" x="715" y="541">kernel</text></g>
+    <g id="file-init"><path class="file program" d="M760 527 H802 L810 535 V555 H760 Z M802 527 V535 H810"/><text class="tiny" x="785" y="541">init</text></g>
     <!-- Every other program, which the steps copy from without naming each -->
-    <g id="file-programs"><rect class="file other" x="820" y="527" width="120" height="28" rx="4"/><text class="tiny" x="880" y="541">other programs</text></g>
+    <g id="file-programs"><path class="file other" d="M820 527 H932 L940 535 V555 H820 Z M932 527 V535 H940"/><text class="tiny" x="880" y="541">other programs</text></g>
     </g>
   </g>
 
