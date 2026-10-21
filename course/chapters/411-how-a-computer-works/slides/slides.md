@@ -17,13 +17,20 @@ what the processes of a deployment actually are.
 
 - Processor (**CPU**: **c**entral **p**rocessing **u**nit)
 - Memory (**RAM**: **r**andom **a**ccess **m**emory)
-- Storage
+- Storage (**disk** or **SSD**: **s**olid **s**tate **d**rive)
 - Input and output (**I/O**)
-- The buses that connects them
+- The **buses** that connect them
 
 **Notes:**
 
-TODO.
+Most of the components you may think about when you think about a computer, like
+the screen, keyboard, mouse, network card, USB ports, etc., are **I/O**: they
+let the computer communicate with the outside world.
+
+They are not really what a computer fundamentally is: a computer is a machine
+that runs programs, and the programs are what make it do things. From that point
+of view, the main components are the CPU, memory, storage and buses. The rest is
+just various forms of I/O.
 
 ---
 
@@ -348,8 +355,14 @@ current flows and the lamp lights up.
 
 **Notes:**
 
-TODO: the same circuit with a sounder in place of the lamp. Current through a
-coil makes an electromagnet, which pulls down an iron bar that clicks.
+The same circuit, with a **sounder** in place of the lamp. A sounder is a coil
+of wire around a piece of iron. When current flows through the coil, the iron
+becomes a magnet, an **electromagnet**, and pulls down an iron bar, which
+clicks. When the current stops, the iron is no longer a magnet, and a spring
+pulls the bar back up.
+
+Closing the switch makes one click, and opening it makes another. The sounder
+turns current into movement, which can be heard.
 
 ---
 
@@ -360,9 +373,18 @@ coil makes an electromagnet, which pulls down an iron bar that clicks.
 
 **Notes:**
 
-TODO: a circuit with a purpose: the same loop stretched between two towns, with
-a key in place of the switch. It works over about 30 km, and needs a line there
-and back.
+The same loop, stretched between two towns. This is the **telegraph**: the first
+long-distance "instant" communication system (milliseconds instead of minutes
+for optical telegraphs, or days by horse).
+
+The switch is now a **key**, a switch that stays closed only while it is
+pressed. Pressing the key in one town makes the sounder click in the other.
+
+Telegraph operators sent letters in **Morse code**, as short and long presses of
+the key, and the operator at the other end listened to the clicks to read them.
+
+The circuit is still a loop, so it needs two long wires between the towns: one
+for the current to go there, and one for it to come back.
 
 ---
 
@@ -373,7 +395,12 @@ and back.
 
 **Notes:**
 
-TODO: the earth completes the circuit, which saves one of the two long wires.
+The earth conducts electricity. With a metal stake driven into the ground at
+each end of the line, the current can come back through the earth instead of
+through a second wire. The earth completes the circuit, and the telegraph needs
+only one long wire instead of two, which only costs half as much.
+
+A connection to the earth is called a **ground**.
 
 ---
 
@@ -384,9 +411,18 @@ TODO: the earth completes the circuit, which saves one of the two long wires.
 
 **Notes:**
 
-TODO: the relay is a sounder that closes a contact instead of clicking, so a
-weak current switches on a fresh one from a local battery, and the line goes
-further.
+A long wire resists the current, which gets weaker with distance. Past a certain
+length, it is too weak to pull the sounder's bar.
+
+The solution is a station halfway, with a **relay**. A relay is a sounder whose
+bar closes a contact instead of clicking. The contact connects a fresh battery,
+at the halfway station, to the next stretch of line. The weak current that
+arrives only has to move the bar, and the strong current from the fresh battery
+carries the signal on to the next town. A line can have as many relays as it
+needs, one every stretch.
+
+The name comes from the relay stations of the old postal routes, where tired
+horses were swapped for fresh ones.
 
 ---
 
@@ -397,7 +433,12 @@ further.
 
 **Notes:**
 
-TODO: shorthand for a stake in the earth.
+The same repeater, with each stake in the earth replaced by the **ground
+symbol**. Every ground is connected to every other one through the earth, so a
+current that goes into one ground can come back out of another.
+
+In a computer, ground is not the earth, but a wire that all the circuits share
+to send their current back. It is drawn with the same symbol.
 
 ---
 
@@ -408,7 +449,16 @@ TODO: shorthand for a stake in the earth.
 
 **Notes:**
 
-TODO: a battery's `+` end alone, since its other end is in the ground anyway.
+Each battery's `-` end is connected to the ground, so there is no need to draw
+it. Only its `+` end is drawn, as a **power source**: a point that supplies
+current, which comes back through the ground.
+
+The source is marked `V`, for **voltage**: the electrical "pressure" with which
+a battery pushes current around a circuit, measured in **volts**. Both words
+come from Alessandro Volta, the Italian physicist who invented the battery in 1800.
+
+The ground and the source are the two symbols used in all the circuits from now
+on.
 
 ---
 
@@ -419,7 +469,17 @@ TODO: a battery's `+` end alone, since its other end is in the ground anyway.
 
 **Notes:**
 
-TODO: a switch controlled by current.
+The relay alone, much like the one used in the telegraph repeater. A relay is a
+**switch controlled by current**: current through its coil closes its contact.
+
+It connects two separate circuits. The first one goes from a source through the
+switch A and the relay's coil to the ground. The second one goes from another
+source through the relay's contact and the lamp to the ground. No current goes
+from one circuit to the other, but the first one controls the second.
+
+Much like the telegraph, the relay's second circuit could in turn control
+another relay, and so on. This is what makes it possible to build circuits out
+of relays.
 
 ---
 
@@ -439,7 +499,12 @@ TODO: a switch controlled by current.
 
 **Notes:**
 
-TODO: the simplest truth table: 0 in gives 0 out, 1 in gives 1 out.
+From now on, **1 means current, and 0 means no current**. The input A is 1 when
+its switch is closed, and the output OUT is 1 when the lamp is lit.
+
+A **truth table** lists the output for every possible value of the inputs. This
+one is the simplest there is: 0 in gives 0 out, and 1 in gives 1 out. The relay
+does not change the value.
 
 ---
 
@@ -455,7 +520,13 @@ TODO: the simplest truth table: 0 in gives 0 out, 1 in gives 1 out.
 
 **Notes:**
 
-TODO: a relay whose contact is closed at rest.
+A relay has a second contact, which is closed when there is no current in the
+coil, and opens when the coil pulls the bar. If the lamp is connected to this
+top contact instead of the bottom one, the lamp is lit when A is 0, and goes out
+when A is 1.
+
+The output is the opposite of the input: this is **NOT**, the `!` operator of
+most programming languages, also called an **inverter**.
 
 ---
 
@@ -471,8 +542,11 @@ TODO: a relay whose contact is closed at rest.
 
 **Notes:**
 
-TODO: two relays in series. The room gives the truth table before the demo
-fills it.
+Two relays **in series**: the current goes through A's contact, then through B's
+contact, before it reaches the lamp. Both contacts must be closed for current to
+get through, so the lamp is lit only when A **and** B are 1.
+
+This is **AND**, the `&&` operator of most programming languages.
 
 ---
 
@@ -488,7 +562,11 @@ fills it.
 
 **Notes:**
 
-TODO: two relays in parallel.
+Two relays **in parallel**: each one has its own source and its own path to the
+lamp. Current gets through either one of them, so the lamp is lit when A **or**
+B is 1, or both.
+
+This is **OR**, the `||` operator of most programming languages.
 
 ---
 
@@ -504,9 +582,15 @@ TODO: two relays in parallel.
 
 **Notes:**
 
-TODO: both contacts of each relay, wired like the two switches of a staircase
-light: the lamp is lit when exactly one input is on. Left for students to play
-with.
+This circuit uses both contacts of each relay. It is wired like the light of a
+staircase, which has a switch at the bottom and one at the top: flipping either
+switch changes the light, whatever the position of the other one.
+
+The lamp is lit when exactly one of A and B is 1, but not when both are. This is
+**XOR**, for "exclusive or": A or B, but not both.
+
+Most programming languages write it `^`. For two booleans, it is the same as
+`!=`: the output is 1 when the two inputs are different.
 
 ---
 
@@ -522,9 +606,14 @@ with.
 
 **Notes:**
 
-TODO: a triangle stands for a relay. The buffer's lamp follows A, like the
-single relay's; the NOT's does the opposite. The only difference between the
-two symbols is the circle at the tip.
+Drawing every relay with its coil, contacts, source and ground quickly becomes
+unreadable, so each circuit gets a symbol, called a **logic gate**. The symbols
+leave out the sources and grounds, and only show the inputs and outputs.
+
+The triangle stands for a single relay, and is called a **buffer**: its output
+follows A. The NOT is the same triangle with a small circle on its output, and
+its output is the opposite of A. That circle is the only difference between the
+two symbols.
 
 ---
 
@@ -540,7 +629,9 @@ two symbols is the circle at the tip.
 
 **Notes:**
 
-TODO: the two relays in series, drawn as one symbol.
+The AND circuit, its two relays in series, drawn as a single symbol. Its truth
+table is the same as the relay circuit's: the output is 1 only when A and B are
+both 1.
 
 ---
 
@@ -556,9 +647,22 @@ TODO: the two relays in series, drawn as one symbol.
 
 **Notes:**
 
-TODO: an AND, the same AND followed by a NOT, and a NAND. NAND is the second
-row with the NOT's triangle left out and its circle kept: the circle alone means
-inversion. The last two lamps always agree.
+Three gates fed by the same A and B: an AND, the same AND followed by a NOT, and
+a **NAND**, for "not AND".
+
+The NAND is drawn as an AND with a small circle on its output, like the NOT. It
+has the same behavior as the AND followed by a NOT, but drawn as a single gate:
+its symbol is a contraction of the two.
+
+The small circle means **inversion**: the output is the opposite of what the
+gate would give without it. That is why the last two outputs always agree,
+whatever A and B are.
+
+Also notice that a gate can have an output of 1 when all its inputs are 0. If
+you do not understand why, go back to the first relay circuit and study it
+again. Understand that the current that flows to the lamp comes from the source,
+not from the input. Inputs only control whether the source's current can reach
+the lamp. The source is not drawn in the gate symbols, but it is always there.
 
 ---
 
@@ -578,7 +682,87 @@ inversion. The last two lamps always agree.
 
 **Notes:**
 
-TODO: the symbols that stand for the relay circuits from now on.
+The classic logic gates used in the rest of the circuits, all fed by the same A
+and B, with their truth tables:
+
+- The **buffer** and **NOT** only take A.
+- **AND** is 1 when both inputs are 1, and **NAND** is its opposite.
+- **OR** is 1 when at least one input is 1, and **NOR**, "not OR", is its
+  opposite.
+- **XOR** is 1 when exactly one input is 1.
+
+Each gate stands for a relay circuit like the ones before.
+
+---
+
+### The first bug that was caught (1947)
+
+<img src="images/bug.jpg" alt="A page of the Harvard Mark II's log book, with a moth taped to it" class="mx-auto h-120">
+
+**Notes:**
+
+Early computers were built out of relays like the ones of the previous circuits:
+they are called **electromechanical** computers, because their switches are
+moved by electromagnets.
+
+On 9 September 1947, the operators of the Harvard Mark II, a relay computer,
+found a moth trapped between the contacts of relay number 70, which stopped it
+from working. They taped the moth into the machine's log book, with the note
+"First actual case of bug being found".
+
+Engineers already called a fault a "bug" before that, which is the joke of the
+note: this time, it was a real one. Debugging these computers could mean
+finding the actual insect in the machine.
+
+_Picture: Naval Surface Warfare Center, Dahlgren, 1988, public domain, from
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:First_Computer_Bug,_1947.jpg)_
+
+---
+
+### Same logic, different switches
+
+<div class="grid grid-cols-3 items-end gap-8">
+  <div>
+    <img src="images/telegraph-relay.jpg" alt="A telegraph relay from the 1850s: two coils of wire and a brass bar on a marble base" class="mx-auto h-60 object-contain">
+    <p class="text-center">Relay<br><span class="text-[0.8em] opacity-60">~1940</span></p>
+  </div>
+  <div>
+    <img src="images/eniac-tubes.jpg" alt="A row of vacuum tubes on a panel of ENIAC" class="mx-auto h-60 object-contain">
+    <p class="text-center">Vacuum tube<br><span class="text-[0.8em] opacity-60">~1945</span></p>
+  </div>
+  <div>
+    <img src="images/transistors.jpg" alt="Four transistors of different sizes, from a few millimetres to a few centimetres" class="mx-auto h-60 object-contain">
+    <p class="text-center">Transistor<br><span class="text-[0.8em] opacity-60">~1955</span></p>
+  </div>
+</div>
+
+**Notes:**
+
+The circuits of this course are drawn with relays, but any switch controlled by
+electricity can build the same gates. Computers have been built from three
+kinds:
+
+- **Relays**, like this telegraph relay from the 1850s. The first computers,
+  such as Konrad Zuse's Z3 in 1941, were built out of relays. A relay moves a
+  metal bar, so it is slow, and it wears out.
+- **Vacuum tubes**, here on a panel of ENIAC, finished in 1945, which had over
+  17,000 of them. In a glass tube emptied of air, a small voltage controls a
+  current that flows through the vacuum. Nothing moves, so they are much faster
+  than relays, but they are bulky, get hot, use a lot of electricity, and burn
+  out like light bulbs.
+- **Transistors**, invented at Bell Labs in 1947, and used in computers from the
+  mid-1950s. A small current or voltage controls a larger one through a solid
+  crystal, usually of silicon. Nothing moves either, and they are much smaller,
+  faster, cooler and more reliable than vacuum tubes. The ones in the picture
+  are single transistors; a modern processor packs billions of much smaller ones
+  onto one chip.
+
+The gates built out of any of them work the same way: the logic does not depend
+on what the switches are made of.
+
+_Pictures from Wikimedia Commons: [telegraph relay][telegraph-relay] by Daderot,
+public domain; [ENIAC tubes][eniac-tubes] by Erik Pitti, CC BY 2.0;
+[transistors][transistors] by Mister rf, CC BY-SA 3.0_
 
 ---
 
@@ -829,7 +1013,8 @@ carries and the second one's sum is 1: `SUM` and `Cout` are both 1, which is
 
 **Notes:**
 
-TODO.
+This is how a full adder is usually drawn: the same circuit, but hidden inside a
+box. The inputs and outputs are the same, and its behavior is unchanged.
 
 ---
 
@@ -837,15 +1022,22 @@ TODO.
 
 <!-- .element: class="corner-title" -->
 
-<!-- TODO: the design lists this one as supplementary material, not shown in
-     the session. -->
-
 <logic-diagram name="four-bit-adder" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
-TODO: four full adders, the carry rippling from right to left.
+If we can add one bit with carry, we can add four bits with carry: four full
+adders, one for each column of the addition. The carry out of each adder goes
+into the carry in of the next one on the left, so **the carry ripples through
+the four adders**. The final carry out is the carry of the whole addition, which
+is 1 when the sum is 16 or more (a situation also known as an overflow: a sum of
+16 or more does not fit in four bits).
+
+And if we can add 4 bits, we can add 8 bits, and 16, and 32, and so on: just
+keep chaining full adders together, with the carry rippling from right to left.
+Modern CPUs use faster circuits to add many bits at once, but the ripple-carry
+adder is the simplest way to do it.
 
 ---
 
@@ -862,7 +1054,22 @@ TODO: four full adders, the carry rippling from right to left.
 
 **Notes:**
 
-TODO: memory from feedback, an output wired back into an input.
+Two NOR gates, each one's output wired back into the other one's input. This is
+**feedback**: an output that comes back to an input.
+
+- Turning SET on makes Q̅ 0. The NOR that gives Q then has both its inputs at 0,
+  so Q becomes 1.
+- Turning RESET on does the opposite: Q becomes 0, and Q̅ becomes 1.
+- When SET and RESET are both off, nothing forces the outputs anymore, and each
+  NOR keeps the other one where it is: **Q stays at the last value it was
+  given**.
+
+The circuit **remembers** one bit: whether it was last set or reset. It is
+called a **latch**, like a door latch that stays where it was pushed. Q̅, "not
+Q", is always the opposite of Q.
+
+Turning SET and RESET on at the same time is not allowed (by convention): it
+would force both outputs to 0, and then Q̅ would no longer be the opposite of Q.
 
 ---
 
@@ -875,7 +1082,16 @@ TODO: memory from feedback, an output wired back into an input.
 
 **Notes:**
 
-TODO: storing a data bit on demand.
+The SR latch, with two AND gates and a NOT in front of it, to store a bit on
+demand. DATA is the bit to store, and WRITE says when to store it.
+
+- While WRITE is 1, DATA goes to SET, and its opposite, through the NOT, goes to
+  RESET. A 1 sets the latch and a 0 resets it, so **Q follows DATA**.
+- While WRITE is 0, both ANDs give 0, the latch gets neither SET nor RESET, and
+  **Q keeps the last value of DATA**, whatever DATA does afterwards.
+
+Because of the NOT, SET and RESET can never be on at the same time, so the
+forbidden state of the SR latch cannot happen.
 
 ---
 
@@ -888,7 +1104,8 @@ TODO: storing a data bit on demand.
 
 **Notes:**
 
-TODO.
+This is how a D latch is usually drawn: the same circuit, but hidden inside a
+box. The inputs and outputs are the same, and its behavior is unchanged.
 
 ---
 
@@ -1007,14 +1224,22 @@ data inputs reaches the output.
 
 **Notes:**
 
-TODO: writing and reading a cell by its address. Two address bits give four
-cells of one bit each.
+The decoder, four D latches and the selector, put together: a memory of four
+cells of one bit each. Each cell is a D latch, and the two address bits, `A1` and
+`A0`, choose which one is used. Each cell's output is labelled with its address.
+
+- **Writing**: DATA goes to every cell, but WRITE goes through the decoder,
+  which only sends it to the cell at the address. Only that cell stores DATA,
+  and the others keep their value.
+- **Reading**: the selector gets the same address, and passes the value of the
+  cell at that address on to OUT.
+
+Any cell can be reached directly by its address, in any order. This is the
+**random access** of RAM, random access memory.
 
 ---
 
 ### A 4-bit address gives a 16-byte memory
-
-<!-- TODO: the cells' contents, if any, for the trace. -->
 
 <div class="grid grid-cols-4 gap-2 font-mono">
   <div class="border p-2">0000</div>
@@ -1037,8 +1262,14 @@ cells of one bit each.
 
 **Notes:**
 
-TODO: 4 address bits give 2⁴ = 16 addresses, and each addressed cell holds 8
-bits.
+4 address bits give 2⁴ possibilities, which is 16 addresses. How many bits of
+data can be stored at each address is up to the designer: one bit, one byte (8
+bits), or more. This can be achieved by wiring enough D latches to each address
+and having the decoder select them all at once.
+
+Modern memory is generally addressable per byte, meaning that each address gives
+8 bits of data. A 4-bit address gives 16 bytes, a 16-bit address gives 65,536
+bytes (64 KiB), and a 32-bit address gives 4,294,967,296 bytes (4 GiB).
 
 ---
 
@@ -1055,7 +1286,16 @@ bits.
 
 **Notes:**
 
-TODO: a relay feeding its own coil. Where a clock comes from.
+A relay whose coil is fed through its own contact, the one that is closed at
+rest. When the switch is closed:
+
+1. Current flows through the contact into the coil.
+2. The coil pulls the bar, which opens the contact.
+3. The coil no longer gets current, so it releases the bar, which closes the
+   contact again, and everything starts over.
+
+The bar keeps moving back and forth on its own, as long as the switch is closed,
+and buzzes. Old electric doorbells work this way.
 
 ---
 
@@ -1072,7 +1312,7 @@ The buzzer, drawn with a gate. A relay feeding its own coil through its normally
 closed contact is a NOT gate whose output goes back to its input. Its output
 never agrees with its input, so it keeps flipping, as fast as the gate can
 switch. A circuit whose output keeps switching back and forth on its own is an
-oscillator.
+**oscillator**.
 
 ---
 
@@ -1085,9 +1325,9 @@ oscillator.
 
 **Notes:**
 
-An oscillator that switches at a steady pace is a computer's clock, drawn from
-now on as this symbol. Every tick of the clock moves the computer on by one
-step.
+An oscillator that switches at a steady pace is a **clock**, drawn from now on
+as this symbol. Computers use a clock to keep everything in step: every tick of
+the clock is one step of what a computer is doing.
 
 A real computer's clock does not use a NOT gate, whose pace drifts with
 temperature and voltage: it uses a quartz crystal, which vibrates at a very
@@ -1108,8 +1348,9 @@ stable frequency, billions of ticks per second in a modern processor.
 
 **Notes:**
 
-TODO: Q only changes when the clock rises. With Q̅ fed back into D, it changes
-on every other tick: half the clock's frequency.
+The edge-triggered D-type flip-flop is a peculiar circuit that can be very
+useful in a computer. You may notice that it is in fact two D latches in a row,
+with an additional NOT gate.
 
 ---
 
@@ -1122,15 +1363,16 @@ on every other tick: half the clock's frequency.
 
 **Notes:**
 
-The edge-triggered D flip-flop is two D latches in a row, and a NOT gate. The
-first latch gets DATA, and the clock through the NOT: it is open, following DATA,
-while the clock is low. The second latch gets the first one's Q, and the clock
-directly: it is open while the clock is high, and copies the first latch.
+This time represented with blocks, the edge-triggered D flip-flop is two D
+latches in a row, and a NOT gate. The first latch gets DATA, and the clock
+through the NOT: it is open, following DATA, while the clock is low (0). The
+second latch gets the first one's Q, and the clock directly: it is open while
+the clock is high (1), and copies the first latch.
 
-The two latches are never open together, so DATA never runs straight through to Q.
-When the clock rises, the first latch closes on the value DATA had just before, and
-the second one opens and passes that value on to Q. Q only changes when the
-clock rises.
+The two latches are never open together, so DATA never runs straight through to
+Q. When the clock rises from 0 to 1, the first latch closes on the value DATA
+had just before, and the second one opens and passes that value on to Q. Q only
+changes when the clock rises from 0 to 1.
 
 ---
 
@@ -1143,8 +1385,8 @@ clock rises.
 
 **Notes:**
 
-The same flip-flop drawn as a box, as the counter will use it. The wedge on the
-clock input marks it as edge-triggered: Q only takes DATA's value when CLK rises.
+The same flip-flop drawn as a box. The wedge on the clock input marks it as
+edge-triggered: Q only takes DATA's value when CLK rises.
 
 ---
 
@@ -1192,13 +1434,12 @@ it stores the opposite of what it holds, so Q flips. Q therefore goes through
 one full cycle, off then on, for every two cycles of the clock: half the clock's
 frequency.
 
+The frequency of the output is half that of the input, so this circuit is a
+**frequency divider**.
+
 The timing diagram underneath shows it, with time running from left to right.
 Each time CLK steps up, Q steps, up or down. A real flip-flop takes a moment to
 respond, which the drawing leaves out.
-
-Q goes 0, 1, 0, 1, one step per cycle of the clock: it counts, but with a single
-binary digit. To count higher, halve the frequency again: a second flip-flop
-gives the next digit.
 
 ---
 
@@ -1327,11 +1568,17 @@ Three frequency dividers in a chain. The first is clocked by the clock, and each
 next one by the Q̅ of the one before, so each flips when the one before goes
 back to 0, and runs at half its frequency.
 
-Read each column of the timing diagram from the bottom up, Q2 then Q1 then Q0,
-as a binary number: `000`, `001`, `010`, `011` … up to `111`, then `000` again.
-The counter adds 1 on every clock cycle. A computer's program counter is built
-the same way, with more digits, but it only counts when the control unit tells
-it to, and a jump can set it to a new value.
+Read each column of the timing diagram from the bottom up, Q2 then Q1 then Q0:
+`000`, `001`, `010`, `011` … up to `111`, then `000` again.
+
+If you read them as binary numbers, they count from 0 to 7, then back to 0. This
+is a **3-bit counter**. It counts up by 1 on every clock cycle, and wraps around
+to 0 after 7. We have a circuit that can count.
+
+Computers use similar counters to keep track of where they are in a program. The
+program counter allows them to step through a program one instruction at a time.
+They also have additional logic to allow them to jump to a different
+instruction, or to stop counting when the program is finished.
 
 ---
 
@@ -1538,10 +1785,6 @@ microprocessors in the 1980s.
 ### A more modern machine
 
 <!-- .element: class="hidden" -->
-
-<!-- TODO: second version of the machine, to compare with the first, for the
-     booting slide in the OS part. It keeps the first one's layout on purpose,
-     so that the differences stand out. -->
 
 {% include diagrams/machine-boot.html %}
 
@@ -1788,3 +2031,7 @@ For a web developer, this means:
 <!-- TODO: call back when the improved deployments run Guess It as a Node.js
      process, and in a PHP-FPM deployment if one is kept as an additional
      exercise. -->
+
+[eniac-tubes]: https://commons.wikimedia.org/wiki/File:ENIAC_Tubes_%282585374699%29.jpg
+[telegraph-relay]: https://commons.wikimedia.org/wiki/File:Telegraph_relay,_1850s.jpg
+[transistors]: https://commons.wikimedia.org/wiki/File:Transistorer_%28cropped%29.jpg
