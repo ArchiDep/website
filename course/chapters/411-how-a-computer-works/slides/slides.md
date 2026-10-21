@@ -1449,86 +1449,70 @@ included, in his [8-bit computer](https://eater.net/8bit) video series.
 ---
 
 <!-- TODO: draft, the transition from the toy machine to the machine at boot.
-     Kept whole: the OS part calls back to its isolation column. -->
+     Kept whole: the OS part calls back to its isolation words. -->
 
 ### Since the 70s
 
-<div class="grid grid-cols-2 gap-16 text-left">
-  <div>
-    <p class="text-3xl font-bold text-blue-500">Faster</p>
-    <ul>
-      <li>Higher clock speeds</li>
-      <li>Caches</li>
-      <li>Pipelining</li>
-      <li>Branch prediction</li>
-      <li>Out-of-order execution</li>
-      <li>Floating-point unit (FPU)</li>
-      <li>Vector instructions (SIMD)</li>
-      <li>Several cores</li>
-    </ul>
+<p class="flex justify-center gap-4 text-2xl">
+  <span class="rounded-full bg-blue-700 px-5 py-1 text-white">More speed</span>
+  <span class="rounded-full bg-emerald-700 px-5 py-1 text-white">More isolation</span>
+</p>
+
+<div class="flex flex-col items-center gap-2 leading-none">
+  <div class="flex items-baseline justify-center gap-x-10">
+    <a href="https://en.wikipedia.org/wiki/Branch_predictor" class="text-3xl text-blue-700! hover:text-blue-600! hover:underline!">Branch prediction</a>
+    <a href="https://en.wikipedia.org/wiki/Hardware-assisted_virtualization" class="text-4xl text-emerald-700! hover:text-emerald-600! hover:underline!">Hardware virtualization</a>
+    <a href="https://en.wikipedia.org/wiki/Floating-point_unit" class="text-2xl text-blue-700! hover:text-blue-600! hover:underline!">FPU</a>
   </div>
-  <div>
-    <p class="text-3xl font-bold text-blue-500">Isolated</p>
-    <ul>
-      <li>Kernel and user modes</li>
-      <li>Virtual memory</li>
-      <li>Non-executable memory</li>
-      <li>Hardware virtualization</li>
-    </ul>
+  <div class="flex items-baseline justify-center gap-x-10">
+    <a href="https://en.wikipedia.org/wiki/64-bit_computing" class="text-3xl text-gray-600! hover:text-gray-500! hover:underline!">64 bits</a>
+    <a href="https://en.wikipedia.org/wiki/CPU_cache" class="text-6xl text-blue-700! hover:text-blue-600! hover:underline!">Caches</a>
+    <a href="https://en.wikipedia.org/wiki/Protection_ring" class="text-5xl text-emerald-700! hover:text-emerald-600! hover:underline!">Kernel and user modes</a>
+  </div>
+  <div class="flex items-baseline justify-center gap-x-10">
+    <a href="https://en.wikipedia.org/wiki/Instruction_pipelining" class="text-4xl text-blue-700! hover:text-blue-600! hover:underline!">Pipelining</a>
+    <a href="https://en.wikipedia.org/wiki/Clock_rate" class="text-6xl text-blue-700! hover:text-blue-600! hover:underline!">Higher clock speeds</a>
+    <a href="https://en.wikipedia.org/wiki/Low-power_electronics" class="text-2xl text-gray-600! hover:text-gray-500! hover:underline!">Lower power use</a>
+  </div>
+  <div class="flex items-baseline justify-center gap-x-10">
+    <a href="https://en.wikipedia.org/wiki/Virtual_memory" class="text-6xl text-emerald-700! hover:text-emerald-600! hover:underline!">Virtual memory</a>
+    <a href="https://en.wikipedia.org/wiki/Multi-core_processor" class="text-5xl text-blue-700! hover:text-blue-600! hover:underline!">Several cores</a>
+  </div>
+  <div class="flex items-baseline justify-center gap-x-10">
+    <a href="https://en.wikipedia.org/wiki/System_on_a_chip" class="text-2xl text-gray-600! hover:text-gray-500! hover:underline!">More on one chip</a>
+    <a href="https://en.wikipedia.org/wiki/Out-of-order_execution" class="text-4xl text-blue-700! hover:text-blue-600! hover:underline!">Out-of-order execution</a>
+    <a href="https://en.wikipedia.org/wiki/Single_instruction,_multiple_data" class="text-3xl text-blue-700! hover:text-blue-600! hover:underline!">SIMD</a>
+  </div>
+  <div class="flex items-baseline justify-center gap-x-10">
+    <a href="https://en.wikipedia.org/wiki/Executable-space_protection" class="text-2xl text-emerald-700! hover:text-emerald-600! hover:underline!">Non-executable memory</a>
+    <a href="https://en.wikipedia.org/wiki/Hardware_acceleration" class="text-2xl text-gray-600! hover:text-gray-500! hover:underline!">Specialized units</a>
   </div>
 </div>
 
-<p class="text-2xl opacity-75">Also: 64 bits for more memory · lower power use ·
-more on one chip · specialized units</p>
-
 **Notes:**
 
-TODO: the machine of the trace is still how a modern processor works: it reads
-instructions from memory and executes them, one after the other. Almost
-everything that changed since the microprocessors of the 1970s, such as the
-Intel 8080 (1974), an 8-bit processor close to the toy machine that could use
-64 KB of memory at most, makes it faster or keeps programs apart, without
-changing that model.
+The conceptual CPU we demonstrated is still how a modern processor works: it
+reads instructions from memory and executes them, one after the other. The
+[Intel 8080](https://en.wikipedia.org/wiki/Intel_8080) (1974), an 8-bit
+processor, is very close to it.
 
-Most of the speed improvements are invisible to the program:
+Almost everything that changed since the microprocessors of the 1970s makes them
+faster or keeps programs apart, without changing that model. The bigger the
+word, the more it changed. Each word links to more about it.
 
-- **Caches** keep recently used memory close to the processor, which reads it
-  much faster than RAM.
-- **Pipelining** starts the next instruction before the current one has
-  finished, as on an assembly line.
-- **Branch prediction** guesses which way a jump will go, so the pipeline does
-  not have to wait.
-- **Out-of-order execution** runs instructions in a different order when the
-  result is the same, and puts the results back in program order.
-- The **FPU** computes with fractional numbers, such as 3.14, in hardware, and
-  **SIMD** applies
-  one instruction to several numbers at once.
+The 8080 ran at 2 MHz: two million clock cycles per second. A processor today
+runs at a few gigahertz, more than a thousand times faster, and memory has not
+kept up. Without caches, which keep recently used memory close to the
+processor, it would spend most of its time waiting for RAM.
 
-The processor still behaves as if it ran one instruction after the other. The
-exception is **several cores**: several processors on one chip, really running
-at the same time.
+Clock speeds stopped rising in the mid-2000s, when faster chips became too hot
+to cool. Since then, speed comes mostly from several cores and from each core
+doing more per cycle.
 
-The isolation improvements are what lets an operating system keep processes
-apart:
-
-- In **user mode**, the processor refuses instructions that only the operating
-  system may use, such as talking to devices directly. The operating system
-  runs in **kernel mode**.
-- **Virtual memory** gives each process its own addresses, so it cannot read or
-  write another process's memory.
-- **Non-executable memory** stops data from being run as instructions.
-- **Hardware virtualization** lets one machine run several virtual machines,
-  such as your server.
-
-The 8080 had none of these: any program could do anything. They existed on
-1960s mainframes, and came to microprocessors in the 1980s, with the Motorola
-68000 and the Intel 80286 and 80386.
-
-Other changes do not fit either column: 64-bit processors can address far more
-memory than the 8080's 64 KB, power use matters as much as speed in phones and
-data centers, components that were separate chips are now on the processor
-(memory controller, graphics), and some units only do one job, such as
-encryption or neural networks.
+The 8080 also let any program do anything, such as overwrite the memory of
+another one. With virtual memory, each process has its own addresses and cannot
+reach the others'. Such protections existed on 1960s mainframes, and came to
+microprocessors in the 1980s.
 
 ---
 
