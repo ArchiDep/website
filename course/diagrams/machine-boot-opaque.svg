@@ -44,12 +44,17 @@
        never held: a lighter shade of its band */
     svg.diagram[data-family='machine'] .band.data { fill: #f3eeff; }
     svg.diagram[data-family='machine'] .band.program.data { fill: #ebfbee; }
+    svg.diagram[data-family='machine'] .band.other.data { fill: #e3fafc; }
     /* What that part holds, said in passing rather than named like a program */
     svg.diagram[data-family='machine'] .band-label.data-label { font-size: 12px; font-weight: normal; fill: #6e6e73; }
+    /* A band's name over two lines, in a band too short for it on one */
+    svg.diagram[data-family='machine'] .band-label.two-lines { font-size: 12px; }
     /* A program's file, coloured as the band it is copied into */
     svg.diagram[data-family='machine'] .file.program { fill: #d3f9d8; stroke: #51cf66; }
     svg.diagram[data-family='machine'] .file.kernel { fill: #e5dbff; stroke: #9775fa; }
     svg.diagram[data-family='machine'] .file.bootloader { fill: #ffdeeb; stroke: #f06595; }
+    /* Every program started once booted, and the file standing for theirs */
+    svg.diagram[data-family='machine'] :is(.band, .file).other { fill: #c5f6fa; stroke: #22b8cf; }
     svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
     /* A connection the control signals open between two components, drawn
        like a live wire in the circuits, its white casing keeping it apart
@@ -152,8 +157,8 @@
       svg.diagram[data-family='machine'] .fill.gone &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-empty 0.9s ease-in-out 0.2s both; }
       /* What a program makes as it runs widens from what was copied, then its
          label appears */
-      svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out both; }
-      svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.2s both; }
+      svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out var(--widen-delay, 0s) both; }
+      svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out calc(var(--widen-delay, 0s) + 1.2s) both; }
     }
     @keyframes machine-tick {
       50% { opacity: 0.15; }
@@ -321,8 +326,78 @@
   <g id="data-init" class="transient" clip-path="url(#memory-inside)">
     <path class="band program data" d="M668 351 H988 V391 H668"/>
   </g>
-  <!-- Once booted, as the fully drawn diagram shows it: the same two bands,
-       drawn again, since stepping starts without them -->
+  <!-- The programs init and the others start once booted, two side by side
+       in a row, each copied in partway with its instructions drawn smaller,
+       and its data beside them: first a laptop's desktop and browser, then a
+       server's SSH server and its users' sessions, what each user runs drawn
+       above their session, though memory has no such order -->
+  <g id="band-desktop" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="380" y="271" width="200" height="40"/>
+    <text class="band-label" x="396" y="291">desktop</text>
+    <g class="band-cells"><rect id="desktop-cell-0" class="cell" x="488" y="279" width="24" height="10"/><rect id="desktop-cell-1" class="cell" x="516" y="279" width="24" height="10"/><rect id="desktop-cell-2" class="cell" x="544" y="279" width="24" height="10"/><rect id="desktop-cell-3" class="cell" x="488" y="293" width="24" height="10"/><rect id="desktop-cell-4" class="cell" x="516" y="293" width="24" height="10"/><rect id="desktop-cell-5" class="cell" x="544" y="293" width="24" height="10"/></g>
+  </g>
+  <g id="data-desktop" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M580 271 H684 V311 H580"/>
+  </g>
+  <g id="band-browser" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="684" y="271" width="200" height="40"/>
+    <text class="band-label" x="700" y="291">browser</text>
+    <g class="band-cells"><rect id="browser-cell-0" class="cell" x="792" y="279" width="24" height="10"/><rect id="browser-cell-1" class="cell" x="820" y="279" width="24" height="10"/><rect id="browser-cell-2" class="cell" x="848" y="279" width="24" height="10"/><rect id="browser-cell-3" class="cell" x="792" y="293" width="24" height="10"/><rect id="browser-cell-4" class="cell" x="820" y="293" width="24" height="10"/><rect id="browser-cell-5" class="cell" x="848" y="293" width="24" height="10"/></g>
+  </g>
+  <g id="data-browser" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M884 271 H988 V311 H884"/>
+  </g>
+  <g id="band-sshd" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="380" y="271" width="200" height="40"/>
+    <text class="band-label" x="396" y="291">SSH server</text>
+    <g class="band-cells"><rect id="sshd-cell-0" class="cell" x="488" y="279" width="24" height="10"/><rect id="sshd-cell-1" class="cell" x="516" y="279" width="24" height="10"/><rect id="sshd-cell-2" class="cell" x="544" y="279" width="24" height="10"/><rect id="sshd-cell-3" class="cell" x="488" y="293" width="24" height="10"/></g>
+  </g>
+  <g id="data-sshd" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M580 271 H684 V311 H580"/>
+  </g>
+  <g id="band-session-1" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="684" y="271" width="200" height="40"/>
+    <text class="band-label two-lines" x="700" y="285">SSH session</text><text class="band-label two-lines" x="700" y="298">&amp; shell</text>
+    <g class="band-cells"><rect id="session-1-cell-0" class="cell" x="792" y="279" width="24" height="10"/><rect id="session-1-cell-1" class="cell" x="820" y="279" width="24" height="10"/><rect id="session-1-cell-2" class="cell" x="848" y="279" width="24" height="10"/><rect id="session-1-cell-3" class="cell" x="792" y="293" width="24" height="10"/><rect id="session-1-cell-4" class="cell" x="820" y="293" width="24" height="10"/><rect id="session-1-cell-5" class="cell" x="848" y="293" width="24" height="10"/></g>
+  </g>
+  <g id="data-session-1" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M884 271 H988 V311 H884"/>
+  </g>
+  <g id="band-ls" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="684" y="231" width="200" height="40"/>
+    <text class="band-label" x="700" y="251">ls</text>
+    <g class="band-cells"><rect id="ls-cell-0" class="cell" x="792" y="239" width="24" height="10"/><rect id="ls-cell-1" class="cell" x="820" y="239" width="24" height="10"/></g>
+  </g>
+  <g id="data-ls" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M884 231 H988 V271 H884"/>
+  </g>
+  <g id="band-session-2" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="380" y="231" width="200" height="40"/>
+    <text class="band-label two-lines" x="396" y="245">SSH session</text><text class="band-label two-lines" x="396" y="258">&amp; shell</text>
+    <g class="band-cells"><rect id="session-2-cell-0" class="cell" x="488" y="239" width="24" height="10"/><rect id="session-2-cell-1" class="cell" x="516" y="239" width="24" height="10"/><rect id="session-2-cell-2" class="cell" x="544" y="239" width="24" height="10"/><rect id="session-2-cell-3" class="cell" x="488" y="253" width="24" height="10"/><rect id="session-2-cell-4" class="cell" x="516" y="253" width="24" height="10"/><rect id="session-2-cell-5" class="cell" x="544" y="253" width="24" height="10"/></g>
+  </g>
+  <g id="data-session-2" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M580 231 H684 V271 H580"/>
+  </g>
+  <g id="band-sleep" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="684" y="231" width="200" height="40"/>
+    <text class="band-label" x="700" y="251">sleep</text>
+    <g class="band-cells"><rect id="sleep-cell-0" class="cell" x="792" y="239" width="24" height="10"/><rect id="sleep-cell-1" class="cell" x="820" y="239" width="24" height="10"/></g>
+  </g>
+  <g id="data-sleep" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M884 231 H988 V271 H884"/>
+  </g>
+  <g id="band-ps" class="transient" clip-path="url(#memory-inside)">
+    <rect class="band other" x="380" y="191" width="200" height="40"/>
+    <text class="band-label" x="396" y="211">ps</text>
+    <g class="band-cells"><rect id="ps-cell-0" class="cell" x="488" y="199" width="24" height="10"/><rect id="ps-cell-1" class="cell" x="516" y="199" width="24" height="10"/></g>
+  </g>
+  <g id="data-ps" class="transient" clip-path="url(#memory-inside)">
+    <path class="band other data" d="M580 191 H684 V231 H580"/>
+  </g>
+  <!-- Once booted, as the fully drawn diagram shows it: the kernel, init and
+       the SSH server of a server, drawn again, since stepping starts without
+       them -->
   <g class="at-rest" clip-path="url(#memory-inside)">
     <rect class="band program" x="380" y="351" width="288" height="40"/>
     <path class="band program data" d="M668 351 H988 V391 H668"/>
@@ -333,6 +408,10 @@
     <text class="band-label" x="396" y="331">kernel</text>
     <rect class="cell" x="490" y="324" width="50" height="14"/><rect class="cell" x="546" y="324" width="50" height="14"/><rect class="cell" x="602" y="324" width="50" height="14"/><rect class="cell" x="658" y="324" width="50" height="14"/><rect class="cell" x="714" y="324" width="50" height="14"/>
     <text class="band-label data-label" x="796" y="331">kernel data (stack &amp; heap)</text>
+    <rect class="band other" x="380" y="271" width="200" height="40"/>
+    <path class="band other data" d="M580 271 H684 V311 H580"/>
+    <text class="band-label" x="396" y="291">SSH server</text>
+    <rect class="cell" x="488" y="279" width="24" height="10"/><rect class="cell" x="516" y="279" width="24" height="10"/><rect class="cell" x="544" y="279" width="24" height="10"/><rect class="cell" x="488" y="293" width="24" height="10"/>
   </g>
   <rect id="memory-border" class="box hollow" x="380" y="108" width="608" height="283" rx="8"/>
 
@@ -354,7 +433,8 @@
     <g id="file-bootloader"><rect class="file bootloader" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text></g>
     <g id="file-kernel"><rect class="file kernel" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text></g>
     <g id="file-init"><rect class="file program" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text></g>
-    <text class="label" x="834" y="537">…</text>
+    <!-- Every other program, which the steps copy from without naming each -->
+    <g id="file-programs"><rect class="file other" x="820" y="527" width="120" height="28" rx="4"/><text class="tiny" x="880" y="541">other programs</text></g>
     </g>
   </g>
 
@@ -367,9 +447,9 @@
   <g id="devices">
     <rect class="box" x="30" y="380" width="209" height="206" rx="8"/>
     <text class="label" x="134" y="404">Devices</text>
-    <rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text>
-    <rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text>
-    <rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text>
+    <g id="device-network"><rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text></g>
+    <g id="device-keyboard"><rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text></g>
+    <g id="device-graphics-card"><rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text></g>
   </g>
 
   <!-- The interrupt: a single wire, by which a device tells the processor

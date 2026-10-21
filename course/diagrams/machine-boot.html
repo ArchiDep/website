@@ -47,12 +47,17 @@ svg.diagram[data-family='machine'] .band.bootloader { fill: #ffdeeb; stroke: #f0
 never held: a lighter shade of its band */
 svg.diagram[data-family='machine'] .band.data { fill: #f3eeff; }
 svg.diagram[data-family='machine'] .band.program.data { fill: #ebfbee; }
+svg.diagram[data-family='machine'] .band.other.data { fill: #e3fafc; }
 /* What that part holds, said in passing rather than named like a program */
 svg.diagram[data-family='machine'] .band-label.data-label { font-size: 12px; font-weight: normal; fill: #6e6e73; }
+/* A band's name over two lines, in a band too short for it on one */
+svg.diagram[data-family='machine'] .band-label.two-lines { font-size: 12px; }
 /* A program's file, coloured as the band it is copied into */
 svg.diagram[data-family='machine'] .file.program { fill: #d3f9d8; stroke: #51cf66; }
 svg.diagram[data-family='machine'] .file.kernel { fill: #e5dbff; stroke: #9775fa; }
 svg.diagram[data-family='machine'] .file.bootloader { fill: #ffdeeb; stroke: #f06595; }
+/* Every program started once booted, and the file standing for theirs */
+svg.diagram[data-family='machine'] :is(.band, .file).other { fill: #c5f6fa; stroke: #22b8cf; }
 svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
 /* A connection the control signals open between two components, drawn
 like a live wire in the circuits, its white casing keeping it apart
@@ -150,8 +155,8 @@ svg.diagram[data-family='machine'] .fill.gone &gt; :not(.band) { animation: mach
 svg.diagram[data-family='machine'] .fill.gone &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-empty 0.9s ease-in-out 0.2s both; }
 /* What a program makes as it runs widens from what was copied, then its
 label appears */
-svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out both; }
-svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.2s both; }
+svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out var(--widen-delay, 0s) both; }
+svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out calc(var(--widen-delay, 0s) + 1.2s) both; }
 }
 @keyframes machine-tick {
 50% { opacity: 0.15; }
@@ -838,16 +843,17 @@ break-inside: avoid;
 <g><rect class="file bootloader" x="574" y="527" width="96" height="28" rx="4"/><text class="tiny" x="622" y="541">bootloader</text></g>
 <g><rect class="file kernel" x="680" y="527" width="70" height="28" rx="4"/><text class="tiny" x="715" y="541">kernel</text></g>
 <g><rect class="file program" x="760" y="527" width="50" height="28" rx="4"/><text class="tiny" x="785" y="541">init</text></g>
-<text class="label" x="834" y="537">…</text>
+<!-- Every other program, which the steps copy from without naming each -->
+<g><rect class="file other" x="820" y="527" width="120" height="28" rx="4"/><text class="tiny" x="880" y="541">other programs</text></g>
 </g><path class="fragment transient arrive data-path" d="M134 335 V385" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s"/><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s">
 <rect class="box" x="30" y="250" width="209" height="90" rx="8"/>
 <text class="label" x="134" y="295">Device controllers</text>
 </g><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13" style="--delay: 0s">
 <rect class="box" x="30" y="380" width="209" height="206" rx="8"/>
 <text class="label" x="134" y="404">Devices</text>
-<rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text>
-<rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text>
-<rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text>
+<g><rect class="file" x="50" y="424" width="169" height="44" rx="4"/><text class="small" x="134" y="446">Network</text></g>
+<g><rect class="file" x="50" y="476" width="169" height="44" rx="4"/><text class="small" x="134" y="498">Keyboard</text></g>
+<g><rect class="file" x="50" y="528" width="169" height="44" rx="4"/><text class="small" x="134" y="550">Graphics card</text></g>
 </g><path class="fragment transient arrive wire" d="M45 250 V183" marker-end="url(#diagram-machine-boot-wire-arrow)" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s"/><text class="fragment transient arrive tiny signal start" x="52" y="224" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">interrupts</text><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">
 <path class="wire" d="M73 239 H45"/><path class="wire-dots" d="M80 239 H101"/>
 </g><g class="fragment transient arrive" data-fragment-index="8" data-faded-at="0 1 2 9 10 11 12 13 14" style="--delay: 0s">

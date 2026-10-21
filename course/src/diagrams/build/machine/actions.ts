@@ -215,11 +215,19 @@ export function fills(id: string): Action {
 /**
  * Shown from this step on, widening from the left, such as what a program
  * makes in memory as it runs, beside what was copied: its first shape grows,
- * then the rest appears.
+ * then the rest appears. With `after`, it waits that many seconds, such as for
+ * the program's band to fill in the same step.
  */
-export function grows(id: string): Action {
+export function grows(
+  id: string,
+  { after = 0 }: { readonly after?: number } = {}
+): Action {
   return (builder, index) => {
-    reveal(builder.element(id), index, 'widen');
+    const element = builder.element(id);
+    reveal(element, index, 'widen');
+    if (after) {
+      setVariables(element, { 'widen-delay': seconds(after) });
+    }
   };
 }
 

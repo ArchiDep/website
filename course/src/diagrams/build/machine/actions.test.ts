@@ -285,6 +285,19 @@ describe('grows', () => {
       )
     );
   });
+
+  it('waits before growing, given how long', () => {
+    assert.equal(
+      generated(
+        '<g id="data" class="transient"><rect class="band data"/></g>',
+        [[grows('data', { after: 1.6 })]]
+      ),
+      partial(
+        '<g id="diagram-m-data" class="fragment widen transient" data-fragment-index="0" style="--widen-delay: 1.6s"><rect class="band data"/></g>',
+        1
+      )
+    );
+  });
 });
 
 describe('reads and writes', () => {

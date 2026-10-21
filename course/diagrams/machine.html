@@ -47,12 +47,17 @@ svg.diagram[data-family='machine'] .band.bootloader { fill: #ffdeeb; stroke: #f0
 never held: a lighter shade of its band */
 svg.diagram[data-family='machine'] .band.data { fill: #f3eeff; }
 svg.diagram[data-family='machine'] .band.program.data { fill: #ebfbee; }
+svg.diagram[data-family='machine'] .band.other.data { fill: #e3fafc; }
 /* What that part holds, said in passing rather than named like a program */
 svg.diagram[data-family='machine'] .band-label.data-label { font-size: 12px; font-weight: normal; fill: #6e6e73; }
+/* A band's name over two lines, in a band too short for it on one */
+svg.diagram[data-family='machine'] .band-label.two-lines { font-size: 12px; }
 /* A program's file, coloured as the band it is copied into */
 svg.diagram[data-family='machine'] .file.program { fill: #d3f9d8; stroke: #51cf66; }
 svg.diagram[data-family='machine'] .file.kernel { fill: #e5dbff; stroke: #9775fa; }
 svg.diagram[data-family='machine'] .file.bootloader { fill: #ffdeeb; stroke: #f06595; }
+/* Every program started once booted, and the file standing for theirs */
+svg.diagram[data-family='machine'] :is(.band, .file).other { fill: #c5f6fa; stroke: #22b8cf; }
 svg.diagram[data-family='machine'] .band-label { font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1d1d1f; dominant-baseline: middle; }
 /* A connection the control signals open between two components, drawn
 like a live wire in the circuits, its white casing keeping it apart
@@ -150,8 +155,8 @@ svg.diagram[data-family='machine'] .fill.gone &gt; :not(.band) { animation: mach
 svg.diagram[data-family='machine'] .fill.gone &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-empty 0.9s ease-in-out 0.2s both; }
 /* What a program makes as it runs widens from what was copied, then its
 label appears */
-svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out both; }
-svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.2s both; }
+svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out var(--widen-delay, 0s) both; }
+svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out calc(var(--widen-delay, 0s) + 1.2s) both; }
 }
 @keyframes machine-tick {
 50% { opacity: 0.15; }
