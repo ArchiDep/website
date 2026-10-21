@@ -1337,6 +1337,12 @@ it to, and a jump can set it to a new value.
 
 ## Running a program
 
+**Notes:**
+
+We mentioned that binary data can represent numbers, colors, images, videos, and
+text. There is one thing we left out: a computer can also run a program, which
+is a sequence of instructions that tell it what to do.
+
 ---
 
 ### The instruction set
@@ -1365,11 +1371,32 @@ it to, and a jump can set it to a new value.
 
 **Notes:**
 
-The codes are those of Ben Eater's 8-bit computer, linked from the next slide,
-so the instructions read the same there.
+Each CPU architecture (e.g. x86, ARM) has its own **instruction set**, which is
+the list of things it can do. These instructions are encoded in binary form,
+just like text or images.
 
-TODO: an instruction is 4 bits of operation and 4 bits of address: eight bits,
-read one more way.
+The instructions in this table form a simplified instruction set for an 8-bit
+computer with 16 memory cells (4-bit addresses). Each instruction consists of 4
+bits for the **opcode** (**op**eration **code**) and 4 bits for the **address**,
+making up a total of 8 bits. The opcode specifies what operation to perform,
+while the address indicates where in memory to read from or write to.
+
+- `memory[x]` means the value stored in memory cell `x`.
+- `acc` stands for the **accumulator**, an 8-bit register that holds a value
+  (built out of 8 flip-flops).
+- `go to` sets the program counter to a new value, so the next instruction comes
+  from that address.
+
+The goal of most instructions is to control the flow of addresses and data from
+one component to another, and to instruct each component to do its job. For
+example, the `LOAD x` instruction moves the value from memory cell `x` into the
+accumulator, while `STORE x` moves the value from the accumulator into memory
+cell `x`.
+
+To learn more: this instruction set is close to the SAP-1's, the
+"Simple-As-Possible" teaching computer, which Ben Eater builds on breadboards,
+control signals included, in his [8-bit computer](https://eater.net/8bit) video
+series.
 
 ---
 
@@ -1378,9 +1405,6 @@ read one more way.
 ### The machine
 
 <!-- .element: class="hidden" -->
-
-<!-- TODO: first draft, static: its steps are to follow the trace. See
-     "Architecture Diagrams" in `course/CONTRIBUTING.md`. -->
 
 {% include diagrams/machine.html %}
 
@@ -1442,14 +1466,7 @@ never computes on a value in memory. It first copies the value into a register,
 even when a single instruction does both, and its ALU only ever works on
 registers.
 
-To learn more: this machine is close to the SAP-1 ("Simple-As-Possible")
-teaching computer, which Ben Eater builds on breadboards, control signals
-included, in his [8-bit computer](https://eater.net/8bit) video series.
-
 ---
-
-<!-- TODO: draft, the transition from the toy machine to the machine at boot.
-     Kept whole: the OS part calls back to its isolation words. -->
 
 ### Since the 70s
 
@@ -1518,7 +1535,7 @@ microprocessors in the 1980s.
 
 <!-- .slide: class="full-diagram" -->
 
-### The machine at boot
+### A more modern machine
 
 <!-- .element: class="hidden" -->
 
@@ -1573,7 +1590,7 @@ address, and data travels between the processor and what it addresses.
 
 <!-- .slide: class="full-diagram" data-transition="none" -->
 
-### The machine at boot, opaque
+### The machine at boot
 
 <!-- .element: class="hidden" -->
 
@@ -1585,76 +1602,130 @@ TODO: the same machine with its processor drawn as a box, to follow the boot.
 
 ---
 
-<!-- TODO: draft notes for the OS part, to split into several slides. Ideas
-     for the 15 to 20 minutes, most of the time on the first four:
-     - Program and process: two SSH sessions are two bash processes running
-       the same program. Everything on the deployment diagram is a process.
-     - Sharing the processor, then several cores (the next slide).
-     - Isolation, and channels as its consequence: files (session 3), pipes
-       (session 4), sockets (networking). The arrows on the diagram are these
-       channels. The most time goes here.
-     - The kernel and system calls: how isolation is enforced, and the shell
-       is a program, not the operating system.
-     - Everything else on one "it also does" slide, a line each.
-     - Not in the session: paging, scheduling algorithms, interrupts and
-       drivers in any detail. -->
+### Booting
 
-### The operating system
-
-- Runs programs as processes
-- Shares the processor between them
-- Gives each its own memory
-- Hides the hardware
-- Organizes the disk into files
-- Handles the network
-- Decides who may do what
-- Connects processes
-- Through system calls only
+1. The processor runs the **firmware** (UEFI), from a chip on the motherboard.
+2. The firmware loads the **bootloader** (GRUB) from the disk and into memory.
+3. The bootloader loads the **kernel** (Linux).
+4. The kernel starts the **first process**, also called the **init process**
+   (systemd on Linux).
+5. The init process starts **everything else**: SSH, nginx, your application.
 
 **Notes:**
 
-TODO: the operating system is the program that manages the computer for all the
+When a computer is switched on, its memory is empty: there is no program in it
+to run yet. Starting it, called **booting**, is a chain of programs, each
+loading the next one into memory and handing over to it.
+
+1. When the power comes on, the CPU starts at a fixed address, like the program
+   counter of the demonstration that started at 0. That address does not lead to
+   the memory but to a chip on the motherboard, which holds the **firmware**. It
+   checks and prepares the hardware, the memory included, then looks for a disk
+   to start from. The modern firmware is **UEFI**, which replaced the older
+   **BIOS**.
+2. The firmware loads the **bootloader** from the disk and into memory, and the
+   CPU runs it from memory. On Linux, the bootloader is usually GRUB. Its job is
+   to find the operating system on the disk.
+3. The bootloader loads the **kernel** into memory and the CPU runs it. The
+   kernel prepares everything it manages: the drivers, the memory, the other
+   cores, and the disk's file system.
+4. The kernel starts a single program: the **first process**, also called the
+   **init process**, with process ID 1. On your Ubuntu server, it is
+   **systemd**.
+5. The init process starts everything else the machine has to run, such as the
+   SSH server you connect to and later the web server for your deployments.
+   Every other process on the machine was started either directly by the init
+   process, or indirectly by a process that it started.
+
+Cloud servers are typically virtual machines, so their firmware is not on a real
+chip: the cloud provider's hypervisor provides it. The chain is otherwise the
+same.
+
+---
+
+### The operating system
+
+- Runs **programs** as **isolated processes**
+- **Hides hardware** behind system calls: files, sockets
+- Decides **who can do what**: permissions
+
+**Notes:**
+
+The operating system is the program that manages the computer for all the
 others. Its responsibilities:
 
-1. **It runs programs.** It loads a program from the disk into memory and
-   starts it. A running program is a **process**. The same program can run as
-   several processes at once: two SSH sessions to your server are two `bash`
-   processes running the same program.
-2. **It shares the processor.** It switches each core from one process to the
-   next many times per second, so that they all make progress.
-3. **It gives each process its own memory.** A process cannot read or write
-   another process's memory: they are **isolated**. The processor itself
-   enforces this, with virtual memory.
-4. **It hides the hardware.** Programs ask to read a file or to send bytes over
-   the network. They never move a disk's head or talk to a specific model of
-   network card: **drivers**, parts of the operating system, do that for them.
-5. **It organizes the disk.** Without it, a disk is billions of bytes. The
-   operating system organizes them into **files** with names, in
-   **directories**. A file is only a sequence of bytes: as with the eight bits
-   at the start, its meaning comes from the program that reads it.
-6. **It handles the network.** It implements TCP/IP, and gives programs
-   **sockets** to send and receive data.
-7. **It decides who may do what**, with users, groups and permissions.
-8. **It connects processes.** Since processes are isolated, they can only
-   communicate through channels the operating system provides:
-   - **files**, which one process writes and another reads;
-   - **pipes**, which send one process's output to another's input;
-   - **sockets**, the same channels as over the network, on the same machine
-     or between machines;
-   - **shared memory**, a region that two processes both ask the operating
-     system for, which both then see. It is the fastest channel, since nothing
-     is copied, but also the hardest to use correctly: the processes must take
-     turns, or they change the same data at the same time. PostgreSQL's
-     processes, one per connection, share their cached data this way.
-9. **It is the only way in.** Programs ask the operating system for all of this
-   with **system calls**. The processor runs programs in **user mode**, where
-   the instructions that control the hardware are refused, and the operating
-   system in **kernel mode**.
+1. **It runs programs as isolated processes.** It loads any program from the
+   disk into memory and starts it. A running program is a **process**. The same
+   program can run as several processes at once: two SSH sessions to your server
+   are two `bash` processes running the same program. Each process has its own
+   memory, which no other process can read or write: processes are **isolated**.
+   The processor itself enforces this, with virtual memory.
+2. **It hides the hardware behind system calls.** Programs never move a hard
+   drive's head or talk to a specific model of network card: **drivers**, parts
+   of the operating system, do that for them. Programs ask the operating system
+   instead, with **system calls**:
+   - Without the operating system, a disk is billions of bytes. It organizes
+     them into **files** with names, in **directories**. A file is only a
+     sequence of bytes: as with the eight bits at the start, its meaning comes
+     from the program that reads it.
+   - It implements TCP/IP, and gives programs **sockets** to send and receive
+     data over the network.
 
-The core of the operating system, which runs in kernel mode, is the
-**kernel**. On your server, it is the Linux kernel. Programs such as the shell,
-`ls` or `ssh` are not the operating system: they are ordinary programs that
-make system calls, like the programs you write.
+   System calls are the only way in: the processor runs programs in **user
+   mode**, where the instructions that control the hardware are refused, and the
+   operating system in **kernel mode**.
+
+3. **It decides who can do what**, with users, groups and permissions.
+
+The core of the operating system, which runs in kernel mode, is the **kernel**.
+On most cloud servers, it is the Linux kernel. Programs such as the shell, `ls`
+or `ssh` are not the operating system: they are ordinary programs that make
+system calls, like the programs you write.
+
+---
+
+### How can they communicate?
+
+{% include diagrams/machine-processes.html %}
+
+**Notes:**
+
+Guess It and PostgreSQL, from the [SFTP deployment]({% link
+chapters/410-sftp-deployment/exercise.md %}), are two processes on the same
+server. Each has its own memory: Guess It cannot read PostgreSQL's, nor
+PostgreSQL Guess It's. Yet both are able to communicate. How?
+
+---
+
+### Connecting processes
+
+<ul>
+  <li class="fragment"><strong>Files</strong>: one process writes, another reads</li>
+  <li class="fragment"><strong>Pipes</strong>: one's output is another's input</li>
+  <li class="fragment"><strong>Sockets</strong>: as over the network, locally too</li>
+  <li class="fragment"><strong>Shared memory</strong>: one region, which both see</li>
+</ul>
+
+**Notes:**
+
+Since processes are isolated, they can only communicate through channels the
+operating system provides:
+
+- **Files**: one process can write to a file, and another can read that file.
+- **Pipes**: you can send the standard output of one process into the standard
+  input of another, as the `|` of a [shell pipeline]({% link
+  chapters/408-unix-processes/subject.md %}#pipelines) does.
+- **Sockets**: programs use them to communicate over the network, but two
+  processes on the same machine can use them too. This is how Guess It talks
+  to PostgreSQL: its `DATABASE_URL` says `localhost:5432`, a port on the
+  loopback address, which never leaves the server. Guess It would connect the
+  same way to a database on another machine, with that machine's address
+  instead.
+- **Shared memory**: two processes can both ask the operating system for the
+  same region of memory, which both then see. It is the fastest channel, since
+  nothing is copied, but also the hardest to use correctly: the processes must
+  take turns, or they change the same data at the same time. PostgreSQL's own
+  processes, one per connection, share their cached data this way.
 
 ---
 
@@ -1717,45 +1788,3 @@ For a web developer, this means:
 <!-- TODO: call back when the improved deployments run Guess It as a Node.js
      process, and in a PHP-FPM deployment if one is kept as an additional
      exercise. -->
-
----
-
-<!-- TODO: draft, to place in the OS part. The callback worth making is to the
-     trace: the program counter starts at 0, and a real processor also starts
-     at a fixed address. -->
-
-### Booting
-
-1. Power on: the processor runs the **firmware** (UEFI), from a chip on the
-   motherboard
-2. The firmware loads the **bootloader** (GRUB) from the disk
-3. The bootloader loads the **kernel** (Linux) into memory
-4. The kernel starts the **first process** (systemd)
-5. systemd starts **everything else**: SSH, nginx, your application
-
-**Notes:**
-
-TODO: when a computer is switched on, its memory is empty: there is no program
-in it to run yet. Starting it, called **booting**, is a chain of programs, each
-loading the next one into memory and handing over to it.
-
-1. When the power comes on, the processor starts at a fixed address, as the
-   program counter of the trace starts at 0. That address does not lead to the
-   memory but to a chip on the motherboard, which holds the **firmware**. It
-   checks and prepares the hardware, the memory included, then looks for a
-   disk to start from. The modern firmware is **UEFI**, which replaced the
-   older **BIOS**.
-2. The firmware loads the **bootloader** from the disk and runs it. On Linux,
-   it is usually GRUB. Its job is to find the operating system on the disk.
-3. The bootloader loads the **kernel** into memory and runs it. The kernel
-   prepares everything it manages: the drivers, the memory, the other cores,
-   and the disk's file system.
-4. The kernel starts a single program: the **first process**, with process ID
-   1. On your Ubuntu server, it is **systemd**.
-5. systemd starts everything else the machine has to run, such as the SSH
-   server you connect to and the web server of your deployments. Every other
-   process on the machine was started by systemd, or by a process that systemd
-   started.
-
-Your server is a virtual machine, so its firmware is not on a real chip: the
-cloud provider's hypervisor provides it. The chain is otherwise the same.
