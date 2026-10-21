@@ -43,6 +43,12 @@ svg.diagram[data-family='machine'] .band.program { fill: #d3f9d8; stroke: #51cf6
 /* The bootloader, which runs before the kernel, as the firmware does, and
 is not one of the programs the kernel runs */
 svg.diagram[data-family='machine'] .band.bootloader { fill: #ffdeeb; stroke: #f06595; }
+/* What a program makes as it runs, its stack and heap, which the file
+never held: a lighter shade of its band */
+svg.diagram[data-family='machine'] .band.data { fill: #f3eeff; }
+svg.diagram[data-family='machine'] .band.program.data { fill: #ebfbee; }
+/* What that part holds, said in passing rather than named like a program */
+svg.diagram[data-family='machine'] .band-label.data-label { font-size: 12px; font-weight: normal; fill: #6e6e73; }
 /* A program's file, coloured as the band it is copied into */
 svg.diagram[data-family='machine'] .file.program { fill: #d3f9d8; stroke: #51cf66; }
 svg.diagram[data-family='machine'] .file.kernel { fill: #e5dbff; stroke: #9775fa; }
@@ -142,6 +148,10 @@ once empty rather than fading as it empties */
 svg.diagram[data-family='machine'] .fill.gone { transition: opacity 0.1s 1.1s, visibility 0s 1.2s !important; }
 svg.diagram[data-family='machine'] .fill.gone &gt; :not(.band) { animation: machine-vanish 0.3s ease-in both; }
 svg.diagram[data-family='machine'] .fill.gone &gt; .band { transform-box: fill-box; transform-origin: bottom; animation: machine-empty 0.9s ease-in-out 0.2s both; }
+/* What a program makes as it runs widens from what was copied, then its
+label appears */
+svg.diagram[data-family='machine'] .widen.visible &gt; .band { transform-box: fill-box; transform-origin: left; animation: machine-grow 1.2s ease-in-out both; }
+svg.diagram[data-family='machine'] .widen.visible &gt; :not(.band) { animation: machine-appear 0.4s ease-out 1.2s both; }
 }
 @keyframes machine-tick {
 50% { opacity: 0.15; }
@@ -157,6 +167,9 @@ from, to { fill-opacity: 0; stroke-opacity: 0; }
 }
 @keyframes machine-fill {
 from { transform: scaleY(0); }
+}
+@keyframes machine-grow {
+from { transform: scaleX(0); }
 }
 @keyframes machine-vanish {
 to { opacity: 0; }

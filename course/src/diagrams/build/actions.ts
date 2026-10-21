@@ -9,15 +9,51 @@ import { START, type Action, type Builder } from './builder';
 import { addClasses, descendants, removeClasses, setVariables } from './svg';
 import { seconds } from './timing';
 
+// The classes reveal.js styles a fragment by itself, in a deck only: a step
+// given one would move in a deck as it does nowhere else, such as `grow`, which
+// scales it up.
+const REVEAL_FRAGMENT_STYLES = new Set([
+  'current-visible',
+  'disabled',
+  'fade-down',
+  'fade-in-then-out',
+  'fade-in-then-semi-out',
+  'fade-left',
+  'fade-out',
+  'fade-right',
+  'fade-up',
+  'grow',
+  'highlight-blue',
+  'highlight-current-blue',
+  'highlight-current-green',
+  'highlight-current-red',
+  'highlight-green',
+  'highlight-red',
+  'semi-fade-out',
+  'shrink',
+  'strike',
+  'visible',
+  'zoom-in'
+]);
+
 /**
  * Makes an element a step of its own: hidden until the step at `index` is
- * reached, with the classes that say how it appears.
+ * reached, with the classes that say how it appears. None may be one of the
+ * classes reveal.js styles a fragment by.
  */
 export function reveal(
   element: Element,
   index: number,
   ...classes: string[]
 ): void {
+  for (const name of classes) {
+    if (REVEAL_FRAGMENT_STYLES.has(name)) {
+      throw new Error(
+        `"${name}" is a class reveal.js styles a fragment by: name the step's class otherwise`
+      );
+    }
+  }
+
   addClasses(element, 'fragment', ...classes);
   element.setAttribute('data-fragment-index', String(index));
 }

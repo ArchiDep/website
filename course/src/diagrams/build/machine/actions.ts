@@ -213,6 +213,17 @@ export function fills(id: string): Action {
 }
 
 /**
+ * Shown from this step on, widening from the left, such as what a program
+ * makes in memory as it runs, beside what was copied: its first shape grows,
+ * then the rest appears.
+ */
+export function grows(id: string): Action {
+  return (builder, index) => {
+    reveal(builder.element(id), index, 'widen');
+  };
+}
+
+/**
  * What a step is about, among the parts of the drawing that can be faded: the
  * others are faded while the step is the current one. A step that says nothing
  * of it fades nothing.

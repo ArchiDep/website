@@ -6,6 +6,7 @@ export type { Action, Becoming, DiagramDefinition, Step } from '..';
 export {
   fills,
   focusOn,
+  grows,
   lit,
   live,
   reads,

@@ -7,6 +7,7 @@ import {
   diagram,
   fills,
   focusOn,
+  grows,
   lit,
   live,
   reads,
@@ -265,6 +266,21 @@ describe('fills', () => {
       ),
       partial(
         '<g id="diagram-m-band" class="fragment fill transient" data-fragment-index="1"><rect class="band"/><text>boot</text></g>',
+        2
+      )
+    );
+  });
+});
+
+describe('grows', () => {
+  it('shows a part from its step on, growing', () => {
+    assert.equal(
+      generated(
+        '<g id="data" class="transient"><rect class="band data"/><text>data</text></g>',
+        [[], [grows('data')]]
+      ),
+      partial(
+        '<g id="diagram-m-data" class="fragment widen transient" data-fragment-index="1"><rect class="band data"/><text>data</text></g>',
         2
       )
     );

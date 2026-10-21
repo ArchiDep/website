@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { DOMParser } from '@xmldom/xmldom';
+
 import { copyOf, diagram, during, runs, START, step } from '.';
+import { reveal } from './actions';
 import { generate } from './generate';
 
 describe('runs', () => {
@@ -85,6 +88,23 @@ describe('during', () => {
         '</div>',
         ''
       ].join('\n')
+    );
+  });
+});
+
+describe('reveal', () => {
+  it('refuses a class reveal.js styles a fragment by', () => {
+    const element = new DOMParser().parseFromString(
+      '<g xmlns="http://www.w3.org/2000/svg"/>',
+      'image/svg+xml'
+    ).documentElement;
+    assert.ok(element);
+
+    assert.throws(
+      () => reveal(element, 0, 'grow'),
+      new Error(
+        '"grow" is a class reveal.js styles a fragment by: name the step\'s class otherwise'
+      )
     );
   });
 });

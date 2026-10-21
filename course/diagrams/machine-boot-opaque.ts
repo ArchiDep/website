@@ -3,11 +3,13 @@
 // storage and the devices. Its steps follow the boot: the processor runs the
 // firmware, which has the disk controller copy the bootloader into memory,
 // which has it copy the kernel, which has it copy init, each jumping to the
-// next once it is copied.
+// next once it is copied. The kernel and init make their data as they run,
+// beside what was copied.
 import {
   diagram,
   fills,
   focusOn,
+  grows,
   lit,
   live,
   step,
@@ -21,7 +23,7 @@ const cells = (program: string, count: number): string[] =>
   Array.from({ length: count }, (_, i) => `${program}-cell-${i}`);
 const FIRMWARE_CELLS = cells('firmware', 14);
 const BOOTLOADER_CELLS = cells('bootloader', 4);
-const KERNEL_CELLS = cells('kernel', 6);
+const KERNEL_CELLS = cells('kernel', 5);
 const INIT_CELLS = cells('init', 3);
 // Where each program waits for the disk controller, looping on its status, or,
 // for the kernel, where the processor rests until an interrupt.
@@ -116,7 +118,7 @@ export default diagram({
       'firmware, the memory, the disk controller and the device controllers. ' +
       'The storage and the devices are behind their controllers, and a device ' +
       'can interrupt the processor. Once booted, the memory holds the kernel ' +
-      'and init.',
+      'and init, each beside its data.',
     start:
       'The machine is powered on. There is no program or data in memory yet.'
   },
@@ -203,11 +205,22 @@ export default diagram({
       RUNNING_FROM_MEMORY
     ),
     step(
+      'As it runs, the kernel makes its data in memory, beside its ' +
+        'instructions: its stack and its heap, which the file never held.',
+      works(),
+      lit(KERNEL_WAITS),
+      grows('data-kernel'),
+      // As the kernel runs, so that only its data growing changes
+      ...wires(FETCH_MEMORY),
+      RUNNING_FROM_MEMORY
+    ),
+    step(
       'The kernel frees the memory the bootloader was copied into: the ' +
         'bootloader is no longer needed.',
       works(),
       lit(KERNEL_WAITS),
-      teardown(['band-bootloader']),
+      // The data's label too, once explained
+      teardown(['band-bootloader', 'data-kernel-label']),
       // As the kernel runs, so that only the band going changes
       ...wires(FETCH_MEMORY),
       RUNNING_FROM_MEMORY
@@ -245,9 +258,11 @@ export default diagram({
       RUNNING_FROM_MEMORY
     ),
     step(
-      'Init runs, its instructions fetched from memory one after the other.',
+      'Init runs, its instructions fetched from memory one after the other, ' +
+        'and makes its own data beside them.',
       works(),
       walks(...INIT_CELLS),
+      grows('data-init'),
       ...wires(FETCH_MEMORY),
       RUNNING_FROM_MEMORY
     )
