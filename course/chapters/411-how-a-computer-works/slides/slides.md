@@ -1041,6 +1041,33 @@ adder is the simplest way to do it.
 
 ---
 
+### The ALU
+
+<img src="images/alu.svg" alt="The ALU symbol: two operands, A and B, go in, the result, A + B or A − B, comes out, and a subtract control signal tells it which" class="mx-auto h-90">
+
+**A**rithmetic **L**ogic **U**nit
+
+**Notes:**
+
+A processor's adder is part of its **ALU**, its **arithmetic logic unit**. It
+takes two numbers, A and B, and gives back a result. A **control signal** tells
+it which operation to perform.
+
+A circuit that can add can also subtract, because A − B is the same as A + (−B).
+Negative numbers are written in binary in a way called **two's complement**,
+where −B is obtained by inverting every bit of B and adding 1. With an inverter
+on each bit of B, switched on by a single "subtract" signal, and that same
+signal used as the first adder's carry in to add the 1, the same adder computes
+A − B instead of A + B.
+
+A modern processor's ALU can do much more than add and subtract. It can also
+apply **logic operations** like AND, OR, XOR and NOT to every bit of its
+operands at once, compare two numbers, or shift their bits left or right. Each
+is a circuit built out of gates, and the control signals choose which one gives
+the result.
+
+---
+
 ## Remembering
 
 ---
@@ -1755,14 +1782,15 @@ registers.
 
 **Notes:**
 
-The conceptual CPU we demonstrated is still how a modern processor works: it
+The conceptual CPU demonstrated before is still how a modern processor works: it
 reads instructions from memory and executes them, one after the other. The
 [Intel 8080](https://en.wikipedia.org/wiki/Intel_8080) (1974), an 8-bit
 processor, is very close to it.
 
 Almost everything that changed since the microprocessors of the 1970s makes them
-faster or keeps programs apart, without changing that model. The bigger the
-word, the more it changed. Each word links to more about it.
+faster or keeps programs isolated, without changing that model. The bigger the
+word in the word cloud, the more influential it is. Each word links to more
+about it.
 
 The 8080 ran at 2 MHz: two million clock cycles per second. A processor today
 runs at a few gigahertz, more than a thousand times faster, and memory has not

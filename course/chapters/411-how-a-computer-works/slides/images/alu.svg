@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 300" width="680" height="300">
+  <title>The ALU symbol: two operands, A and B, in on the right, the result, A + B or A − B, out on the left, and a subtract control signal in from the top</title>
+  <style>
+    .box { fill: #ffffff; stroke: #1d1d1f; stroke-width: 6; stroke-linejoin: round; }
+    .label { font-family: Helvetica, Arial, sans-serif; font-size: 44px; font-weight: bold; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
+    .small { font-family: Helvetica, Arial, sans-serif; font-size: 28px; fill: #6e6e73; text-anchor: middle; dominant-baseline: middle; }
+    .start { text-anchor: start; }
+    .data-path { fill: none; stroke: #1971c2; stroke-width: 30; }
+    .marker-data { fill: #1971c2; }
+    .wire { fill: none; stroke: #1d1d1f; stroke-width: 5; }
+    .marker-wire { fill: #1d1d1f; }
+  </style>
+  <defs>
+    <!-- The arrowheads of the machine diagrams: the data arrow starts where
+         its path ends, the wire arrow ends there -->
+    <marker id="data-arrow" viewBox="0 0 8 10" refX="0" refY="5" markerWidth="1.6" markerHeight="2" orient="auto">
+      <path class="marker-data" d="M0 0 L8 5 L0 10 z"/>
+    </marker>
+    <marker id="wire-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path class="marker-wire" d="M0 0 L10 5 L0 10 z"/>
+    </marker>
+  </defs>
+
+  <!-- The operands, in on the right -->
+  <path class="data-path" d="M610 108 H448" marker-end="url(#data-arrow)"/>
+  <text class="label" x="640" y="108">A</text>
+  <path class="data-path" d="M610 241 H448" marker-end="url(#data-arrow)"/>
+  <text class="label" x="640" y="241">B</text>
+
+  <!-- The result, out on the left -->
+  <path class="data-path" d="M240 175 H88" marker-end="url(#data-arrow)"/>
+  <text class="small" x="140" y="128">A + B or A − B</text>
+
+  <!-- The control signal: subtract instead of add -->
+  <path class="wire" d="M270 20 V115" marker-end="url(#wire-arrow)"/>
+  <text class="small start" x="286" y="36">subtract</text>
+
+  <!-- The ALU, the same shape as in the machine diagrams, twice the size -->
+  <polygon class="box" points="400,70 400,146 372,174 400,202 400,280 240,220 240,130"/>
+  <text class="label" x="316" y="176">ALU</text>
+</svg>
