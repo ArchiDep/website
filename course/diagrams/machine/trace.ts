@@ -82,6 +82,12 @@ export interface Trace {
    * its annotations, which the drawing shows.
    */
   readonly start: Readonly<Record<string, Value>>;
+  /**
+   * The program as the room reads it, before the processor runs it: its
+   * instructions, then its data.
+   */
+  readonly reading: readonly StepState[];
+  /** The processor running it, from the annotations going. */
   readonly steps: readonly StepState[];
   /** The memory once the program has halted. */
   readonly memory: readonly number[];
@@ -90,6 +96,7 @@ export interface Trace {
 type Pace = 'full' | 'medium' | 'fast';
 
 export const CLOCK = ['clock', 'wire-clock'];
+export const MEMORY_CELLS = PROGRAM.map((_, cell) => `cell-${cell}`);
 const ADDRESS_TO_MEMORY = [
   'selector',
   'wire-select',
@@ -698,23 +705,24 @@ export function trace(
     { lit: [`cell-${result}`], focus: null }
   );
 
-  // The beginning, told over the program as the room reads it, which only the
-  // trace knows: where its instructions are, then its data, in the same
-  // memory; then the annotations go, since the processor knows none of it.
-  // Each comes back when the processor first uses its cell.
+  // The program as the room reads it, which only the trace knows: where its
+  // instructions are, then its data, in the same memory, the memory in focus.
+  // Before the trace, the annotations go, since the processor knows none of
+  // it. Each comes back when the processor first uses its cell.
   const sorted = (cells: Set<number>): number[] =>
     [...cells].sort((a, b) => a - b);
   const cellsOf = (cells: Set<number>): string[] =>
     sorted(cells).map(cell => `cell-${cell}`);
   const used = new Set([...instructions, ...data]);
   const quiet = { tick: false, access: null, live: [] } as const;
-  steps.unshift(
+  const inMemory = ['memory', ...MEMORY_CELLS];
+  const reading: StepState[] = [
     {
       caption: `${capitalized(cellsNamed(instructions))} hold the program: its instructions, one per cell.`,
       ...quiet,
       lit: cellsOf(instructions),
       values: {},
-      focus: null
+      focus: inMemory
     },
     {
       caption:
@@ -723,23 +731,23 @@ export function trace(
       ...quiet,
       lit: cellsOf(data),
       values: {},
-      focus: null
-    },
-    {
-      caption:
-        'The processor knows none of this: to it, the memory holds only ' +
-        'bits. A cell is an instruction or a number only once the processor ' +
-        'uses it as one.',
-      ...quiet,
-      lit: [],
-      values: Object.fromEntries(
-        sorted(used).map(cell => [`annotation-${cell}`, null])
-      ),
-      focus: ['memory', ...cellsOf(used)]
+      focus: inMemory
     }
-  );
+  ];
+  steps.unshift({
+    caption:
+      'The processor knows none of this: to it, the memory holds only ' +
+      'bits. A cell is an instruction or a number only once the processor ' +
+      'uses it as one.',
+    ...quiet,
+    lit: [],
+    values: Object.fromEntries(
+      sorted(used).map(cell => [`annotation-${cell}`, null])
+    ),
+    focus: ['memory', ...cellsOf(used)]
+  });
 
-  return { start: { 'program-counter': 0 }, steps, memory };
+  return { start: { 'program-counter': 0 }, reading, steps, memory };
 }
 
 /** Cells as a caption names them, such as "cells 0 to 8" or "cells 3 and 5". */

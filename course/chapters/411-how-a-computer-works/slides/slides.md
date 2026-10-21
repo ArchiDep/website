@@ -19,7 +19,7 @@ what the processes of a deployment actually are.
 - Memory (**RAM**: **r**andom **a**ccess **m**emory)
 - Storage
 - Input and output (**I/O**)
-- The bus that connects them
+- The buses that connects them
 
 **Notes:**
 

@@ -1,7 +1,9 @@
 // The toy machine of "How a computer works": an 8-bit processor and a memory of
 // sixteen cells holding the program of the trace, a multiplication by repeated
-// addition. Its steps are the program's trace, worked out by the interpreter
-// in `machine/trace.ts`, each step told with the machine's vocabulary.
+// addition. It opens with both drawn opaque, then shows the memory and the
+// program in it, the buses, and the processor's components. Its other steps are
+// the program's trace, worked out by the interpreter in `machine/trace.ts`,
+// each step told with the machine's vocabulary.
 import {
   diagram,
   focusOn,
@@ -9,17 +11,30 @@ import {
   live,
   reads,
   step,
+  teardown,
   tick,
   value,
   writes,
   type Action
 } from '../src/diagrams/build/machine';
-import { CLOCK, trace, type StepState } from './machine/trace';
+import { CLOCK, MEMORY_CELLS, trace, type StepState } from './machine/trace';
+
+// What the buses are drawn as outside the processor drawn opaque, the paths
+// coming out of it included.
+const BUSES = [
+  'data-bus',
+  'address-bus',
+  'path-selector-address-bus',
+  'path-bus-alu',
+  'path-data-bus-memory',
+  'path-address-bus-memory'
+];
 
 // The parts a step can be about; the others are faded while it is the current
 // one. The control unit takes part in every step, and is never faded; the
 // clock is in focus when it ticks, at the step starting each phase.
 const focus = focusOn([
+  'processor-cover',
   'program-counter',
   'path-pc-selector',
   'path-ir-selector',
@@ -45,7 +60,7 @@ const focus = focusOn([
   'memory',
   'wire-read-write',
   ...CLOCK,
-  ...Array.from({ length: 16 }, (_, i) => `cell-${i}`)
+  ...MEMORY_CELLS
 ]);
 
 function actionsOf(state: StepState): Action[] {
@@ -60,7 +75,8 @@ function actionsOf(state: StepState): Action[] {
   ];
 }
 
-const { start, steps } = trace();
+const { start, reading, steps } = trace();
+const stepOf = (state: StepState) => step(state.caption, ...actionsOf(state));
 
 export default diagram({
   captions: {
@@ -70,9 +86,33 @@ export default diagram({
       'adding 3 twice, and leaves its result in cell 14. The program counter ' +
       'is at 0, ready to start.',
     start:
-      'The program is in memory, and the program counter is at 0. It ' +
-      'multiplies 3 by 2 by adding 3 twice, and leaves its result in cell 14.'
+      'A processor and a memory, connected by a data bus and an address bus.'
   },
   start: Object.entries(start).map(([slot, held]) => value(slot, held)),
-  steps: steps.map(state => step(state.caption, ...actionsOf(state)))
+  steps: [
+    step(
+      'The memory has sixteen cells, numbered 0 to 15, each holding 8 bits.',
+      teardown(['memory-cover']),
+      focus('memory', ...MEMORY_CELLS)
+    ),
+    ...reading.map(stepOf),
+    step(
+      'The address bus carries 4 bits, enough to pick one of the sixteen ' +
+        'cells, as the address inputs of the addressable memory did. The data ' +
+        'bus carries the 8 bits of a cell, to the memory or from it.',
+      focus(...BUSES)
+    ),
+    step(
+      'The processor, an 8-bit CPU, runs the program: it reads each ' +
+        'instruction from memory, then does what it says.',
+      focus('processor-cover')
+    ),
+    step(
+      'Inside the processor: the program counter, the selector, the control ' +
+        'unit with its instruction register, the accumulator, the ALU and the ' +
+        'clock.',
+      teardown(['processor-cover', 'data-bus-label'])
+    ),
+    ...steps.map(stepOf)
+  ]
 });
