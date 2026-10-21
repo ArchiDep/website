@@ -455,7 +455,8 @@ current, which comes back through the ground.
 
 The source is marked `V`, for **voltage**: the electrical "pressure" with which
 a battery pushes current around a circuit, measured in **volts**. Both words
-come from Alessandro Volta, the Italian physicist who invented the battery in 1800.
+come from Alessandro Volta, the Italian physicist who invented the battery
+in 1800.
 
 The ground and the source are the two symbols used in all the circuits from now
 on.
@@ -1252,8 +1253,9 @@ data inputs reaches the output.
 **Notes:**
 
 The decoder, four D latches and the selector, put together: a memory of four
-cells of one bit each. Each cell is a D latch, and the two address bits, `A1` and
-`A0`, choose which one is used. Each cell's output is labelled with its address.
+cells of one bit each. Each cell is a D latch, and the two address bits, `A1`
+and `A0`, choose which one is used. Each cell's output is labelled with its
+address.
 
 - **Writing**: DATA goes to every cell, but WRITE goes through the decoder,
   which only sends it to the cell at the address. Only that cell stores DATA,
@@ -1684,61 +1686,41 @@ series.
 
 **Notes:**
 
-TODO: the components built in the first half, connected. The counter is the
-program counter, the adder is in the ALU, the flip-flops hold the accumulator,
-the instruction register and the memory cells, the decoder picks a memory cell
-from its address, and the selector chooses whether the program counter or the
-instruction gives the address.
+The circuits built so far, connected into a computer: the **ALU**, the counter
+as the **program counter**, flip-flops holding the **accumulator** and the
+**instruction register**, and latches holding the **memory** cells. Decoders and
+selectors are used throughout to steer addresses and data: to pick a memory cell
+by its address, to choose whether the program counter or the instruction gives
+that address, or which component a value goes to.
 
-Every value, instructions included, travels on the shared **data bus**, and
-addresses travel on the **address bus**, to the memory. The control unit directs
-everything with control signals: which component, the memory included, puts its
-value on the data bus, which one takes it in on the next tick, what the ALU
-computes, and which address the selector lets through. Only one component puts
-a value on the bus at a time.
-
-Blue paths carry data, 8 bits at once, and orange paths carry addresses, 4 bits
-at once. An instruction arrives in the instruction register as 8 bits of data;
-its 4 bits of address then leave in orange, to the selector, or to the program
-counter for a jump. Single wires carry 1 bit each. Two control signals are drawn
-all the way: the one that tells the selector which address to let through, and
-**subtract**, which tells the ALU to subtract instead of add for `SUB`. The ALU
-answers on the **zero** wire, whether its last result was 0, which `JUMPZ`
-reads. The memory's R/W wire is one of the other control signals, seen only
-where it arrives: it tells the memory whether to put a cell's value on the data
-bus or to take the value on the bus into the cell.
+Values, instructions included, travel 8 bits at a time on the **data bus**
+(blue), and addresses 4 bits at a time on the **address bus** (orange). The
+**control unit** directs everything with **control signals**: which component
+puts its value on the data bus, which one takes it in, and what the ALU
+computes. The ALU tells it on its **zero** wire whether its last result was 0,
+which `JUMPZ` needs.
 
 The control unit repeats the same cycle for every instruction:
 
-1. **Fetch**: the program counter's address goes to the memory, the
-   instruction at that address comes back into the instruction register, and
-   the program counter adds 1.
-2. **Decode**: the control unit reads the instruction's 4 bits of operation to
-   know what to do.
-3. **Execute**: it tells the other components what to put on the buses and
-   what to take from them. `LOAD`, `STORE`, `ADD` and `SUB` use the memory
-   again, at the instruction's address, which the selector lets through instead
-   of the program counter's; `JUMP` only changes the program counter.
+1. **Fetch**: the instruction at the program counter's address comes into the
+   instruction register, and the program counter adds 1.
+2. **Decode**: the control unit reads the instruction's 4-bit operation code.
+3. **Execute**: it has the other components move and compute values, using the
+   instruction's address for the memory, or for the program counter on a jump.
 
-The clock is connected to every component that holds a value: the registers,
-the program counter and the control unit. On each tick they all take their new
-values at once, so each step's result is ready, and stays put, before the next
-step uses it. The ALU and the selector hold nothing: their output follows their
-inputs. That is why the accumulator can feed the ALU and take its result back:
-it only takes the new value on the tick, then holds it.
+On each tick of the clock, every component that holds a value takes its new
+value at the same time, so each step's result is ready, and stays put, before
+the next step uses it.
 
-The program uses the three building blocks of structured programming.
-**Sequence**: the program counter adds 1 after each instruction, so they run one
-after the other. **Selection**: `JUMPZ` chooses between two ways forward,
-depending on the last result. **Iteration**: `JUMP 0` goes back to repeat the
-loop, and `JUMPZ` decides when to leave it. Every `if` and every loop of a
-programming language comes down to such jumps, conditional or not.
+These few instructions are enough for the three building blocks of structured
+programming: **sequence** (the program counter steps through instructions one at
+a time), **selection** (`JUMPZ` chooses depending on the last result) and
+**iteration** (a jump back). Every `if` and every loop comes down to such jumps.
 
-This machine simplifies one thing that every real processor does differently:
-its ALU takes a number straight from memory, over the data bus. A real processor
-never computes on a value in memory. It first copies the value into a register,
-even when a single instruction does both, and its ALU only ever works on
-registers.
+Real processors of the time were more complex. They had several registers,
+longer addresses to reach more memory, and instructions longer than one byte.
+Their ALU also never computed on a value straight from memory: it was first
+copied into a register.
 
 ---
 
@@ -1818,42 +1800,29 @@ microprocessors in the 1980s.
 
 **Notes:**
 
-TODO: a modern machine, drawn like the toy one. Its numbers are those of an
-x86-64 processor, the kind your cloud server runs on. Its firmware chip and its
-disk controller sit on the same buses as the memory. The storage does not: the
-processor cannot address the bytes on the disk, only the disk controller, which
-it asks to copy them into memory. At power-on, the processor starts at an
-address that leads to the firmware, which is read but never written. The
-firmware has the bootloader copied from the storage into the memory and jumps to
-it, and the bootloader does the same with the kernel. A program is only bytes
-copied into memory, then jumped to.
+The same machine, with the numbers of a modern **x86-64** processor, the kind
+most cloud servers run on:
 
-The toy machine could never do this: with 4-bit addresses, its memory has 16
-bytes. A modern processor works with 64 bits at a time, and its addresses are 64
-bits too, enough to address far more memory than any computer has. Today's
-processors only use 48 to 57 of those bits, which is still plenty.
+- It works with **64 bits** at a time, and its addresses are 64 bits too: enough
+  for far more memory than any computer has, where the previous machine's 4-bit
+  addresses only reached 16 bytes.
+- It has **16 registers** instead of a single accumulator, and **several ALUs**
+  that compute on them.
+- Its **caches**, L1, L2 and L3, keep copies of recently used memory close to
+  the processor.
+- Its instructions are **1 to 15 bytes** long, instead of always one.
 
-It also has more than one register to compute with: an x86-64 processor has 16
-general-purpose registers, and the ALU can take its operands from any of them
-and write its result into any of them. Values from memory are loaded into a
-register before the ALU uses them, and stored back afterwards. A modern
-processor also has several ALUs, and works on several instructions in the same
-tick when they do not depend on each other. A register can also hold an
-address: that is how a program walks through memory, one address after the
-other, without a separate instruction for each one.
+It also shows parts the previous machine left out:
 
-Between the processor and the buses are its caches, small and fast memories that
-keep copies of recently used memory, since memory is far and slow. The processor
-looks in L1 first, then L2, then L3, each larger and slower than the one before,
-and only then asks the memory. L1 and L2 belong to a core; L3 is shared by all
-of a processor's cores.
+- The **firmware**, a small program built into the computer, on a **ROM** chip:
+  read-only memory, which keeps its content without power.
+- The **storage**, a disk that keeps programs and files. The memory (RAM) is
+  **volatile**: it loses its content when the power is off. The storage is
+  **persistent**: it keeps its content. The processor cannot address storage
+  bytes directly: it asks the **disk controller**, which is on the buses, to
+  copy them between the disk and the memory.
 
-Its instructions are not all the same size, as the toy machine's were: an
-x86-64 instruction is 1 to 15 bytes long, and there is no fixed split between
-operation and address.
-
-A modern computer no longer has a single shared bus, as drawn here. The
-processor reaches the memory, the firmware and the devices through separate,
+A modern computer no longer has a single shared bus as drawn here, but separate,
 faster connections. What the drawing shows still holds: everything has an
 address, and data travels between the processor and what it addresses.
 
@@ -1869,7 +1838,35 @@ address, and data travels between the processor and what it addresses.
 
 **Notes:**
 
-TODO: the same machine with its processor drawn as a box, to follow the boot.
+The same machine, with its processor drawn as a box. Unlike the previous
+machine, it has several **cores**, drawn stacked: each one is a complete
+processor that runs programs of its own. The storage and the devices (keyboard,
+screen, network) sit behind their **controllers**, which are on the buses like
+the memory. The processor talks to a controller by reading and writing its
+registers, at addresses, as it does with memory.
+
+At power-on, the memory is empty. The processor starts at a fixed address,
+which leads to the firmware's chip instead of the memory. From there, **booting
+is a chain of programs**: each one has the next copied from the storage into
+memory, then jumps to its first instruction, and the processor runs it.
+
+The processor does not copy the bytes itself. A program asks the disk
+controller, which copies them into memory over the buses on its own. When it is
+done, the controller sends an **interrupt**: the processor stops whatever it is
+running and jumps to the kernel's code that handles it. Devices do the same when
+a key is pressed or data arrives from the network. With nothing to run, the
+kernel stops the processor until the next interrupt: a server spends most of its
+time waiting.
+
+A program in memory is its instructions, copied from its file, plus the data it
+makes as it runs. The kernel gives it that memory, and frees it when the program
+ends. Once booted, every program is started the same way, whenever it is needed:
+a desktop and a browser on a laptop, or on a server, an SSH server and the
+shells of the users who connect. The same program can even run twice, each copy
+with its own memory.
+
+A **program** is an inert file in the storage. A **process** is a program
+copied into memory and being executed by the processor.
 
 ---
 
@@ -1884,22 +1881,15 @@ TODO: the same machine with its processor drawn as a box, to follow the boot.
 
 **Notes:**
 
-When a computer is switched on, its memory is empty: there is no program in it
-to run yet. Starting it, called **booting**, is a chain of programs, each
-loading the next one into memory and handing over to it.
+Each stage of the chain, and what it does:
 
-1. When the power comes on, the CPU starts at a fixed address, like the program
-   counter of the demonstration that started at 0. That address does not lead to
-   the memory but to a chip on the motherboard, which holds the **firmware**. It
-   checks and prepares the hardware, the memory included, then looks for a disk
-   to start from. The modern firmware is **UEFI**, which replaced the older
-   **BIOS**.
-2. The firmware loads the **bootloader** from the disk and into memory, and the
-   CPU runs it from memory. On Linux, the bootloader is usually GRUB. Its job is
-   to find the operating system on the disk.
-3. The bootloader loads the **kernel** into memory and the CPU runs it. The
-   kernel prepares everything it manages: the drivers, the memory, the other
-   cores, and the disk's file system.
+1. The **firmware**, on a chip on the motherboard, checks and prepares the
+   hardware, the memory included, then looks for a disk to start from. The
+   modern firmware is **UEFI**, which replaced the older **BIOS**.
+2. The **bootloader** finds the operating system on the disk. On Linux, it is
+   usually GRUB.
+3. The **kernel** prepares everything it manages: the drivers, the memory, the
+   other cores, and the disk's file system.
 4. The kernel starts a single program: the **first process**, also called the
    **init process**, with process ID 1. On your Ubuntu server, it is
    **systemd**.

@@ -1,4 +1,4 @@
-// The toy machine of "How a computer works": an 8-bit processor and a memory of
+// The machine of "How a computer works": an 8-bit processor and a memory of
 // sixteen cells holding the program of the trace, a multiplication by repeated
 // addition. It opens with both drawn opaque, then shows the memory and the
 // program in it, the buses, and the processor's components. Its other steps are

@@ -102,7 +102,7 @@ export default diagram({
       'the disk controller, which the processor asks to copy from it into ' +
       'memory.',
     start:
-      'A modern computer, drawn like the toy machine. The machine is powered ' +
+      'A modern computer, drawn like the previous machine. It is powered ' +
       'on, and there is no program in memory yet.'
   },
   steps: [

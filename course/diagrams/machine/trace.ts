@@ -1,4 +1,4 @@
-// The trace of the toy machine's program, step by step, as the diagram shows it
+// The trace of the machine's program, step by step, as the diagram shows it
 // and the room plays it: a small interpreter of its seven instructions runs the
 // program and says, for each step, what is lit, what travels and what each
 // part holds, so that the steps are right by construction.
