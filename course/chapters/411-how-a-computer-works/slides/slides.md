@@ -1155,7 +1155,7 @@ clock input marks it as edge-triggered: Q only takes DATA's value when CLK rises
 <logic-diagram name="frequency-divider" names="true" controls="none" theme="light" style="width: 400px; margin: 0 auto">
 </logic-diagram>
 
-<table class="mt-8 text-[#1d1d1f]">
+<table class="fragment mt-8 text-[#1d1d1f]" data-fragment-index="0">
   <tbody>
     <tr>
       <th class="border-b-0! py-0! pr-6! text-right! align-middle font-sans text-3xl">CLK</th>
