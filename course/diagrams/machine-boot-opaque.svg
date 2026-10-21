@@ -115,6 +115,9 @@
     svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
     svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
     svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
+    /* A band of memory, whatever its colour, nothing being drawn under it */
+    svg.diagram[data-family='machine'] .faded .band { fill-opacity: 0.35; stroke-opacity: 0.35; }
+    svg.diagram[data-family='machine'] .faded .band-label { fill: #cfcfd4; }
     svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
     svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
     /* Still lit, but paler, such as an instruction the processor loops on
@@ -244,6 +247,9 @@
     <text id="core-name" class="label chip-name" x="120" y="164">CPU core</text>
     <!-- Turns while the core works, centred in the room above its title -->
     <path id="cog" class="cog transient" d="M140.6,80.1 L147.9,81.4 L147.9,86.6 L140.6,87.9 L139.0,92.9 L144.1,98.3 L141.0,102.5 L134.4,99.3 L130.1,102.4 L131.1,109.7 L126.1,111.3 L122.6,104.8 L117.4,104.8 L113.9,111.3 L108.9,109.7 L109.9,102.4 L105.6,99.3 L99.0,102.5 L95.9,98.3 L101.0,92.9 L99.4,87.9 L92.1,86.6 L92.1,81.4 L99.4,80.1 L101.0,75.1 L95.9,69.7 L99.0,65.5 L105.6,68.7 L109.9,65.6 L108.9,58.3 L113.9,56.7 L117.4,63.2 L122.6,63.2 L126.1,56.7 L131.1,58.3 L130.1,65.6 L134.4,68.7 L141.0,65.5 L144.1,69.7 L139.0,75.1 Z M128,84 A8,8 0 1 0 112,84 A8,8 0 1 0 128,84 Z"/>
+    <!-- The same, still, in the fully drawn diagram: what the processor does,
+         execute programs -->
+    <path class="cog at-rest" d="M140.6,80.1 L147.9,81.4 L147.9,86.6 L140.6,87.9 L139.0,92.9 L144.1,98.3 L141.0,102.5 L134.4,99.3 L130.1,102.4 L131.1,109.7 L126.1,111.3 L122.6,104.8 L117.4,104.8 L113.9,111.3 L108.9,109.7 L109.9,102.4 L105.6,99.3 L99.0,102.5 L95.9,98.3 L101.0,92.9 L99.4,87.9 L92.1,86.6 L92.1,81.4 L99.4,80.1 L101.0,75.1 L95.9,69.7 L99.0,65.5 L105.6,68.7 L109.9,65.6 L108.9,58.3 L113.9,56.7 L117.4,63.2 L122.6,63.2 L126.1,56.7 L131.1,58.3 L130.1,65.6 L134.4,68.7 L141.0,65.5 L144.1,69.7 L139.0,75.1 Z M128,84 A8,8 0 1 0 112,84 A8,8 0 1 0 128,84 Z"/>
   </g>
   <!-- The processor's paths, from the edge of the stack of cores rather than
        from one of them -->

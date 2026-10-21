@@ -78,7 +78,8 @@ const wires = (paths: readonly string[]): Action[] =>
 // What a step is about: what gives and takes the addresses and values that
 // travel, and the buses and paths they travel on. The rest is faded, the cores
 // too while the disk controller copies without them, their cog turning paler.
-// The bands of memory are never faded, so that a band freed is seen to go.
+// The bands of memory are in focus whenever the memory is, so that a band freed
+// is seen to go, and faded with it otherwise.
 const BUSES = ['data-bus', 'address-bus', 'address-bus-label'];
 const CORES = [
   'cores',
@@ -90,7 +91,22 @@ const FIRMWARE = [
   'path-data-bus-firmware',
   'path-address-bus-firmware'
 ];
-const MEMORY_BOX = ['memory', 'memory-border'];
+const BANDS = [
+  'band-bootloader',
+  ...[
+    'kernel',
+    'init',
+    'desktop',
+    'browser',
+    'sshd',
+    'session-1',
+    'ls',
+    'session-2',
+    'sleep',
+    'ps'
+  ].flatMap(name => [`band-${name}`, `data-${name}`])
+];
+const MEMORY_BOX = ['memory', 'memory-border', ...BANDS];
 const MEMORY = [
   ...MEMORY_BOX,
   'path-data-bus-memory',
@@ -187,7 +203,9 @@ export default diagram({
       'firmware, the memory, the disk controller and the device controllers. ' +
       'The storage and the devices are behind their controllers, and a device ' +
       'can interrupt the processor. Once booted, the memory holds the kernel, ' +
-      'init and, on a server, the SSH server, each with its data.',
+      'init and, on a server, the SSH server, each with its data. A program ' +
+      'is an inert file in the storage; a process is a program copied into ' +
+      'memory and being executed by the processor.',
     start:
       'The machine is powered on. There is no program or data in memory yet.'
   },
@@ -231,8 +249,8 @@ export default diagram({
 
     // The bootloader loads the kernel
     step(
-      'The bootloader runs, its instructions fetched from memory one after ' +
-        'the other.',
+      'The bootloader runs: the processor reads its instructions from ' +
+        'memory, and runs them one after the other.',
       works(),
       walks(...BOOTLOADER_CELLS),
       ...wires(FETCH_MEMORY),
@@ -327,8 +345,9 @@ export default diagram({
       RUNNING_FROM_MEMORY
     ),
     step(
-      'Init runs, its instructions fetched from memory one after the other, ' +
-        'and asks the kernel for memory for its data.',
+      'Init runs: the processor reads its instructions from memory and runs ' +
+        'them one after the other, and init asks the kernel for memory for ' +
+        'its data.',
       works(),
       walks(...INIT_CELLS),
       grows('data-init'),
@@ -488,6 +507,23 @@ export default diagram({
       'The server is idle again: until the next connection, the kernel stops ' +
         'the processor.',
       focus(...MEMORY_BOX)
+    ),
+
+    // What to remember
+    step(
+      'A program is a file: inert bytes in the storage, such as init, until ' +
+        'the kernel copies it into memory.',
+      lit('file-init'),
+      focus(...STORAGE)
+    ),
+    step(
+      'A process is a program copied into memory and being executed: the ' +
+        'processor reads a program’s instructions from memory, and runs them one ' +
+        'after the other.',
+      works(),
+      lit('init-cell-1'),
+      ...wires(FETCH_MEMORY),
+      RUNNING_FROM_MEMORY
     )
   ]
 });

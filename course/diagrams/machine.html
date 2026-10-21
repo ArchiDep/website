@@ -114,6 +114,9 @@ svg.diagram[data-family='machine'] :is(.faded .label, .faded .small, .faded .tin
 svg.diagram[data-family='machine'] :is(.faded .bits) { fill: #8e8e93; }
 svg.diagram[data-family='machine'] :is(.faded.core, .faded .core) { stroke: #ebebee; }
 svg.diagram[data-family='machine'] :is(.faded .file) { fill: #f7f7f8; stroke: #ebebee; }
+/* A band of memory, whatever its colour, nothing being drawn under it */
+svg.diagram[data-family='machine'] .faded .band { fill-opacity: 0.35; stroke-opacity: 0.35; }
+svg.diagram[data-family='machine'] .faded .band-label { fill: #cfcfd4; }
 svg.diagram[data-family='machine'] :is(.faded.chip-tab, .faded .chip-tab) { fill: #f7f7f8; }
 svg.diagram[data-family='machine'] .faded .cog { fill: #dcdce0; }
 /* Still lit, but paler, such as an instruction the processor loops on
