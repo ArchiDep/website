@@ -15,10 +15,12 @@ import 'reveal.js/dist/theme/solarized.css';
 import 'reveal.js/plugin/highlight/monokai.css';
 import 'tippy.js/dist/tippy.css';
 import { diagramsPlugin } from '../diagrams/runtime';
+import { defineCoffeeQueuesElement } from './coffee-queues';
 // The embeds need no reveal.js lifecycle wiring: each one defers on its own
 // IntersectionObserver and replays when its slide comes back.
 import { defineStoryElement } from './simgit';
 
+defineCoffeeQueuesElement();
 defineStoryElement();
 defineLogicDiagramElement();
 defineTruthTableElement();

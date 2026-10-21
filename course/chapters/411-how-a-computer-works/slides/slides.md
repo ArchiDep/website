@@ -1990,6 +1990,26 @@ operating system provides:
 
 ---
 
+### Taking turns
+
+<!-- .element: class="corner-title" -->
+
+<coffee-queues style="width: 900px; margin: 0 auto">
+  <span class="fragment"></span>
+  <span class="fragment"></span>
+</coffee-queues>
+
+**Notes:**
+
+TODO: one row at one coffee machine; a second row arriving, taking turns at the
+same machine; a second machine. The machine serves as many coffees per minute
+with two rows as with one, each row getting half; a second machine doubles
+them. A coffee takes about 30 seconds, and the animation runs 15 times faster.
+The picture of two queues at one coffee machine, against two queues at two
+machines, is [Joe Armstrong's][armstrong-coffee], the creator of Erlang.
+
+---
+
 ### Several cores
 
 <div class="grid grid-cols-2 gap-16 text-left">
@@ -2050,6 +2070,7 @@ For a web developer, this means:
      process, and in a PHP-FPM deployment if one is kept as an additional
      exercise. -->
 
+[armstrong-coffee]: https://joearms.github.io/published/2013-04-05-concurrent-and-parallel-programming.html
 [eniac-tubes]: https://commons.wikimedia.org/wiki/File:ENIAC_Tubes_%282585374699%29.jpg
 [telegraph-relay]: https://commons.wikimedia.org/wiki/File:Telegraph_relay,_1850s.jpg
 [transistors]: https://commons.wikimedia.org/wiki/File:Transistorer_%28cropped%29.jpg
