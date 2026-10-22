@@ -86,7 +86,7 @@ or automation. Read [What is a bare repository?][git-bare] for more information.
 
 Copy this script:
 
-```
+```bash
 #!/usr/bin/env bash
 set -e
 

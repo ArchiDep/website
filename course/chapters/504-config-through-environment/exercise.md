@@ -52,12 +52,14 @@ environment if available.
 For example, instead of:
 
 ```php
+<?php
 define('BASE_URL', '/');
 ```
 
 Use this:
 
 ```php
+<?php
 define('BASE_URL', getenv('TODOLIST_BASE_URL') ?: '/');
 ```
 
@@ -78,6 +80,7 @@ Twelve-Factor App](https://12factor.net/config)). The definition of the
 `DB_PASS` variable should have no default and look like this:
 
 ```php
+<?php
 define('DB_PASS', getenv('TODOLIST_DB_PASS'));
 ```
 
@@ -101,6 +104,7 @@ The configuration at the top of your index.php file in your PHP todolist
 repository should look like this:
 
 ```php
+<?php
 define('BASE_URL', getenv('TODOLIST_BASE_URL') ?: '/');
 
 // Database connection parameters.

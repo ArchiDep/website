@@ -141,6 +141,15 @@
 .l-label {
   color: #859900;
 }
+.l-line-number:not(.l-line-number-highlighted) {
+  color: #93a1a1;
+  background-color: #fdf6e3;
+}
+.l-line-number-highlighted {
+  color: #cb4b16;
+  background-color: #f8e4ce;
+  font-weight: bold;
+}
 .l-markup {
   color: #6c71c4;
 }
@@ -330,4 +339,22 @@
 }
 .l-variable-parameter-builtin {
   color: #6c71c4;
+}
+@layer lumis {
+  pre.lumis > code {
+    display: block;
+    width: fit-content;
+    min-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  pre.lumis > code > span.l-line {
+    display: inline-block;
+    width: 100%;
+    min-height: 1lh;
+    vertical-align: top;
+  }
+  .l-line-number {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }

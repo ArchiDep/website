@@ -295,7 +295,7 @@ seam][urls].
 ### Syntax Highlighting
 
 Code blocks in the course material are highlighted at build time by
-[Lumis][lumis], which emits `<pre class="lumis">` with one `<div
+[Lumis][lumis], which emits `<pre class="lumis">` with one `<span
 class="l-line">` per line and `l-*` token classes (`.l-keyword`, `.l-string`,
 `.l-function`, etc.). The theme provides two color schemes for these classes:
 
@@ -310,12 +310,14 @@ application][app-contributing], which is also where the themes they are built
 from are named. Run it from the `app` directory after changing either theme and
 after upgrading Lumis; do not edit the two files by hand.
 
-The structural rules the markup needs — a code block bleeding into the page
-margins, a marked line spanning a block that scrolls, the spacing of a block
-inside a note or a solution — are in `course.css` rather than in the generated
-files. A marked line (`.l-highlighted`, which a code fence asks for with the
-`highlight_lines` decorator documented in the [course material
-documentation][course-code-blocks]) is colored by the scheme itself.
+The generated files also carry Lumis's own layout, in a `lumis` cascade layer
+that any rule of the theme overrides: each line is a block as wide as the widest
+line, so a marked line spans a block that scrolls. The rules the course's pages
+add to it — a code block bleeding into the page margins, wrapping in print, the
+spacing of a block inside a note or a solution — are in `course.css`. A marked
+line (`.l-highlighted`, which a code fence asks for with the `highlight_lines`
+decorator documented in the [course material documentation][course-code-blocks])
+is colored by the scheme itself.
 
 ### Course & Application Components
 

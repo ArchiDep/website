@@ -18,8 +18,8 @@ defmodule ArchiDep.CourseSite.Renderer.MarkdownTest do
     test "highlights the code of a fenced block" do
       assert Markdown.to_html("```bash\npwd\n```\n", context()) ==
                {~s(<pre class="lumis"><code class="language-bash" translate="no" tabindex="0">) <>
-                  ~s(<div class="l-line" data-line="1">) <>
-                  ~s(<span class="l-function-builtin">pwd</span>\n</div></code></pre>), []}
+                  ~s(<span class="l-line" data-line="1">) <>
+                  ~s(<span class="l-function-builtin">pwd</span></span></code></pre>), []}
     end
 
     test "keeps the raw HTML the course writes in its Markdown" do

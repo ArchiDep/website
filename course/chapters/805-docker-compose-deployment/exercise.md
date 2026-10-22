@@ -59,6 +59,7 @@ the definition of the base URL and database connection parameters at the top
 should look something like this:
 
 ```php
+<?php
 define('BASE_URL', getenv('TODOLIST_BASE_URL') ?: '/');
 
 // Database connection parameters.

@@ -85,12 +85,7 @@ defmodule ArchiDep.CourseSite.Renderer.Highlighter do
            ]}
       end
 
-    html =
-      code
-      # The literal of a block ends with the newline that closes its last line,
-      # which Lumis would otherwise number and show as an empty line of its own.
-      |> String.replace_suffix("\n", "")
-      |> Lumis.highlight!(formatter: {:html_linked, [language: language] ++ options})
+    html = Lumis.highlight!(code, formatter: {:html_linked, [language: language] ++ options})
 
     {html, errors}
   end

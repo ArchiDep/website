@@ -19,8 +19,8 @@ defmodule ArchiDep.CourseSite.Renderer.HighlighterTest do
                   | nodes: [
                       html_block(
                         ~s(<pre class="lumis"><code class="language-bash" translate="no" ) <>
-                          ~s(tabindex="0"><div class="l-line" data-line="1">) <>
-                          ~s(<span class="l-function-builtin">pwd</span>\n</div></code></pre>)
+                          ~s(tabindex="0"><span class="l-line" data-line="1">) <>
+                          ~s(<span class="l-function-builtin">pwd</span></span></code></pre>)
                       )
                     ]
                 }, []}
@@ -52,8 +52,8 @@ defmodule ArchiDep.CourseSite.Renderer.HighlighterTest do
                   | nodes: [
                       html_block(
                         ~s(<pre class="lumis"><code class="language-plaintext" translate="no" ) <>
-                          ~s(tabindex="0"><div class="l-line" data-line="1">a\n</div>) <>
-                          ~s(<div class="l-line l-highlighted" data-line="2">b\n</div>) <>
+                          ~s(tabindex="0"><span class="l-line" data-line="1">a</span>\n) <>
+                          ~s(<span class="l-line l-highlighted" data-line="2">b</span>) <>
                           ~s(</code></pre>)
                       )
                     ]
@@ -72,10 +72,28 @@ defmodule ArchiDep.CourseSite.Renderer.HighlighterTest do
                   | nodes: [
                       html_block(
                         ~s(<pre class="lumis"><code class="language-plaintext" translate="no" ) <>
-                          ~s(tabindex="0"><div class="l-line l-highlighted" data-line="1">a\n</div>) <>
-                          ~s(<div class="l-line" data-line="2">b\n</div>) <>
-                          ~s(<div class="l-line l-highlighted" data-line="3">c\n</div>) <>
-                          ~s(<div class="l-line l-highlighted" data-line="4">d\n</div>) <>
+                          ~s(tabindex="0"><span class="l-line l-highlighted" data-line="1">a</span>\n) <>
+                          ~s(<span class="l-line" data-line="2">b</span>\n) <>
+                          ~s(<span class="l-line l-highlighted" data-line="3">c</span>\n) <>
+                          ~s(<span class="l-line l-highlighted" data-line="4">d</span>) <>
+                          ~s(</code></pre>)
+                      )
+                    ]
+                }, []}
+    end
+
+    test "keeps the blank line a block ends with" do
+      context = context()
+      {:ok, document} = Markdown.parse("```\na\n\n```\n", context)
+
+      assert Highlighter.run(document, context) ==
+               {%{
+                  document
+                  | nodes: [
+                      html_block(
+                        ~s(<pre class="lumis"><code class="language-plaintext" translate="no" ) <>
+                          ~s(tabindex="0"><span class="l-line" data-line="1">a</span>\n) <>
+                          ~s(<span class="l-line" data-line="2"></span>) <>
                           ~s(</code></pre>)
                       )
                     ]
@@ -213,5 +231,5 @@ defmodule ArchiDep.CourseSite.Renderer.HighlighterTest do
   defp plain_text(code),
     do:
       ~s(<pre class="lumis"><code class="language-plaintext" translate="no" tabindex="0">) <>
-        ~s(<div class="l-line" data-line="1">#{code}\n</div></code></pre>)
+        ~s(<span class="l-line" data-line="1">#{code}</span></code></pre>)
 end

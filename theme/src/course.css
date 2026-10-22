@@ -18,12 +18,6 @@ main > .archidep-randomize > pre.lumis {
   @apply -mx-(--content-pad);
 }
 
-/* A code block scrolls sideways, so a marked line must be as wide as the code
- * rather than as wide as the box the code is read through. */
-main pre.lumis .l-highlighted {
-  @apply inline-block min-w-full;
-}
-
 /* Paper cannot scroll, so a line the box would be read sideways for is a line
  * the reader of a PDF never sees at all: printed, a code block wraps instead.
  * It wraps anywhere rather than at spaces because the lines this is for are
