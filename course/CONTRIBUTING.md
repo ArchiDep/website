@@ -40,9 +40,11 @@ for AI assistants and automated agents.
   - [Build Output & Asset URLs](#build-output--asset-urls)
   - [JSON Exports](#json-exports)
   - [Client-Side Architecture](#client-side-architecture)
+  - [Lightbox](#lightbox)
   - [Search](#search)
   - [Slides](#slides)
   - [PDF Generation](#pdf-generation)
+  - [Screenshots](#screenshots)
   - [Home Page](#home-page)
 - [Formatting and Linting](#formatting-and-linting)
 - [References](#references)
@@ -1207,6 +1209,50 @@ the Actions tab as well.
 
 As noted in the [`AGENTS.md`](./AGENTS.md), this is an expensive operation; run
 it locally only when you need the files themselves.
+
+### Screenshots
+
+The `npm run screenshot` script
+([`src/scripts/screenshot.ts`](./src/scripts/screenshot.ts)) takes screenshots
+of the course material as the running dev server shows it, with
+[Puppeteer][puppeteer]: a slide, a step of what a slide reveals, or an
+[architecture diagram](#architecture-diagrams) of a page, enlarged or not, at
+any of its steps. It is for checking a change to a slide or a diagram without
+stepping to it by hand.
+
+```bash
+# The slide showing the machine diagram, with 9 then 10 steps reached
+npm run screenshot -- 411 --slides --diagram machine --step 9,10
+
+# A slide by its number, as the deck's counter shows it, or by its heading
+npm run screenshot -- 411 --slides --slide 13
+npm run screenshot -- 411 --slides --slide "closed circuit"
+
+# The diagram of the page, alone or enlarged, at step 9, in dark mode
+npm run screenshot -- 411 --diagram machine --step 9 --dark
+npm run screenshot -- 411 --diagram machine --enlarged --step 9
+```
+
+A chapter is named by its number or its slug. A step is the number of steps
+reached, as the page's stepper counts them, so `0` is none. Without `--step`, a
+page's diagram is fully drawn and a slide is shown as it is arrived at.
+`npm run screenshot -- --help` lists the other options: the window's size, the
+pixel ratio, where the shots go, and so on. The script prints the path of each
+shot it writes, by default in `website/tmp/screenshots`, which Git ignores.
+
+Each shot loads its page anew and waits for the step to settle before it is
+taken: at least a second, then until the animations and transitions that end
+have ended. Animations that never end, such as the current along a live wire,
+are not waited for. `--settle <ms>` waits a fixed time instead, to catch a step
+in motion. A shot that takes longer than `--timeout` (15 s by default) fails and
+stops the run, so that a page that never gets there does not keep it going.
+
+**The dev server has to be running**, on `http://localhost:42000` unless
+`--base-url` says otherwise. The script stops if nothing answers there. It also
+warns about what would make a shot show something other than the sources: a
+watcher of the course, the theme or the application assets that is not running,
+or [diagrams](#architecture-diagrams) not generated again since they changed.
+Starting them is left to whoever runs the dev environment.
 
 ### Home Page
 

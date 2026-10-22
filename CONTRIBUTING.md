@@ -234,6 +234,9 @@ format`.
   course materials from a local build, which needs freshly built and digested
   assets; `scripts/pdf` does all of it (see [PDF
   Generation](./course/CONTRIBUTING.md#pdf-generation)).
+- `npm run screenshot -- <chapter> [options]`: Take screenshots of a slide, a
+  diagram step or an enlarged diagram from the running dev server (see
+  [Screenshots](./course/CONTRIBUTING.md#screenshots)).
 
 ---
 

@@ -78,12 +78,18 @@ const courseDataType = t.readonly(
 type CourseData = t.TypeOf<typeof courseDataType>;
 
 export async function readCourseManifest(file: string): Promise<CourseData> {
-  const decoded = courseDataType.decode(
-    JSON.parse(await readFile(file, 'utf-8'))
-  );
+  return parseCourseManifest(JSON.parse(await readFile(file, 'utf-8')), file);
+}
+
+/**
+ * Decode a manifest read from elsewhere than a file, such as the one a running
+ * site serves; `source` says where it came from in the error.
+ */
+export function parseCourseManifest(data: unknown, source: string): CourseData {
+  const decoded = courseDataType.decode(data);
   if (isLeft(decoded)) {
     throw new Error(
-      `Course data in ${file} is invalid: ${getValidationErrorDetails(decoded.left)}`
+      `Course data in ${source} is invalid: ${getValidationErrorDetails(decoded.left)}`
     );
   }
 

@@ -33,7 +33,8 @@
     "format:root:write": "prettier --write .",
     "format:write": "npm run format:root:write && npm run --workspace course format:write",
     "lint:md": "remark . --frail",
-    "pdf": "npm run --workspace course pdf --"
+    "pdf": "npm run --workspace course pdf --",
+    "screenshot": "npm run --workspace course screenshot --"
   },
   "workspaces": [
     "app",

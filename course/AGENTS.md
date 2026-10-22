@@ -22,3 +22,11 @@ and automated agents interacting with this project.
 - **Run the [script tests](./CONTRIBUTING.md#exercise-scripts) yourself** when a
   change touches what they play, and report their result. If you cannot run
   one, say so instead of reporting the change as done.
+- **Check a slide or a diagram with the [screenshot
+  script](./CONTRIBUTING.md#screenshots)** rather than writing a Puppeteer
+  script of your own. The dev server and the watchers are usually already
+  running: do not start them, and say so if the script warns that one is not.
+  Leave the shots where it writes them, in `website/tmp/screenshots`, which you
+  may write to without being asked, and link to the ones you mention by that
+  path so that the human can open them in the editor. If the script cannot
+  reach what you need to check, extend it rather than working around it.
