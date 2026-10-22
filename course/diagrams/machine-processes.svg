@@ -101,7 +101,7 @@
     /* R or W of the memory's controls, in red, the other letters paled, all
        drawn over the controls with a halo hiding them */
     svg.diagram[data-family='machine'] .read-write.lit { fill: #e03131; stroke: #ffffff; stroke-width: 3; stroke-linejoin: round; paint-order: stroke; }
-    svg.diagram[data-family='machine'] .read-write.lit .unlit { fill: #c7c7cc; }
+    svg.diagram[data-family='machine'] .read-write.lit .unlit { fill: #c7c7cc; dominant-baseline: middle; }
     /* A register's value, one binary digit in each of its boxes */
     svg.diagram[data-family='machine'] .bit-value { font-family: Menlo, Consolas, monospace; font-size: 18px; fill: #1d1d1f; text-anchor: middle; dominant-baseline: middle; }
     /* What the room says aloud: a register's value in decimal, the decoded
