@@ -146,12 +146,11 @@ config :logger, level: :info
 config :phoenix, :json_library, Jason
 
 config :sentry,
-  enable_logs: true,
+  logs: [level: :info, capture_metadata: [:file, :line]],
   before_send: {ArchiDep.Sentry, :before_send},
   environment_name: Mix.env(),
   enable_source_code_context: true,
-  root_source_code_paths: [File.cwd!()],
-  telemetry_processor_categories: [:log, :error, :check_in, :transaction]
+  root_source_code_paths: [File.cwd!()]
 
 config :ueberauth, Ueberauth,
   providers: [
