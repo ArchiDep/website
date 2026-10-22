@@ -1,4 +1,4 @@
-import Reveal from 'reveal.js';
+import type { RevealApi } from 'reveal.js';
 
 declare global {
   interface Window {
@@ -7,12 +7,12 @@ declare global {
      * so that the scripts loaded beside it, such as the Mermaid renderer, can
      * drive the same deck rather than build one of their own.
      */
-    deck?: Reveal.Api;
+    deck?: RevealApi;
 
     /**
      * The same deck under the name reveal.js's own PDF export looks for.
      */
-    Reveal?: Reveal.Api;
+    Reveal?: RevealApi;
 
     /**
      * What the dashboard's log-out control calls. It is a global because the

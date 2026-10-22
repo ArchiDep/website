@@ -4,14 +4,14 @@ import {
   RevealLogicDiagrams
 } from 'companion-gate';
 import 'iconify-icon';
-import Reveal from 'reveal.js';
-import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
-import Markdown from 'reveal.js/plugin/markdown/markdown.esm.js';
-import Notes from 'reveal.js/plugin/notes/notes.esm.js';
-import Search from 'reveal.js/plugin/search/search.esm.js';
+import Reveal, { type RevealApi } from 'reveal.js';
+import Highlight from 'reveal.js/plugin/highlight';
+import Markdown from 'reveal.js/plugin/markdown';
+import Notes from 'reveal.js/plugin/notes';
+import Search from 'reveal.js/plugin/search';
 
-import 'reveal.js/dist/reveal.css';
-import 'reveal.js/dist/theme/solarized.css';
+import 'reveal.js/reveal.css';
+import 'reveal.js/theme/solarized.css';
 import 'reveal.js/plugin/highlight/monokai.css';
 import 'tippy.js/dist/tippy.css';
 import { diagramsPlugin } from '../diagrams/runtime';
@@ -45,7 +45,7 @@ const scrollMode = urlSearch.get('view') === 'scroll';
 // is no longer the first one in the document.
 const titleSlide = () => ({
   id: 'archidep-title-slide',
-  init: (reveal: Reveal.Api) => {
+  init: (reveal: RevealApi) => {
     reveal.getSlides()[0]?.classList.add('title-slide');
   }
 });
@@ -59,7 +59,7 @@ const titleSlide = () => ({
 // title, shown only once the title's fragment is.
 const cornerTitle = () => ({
   id: 'archidep-corner-title',
-  init: (reveal: Reveal.Api) => {
+  init: (reveal: RevealApi) => {
     const box = document.createElement('div');
     box.className = 'corner-title-window';
     box.setAttribute('aria-live', 'polite');
@@ -101,7 +101,7 @@ const cornerTitle = () => ({
 // after the frame that puts it in place.
 const followingOn = () => ({
   id: 'archidep-following-on',
-  init: (reveal: Reveal.Api) => {
+  init: (reveal: RevealApi) => {
     const own = new Map<Element, string | null>();
     const before = (): Element | null => {
       const current = reveal.getCurrentSlide();
@@ -166,7 +166,10 @@ const deck = new Reveal({
     Notes,
     Search
   ],
-  showNotes: getNotesMode(),
+  // reveal.js's own types only allow a boolean, but it also takes
+  // 'separate-page', which prints the notes of each slide on a page of their
+  // own.
+  showNotes: getNotesMode() as boolean,
   slideNumber: 'c/t'
 });
 

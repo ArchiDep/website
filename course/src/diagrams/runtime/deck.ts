@@ -1,7 +1,7 @@
 // Diagrams in a reveal.js deck. reveal.js does the stepping itself, its
 // fragments being the diagram's steps; what is left is the motion, the legend,
 // and printing.
-import type Reveal from 'reveal.js';
+import type { RevealApi, RevealPlugin } from 'reveal.js';
 
 import { setAspect, viewBoxWithoutLegend } from './fit';
 import { animate } from './motion';
@@ -14,10 +14,10 @@ export function diagramsPlugin({
   print
 }: {
   readonly print: boolean;
-}): () => Reveal.Plugin {
+}): () => RevealPlugin {
   return () => ({
     id: 'archidep-diagrams',
-    init: (deck: Reveal.Api): void => {
+    init: (deck: RevealApi): void => {
       for (const figure of deck
         .getSlidesElement()
         ?.querySelectorAll<HTMLElement>('.diagram-figure') ?? []) {

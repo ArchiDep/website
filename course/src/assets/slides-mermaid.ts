@@ -1,6 +1,6 @@
 import { icons } from '@iconify-json/fluent';
 import mermaid from 'mermaid';
-import Reveal from 'reveal.js';
+import type { RevealApi } from 'reveal.js';
 
 import { required } from './utils';
 
@@ -15,7 +15,7 @@ const scrollMode = urlSearch.get('view') === 'scroll';
 // The deck `src/assets/slides.ts` set up. This script is loaded beside it on a
 // slides page and nowhere else, so a page with no deck is a mistake in the
 // layout rather than something to draw around.
-const deck: Reveal.Api = required(window['deck'], 'Reveal.js deck not found');
+const deck: RevealApi = required(window['deck'], 'Reveal.js deck not found');
 
 mermaid.initialize({
   startOnLoad: false,

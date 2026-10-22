@@ -6,6 +6,8 @@
     "rootDir": "."
   },
   "include": [
+    // What the screenshot script reads of the page's globals, such as its deck.
+    "./src/assets/globals.d.ts",
     "./src/scripts/**/*.ts",
     "./src/diagrams/build/**/*.ts",
     "./diagrams/**/*.ts",
