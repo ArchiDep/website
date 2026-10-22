@@ -149,8 +149,10 @@
     svg.diagram[data-family='machine'] .marker-wire.faded-marker { fill: #dcdce0; }
 
     @media screen and (prefers-reduced-motion: no-preference) {
-      /* Current running along a live wire */
-      svg.diagram[data-family='machine'] .live-current { animation: machine-current 0.6s linear infinite; }
+      /* Current running along a live wire, once it is shown: Safari starts
+         an animation only when its declaration changes, not when an element
+         that has one is shown */
+      svg.diagram[data-family='machine'] .live.visible:not(.gone) .live-current { animation: machine-current 0.6s linear infinite; }
       svg.diagram[data-family='machine'] .tick.visible { animation: machine-tick 0.36s ease-in-out; }
       /* Focus changes in a moment rather than at once */
       svg.diagram[data-family='machine'] :is([data-faded-at], [data-faded-at] *) { transition: fill 0.18s, stroke 0.18s; }
