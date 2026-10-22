@@ -126,8 +126,8 @@ possible to fast-forward, aborting.`** (`pull.ff` set to `only`): a
   configuration from earlier Git use. The page only says what to do when nothing
   is set. Hint: what did the command print? Then: set `pull.rebase` to `false`
   as the page does, and remove the other with `git config --global --unset
-  pull.ff`. If a pull has already rebased and stopped on the conflict (`git
-  status` says a rebase is in progress), `git rebase --abort` goes back to
+pull.ff`. If a pull has already rebased and stopped on the conflict (`git
+status` says a rebase is in progress), `git rebase --abort` goes back to
   before the pull. Rebasing is not in the course, so do not explain it further.
 - **In "Bob: look before you fetch", `git status` already says Bob is behind**:
   his editor fetched for him. VS Code offers to run `git fetch` periodically,

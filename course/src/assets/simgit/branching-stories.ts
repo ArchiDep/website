@@ -40,14 +40,12 @@ export function commitOf(
   displayDigest: string
 ): readonly Operation[] {
   return [
-    ...Object.entries(files).map(
-      ([file, data]): Operation => ({
-        kind: 'writeFile',
-        path: `${target.repo}/${file}`,
-        data,
-        target
-      })
-    ),
+    ...Object.entries(files).map(([file, data]): Operation => ({
+      kind: 'writeFile',
+      path: `${target.repo}/${file}`,
+      data,
+      target
+    })),
     { kind: 'add', pathspecs: Object.keys(files), target },
     { kind: 'commit', message, displayDigest, target }
   ];

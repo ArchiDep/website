@@ -1790,7 +1790,7 @@ Servers.SSH.Client.SystemClient)` — even though the mocks are Hammox-defined (
   the real tool is a **foreign module that does not declare the behaviour**
   (e.g. `ExCmd` behind `Cmd`), `stub_with/2` raises "do not share any
   behaviour"; stub the callback directly instead — `stub(Cmd.Mock, :stream,
-  &ExCmd.stream/2)`.
+&ExCmd.stream/2)`.
 - **Mind the owner scope.** `stub_with` is owner-scoped like any Mox stub, so
   real work done in a **spawned** GenServer/task (a `ServerConnection`, the
   `Ansible.Runner` task) still needs `allow/3` or global mode — the same wall

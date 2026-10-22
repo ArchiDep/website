@@ -179,7 +179,7 @@ export function insertAfter(reference: Element, element: Element): void {
 }
 
 export function removeComments(node: Node): void {
-  for (let child = node.firstChild; child !== null; ) {
+  for (let child = node.firstChild; child !== null;) {
     const next = child.nextSibling;
     if (child.nodeType === COMMENT_NODE) {
       node.removeChild(child);

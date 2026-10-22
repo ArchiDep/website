@@ -89,7 +89,7 @@ TABLE`. Ask: why does the application get a user of its own, rather than
 - **"Configure and start the application".** After: `Guess It is listening on
 http://localhost:3000`, and the home page says `No games won yet. Be the first!`
   and `0 games played in total`. With the notice instead, the error below `Could
-  not load the leaderboard` in the terminal says why. Ask: which program is a
+not load the leaderboard` in the terminal says why. Ask: which program is a
   server, and which is its client? What does each part of `DATABASE_URL` say?
 - **"Implement the missing queries".** A missing query fails silently, not with
   an error. Before any is implemented, the game starts and answers "Higher!" or

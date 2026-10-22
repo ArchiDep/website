@@ -134,10 +134,7 @@ export const currentSessionType = t.union([
 ]);
 
 export type CurrentSession =
-  | AnonymousSession
-  | CachedSession
-  | ConnectedSession
-  | SessionConnectionError;
+  AnonymousSession | CachedSession | ConnectedSession | SessionConnectionError;
 
 const cachedSessionString = window.localStorage.getItem('archidep:session');
 const decodedCachedSession = pipe(
