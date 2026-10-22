@@ -1215,10 +1215,11 @@ it locally only when you need the files themselves.
 The `npm run screenshot` script
 ([`src/scripts/screenshot.ts`](./src/scripts/screenshot.ts)) takes screenshots
 of the course material as the running dev server shows it, with
-[Puppeteer][puppeteer]: a slide, a step of what a slide reveals, or an
+[Puppeteer][puppeteer]: a slide, a step of what a slide reveals, an
 [architecture diagram](#architecture-diagrams) of a page, enlarged or not, at
-any of its steps. It is for checking a change to a slide or a diagram without
-stepping to it by hand.
+any of its steps, or a code block of a page. It is for checking a change to a
+slide, a diagram or the highlighting of code without stepping or scrolling to it
+by hand.
 
 ```bash
 # The slide showing the machine diagram, with 9 then 10 steps reached
@@ -1231,6 +1232,9 @@ npm run screenshot -- 411 --slides --slide "closed circuit"
 # The diagram of the page, alone or enlarged, at step 9, in dark mode
 npm run screenshot -- 411 --diagram machine --step 9 --dark
 npm run screenshot -- 411 --diagram machine --enlarged --step 9
+
+# The 18th and 20th code blocks of the page, counted from the top
+npm run screenshot -- 101 --code 18,20
 ```
 
 A chapter is named by its number or its slug. A step is the number of steps

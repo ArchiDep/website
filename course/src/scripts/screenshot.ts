@@ -1,6 +1,7 @@
 // Screenshots of the course material as the running dev server shows it: a
-// slide, a step of the diagram on it, or a diagram of a page, enlarged or not,
-// at any of its steps. See "Screenshots" in `course/CONTRIBUTING.md`.
+// slide, a step of the diagram on it, a diagram of a page, enlarged or not, at
+// any of its steps, or a code block of a page. See "Screenshots" in
+// `course/CONTRIBUTING.md`.
 import { execFile } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -22,6 +23,8 @@ const USAGE = `Usage: npm run screenshot -- <chapter> [options]
                         page, a shot of it alone; in the deck, the slide
                         showing it, unless --slide names one
   --enlarged            In the page, the diagram enlarged in the lightbox
+  --code <n[,n...]>     In the page, the nth code block (from 1), one shot
+                        each; repeatable
   --step <n[,n...]>     With n steps reached (0: none), one shot each;
                         repeatable. Without it, a page's diagram is fully
                         drawn and a slide is as it is arrived at
@@ -45,6 +48,7 @@ const { values, positionals } = parseArgs({
     slide: { type: 'string', multiple: true },
     diagram: { type: 'string' },
     enlarged: { type: 'boolean', default: false },
+    code: { type: 'string', multiple: true },
     step: { type: 'string', multiple: true },
     size: { type: 'string', default: '1280x800' },
     scale: { type: 'string', default: '1' },
@@ -80,6 +84,9 @@ const settleMs =
 const steps: (number | undefined)[] = (values.step ?? []).flatMap(list =>
   list.split(',').map(Number)
 );
+const codeBlocks = (values.code ?? []).flatMap(list =>
+  list.split(',').map(Number)
+);
 
 if (sizeMatch === null) {
   fail(`--size must be <width>x<height>, got ${values.size}`);
@@ -108,6 +115,18 @@ if (!values.slides && values.slide !== undefined) {
 if (values.enlarged && values.diagram === undefined) {
   fail('--enlarged needs --diagram');
 }
+if (codeBlocks.some(n => !Number.isInteger(n) || n < 1)) {
+  fail(`--code takes numbers from 1, got ${values.code?.join(' ')}`);
+}
+if (codeBlocks.length !== 0 && values.slides) {
+  fail('--code is for a page, not a deck');
+}
+if (
+  codeBlocks.length !== 0 &&
+  (values.diagram !== undefined || values.step !== undefined)
+) {
+  fail('--code shoots a code block, which has no diagram and no steps');
+}
 
 const baseUrl = values['base-url'];
 const outDir = path.resolve(
@@ -135,11 +154,7 @@ interface Shot {
 class TimeoutError extends Error {}
 
 const suffix = `${values.dark ? '-dark' : ''}${scale === 1 ? '' : `@${scale}x`}`;
-const shots: Shot[] = values.slides
-  ? (values.slide ?? [undefined]).flatMap(slide =>
-      steps.map(step => deckShot(slide, step))
-    )
-  : steps.map(step => pageShot(step));
+const shots = plannedShots();
 
 const browser = await puppeteer.launch({ timeout: timeoutMs });
 let failed = false;
@@ -213,6 +228,17 @@ async function takeShot(
   } finally {
     await Promise.race([page.close(), sleep(2000)]);
   }
+}
+
+function plannedShots(): Shot[] {
+  if (values.slides) {
+    return (values.slide ?? [undefined]).flatMap(slide =>
+      steps.map(step => deckShot(slide, step))
+    );
+  } else if (codeBlocks.length !== 0) {
+    return codeBlocks.map(n => codeShot(n));
+  }
+  return steps.map(step => pageShot(step));
 }
 
 function deckShot(slide: string | undefined, step: number | undefined): Shot {
@@ -404,6 +430,33 @@ function pageShot(step: number | undefined): Shot {
         throw new Error(`No diagram ${diagram} in the page`);
       }
       return { name, image: await figure.screenshot() };
+    }
+  };
+}
+
+function codeShot(n: number): Shot {
+  const name = `${doc.num}-code-${n}`;
+  return {
+    label: name,
+    take: async page => {
+      if (doc.course_type === 'slides') {
+        throw new Error(`${doc.title} is a deck: add --slides`);
+      }
+
+      await page.goto(new URL(doc.url, baseUrl).toString(), {
+        waitUntil: 'load'
+      });
+
+      const blocks = await page.$$('main pre');
+      const block = blocks[n - 1];
+      if (block === undefined) {
+        throw new Error(
+          `No code block ${n} in the page, which has ${blocks.length}`
+        );
+      }
+
+      await settle(page);
+      return { name, image: await block.screenshot() };
     }
   };
 }
