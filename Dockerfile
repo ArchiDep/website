@@ -3,7 +3,7 @@ ARG APP_DEPS_IMAGE=app-deps-compiled
 ################################
 ### Application dependencies ###
 ################################
-FROM elixir:1.20.4-otp-28-alpine AS app-deps
+FROM elixir:1.20.4-otp-29-alpine AS app-deps
 
 RUN apk add --no-cache git && \
     addgroup -S build && \
@@ -128,7 +128,7 @@ RUN npm run --workspace theme build
 #####################
 ### Digest Assets ###
 #####################
-FROM elixir:1.20.4-otp-28-alpine AS digest
+FROM elixir:1.20.4-otp-29-alpine AS digest
 
 RUN addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
@@ -159,7 +159,7 @@ RUN mix phx.digest priv/static -o priv/static && \
 ###########################
 ### Application Release ###
 ###########################
-FROM elixir:1.20.4-otp-28-alpine AS release
+FROM elixir:1.20.4-otp-29-alpine AS release
 
 ARG APP_DEPS_IMAGE
 
@@ -265,7 +265,7 @@ RUN mix sentry.package_source_code && \
 ###################
 ### Application ###
 ###################
-FROM elixir:1.20.4-otp-28-alpine AS app
+FROM elixir:1.20.4-otp-29-alpine AS app
 
 WORKDIR /archidep
 

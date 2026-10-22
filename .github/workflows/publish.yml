@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  ELIXIR_OTP: 1.20.4-otp-28
+  ELIXIR_OTP: 1.20.4-otp-29
 
 jobs:
   publish:

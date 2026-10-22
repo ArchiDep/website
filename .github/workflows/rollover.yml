@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 60
     env:
       ELIXIR_VERSION: 1.20.4
-      ERLANG_VERSION: 28.5.0.8
+      ERLANG_VERSION: 29.1.2
       MIX_ENV: prod
       YEAR: ${{ inputs.year }}
       MODE: ${{ inputs.mode }}

@@ -26,7 +26,7 @@ jobs:
       ARCHIDEP_WEB_ENDPOINT_SECRET_KEY_BASE: YdxkmjX6DMzwlOXvzoDpz+F3rPskbgjghvFn21sBeXlZt8sWRWm7nIRq7Mhg+tmF
       ARCHIDEP_WEB_ENDPOINT_SESSION_SIGNING_SALT: gpWUEtqY2/8uMQq33419KZQmu1iAnZgKIaMEIQl9TIgmyknRYhFyXwEiuc2tJucb
       ELIXIR_VERSION: 1.20.4
-      ERLANG_VERSION: 28.5.0.8
+      ERLANG_VERSION: 29.1.2
       MIX_ENV: test
     services:
       postgres:
@@ -224,7 +224,7 @@ jobs:
     name: Build course material site
     env:
       ELIXIR_VERSION: 1.20.4
-      ERLANG_VERSION: 28.5.0.8
+      ERLANG_VERSION: 29.1.2
       MIX_ENV: prod
     steps:
       - name: Checkout the repository

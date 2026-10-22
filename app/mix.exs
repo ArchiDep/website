@@ -12,12 +12,13 @@ defmodule ArchiDep.MixProject do
       aliases: aliases(),
       deps: project_dependencies(),
       dialyzer: [
-        # Suppress :no_opaque warnings from manipulating opaque structs
-        # (Ecto.Changeset, DateTime) under OTP 28. Still required on Elixir
-        # 1.20.4 / OTP 28: dropping this flag yields 50 call_without_opaque
-        # and contract_with_opaque warnings. Keep the matching
-        # ".vscode/settings.json" setting
-        # ("elixirLS.dialyzerWarnOpts") in sync.
+        # Suppress false opaque-type warnings, still 50 on Elixir 1.20.4 / OTP
+        # 29.1.2: 48 call_without_opaque from the MapSet inside every
+        # %Ecto.Multi{} (MapSet wraps OTP's opaque :sets.set(), which dialyzer
+        # sees as a plain map in the empty set Ecto.Multi.new/0 builds), and 2
+        # contract_with_opaque from the Phoenix.LiveView.JS specs of
+        # ArchiDepWeb.Helpers.DialogHelpers. Keep the matching
+        # ".vscode/settings.json" setting ("elixirLS.dialyzerWarnOpts") in sync.
         flags: [:no_opaque],
         plt_add_apps: [:ex_unit, :mix]
       ],
