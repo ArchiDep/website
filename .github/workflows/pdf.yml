@@ -76,7 +76,8 @@ jobs:
       # fallback font, and an export that waits on the network going quiet,
       # which a 404 does.
       - name: Check the assets address themselves relatively
-        run: grep -qF 'Automatic publicPath is not supported in this browser' app/priv/static/assets/course/slides-mermaid.js
+        run: npm run check:relative-assets
+        working-directory: course
 
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1

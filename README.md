@@ -164,7 +164,7 @@ Run all of these in parallel:
 cd app
 npm start
 
-# Build and watch course assets with Webpack
+# Build and watch course assets with esbuild
 cd course
 npm start
 

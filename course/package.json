@@ -5,14 +5,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "webpack --config webpack.config.cjs",
+    "build": "node build.mjs",
+    "check:relative-assets": "tsx src/scripts/check-relative-assets.ts",
     "diagrams": "tsx src/diagrams/build/cli.ts",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "pdf": "tsx src/scripts/pdf.ts",
     "screenshot": "tsx src/scripts/screenshot.ts",
-    "start": "webpack --config webpack.config.cjs --watch",
-    "test": "tsx --test 'src/**/*.test.ts' 'diagrams/**/*.test.ts'"
+    "start": "node build.mjs --watch",
+    "test": "tsx --test 'src/**/*.test.ts' 'diagrams/**/*.test.ts'",
+    "typecheck": "tsc --noEmit -p tsconfig.assets.json && tsc --noEmit -p tsconfig.scripts.json"
   },
   "devDependencies": {
     "@alphahydrae/simgit": "~0.3.0-beta.1",
@@ -32,7 +34,7 @@
     "chance": "^1.1.13",
     "clipboard": "^2.0.11",
     "companion-gate": "^0.3.0",
-    "css-loader": "^7.1.2",
+    "esbuild": "^0.28.0",
     "fp-ts": "^2.16.10",
     "iconify-icon": "^3.0.0",
     "io-ts": "^2.2.22",
@@ -42,7 +44,6 @@
     "lunr": "^2.3.9",
     "luxon": "^3.7.1",
     "mermaid": "^11.9.0",
-    "mini-css-extract-plugin": "^2.9.2",
     "phoenix": "^1.7.21",
     "preact": "^11.0.1",
     "prettier": "^3.6.2",
@@ -50,12 +51,9 @@
     "puppeteer": "^25.1.0",
     "reveal.js": "^6.0.2",
     "tippy.js": "^6.3.7",
-    "ts-loader": "^9.5.2",
     "ts-pattern": "^5.8.0",
     "tsx": "^4.20.3",
-    "typescript": "^6.0.3",
-    "webpack": "^5.98.0",
-    "webpack-cli": "^7.2.3"
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": "^26",

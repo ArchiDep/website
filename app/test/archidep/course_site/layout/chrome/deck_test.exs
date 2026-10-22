@@ -121,7 +121,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="/assets/course/slides.css">
         <link rel="stylesheet" href="/assets/theme/slides.css">
-        <script defer src="/assets/course/slides-mermaid.js">
+        <script type="module" src="/assets/course/slides-mermaid.js">
         </script>
       </head>
       <body data-theme="light">

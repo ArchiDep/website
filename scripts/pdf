@@ -112,11 +112,7 @@ step "Building the course assets"
 # A bundle that addresses what it fetches absolutely prints a deck with its
 # diagrams missing and its titles in a fallback font. The asset build section of
 # course/CONTRIBUTING.md explains why.
-if ! grep -qF 'Automatic publicPath is not supported in this browser' \
-  "$root_dir/app/priv/static/assets/course/slides-mermaid.js"; then
-  >&2 echo "The course assets do not address themselves relatively."
-  exit 1
-fi
+(cd "$root_dir/course" && npm run --silent check:relative-assets)
 
 # The site build links the digested copy of each asset that cache_manifest.json
 # names, so without this it prints whatever was last digested.

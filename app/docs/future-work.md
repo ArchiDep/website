@@ -664,11 +664,11 @@ describes a case that no longer exists.
 
 ## Stop publishing source maps with the course assets
 
-**Problem:** [`webpack.config.cjs`](../../course/webpack.config.cjs) sets
-`devtool: 'source-map'` unconditionally — `mode` switches on the environment and
-`devtool` does not — so a production build emits a `.map` beside every chunk and
-writes a `sourceMappingURL` comment into all of them. They are published with
-the rest of the assets: a build tree measured here held 267 map files under
+**Problem:** [`build.mjs`](../../course/build.mjs) sets `sourcemap: true`
+unconditionally — `minify` switches on the environment and `sourcemap` does not
+— so a production build emits a `.map` beside every chunk and writes a
+`sourceMappingURL` comment into all of them. They are published with the rest
+of the assets: a webpack build tree measured here held 267 map files under
 `assets/course` totalling 89 MB, the largest single one 4.2 MB. That figure is
 inflated by digested copies accumulating in a long-lived local `priv/static`, so
 a clean build is smaller, but the order of magnitude is the point.
@@ -681,14 +681,14 @@ image built and every deployment made, on a repository whose image is rebuilt on
 each push. It is not a disclosure concern either: the sources are in a public
 repository.
 
-**Proposed approach:** Make `devtool` depend on the mode the way `mode` already
-does.
+**Proposed approach:** Make `sourcemap` depend on the environment the way
+`minify` already does.
 
-- `devtool: false` for production if the maps have no consumer, which is the
+- `sourcemap: false` for production if the maps have no consumer, which is the
   situation today.
-- `hidden-source-map` instead, if they are ever wanted for error reporting: the
-  maps are still emitted, but no `sourceMappingURL` comment points a browser at
-  them, and the build step that would use them uploads them rather than
+- `sourcemap: 'external'` instead, if they are ever wanted for error reporting:
+  the maps are still emitted, but no `sourceMappingURL` comment points a browser
+  at them, and the build step that would use them uploads them rather than
   publishing them.
 
 **Open questions to resolve when scheduling this**

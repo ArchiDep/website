@@ -75,7 +75,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Deck do
         <link rel="preconnect" href={fonts_static_url()} crossorigin />
         <link rel="stylesheet" href={@page.links[:slides_css]} />
         <link rel="stylesheet" href={@page.links[:theme_slides_css]} />
-        <script defer src={@page.links[:slides_mermaid_js]}>
+        <script type="module" src={@page.links[:slides_mermaid_js]}>
         </script>
       </head>
       <body data-theme="light">

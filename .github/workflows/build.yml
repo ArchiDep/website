@@ -203,6 +203,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The bundler strips the types without checking them.
+      - name: Type-check course assets
+        run: npm run typecheck
+        working-directory: course
+
       - name: Build course assets
         run: npm run build
         working-directory: course
@@ -269,18 +274,12 @@ jobs:
       # and from the root of an export. A prefix baked in here would 404 in all
       # but one of those, taking with it the diagrams and the fonts.
       #
-      # What is matched is the message webpack's automatic-publicPath runtime
-      # throws where it cannot work out its own address, present only in a
-      # bundle that has that runtime rather than a prefix. It is matched instead
-      # of the assignment it guards because a string literal is the part of that
-      # runtime a minified build keeps: the names around it, webpack's own
-      # included, are gone by then.
-      #
       # Checked here, where a production build of the assets happens on every
       # push, and again in the `pdf` workflow, which builds them itself and
       # cannot depend on this job having run.
       - name: Check the assets address themselves relatively
-        run: grep -qF 'Automatic publicPath is not supported in this browser' app/priv/static/assets/course/slides-mermaid.js
+        run: npm run check:relative-assets
+        working-directory: course
 
       - name: Install Erlang/OTP & Elixir
         uses: erlef/setup-beam@v1

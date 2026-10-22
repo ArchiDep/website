@@ -566,21 +566,8 @@ async function checkWatchers(): Promise<string[]> {
   const running = (...parts: string[]): boolean =>
     processes.some(({ args }) => parts.every(part => args.includes(part)));
 
-  // webpack names its process "webpack", without its arguments: the course's
-  // is the one running in the course's directory.
-  const cwds = await Promise.all(
-    processes
-      .filter(({ args }) => /^(\S*\/)?webpack\b/u.test(args))
-      .map(({ pid }) =>
-        run('lsof', ['-a', '-p', pid, '-d', 'cwd', '-Fn']).then(
-          ({ stdout: out }) => /^n(.*)$/mu.exec(out)?.[1],
-          () => undefined
-        )
-      )
-  );
-
   const warnings: string[] = [];
-  if (!cwds.includes(courseRoot)) {
+  if (!running('build.mjs', '--watch')) {
     warnings.push(
       'the course assets are not being built: run "npm start" in website/course'
     );

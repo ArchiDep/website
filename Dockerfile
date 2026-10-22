@@ -90,7 +90,7 @@ COPY --chown=build:build ./course/package.json /build/course/
 
 RUN npm ci
 
-COPY --chown=build:build ./course/tsconfig.json ./course/tsconfig.assets.json ./course/webpack.config.cjs /build/course/
+COPY --chown=build:build ./course/tsconfig.json ./course/tsconfig.assets.json ./course/build.mjs /build/course/
 COPY --chown=build:build ./course/src/ /build/course/src/
 
 ENV NODE_ENV=production

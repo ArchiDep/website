@@ -147,12 +147,11 @@ the dashboard functionality is only available during the current semester).
     generating PDFs and building the search index.
   - `src/shared/**/*.{ts,tsx}`: Common TypeScript code used in many client-side
     scripts and build-time tasks.
+  - `build.mjs`: esbuild script bundling client-side assets.
   - `tsconfig.json`: Base TypeScript configuration file.
   - `tsconfig.assets.json`: TypeScript configuration for client-side
     assets.
   - `tsconfig.scripts.json`: TypeScript configuration for build-time scripts.
-  - `webpack.config.cjs`: Webpack configuration file for bundling client-side
-    assets.
 
 ### Exercise Scripts
 
@@ -988,7 +987,7 @@ See the next sections for more specific guidelines.
 - **Main Frameworks, Languages and Libraries**
   - [Liquid][liquid] tags and filters in the Markdown, rendered by the
     application
-  - [Webpack][webpack] for bundling JavaScript and [TypeScript][typescript]
+  - [esbuild][esbuild] for bundling JavaScript and [TypeScript][typescript]
     scripts
   - [Preact][preact] and [Preact signals][preact-signals] with TSX for
     client-side interactive components
@@ -1029,31 +1028,38 @@ subsystem, in
 
 ### Build Output & Asset URLs
 
-Client-side assets are bundled by [Webpack][webpack]
-([`webpack.config.cjs`](./webpack.config.cjs)), which exports two
-configurations:
+Client-side assets are bundled by [esbuild][esbuild]
+([`build.mjs`](./build.mjs)), in three builds:
 
-- The main config bundles the `course`, `slides` and `slides-mermaid` entry
-  points (and their CSS) into `app/priv/static/assets/course`.
-- A second config bundles the `search` entry point into
+- The `course` and `slides` entry points (and the stylesheet `slides` imports)
+  are bundled into `app/priv/static/assets/course` as classic scripts, one file
+  each.
+- The `slides-mermaid` entry point is bundled into the same directory as an ES
+  module, split into the chunks Mermaid loads on demand, and is loaded with
+  `<script type="module">`. Like a deferred script, a module runs once the page
+  is parsed, so it finds the deck `slides.js` has already set up.
+- The `search` entry point, which the dashboard loads as well, is bundled into
   `app/priv/static/assets/search`.
+
+esbuild strips TypeScript types without checking them: `npm run typecheck`
+checks them, and CI runs it.
 
 **Cache busting is `phx.digest`'s, and the Phoenix `cache_manifest.json` is the
 site's single asset manifest.** Entry bundles are therefore named plainly
 (`course.js`), and the digest step — which runs over the whole static directory,
 after every bundler has written into it — is what gives them a content-hashed
-name and records it. Chunks Webpack loads at runtime are the exception: the
-Webpack runtime requests those by name from its own `publicPath` and never
-consults a manifest, so they keep Webpack's `[chunkhash]`.
+name and records it. Chunks are the exception: a module imports them by name and
+never consults a manifest, so they keep esbuild's own content hash.
 
 **What a bundle fetches for itself is addressed relative to the file asking for
-it** (`publicPath: 'auto'`) — a runtime chunk, a font a bundled stylesheet
-names. None of that goes through the build's [URL seam][urls], and where a build
-publishes its assets is not known when they are bundled: the same bundle is
-served under an edition prefix, under a mount point, and from the root of the
-copy the PDFs are printed from. An address baked in here resolves in exactly one
-of those and 404s in the rest, which shows up as a deck printed with its
-diagrams missing and its titles in a fallback font.
+it** — a chunk, a font a bundled stylesheet names. That is what esbuild does as
+long as no `publicPath` is set, and `npm run check:relative-assets` checks it,
+in CI and in `scripts/pdf`. None of that goes through the build's [URL
+seam][urls], and where a build publishes its assets is not known when they are
+bundled: the same bundle is served under an edition prefix, under a mount point,
+and from the root of the copy the PDFs are printed from. An address baked in
+here resolves in exactly one of those and 404s in the rest, which shows up as a
+deck printed with its diagrams missing and its titles in a fallback font.
 
 The build reads `cache_manifest.json` to turn an asset's logical name into the
 name it was published under. **Do not hardcode hashed asset paths**: a page
@@ -1082,7 +1088,7 @@ prefix:
 ### Client-Side Architecture
 
 The main client entry point is [`src/assets/course.ts`](./src/assets/course.ts),
-bundled by Webpack and loaded on every page. It initializes the interactive
+bundled by esbuild and loaded on every page. It initializes the interactive
 features ([search](#search), copy buttons, [randomized
 values](#randomized-values), the [cloud server widget](#cloud-server-widget),
 the table of contents, "back to top", [tell me more](#tell-me-more), [Git
@@ -1275,11 +1281,15 @@ other document.
 ## Formatting and Linting
 
 - Use [Prettier][prettier] for formatting TypeScript code.
+- Type-check the TypeScript code with `npm run typecheck` in this directory.
+  Neither the bundler nor `tsx` checks types, so a type error shows up nowhere
+  else before CI.
 
 ---
 
 ## References
 
+- [esbuild][esbuild] for bundling JavaScript and TypeScript
 - [Liquid Documentation][liquid] for HTML templating
 - [simgit][simgit] for interactive Git diagrams
 - [io-ts][io-ts] for runtime type checking and validation
@@ -1295,8 +1305,6 @@ other document.
 - [Reveal][reveal] for slide presentations
 - [TypeScript][typescript]
   - [ts-pattern][ts-pattern] for exhaustive pattern matching
-- [Webpack][webpack] for bundling JavaScript and TypeScript
-  - [Webpack Documentation][webpack-docs]
 
 ---
 
@@ -1306,6 +1314,7 @@ Follow the instructions and guidelines in this document and read the adjacent
 [`AGENTS.md`](./AGENTS.md) file for additional instructions targeted towards AI
 agents.
 
+[esbuild]: https://esbuild.github.io
 [iconify]: https://github.com/iconify/iconify
 [io-ts]: https://github.com/gcanti/io-ts
 [io-ts-concepts]: https://gcanti.github.io/io-ts/
@@ -1326,5 +1335,3 @@ agents.
 [ts-pattern]: https://github.com/gvergnaud/ts-pattern
 [typescript]: https://www.typescriptlang.org
 [urls]: ../app/lib/archidep/course_site/CONTRIBUTING.md#url-and-link-emission
-[webpack]: https://webpack.js.org
-[webpack-docs]: https://webpack.js.org/concepts/
