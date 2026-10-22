@@ -3,8 +3,5 @@
 all: check
 
 check:
-	pushd app && \
-	mix check && \
-	popd && \
-	npm run format && \
-	npm run lint:md
+	cd app && mix check
+	npm run check
