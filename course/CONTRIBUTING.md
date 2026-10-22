@@ -1005,6 +1005,14 @@ See the next sections for more specific guidelines.
   - Try to make impossible states unrepresentable.
   - Never use `any`. If you cannot know about the type of a value, create an
     [`io-ts` codec][io-ts-concepts] to validate it at runtime.
+  - Never write an assertion that can lie to the compiler: a type assertion
+    (`value as Type`, `<Type>value`) or a non-null assertion (`value!`). Each
+    tells the compiler to trust a claim it cannot check, so a wrong claim
+    compiles and fails at runtime. Give the compiler a reason instead: a type
+    annotation, narrowing with a runtime check (`instanceof`, a `type`
+    discriminant, a comparison with `null`), or an `io-ts` codec. `as const`
+    and `satisfies` are allowed, because they only ever make a type more
+    precise or check it, never override it.
   - Use [ts-pattern][ts-pattern] for exhaustive pattern matching.
 
 ---

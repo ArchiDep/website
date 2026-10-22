@@ -14,6 +14,7 @@ and the options for resolving it.
 - [A reference link nothing defines is rendered as its own source text](#a-reference-link-nothing-defines-is-rendered-as-its-own-source-text)
 - [Re-recording the current edition's manifest fails to compile](#re-recording-the-current-editions-manifest-fails-to-compile)
 - [A code block with a blank line breaks a slide's speaker notes](#a-code-block-with-a-blank-line-breaks-a-slides-speaker-notes)
+- [The course's TypeScript asserts types the compiler cannot check](#the-courses-typescript-asserts-types-the-compiler-cannot-check)
 
 <!-- END doctoc -->
 
@@ -167,3 +168,64 @@ inside a fenced code block in a slide's notes as it fails on a missing asset, or
 keeps their HTML out of the second Markdown pass. The check is simpler and also
 catches the whitespace-only lines that are hard to see in an editor; the fix
 removes the restriction altogether.
+
+## The course's TypeScript asserts types the compiler cannot check
+
+The [TypeScript guidelines][course-typescript-guidelines] forbid any assertion
+that can lie to the compiler: a type assertion (`as Type`) or a non-null
+assertion (`value!`). The course's TypeScript, under `course/src` and
+`course/diagrams`, still holds 43 of them across 21 files. Each one compiles
+whether or not its claim is true, so a wrong claim surfaces only at runtime.
+
+They are of four kinds:
+
+- **A DOM node narrowed to a more precise type** (`as HTMLElement`, `as
+Element`, `as HTMLDialogElement`, `as HTMLCollectionOf<HTMLElement>`): in
+  `randomize.ts`, `search.ts`, `lightbox.ts`, `cloud-server.tsx`, and the
+  diagram build (`actions.ts`, `becomes.ts`, `processes/actions.ts`, `svg.ts`).
+  A `cloneNode` or an `IntersectionObserver` entry's `target` is typed more
+  loosely than what it is. An `instanceof` check narrows it truthfully.
+- **An element of the page assumed to exist** (`querySelector(…)!`,
+  `childNodes[0]!`): seven in `search.ts`, on markup the script builds from its
+  own templates. The [`required`][course-utils] helper it already uses elsewhere
+  fails with a message instead.
+- **An array index assumed to be in range** (`a[i]!`, `.at(-1)!`): in
+  `diagrams/runtime/motion.ts`, `diagrams/runtime/shapes.ts`, the coffee-queues
+  simulation and view, and `diagrams/machine-boot-opaque.ts`. They come from
+  `noUncheckedIndexedAccess` typing an index as possibly `undefined`. A loop
+  over the elements, or a check that throws, removes them.
+- **A value of a type the code cannot otherwise state**: `getNotesMode() as
+boolean` and `window as any` in `slides.ts`, `event as SlideChangedEvent` in
+  `slides-mermaid.ts`, `row as Row` in coffee-queues, `codeElement as
+Randomized` in `randomize.ts`, the match metadata of a search result in
+  `search.ts`, `Object.keys(…) as Operation[]` in `diagrams/machine/trace.ts`,
+  `definition as DiagramDefinition` in `diagrams/build/cli.ts`,
+  `this.#states.get(key) as T` in `diagrams/build/builder.ts`, and
+  `server.address() as AddressInfo` in the static server. These need the most
+  thought: some want an `io-ts` codec, some a narrower type upstream, and the
+  two that work around reveal.js's types, a declaration of what reveal.js
+  actually accepts.
+
+One of the 43, `[] as readonly (readonly [number, number])[]` in `randomize.ts`,
+widens an empty array and cannot lie. A lint rule flags it all the same, and an
+annotation says it as well.
+
+**Nothing enforces the rule**, which is why it was broken again while it went
+unwritten: the repository has no ESLint, and `npm run typecheck` accepts every
+assertion. The rule needs to be enforced as well as written:
+
+- Add ESLint with [typescript-eslint][typescript-eslint] to `course`, with
+  `@typescript-eslint/consistent-type-assertions` set to `{ assertionStyle:
+'never' }` and `@typescript-eslint/no-non-null-assertion`. `as const` and
+  `satisfies` stay allowed under both, as the guidelines allow them.
+- Run it from `npm run check` in `course`, and as a step of the `build-site` job
+  of [`build.yml`][build-workflow] beside the formatting check, so that a new
+  assertion fails CI.
+- Fix the 43 above first, or switch the rules on with the existing ones
+  suppressed one by one, so that CI passes from the first run and the
+  suppressions are the list of what is left.
+
+[build-workflow]: ../../.github/workflows/build.yml
+[course-typescript-guidelines]: ../../course/CONTRIBUTING.md#general-coding-guidelines
+[course-utils]: ../../course/src/assets/utils.ts
+[typescript-eslint]: https://typescript-eslint.io

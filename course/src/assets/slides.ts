@@ -3,8 +3,10 @@ import {
   defineTruthTableElement,
   RevealLogicDiagrams
 } from 'companion-gate';
+import GithubSlugger from 'github-slugger';
 import 'iconify-icon';
-import Reveal, { type RevealApi } from 'reveal.js';
+import type { MarkedExtension } from 'marked';
+import Reveal, { type MarkdownConfig, type RevealApi } from 'reveal.js';
 import Highlight from 'reveal.js/plugin/highlight';
 import Markdown from 'reveal.js/plugin/markdown';
 import Notes from 'reveal.js/plugin/notes';
@@ -140,16 +142,44 @@ const followingOn = () => ({
   }
 });
 
+// A slide is linked to by the identifier of its heading, as the search dialog
+// does, which reveal.js finds in the document to know which slide to show. The
+// marked that converts the deck gives a heading no identifier, so it is given
+// the one the build indexed it under: slugged from its text the way GitHub
+// slugs one, and numbered across the whole deck, which the build reads as one
+// document. The text is the heading's as a reader sees it, so that an emoji
+// drawn as an image, or a comment giving reveal.js the heading's attributes, is
+// left out of it as the build leaves it out.
+//
+// reveal.js hands marked whatever its Markdown configuration says besides its
+// own options, but its type names only the options marked used to take, so the
+// hook marked runs on each slide it converts is typed here as marked's own.
+const slugger = new GithubSlugger();
+const markdown: MarkdownConfig & Pick<MarkedExtension, 'hooks'> = {
+  notesSeparator: '^\\*\\*Notes:\\*\\*',
+  verticalSeparator: '^--v',
+  hooks: {
+    postprocess(html) {
+      const slide = document.createElement('template');
+      slide.innerHTML = html;
+      for (const heading of slide.content.querySelectorAll(
+        'h1, h2, h3, h4, h5, h6'
+      )) {
+        heading.id = slugger.slug(heading.textContent);
+      }
+
+      return slide.innerHTML;
+    }
+  }
+};
+
 const deck = new Reveal({
   hash: true,
   // A deck's fragments pace an explanation as it is given, which a reader of
   // the PDF is not sitting through: print each slide once, fully revealed,
   // rather than once per fragment.
   pdfSeparateFragments: false,
-  markdown: {
-    notesSeparator: '^\\*\\*Notes:\\*\\*',
-    verticalSeparator: '^--v'
-  },
+  markdown,
   plugins: [
     Markdown,
     // Beware that the order of plugins matters! These must be after Markdown:

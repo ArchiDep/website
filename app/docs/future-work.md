@@ -27,6 +27,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Let the link tag name a document rather than a source path](#let-the-link-tag-name-a-document-rather-than-a-source-path)
 - [Normalise the two slide-deck source layouts](#normalise-the-two-slide-deck-source-layouts)
 - [Stop publishing source maps with the course assets](#stop-publishing-source-maps-with-the-course-assets)
+- [Check that every slide the search links to can be reached](#check-that-every-slide-the-search-links-to-can-be-reached)
 
 <!-- END doctoc -->
 
@@ -701,7 +702,69 @@ repository.
   `priv/static` is worth addressing separately; it inflates any measurement of
   the published tree and is not specific to source maps.
 
+## Check that every slide the search links to can be reached
+
+**Problem:** The search dialog links to a slide by the identifier of its
+heading, and two systems have to agree on that identifier without either knowing
+about the other. The build slugs a deck's headings with MDEx when it writes the
+search index, while the browser gets them from the extension in
+[`slides.ts`][slides-ts], which slugs the headings marked converts with
+`github-slugger`. reveal.js then has to find that identifier in the document to
+show the slide. Nothing checks that agreement. When it breaks, a search result
+opens its deck on the title slide, and no test fails. Upgrading reveal.js from 5
+to 6 broke it exactly that way: the marked it bundles stopped giving headings
+identifiers, and it was noticed by hand.
+
+What can break it is spread across three dependencies: MDEx's slugger,
+`github-slugger`, and the version of marked compiled into reveal.js's Markdown
+plugin. A unit test of the extension against fixture headings would pin only the
+client side against fixtures someone typed in. It would catch neither slugger
+drifting from the other, nor reveal.js changing how it converts a deck.
+
+**Why it is not being done now:** The fix restoring the identifiers was verified
+by hand against every deck. The check needs a built site and a browser, which
+the fast course tests (`npm test`) deliberately do without, so it is a separate
+piece of tooling rather than one more test.
+
+**Proposed approach:** Check the whole chain against a real build, in a browser.
+
+- A script beside [`check-relative-assets.ts`][check-relative-assets], run as
+  `npm run check:slide-links -- --build <dir>` the way the [PDF
+  script][pdf-script] takes `--build`. It serves the build with
+  [`serveDirectory`][static-server] and opens it with Puppeteer, both already
+  used by the PDF script.
+- It reads the build's search data and groups the slide entries whose URL has a
+  fragment by deck. It opens each deck, waits for reveal.js to be ready, and
+  fails listing every identifier missing from the document.
+- It also opens one deck at a heading's fragment on a fresh load and asserts
+  that reveal.js shows the slide holding that heading. That catches a deck whose
+  identifiers are present but that reveal.js no longer navigates to.
+- In CI, a step in the `build-site` job of [`build.yml`][build-workflow], right
+  after "Build the site", run against `../tmp/site`. That job runs on every
+  branch, so a dependency upgrade on a branch is caught before it is merged. It
+  needs the step that lets Chrome's sandbox start, which
+  [`pdf.yml`][pdf-workflow] already has.
+- Locally, the same command against any build directory, for example one written
+  by `mix archidep.course_site.build --output <dir>`.
+
+**Open questions to resolve when scheduling this**
+
+- How the script finds the search data in a build. Its name carries the build's
+  identifier, and a page states it in `data-search-data-url` rather than the
+  script being able to work it out.
+- Whether a backup-mode build, which is what `build-site` produces, indexes the
+  decks exactly as the live site does, or whether the check should build in the
+  mode the live site uses.
+- Whether one navigation check is enough, or whether it should cover a heading
+  whose identifier the build numbered (`-1`) because the deck repeats it.
+
+[build-workflow]: ../../.github/workflows/build.yml
+[check-relative-assets]: ../../course/src/scripts/check-relative-assets.ts
 [coveralls-config]: ../coveralls.json
+[pdf-script]: ../../course/src/scripts/pdf.ts
+[pdf-workflow]: ../../.github/workflows/pdf.yml
+[slides-ts]: ../../course/src/assets/slides.ts
+[static-server]: ../../course/src/scripts/utils/static-server.ts
 [course-site-refusals]: ../lib/archidep/course_site/CONTRIBUTING.md#what-it-refuses
 [hello-shell-exercise]: ../../course/chapters/102-hello-shell/exercise.md
 [ssh-exercise-vm-automation]: #automated-ssh-exercise-vm-setup-with-ansible
