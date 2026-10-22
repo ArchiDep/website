@@ -160,7 +160,8 @@ const deck = new Reveal({
     titleSlide,
     diagramsPlugin({ print: printPdfMode }),
     // Resets the logic diagrams of the current slide on R, so that their embeds
-    // can do without a control bar and use its height to be larger.
+    // can do without a control bar and use its height to be larger, and moves
+    // their focus as fragments with a `data-logic-focus` are shown.
     RevealLogicDiagrams,
     ...(printPdfMode || scrollMode ? [] : [cornerTitle, followingOn]),
     Notes,

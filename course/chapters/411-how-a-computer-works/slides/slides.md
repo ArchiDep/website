@@ -983,6 +983,12 @@ to add the carry coming in from the column on its right.
 <logic-diagram id="full-adder" name="full-adder" names="true" controls="none" theme="light" style="width: 960px; margin: 0 auto">
 </logic-diagram>
 <truth-table for="full-adder" split="2" theme="light"></truth-table>
+<div class="hidden">
+  <span class="fragment" data-logic-focus="firstHalfAdder"></span>
+  <span class="fragment" data-logic-focus="secondHalfAdder"></span>
+  <span class="fragment" data-logic-focus="carryOr"></span>
+  <span class="fragment" data-logic-focus=""></span>
+</div>
 
 **Notes:**
 
@@ -1107,6 +1113,12 @@ would force both outputs to 0, and then Q̅ would no longer be the opposite of Q
 
 <logic-diagram name="d-latch" names="true" controls="none" theme="light" style="width: 800px; margin: 0 auto">
 </logic-diagram>
+<div class="hidden">
+  <span class="fragment" data-logic-focus="srLatch"></span>
+  <span class="fragment" data-logic-focus="dataGating"></span>
+  <span class="fragment" data-logic-focus="writeGating"></span>
+  <span class="fragment" data-logic-focus=""></span>
+</div>
 
 **Notes:**
 
@@ -1249,6 +1261,12 @@ data inputs reaches the output.
 
 <logic-diagram name="addressable-memory" names="true" highlight="true" controls="none" theme="light" style="width: 530px; margin: 0 auto">
 </logic-diagram>
+<div class="hidden">
+  <span class="fragment" data-logic-focus="cells"></span>
+  <span class="fragment" data-logic-focus="decoder"></span>
+  <span class="fragment" data-logic-focus="selector"></span>
+  <span class="fragment" data-logic-focus=""></span>
+</div>
 
 **Notes:**
 
@@ -1374,6 +1392,12 @@ stable frequency, billions of ticks per second in a modern processor.
 
 <logic-diagram name="d-flip-flop-manual" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
 </logic-diagram>
+<div class="hidden">
+  <span class="fragment" data-logic-focus="firstLatch"></span>
+  <span class="fragment" data-logic-focus="secondLatch"></span>
+  <span class="fragment" data-logic-focus="clock"></span>
+  <span class="fragment" data-logic-focus=""></span>
+</div>
 
 **Notes:**
 
