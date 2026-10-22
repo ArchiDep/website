@@ -220,6 +220,15 @@ This section documents the npm scripts that can be run from the root of the
 repository. See the `CONTRIBUTING.md` files in subdirectories (`app`, `course`
 and `theme`) for component-specific commands.
 
+- `npm run check`: Run every Node.js build, test and lint of the repository:
+  formatting and Markdown lint here, then the `check` script of each workspace
+  (`app`, `course` and `theme`), which can also be run on its own from that
+  directory. It runs no Elixir checks: see `mix check` in
+  [`app/CONTRIBUTING.md`](./app/CONTRIBUTING.md).
+- `npm run check:write`: The same, but applying what can be fixed (formatting,
+  tables of contents, generated diagrams) instead of only reporting it. Only
+  the workspaces with something to fix (`course`) have a `check:write` of their
+  own.
 - `npm run doctoc`: Update the table of contents in various Markdown files.
 - `npm run format`: Check code formatting in various languages using Prettier.
   This top-level command formats a lot of files and takes a little while to run.

@@ -6,6 +6,7 @@
   "scripts": {
     "build": "cross-env NODE_PATH=deps esbuild assets/js/app.js --bundle --target=es2017 --outdir=priv/static/assets/app --external:/fonts/* --external:/images/*",
     "build:production": "cross-env NODE_PATH=deps esbuild assets/js/app.js --bundle --target=es2017 --outdir=priv/static/assets/app --external:/fonts/* --external:/images/* --minify",
+    "check": "npm run build",
     "start": "cross-env NODE_PATH=deps esbuild assets/js/app.js --bundle --target=es2017 --outdir=priv/static/assets/app --external:/fonts/* --external:/images/* --sourcemap=inline --watch",
     "start:docker": "cross-env NODE_PATH=deps esbuild assets/js/app.js --bundle --target=es2017 --outdir=priv/static/assets/app --external:/fonts/* --external:/images/* --sourcemap=inline --watch --watch=forever"
   },
