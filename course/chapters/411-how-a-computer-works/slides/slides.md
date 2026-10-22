@@ -2001,12 +2001,30 @@ operating system provides:
 
 **Notes:**
 
-TODO: one row at one coffee machine; a second row arriving, taking turns at the
-same machine; a second machine. The machine serves as many coffees per minute
-with two rows as with one, each row getting half; a second machine doubles
-them. A coffee takes about 30 seconds, and the animation runs 15 times faster.
-The picture of two queues at one coffee machine, against two queues at two
-machines, is [Joe Armstrong's][armstrong-coffee], the creator of Erlang.
+- When one row of people queue at one coffee machine, each person takes a turn.
+- When two rows of people queue at the same machine, they have to take turns
+  too. Two queues are moving, but only one person at a time is served.
+- When two coffee machines are available, each row can use one, and both rows
+  are served at the same time. Two queues are moving, and two people are served
+  at the same time.
+
+This analogy illustrates the difference between **concurrent** and **parallel**
+programs: each queue stands in for a program and its instructions being
+executed.
+
+- With one CPU core, the programs are concurrent: they **take turns on the same
+  core**. If it happens fast enough, you get the illusion that they run at the
+  same time, but it is still no faster than running the two programs one after
+  the other if they both keep the core busy.
+- With two CPU cores, the programs are parallel: they can actually run **at the
+  same time**, and the total work is done faster.
+
+This is a simplification. A modern CPU core can also execute several independent
+instructions of the same program at the same time, and some cores can run two
+threads at once, but they share the same circuits, so it's still not as fast as
+two cores.
+
+_Analogy from [Joe Armstrong][armstrong-coffee], the creator of Erlang_
 
 ---
 
@@ -2020,19 +2038,21 @@ machines, is [Joe Armstrong's][armstrong-coffee], the creator of Erlang.
 
 **Notes:**
 
-TODO: the machine at boot once booted, with a single core and two programs in
-memory, A and B, coloured as the two rows of coffee queues. The core runs some
-of A's instructions, then the kernel, which switches it to B, then some of B's,
-and so on, each program picking up where it stopped. The programs take turns on
-one core: they are **concurrent**. The kernel switches between them hundreds of
-times a second, fast enough that both seem to run at once.
+Programs being executed **concurrently** on a single core, like two rows of
+people queueing at one coffee machine. Each process takes turns on the core, and
+the kernel switches between them fast enough that both seem to run at once.
 
-A program never hands the core back by itself: the kernel takes it back with an
-**interrupt**, as a device does when a key is pressed or data arrives. A timer
-interrupts the core at regular intervals, a few hundred to a thousand times a
-second, and the core jumps to the kernel's code, wherever the program was. The
-kernel notes where the program stopped, picks the one to run next, and jumps
-back into it where it had stopped in turn.
+The kernel takes the core back with an interrupt, which happens at regular
+intervals, a few hundred to a thousand times a second. The core jumps to the
+kernel's code, regardless of what the process was doing. The kernel notes where
+the process stopped, picks the one to run next, and jumps back into it where it
+had stopped in turn.
+
+This is one of the responsibilities the operating system handles transparently,
+allowing what is known as
+[time-sharing](https://en.wikipedia.org/wiki/Time-sharing) since the 1960s:
+several users can run programs on the same machine at once, each thinking they
+have the machine to themselves, even if it has only one core.
 
 ---
 
@@ -2046,13 +2066,30 @@ back into it where it had stopped in turn.
 
 **Notes:**
 
-TODO: a modern processor has several **cores**, each a complete processor that
-executes its own instructions. A laptop typically has between 4 and 16.
+Programs being executed **in parallel** on two cores, like two rows of people
+queueing at two coffee machines. Each core is a complete processor that executes
+its own instructions. A typical laptop today has between 4 and 16 cores.
 
-With a single core, the operating system switches the processor between
-programs so fast that they seem to run at once. They are **concurrent**: they
-take turns. With several cores, several programs really run at the same
-moment. They are **parallel**.
+With concurrency, we only get the illusion of programs running at the same time.
+With parallelism, programs A and B in this illustration actually run at the same
+time, and the total work is done faster.
+
+A single program cannot choose a core itself. It asks the operating system for
+more processes or **threads** (several flows of instructions inside one process,
+sharing its memory), and the operating system decides which core runs each one
+and when.
+
+This means that a single program does not necessarily get faster on a machine
+with more cores: it has to be programmed to use them, and its work has to be
+splittable. Two cores make a program twice as fast only if its work splits
+evenly between its threads.
+
+In this illustration, program A is written as a single flow of instructions, so
+it runs on one core while the other stays idle. Program C is written to run on
+several cores: it has two threads, which the operating system can run on both
+cores at once.
+
+TODO: move some of the following notes to an appendix in the subject
 
 A program cannot choose a core itself. It asks the operating system for more
 processes or **threads** (several flows of instructions inside one process,
