@@ -17,7 +17,6 @@ on:
       - 'app/priv/repo/**'
       - 'app/test/**'
       - 'docker/**'
-      - 'wip/**'
   workflow_dispatch:
     inputs:
       force:
