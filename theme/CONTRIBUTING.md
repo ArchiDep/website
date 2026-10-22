@@ -334,6 +334,9 @@ document for the meaning and intended behavior of each feature:
   [Side-by-Side Columns][course-cols].
 - **Git diagrams** (`simgit-story`, in `simgit.css`) — the interactive [Git
   diagrams][course-git-diagrams].
+- **Lightbox** (`dialog.lightbox`, in `lightbox.css`) — pictures and
+  architecture diagrams shown as large as the window allows. See
+  [Lightbox][course-lightbox].
 - **Progress indicators** (`#course-material-menu .course-item-*` /
   `.course-section-*`) — the done/due/next/future markers in the sidebar.
 - **Search** (`#search-dialog`) — the full-text search dialog shared with the
@@ -421,6 +424,7 @@ agents.
 [course-cols]: ../course/CONTRIBUTING.md#side-by-side-columns
 [course-code-blocks]: ../course/CONTRIBUTING.md#code-blocks
 [course-git-diagrams]: ../course/CONTRIBUTING.md#interactive-git-diagrams
+[course-lightbox]: ../course/CONTRIBUTING.md#lightbox
 [daisyui]: https://daisyui.com/docs/
 [emoji]: ../app/lib/archidep/emoji.ex
 [flashy]: https://hexdocs.pm/flashy/readme.html

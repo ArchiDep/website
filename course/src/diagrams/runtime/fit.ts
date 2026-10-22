@@ -1,6 +1,17 @@
 const PADDING = 16;
 
 /**
+ * The proportions of what the diagram shows, which a slide of its own and the
+ * lightbox size it by, since CSS cannot read a view box.
+ */
+export function setAspect(figure: HTMLElement, svg: SVGSVGElement): void {
+  const { width, height } = svg.viewBox.baseVal;
+  if (width && height) {
+    figure.style.setProperty('--diagram-aspect', `${width} / ${height}`);
+  }
+}
+
+/**
  * The view box of what a diagram shows without its legend, which leaves a gap
  * when it is hidden: CSS cannot change the view box.
  *

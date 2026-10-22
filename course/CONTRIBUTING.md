@@ -759,6 +759,9 @@ It shows the same steps wherever it is included:
   the teacher being there to explain.
 - **In a page**, it opens fully drawn, with its legend, and a button steps
   through it, each step with its caption. The arrow keys step once it has focus.
+  Where the window has room to show it markedly larger than the page's column
+  does, clicking it or its "Enlarge" button shows it, controls included, in the
+  [lightbox](#lightbox).
 - **In print and without JavaScript**, deck and page alike, it is fully drawn,
   legend included: what was drawn in the file, without what only a step shows.
 
@@ -1081,12 +1084,12 @@ bundled by Webpack and loaded on every page. It initializes the interactive
 features ([search](#search), copy buttons, [randomized
 values](#randomized-values), the [cloud server widget](#cloud-server-widget),
 the table of contents, "back to top", [tell me more](#tell-me-more), [Git
-diagrams](#interactive-git-diagrams)) and the real-time integration described
-below. Components are built with [Preact][preact] and [Preact
-signals][preact-signals]; external JSON is validated at runtime with
-[`io-ts`][io-ts] codecs (see [`src/shared/codecs`](./src/shared)). Logging goes
-through [`src/assets/logging.ts`](./src/assets/logging.ts)
-([loglevel][loglevel]).
+diagrams](#interactive-git-diagrams), the [lightbox](#lightbox)) and the
+real-time integration described below. Components are built with
+[Preact][preact] and [Preact signals][preact-signals]; external JSON is
+validated at runtime with [`io-ts`][io-ts] codecs (see
+[`src/shared/codecs`](./src/shared)). Logging goes through
+[`src/assets/logging.ts`](./src/assets/logging.ts) ([loglevel][loglevel]).
 
 **Real-time dashboard integration.** When not in standalone mode, the client
 opens a [Phoenix][phoenix] WebSocket channel to the dashboard application
@@ -1098,6 +1101,17 @@ error) in [`src/assets/course/session.ts`](./src/assets/course/session.ts); it
 drives the login/logout/impersonation UI and the [cloud server
 widget](#cloud-server-widget). In standalone builds, this integration and
 analytics are disabled.
+
+### Lightbox
+
+A page's pictures and [architecture diagrams](#architecture-diagrams) can be
+shown as large as the window allows, which matters where the course menu and the
+headings leave the text a narrow column. Nothing is written in the Markdown for
+it: [`src/assets/course/lightbox.ts`](./src/assets/course/lightbox.ts) offers it
+for every picture of a page that it would show markedly larger, except an emoji
+or a picture in a link, and explains how it decides and sizes what it shows. Its
+styles are the theme's, in
+[`theme/src/lightbox.css`](../theme/src/lightbox.css).
 
 ### Search
 

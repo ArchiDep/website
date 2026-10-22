@@ -3,7 +3,7 @@
 // and printing.
 import type Reveal from 'reveal.js';
 
-import { viewBoxWithoutLegend } from './fit';
+import { setAspect, viewBoxWithoutLegend } from './fit';
 import { animate } from './motion';
 
 /**
@@ -69,16 +69,5 @@ function fitDiagrams(slide: HTMLElement | undefined): void {
         setAspect(figure, svg);
       }
     }
-  }
-}
-
-/**
- * The proportions of what the diagram shows, which a slide of its own sizes
- * it by.
- */
-function setAspect(figure: HTMLElement, svg: SVGSVGElement): void {
-  const { width, height } = svg.viewBox.baseVal;
-  if (width && height) {
-    figure.style.setProperty('--diagram-aspect', `${width} / ${height}`);
   }
 }

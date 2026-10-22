@@ -6,13 +6,25 @@
 import { render } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-import { viewBoxWithoutLegend } from './fit';
+import { setAspect, viewBoxWithoutLegend } from './fit';
 import { animate } from './motion';
+
+export interface PageDiagramOptions {
+  /**
+   * Shows the diagram larger than the page can, controls included. The button
+   * that calls it is only shown while the figure has the `data-enlargeable`
+   * attribute, which whoever enlarges it decides.
+   */
+  readonly enlarge?: (figure: HTMLElement) => void;
+}
 
 /**
  * Set up every diagram of a page that is not set up yet.
  */
-export function setUpPageDiagrams(root: ParentNode = document): void {
+export function setUpPageDiagrams(
+  root: ParentNode = document,
+  { enlarge }: PageDiagramOptions = {}
+): void {
   for (const figure of root.querySelectorAll<HTMLElement>(
     '.diagram-figure:not([data-stepper])'
   )) {
@@ -22,17 +34,19 @@ export function setUpPageDiagrams(root: ParentNode = document): void {
     }
 
     figure.dataset['stepper'] = '';
+    setAspect(figure, svg);
     animate(svg);
 
     const controls = document.createElement('div');
     figure.appendChild(controls);
-    render(<Stepper figure={figure} svg={svg} />, controls);
+    render(<Stepper figure={figure} svg={svg} enlarge={enlarge} />, controls);
   }
 }
 
 interface StepperProps {
   readonly figure: HTMLElement;
   readonly svg: SVGSVGElement;
+  readonly enlarge: PageDiagramOptions['enlarge'];
 }
 
 /**
@@ -40,7 +54,7 @@ interface StepperProps {
  */
 type Step = number | null;
 
-function Stepper({ figure, svg }: StepperProps) {
+function Stepper({ figure, svg, enlarge }: StepperProps) {
   const fragments = [...svg.querySelectorAll('.fragment')];
   const count =
     Math.max(
@@ -75,6 +89,7 @@ function Stepper({ figure, svg }: StepperProps) {
         svg.setAttribute('viewBox', steppingViewBox.current);
       }
     }
+    setAspect(figure, svg);
 
     // The captions are the course's own, written in the diagram's definition.
     const text = figure.querySelector<HTMLTemplateElement>(
@@ -88,8 +103,8 @@ function Stepper({ figure, svg }: StepperProps) {
     );
   }, [step]);
 
-  // The arrow keys step once the diagram has focus, so that they do not take
-  // over the page's own keys.
+  // The arrow keys step once the diagram or one of its buttons has focus, so
+  // that they do not take over the page's own keys.
   useEffect(() => {
     figure.tabIndex = 0;
     figure.setAttribute(
@@ -97,7 +112,7 @@ function Stepper({ figure, svg }: StepperProps) {
       'Architecture diagram, which can be stepped through with the arrow keys'
     );
     const onKey = (event: KeyboardEvent): void => {
-      if (event.target !== figure || count === 0) {
+      if (count === 0) {
         return;
       }
 
@@ -132,6 +147,10 @@ function Stepper({ figure, svg }: StepperProps) {
     };
   }, []);
 
+  // A button that starts or stops stepping is replaced by others, and the focus
+  // would fall back to the page, where the arrow keys no longer step.
+  const keepFocus = (): void => figure.focus({ preventScroll: true });
+
   // The caption is under the controls, so that a caption of one line or of two
   // does not move the buttons being clicked. A diagram without steps has
   // nothing to step through, only its caption.
@@ -143,7 +162,10 @@ function Stepper({ figure, svg }: StepperProps) {
             <button
               type="button"
               className="primary"
-              onClick={() => setStep(0)}
+              onClick={() => {
+                setStep(0);
+                keepFocus();
+              }}
             >
               Step through it →
             </button>
@@ -173,10 +195,26 @@ function Stepper({ figure, svg }: StepperProps) {
             >
               Next →
             </button>
-            <button type="button" onClick={() => setStep(null)}>
+            <button
+              type="button"
+              onClick={() => {
+                setStep(null);
+                keepFocus();
+              }}
+            >
               Show all
             </button>
           </>
+        )}
+        {enlarge && (
+          <button
+            type="button"
+            className="enlarge"
+            onClick={() => enlarge(figure)}
+            title="Show it as large as the window allows"
+          >
+            ⤢ Enlarge
+          </button>
         )}
       </div>
       <div className="diagram-caption" aria-live="polite" ref={caption} />
