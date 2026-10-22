@@ -5,7 +5,7 @@ defmodule ArchiDep.MixProject do
     [
       app: :archidep,
       version: "0.1.0",
-      elixir: "~> 1.19",
+      elixir: "~> 1.20",
       elixirc_paths: compilation_paths_for(Mix.env()),
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
@@ -14,8 +14,9 @@ defmodule ArchiDep.MixProject do
       dialyzer: [
         # Suppress :no_opaque warnings from manipulating opaque structs
         # (Ecto.Changeset, DateTime) under OTP 28. Still required on Elixir
-        # 1.19.5 / OTP 28: dropping this flag yields 42 call_without_opaque
-        # warnings. Keep the matching ".vscode/settings.json" setting
+        # 1.20.4 / OTP 28: dropping this flag yields 50 call_without_opaque
+        # and contract_with_opaque warnings. Keep the matching
+        # ".vscode/settings.json" setting
         # ("elixirLS.dialyzerWarnOpts") in sync.
         flags: [:no_opaque],
         plt_add_apps: [:ex_unit, :mix]

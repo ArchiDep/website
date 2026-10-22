@@ -28,7 +28,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManager do
   alias ArchiDep.Servers.Types
   alias Ecto.Changeset
   alias Ecto.UUID
-  require Logger
 
   @type server_manager_option :: {:state, ServerManagerBehaviour.t()}
   @type server_manager_options :: list(server_manager_option())

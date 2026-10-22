@@ -7,7 +7,6 @@ defmodule ArchiDepWeb.Admin.Ansible.AnsiblePlaybookRunLive do
   alias ArchiDep.Servers
   alias ArchiDep.Servers.Schemas.AnsiblePlaybookRun
   alias Phoenix.LiveView.JS
-  require Logger
 
   @impl LiveView
   def mount(%{"id" => run_id}, _session, socket) do

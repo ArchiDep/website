@@ -10,7 +10,6 @@ defmodule ArchiDep.Servers.Ansible do
 
   alias ArchiDep.Servers.Ansible.PlaybooksRegistry
   alias ArchiDep.Servers.Schemas.AnsiblePlaybook
-  require Logger
 
   @implementation Application.compile_env!(:archidep, __MODULE__)
   @setup_playbook PlaybooksRegistry.playbook!("setup")

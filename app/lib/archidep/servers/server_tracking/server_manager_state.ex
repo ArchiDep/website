@@ -44,7 +44,6 @@ defmodule ArchiDep.Servers.ServerTracking.ServerManagerState do
   alias Ecto.UUID
   alias Phoenix.Token
   require Logger
-  require Record
 
   @enforce_keys [
     :server,

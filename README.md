@@ -36,7 +36,7 @@ To run with Docker (slower, but simpler):
 
 To run on your machine:
 
-- [Elixir][elixir] 1.19.x
+- [Elixir][elixir] 1.20.x
 - [Erlang/OTP][erlang] 28.x
 - [Node.js][node] 24.x
 - [PostgreSQL][postgresql] 17.x
