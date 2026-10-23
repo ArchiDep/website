@@ -1712,6 +1712,43 @@ series.
 
 ---
 
+### From program to instructions
+
+<div class="flex items-center justify-center gap-8">
+<pre class="m-0! w-auto!"><code class="language-js">let a = 3;
+let counter = 2;
+let result = 0;
+do {
+  result = result + a;
+  counter = counter - 1;
+} while (counter !== 0);</code></pre>
+<span class="text-6xl text-gray-500">→</span>
+<pre class="m-0! w-auto!"><code class="language-plaintext">0001 1110
+0010 1100
+0100 1110
+0001 1101
+0011 1111
+0100 1101
+1000 1000
+0110 0000
+1111 0000</code></pre>
+</div>
+
+**Notes:**
+
+A processor runs nothing but the instructions of its instruction set. A program
+is either translated into such instructions by a **compiler**, ahead of time, or
+as it runs, or carried out by an **interpreter**, a program made of such
+instructions that reads it as data.
+
+This program multiplies 3 by 2 the only way this machine can, by adding 3 twice,
+since it cannot multiply directly. Each kind of instruction has its part: the
+calculations become instructions that move values between memory and the
+accumulator and compute with them, and the loop becomes jumps. The values
+themselves, variables and numbers alike, are kept in memory cells.
+
+---
+
 <!-- .slide: class="full-diagram" -->
 
 ### The machine
