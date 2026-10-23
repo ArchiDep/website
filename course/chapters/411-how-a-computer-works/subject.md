@@ -842,15 +842,110 @@ time.
 
 ### Flip-flops with preset and clear
 
-_To write:_ the fundamental circuits the program counter needs: a flip-flop that
-can be forced to 1 or 0, and one that can be loaded with a value
-(`d-flip-flop-preset-clear`, `d-flip-flop-preset-clear-block`,
-`loadable-flip-flop`, `loadable-flip-flop-block`).
+The machine's **program counter** holds the address of the next instruction.
+The presentation showed [a counter]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/61) made of D flip-flops, each one
+feeding its Q̅ back into its DATA, so that it flips on every rising edge of its
+clock. The first flip-flop is clocked by the clock. Each of the others is
+clocked by the Q̅ of the one before, so that it flips when the one before goes
+back to 0, like a carry. Read from right to left, Q2 Q1 Q0 count from `000` to
+`111`, then start over:
+
+<logic-diagram name="counter" names="true" controls="none" style="max-width: 760px; margin: 0 auto"></logic-diagram>
+
+This counter can only count up, from wherever it happens to be. A program
+counter needs two more things:
+
+- **Jumping**: `JUMP` and `JUMPZ` load it with a new address.
+- **Resetting**: at power-on, it has to start at 0, the address of the first
+  instruction.
+
+The [register's](#a-register) way of loading a value, a selector in front of
+DATA, does not work here. It loads on a rising edge of the clock, but only the
+first flip-flop of this counter gets the clock: the others flip when the one
+before them goes back to 0, each at a different moment. The counter's
+flip-flops have to be forced to a value at once, whatever their clock does.
+
+**Preset and clear** do that. Its clock starts paused, and Q starts at 0:
+
+1. Turn PRESET on: Q becomes 1 at once, while CLK stays at 0.
+2. Turn PRESET off: Q stays 1.
+3. Turn CLEAR on: Q becomes 0 at once.
+4. Turn CLEAR off: Q stays 0.
+5. Set DATA to 1, then raise CLK: Q becomes 1, as with any D flip-flop.
+
+<logic-diagram name="d-flip-flop-preset-clear" names="true" controls="none"></logic-diagram>
+
+A flip-flop normally changes only on a rising edge of its clock. Preset and
+clear are a way around the clock: they force the flip-flop to 1 or to 0 straight
+away, whatever its clock and its DATA are doing. Once they are released, the
+flip-flop keeps that value, and works with its clock again.
+
+This flip-flop is built differently from the one of the presentation, out of
+three [SR latches]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/42) instead of two D latches. The latch on the right
+holds Q, and the two on the left set or reset it when the clock rises. Preset
+and clear act directly on the latch on the right, as its SET and RESET. Turning
+them on at the same time is therefore not allowed, by convention, as for the SR
+latch: it would make both Q and Q̅ 0.
+
+The same flip-flop drawn as a box, with PRESET on top and CLEAR below:
+
+<logic-diagram name="d-flip-flop-preset-clear-block" names="true" controls="none" style="max-width: 480px; margin: 0 auto"></logic-diagram>
+
+**A loadable bit** uses preset and clear to load any value, 0 or 1, straight
+away. Its clock starts paused, and Q starts at 0:
+
+1. Set A to 1: Q stays 0.
+2. Turn LOAD on: Q becomes 1 at once.
+3. Set A to 0: Q becomes 0. Set A back to 1: Q becomes 1.
+4. Turn LOAD off, then set A to 0: Q stays 1.
+5. Turn RESET on: Q becomes 0.
+6. Turn RESET off: Q stays 0.
+
+<logic-diagram name="loadable-flip-flop" names="true" controls="none" style="max-width: 600px; margin: 0 auto"></logic-diagram>
+
+A is the value to load, and LOAD copies it into the flip-flop: it presets the
+flip-flop when A is 1, and clears it when A is 0. As long as LOAD is on, the
+flip-flop follows A. RESET clears it, whatever A is. When neither is on, the
+flip-flop is left alone, and works with its clock like any other.
+
+The loadable bit drawn as a box, with A on top, and LOAD and RESET below:
+
+<logic-diagram name="loadable-flip-flop-block" names="true" controls="none" style="max-width: 440px; margin: 0 auto"></logic-diagram>
 
 ### The program counter
 
-_To write:_ a counter that can also be loaded with an address, which is what a
-jump does (`loadable-counter`).
+Built out of loadable bits instead of plain flip-flops, the
+[counter](#flip-flops-with-preset-and-clear) can jump. Its clock runs:
+
+1. Watch it count, reading Q2 Q1 Q0 from right to left: `000`, `001`, `010`, and
+   so on up to `111`, then `000` again.
+2. Set A2 to 1, A1 to 0 and A0 to 1, which is `101`, 5: the count goes on as
+   before.
+3. Turn LOAD on, and leave it on for a few ticks: Q2 Q1 Q0 show `101`, and stay
+   there whatever the clock does.
+4. Turn LOAD off: the counter counts on from `101`: `110`, `111`, `000`, and so
+   on.
+5. Turn RESET on, and leave it on for a few ticks: Q2 Q1 Q0 show `000`, and stay
+   there.
+6. Turn RESET off: the counter counts from 0 again: `001`, `010`, and so on.
+
+<logic-diagram name="loadable-counter" names="true" controls="none" style="max-width: 820px; margin: 0 auto"></logic-diagram>
+
+Each bit still feeds its Q̅ back into its DATA and clocks the next bit, so the
+counter counts as before. LOAD and RESET take over from the clock: while one of
+them is on, the counter holds the value it is given, A or 0. Once it is
+released, the counter counts on from there.
+
+The machine's program counter works this way, with four bits for its sixteen
+addresses. The control unit drives it:
+
+- **To move on to the next instruction**, it gives the counter a single clock
+  pulse, once per instruction.
+- **To execute `JUMP x`**, it sends the address `x` to the counter's A inputs,
+  and turns LOAD on for a moment. `JUMPZ x` does the same, but only if the
+  accumulator is 0.
+- **At power-on**, RESET sets the counter to 0, so that the program starts with
+  the instruction at address 0.
 
 ### A bigger memory from smaller blocks
 
