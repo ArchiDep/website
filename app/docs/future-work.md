@@ -26,7 +26,6 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Remaining uncovered code after the 90% coverage push](#remaining-uncovered-code-after-the-90-coverage-push)
 - [Let the link tag name a document rather than a source path](#let-the-link-tag-name-a-document-rather-than-a-source-path)
 - [Normalise the two slide-deck source layouts](#normalise-the-two-slide-deck-source-layouts)
-- [Stop publishing source maps with the course assets](#stop-publishing-source-maps-with-the-course-assets)
 - [Check that every slide the search links to can be reached](#check-that-every-slide-the-search-links-to-can-be-reached)
 
 <!-- END doctoc -->
@@ -662,45 +661,6 @@ describes a case that no longer exists.
 - What happens to the `images/` directories of the five decks that move, since a
   deck published one segment deeper than it is written refers to them
   differently.
-
-## Stop publishing source maps with the course assets
-
-**Problem:** [`build.mjs`](../../course/build.mjs) sets `sourcemap: true`
-unconditionally — `minify` switches on the environment and `sourcemap` does not
-— so a production build emits a `.map` beside every chunk and writes a
-`sourceMappingURL` comment into all of them. They are published with the rest
-of the assets: a webpack build tree measured here held 267 map files under
-`assets/course` totalling 89 MB, the largest single one 4.2 MB. That figure is
-inflated by digested copies accumulating in a long-lived local `priv/static`, so
-a clean build is smaller, but the order of magnitude is the point.
-
-**Why this matters:** Nothing consumes them. There is no error-reporting service
-wired to the course front end, so the maps exist only for whoever opens
-developer tools against the deployed site. What they cost is not user bandwidth
-— a browser fetches a map only when devtools are open — but the weight of every
-image built and every deployment made, on a repository whose image is rebuilt on
-each push. It is not a disclosure concern either: the sources are in a public
-repository.
-
-**Proposed approach:** Make `sourcemap` depend on the environment the way
-`minify` already does.
-
-- `sourcemap: false` for production if the maps have no consumer, which is the
-  situation today.
-- `sourcemap: 'external'` instead, if they are ever wanted for error reporting:
-  the maps are still emitted, but no `sourceMappingURL` comment points a browser
-  at them, and the build step that would use them uploads them rather than
-  publishing them.
-
-**Open questions to resolve when scheduling this**
-
-- Whether the dashboard's own assets do the same thing, which was not checked
-  when this was written.
-- Whether the maps should be kept as a build artifact — uploaded by CI and not
-  served — rather than simply not produced.
-- Whether the accumulation of stale digested copies in a long-lived
-  `priv/static` is worth addressing separately; it inflates any measurement of
-  the published tree and is not specific to source maps.
 
 ## Check that every slide the search links to can be reached
 

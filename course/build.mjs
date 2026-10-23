@@ -2,7 +2,8 @@
 //
 // Usage: node build.mjs [--watch]
 //
-// A production build (NODE_ENV=production) is minified. Neither kind is
+// A production build (NODE_ENV=production) is minified and has no source maps:
+// a deployed bundle's maps can be rebuilt from its commit. Neither kind is
 // type-checked: esbuild only strips types, which `npm run typecheck` checks.
 import * as esbuild from 'esbuild';
 import path from 'node:path';
@@ -47,7 +48,7 @@ const baseOptions = {
   // than esbuild's own log, whose lines do not say which build they are about.
   logLevel: 'silent',
   minify: production,
-  sourcemap: true,
+  sourcemap: !production,
   target: 'es2022',
   tsconfig: 'tsconfig.assets.json'
 };
