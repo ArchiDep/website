@@ -1059,6 +1059,15 @@ after every bundler has written into it — is what gives them a content-hashed
 name and records it. Chunks are the exception: a module imports them by name and
 never consults a manifest, so they keep esbuild's own content hash.
 
+esbuild does not empty its output directories, so a local `app/priv/static`
+keeps every chunk any earlier build produced. They are never published, since
+images and CI start from an empty tree, but they take space and inflate any
+measurement of the directory. Delete `app/priv/static/assets` now and then, then
+rebuild and digest. The build does not do it itself, because the site build
+reads `cache_manifest.json` whenever it exists, and clearing the directory under
+a manifest left by an earlier digest would leave the local site naming files
+that are gone.
+
 **What a bundle fetches for itself is addressed relative to the file asking for
 it** — a chunk, a font a bundled stylesheet names. That is what esbuild does as
 long as no `publicPath` is set, and `npm run check:relative-assets` checks it,

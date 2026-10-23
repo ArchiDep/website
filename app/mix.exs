@@ -148,7 +148,10 @@ defmodule ArchiDep.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      "assets.deploy": ["phx.digest"],
+      # `phx.digest` adds a digested copy of every file each time it runs and
+      # never removes the previous ones, so a long-lived `priv/static` would
+      # otherwise keep every version ever digested.
+      "assets.deploy": ["phx.digest.clean --all", "phx.digest"],
       check: [
         "coveralls.html --raise",
         "format --check-formatted",
