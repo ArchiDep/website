@@ -316,7 +316,7 @@ Simple as it is, this machine is a real computer. With a wider address bus, and
 therefore a larger memory, it could run any program, as long as the program and
 its data fit in that memory. It is also conceptually very close to the
 processors of the 1970s, such as the [Intel
-8080](https://en.wikipedia.org/wiki/Intel_8080).
+8080][intel-8080].
 
 ### A particular place, at a particular time
 
@@ -793,8 +793,52 @@ operations.
 
 ### Adding numbers wider than the machine
 
-_To write:_ adding 16-bit numbers on 8-bit hardware: the low bytes first, then
-the high bytes with the carry.
+The machine's accumulator and ALU have 8 bits, so they handle numbers from 0 to 255. Programs still need larger numbers, and an 8-bit processor adds them the
+way you add on paper: one column at a time, carrying into the next. The columns
+are just wider: each one is a whole byte, instead of a digit.
+
+A 16-bit number is two bytes: a **high byte**, worth 256 times its value, and a
+**low byte**. To add two 16-bit numbers, a program:
+
+1. Adds the two low bytes. The [carry flag](#the-adder-subtractor) keeps the
+   ninth bit of the result, if there is one.
+2. Adds the two high bytes, plus the carry flag.
+
+For example, 300 + 500:
+
+| Number    | High byte      | Low byte         |
+| :-------- | :------------- | :--------------- |
+| 300       | `00000001` (1) | `00101100` (44)  |
+| 500       | `00000001` (1) | `11110100` (244) |
+| 300 + 500 | `00000011` (3) | `00100000` (32)  |
+
+44 + 244 is 288, which does not fit in a byte: the low byte of the result is 288
+
+- 256 = 32, and the carry flag is 1. The high byte is then 1 + 1, plus the
+  carry: 3. And 3 × 256 + 32 is 800.
+
+The second addition needs an instruction that adds the carry flag as well. Real
+processors have one, usually called **add with carry**, `ADC`: the [Intel
+8080][intel-8080] did. The machine demonstrated in the presentation does not,
+but its ALU would only need its first Cin to come from the carry flag of the
+previous instruction, instead of being 0.
+
+You can do the same on the 4-bit adder, to add 8-bit numbers, four bits at a
+time. To add 23 (`0001 0111`) and 45 (`0010 1101`):
+
+1. Add the low halves: set A to `0111` and B to `1101`, with Cin at 0. S shows
+   `0100`, and Cout is lit: 7 + 13 is 20, which does not fit in 4 bits.
+2. Write down `0100` as the low half of the result, and remember the carry.
+3. Add the high halves: set A to `0001` and B to `0010`, and Cin to 1 for the
+   carry. S shows `0100`.
+4. The result is `0100 0100`: 68.
+
+<logic-diagram name="four-bit-adder" names="true" controls="none" style="max-width: 820px; margin: 0 auto"></logic-diagram>
+
+Subtraction works the same way, with a **subtract with borrow** instruction for
+the high bytes. And numbers wider than any register, such as Java's `BigInteger`
+or JavaScript's `BigInt`, are added the same way, one register-sized piece at a
+time.
 
 ### Flip-flops with preset and clear
 
@@ -874,4 +918,5 @@ presentation does, at a size you can walk around in. A few fun references, not
 material to learn.
 
 [ascii]: https://en.wikipedia.org/wiki/ASCII
+[intel-8080]: https://en.wikipedia.org/wiki/Intel_8080
 [utf8]: https://en.wikipedia.org/wiki/UTF-8
