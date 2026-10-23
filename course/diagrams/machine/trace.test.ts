@@ -47,7 +47,8 @@ describe('trace', () => {
     assert.deepEqual(trace().reading, [
       {
         caption:
-          'Cells 0 to 8 hold the program: its instructions, one per cell.',
+          'Cells 0 to 8 hold the program: its instructions, one per cell. ' +
+          'It multiplies 3 by 2, by adding 3 twice.',
         tick: false,
         lit: [
           'cell-0',

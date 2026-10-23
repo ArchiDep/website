@@ -718,7 +718,9 @@ export function trace(
   const inMemory = ['memory', ...MEMORY_CELLS];
   const reading: StepState[] = [
     {
-      caption: `${capitalized(cellsNamed(instructions))} hold the program: its instructions, one per cell.`,
+      caption:
+        `${capitalized(cellsNamed(instructions))} hold the program: its ` +
+        'instructions, one per cell. It multiplies 3 by 2, by adding 3 twice.',
       ...quiet,
       lit: cellsOf(instructions),
       values: {},
