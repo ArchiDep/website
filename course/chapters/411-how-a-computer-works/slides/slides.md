@@ -1390,7 +1390,7 @@ stable frequency, billions of ticks per second in a modern processor.
 
 <!-- .element: class="corner-title" -->
 
-<logic-diagram name="d-flip-flop-manual" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
+<logic-diagram name="d-flip-flop" names="true" controls="none" theme="light" style="width: 900px; margin: 0 auto">
 </logic-diagram>
 <div class="hidden">
   <span class="fragment" data-logic-focus="firstLatch"></span>
@@ -1405,13 +1405,17 @@ The edge-triggered D-type flip-flop is a peculiar circuit that can be very
 useful in a computer. You may notice that it is in fact two D latches in a row,
 with an additional NOT gate.
 
+Clicking the clock pauses it at its current level. Paused, it splits in two:
+clicking its 0/1 half flips the level by hand, one edge at a time, and its ▶
+half lets it run again. This works on every clock from here on.
+
 ---
 
 ### Two latches make a flip-flop
 
 <!-- .element: class="hidden" -->
 
-<logic-diagram name="d-flip-flop-latches" names="true" controls="none" theme="light" style="width: 720px; margin: 0 auto">
+<logic-diagram name="d-flip-flop-latches" clock="running" names="true" controls="none" theme="light" style="width: 720px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
@@ -1427,19 +1431,23 @@ Q. When the clock rises from 0 to 1, the first latch closes on the value DATA
 had just before, and the second one opens and passes that value on to Q. Q only
 changes when the clock rises from 0 to 1.
 
+Pause the clock to step through it by hand: lower CLK and change DATA, then
+raise CLK and see which latch opens.
+
 ---
 
 ### The D flip-flop as a block
 
 <!-- .element: class="hidden" -->
 
-<logic-diagram name="d-flip-flop-block-manual" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+<logic-diagram name="d-flip-flop-block" names="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
 </logic-diagram>
 
 **Notes:**
 
 The same flip-flop drawn as a box. The wedge on the clock input marks it as
-edge-triggered: Q only takes DATA's value when CLK rises.
+edge-triggered: Q only takes DATA's value when CLK rises. Pause the clock to
+raise CLK by hand.
 
 ---
 
@@ -1493,6 +1501,8 @@ The frequency of the output is half that of the input, so this circuit is a
 The timing diagram underneath shows it, with time running from left to right.
 Each time CLK steps up, Q steps, up or down. A real flip-flop takes a moment to
 respond, which the drawing leaves out.
+
+Pause the clock to follow it one edge at a time.
 
 ---
 
@@ -1627,6 +1637,8 @@ Read each column of the timing diagram from the bottom up, Q2 then Q1 then Q0:
 If you read them as binary numbers, they count from 0 to 7, then back to 0. This
 is a **3-bit counter**. It counts up by 1 on every clock cycle, and wraps around
 to 0 after 7. We have a circuit that can count.
+
+Pause the clock to count one edge at a time.
 
 Computers use similar counters to keep track of where they are in a program. The
 program counter allows them to step through a program one instruction at a time.
