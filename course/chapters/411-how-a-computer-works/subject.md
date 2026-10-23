@@ -651,15 +651,145 @@ which is `11100000`:
  1 01010011     83, S in UTF-8, once the ninth bit is dropped
 ```
 
-A processor needs no separate circuit to subtract: an adder, NOT gates to invert
-B, and a carry of 1 into the first column are enough.
+A processor needs no separate circuit to subtract. An adder is enough, given a
+way to invert the bits of B and a carry of 1 into the first column, which the
+next section builds.
+
+### The adder-subtractor
+
+A **full adder** adds one column of an addition: A, B, and the carry from the
+column on its right, Cin. It gives the column's SUM, and Cout, the carry for the
+column on its left. The presentation shows [how it is made of two half adders
+and an OR]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/37):
+
+<logic-diagram name="full-adder-block" names="true" controls="none" style="max-width: 320px; margin: 0 auto"></logic-diagram>
+
+Four full adders, each one's Cout going into the next one's Cin, add two 4-bit
+numbers. The carry ripples from right to left, one full adder after the other,
+which is why this is called a **ripple-carry adder**. Set A to `0111` and B to
+`0011`: S shows `1010`, as in [adding in binary](#adding-in-binary).
+
+<logic-diagram name="four-bit-adder" names="true" controls="none" style="max-width: 820px; margin: 0 auto"></logic-diagram>
+
+To subtract B instead, the adder has to add the two's complement of B: B with
+its bits inverted, plus 1. Adding 1 is easy: the first Cin is set to 1. Bits
+are inverted by XOR gates, which invert a bit only when told to:
+
+- While INVERT is 0, OUT is B, unchanged.
+- While INVERT is 1, OUT is B, inverted.
+
+<logic-diagram name="xor-inverter" names="true" controls="none" style="max-width: 470px; margin: 0 auto"></logic-diagram>
+
+So a single input, SUBTRACT, goes into the first Cin, and into an XOR on each bit
+of B as its INVERT. While SUBTRACT is 0, the circuit adds. While it is 1, it
+subtracts:
+
+1. Set A to `0110` (6) and B to `0010` (2): S shows `1000` (8).
+2. Turn SUBTRACT on: the XORs give `1101`, B inverted, and S shows `0100` (4).
+   Cout is lit: it is the fifth bit, which is dropped.
+3. Swap A and B: S shows `1100`, which is -4 in 4-bit two's complement, where
+   numbers go from -8 to 7. Cout is now off. When subtracting, an unlit Cout
+   means that the subtraction would have had to borrow from a fifth bit that
+   does not exist: A was less than B, and the result went below 0.
+
+<logic-diagram name="adder-subtractor" names="true" controls="none" style="max-width: 840px; margin: 0 auto"></logic-diagram>
+
+Cout says something about the result besides the result itself. Such a bit is
+called a **flag**, and Cout is the **carry flag**. One more gate adds a **zero
+flag**, ZERO, which is 1 when every bit of the result is 0: what a jump such as
+`JUMPZ` needs to know. That gate is a NOR of the result's bits: an OR followed
+by a NOT, whose output is 1 only when all its inputs are 0.
+
+1. Turn SUBTRACT on, then set A and B to the same number: ZERO is lit, and so is
+   Cout.
+2. Make A smaller than B: ZERO and Cout are both off.
+3. Make A larger than B: Cout is lit, and ZERO is off.
+
+<logic-diagram name="adder-subtractor-flags" names="true" controls="none"></logic-diagram>
+
+So a circuit built to add and subtract also **compares** numbers, with nothing
+added but a NOR. To compare A and B, a processor subtracts B from A, ignores the
+result, and reads the flags:
+
+| Comparison | Flags after A - B       |
+| :--------- | :---------------------- |
+| A == B     | ZERO is 1               |
+| A != B     | ZERO is 0               |
+| A < B      | Cout is 0               |
+| A >= B     | Cout is 1               |
+| A > B      | Cout is 1 and ZERO is 0 |
+| A <= B     | Cout is 0 or ZERO is 1  |
+
+This holds for A and B read as numbers from 0 to 15. Comparing numbers in two's
+complement takes two more flags, not shown here: the **sign flag** and the
+**overflow flag**. Every `if (a < b)` of your programs comes down to such a
+subtraction.
 
 ### A simplified ALU
 
-_To write:_ the adder turned into an adder-subtractor, its flags (the zero flag
-that `JUMPZ` needs), then logic operations, and the control signals that choose
-the result (`adder-subtractor`, `adder-subtractor-flags`, `alu-slice`,
-`alu-slice-block`, `four-bit-alu`).
+An ALU does more than arithmetic. It also performs **logic operations**, AND,
+OR and XOR, on each pair of bits of A and B. For example, `s` is `S` with the
+bit worth 32 set, so `S` OR `00100000` is `s`, whatever the letter.
+
+An ALU computes every operation at once, and a selector passes on the one that
+is asked for. With four operations to choose from, it needs a **4-to-1
+selector**: two select bits, S1 and S0, read as a binary number, pick which of
+four data inputs reaches Y. It is built like the 2-to-1 selector [of the
+register](#a-register), as the presentation [shows]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/48). Set S1 and S0 to
+`00`, `01`, `10` and `11` in turn, and see which input gets through:
+
+<logic-diagram name="selector-block" names="true" highlight="true" controls="none" style="max-width: 340px; margin: 0 auto"></logic-diagram>
+
+**One bit of an ALU** is a full adder with its SUBTRACT XOR, an AND, an OR, an
+XOR, and a 4-to-1 selector whose select bits, OP1 and OP0, choose the
+operation:
+
+| OP1 OP0 | RESULT                           |
+| :-----: | :------------------------------- |
+|  `00`   | A + B, or A - B with SUBTRACT on |
+|  `01`   | A AND B                          |
+|  `10`   | A OR B                           |
+|  `11`   | A XOR B                          |
+
+The logic gates take B before the SUBTRACT XOR, so that SUBTRACT only changes
+the arithmetic. Cin is an input here, since this bit has no neighbour on its
+right yet:
+
+1. Set A and B to 1, with Cin at 0.
+2. Set OP1 and OP0 to `00`, `01`, `10` and `11` in turn: RESULT shows 0 (with
+   Cout at 1, since 1 + 1 is `10`), then 1, 1 and 0.
+3. Watch the gates that are not selected: they go on computing all the time. The
+   selector only picks which result gets through.
+
+<logic-diagram name="alu-slice" names="true" highlight="true" controls="none" style="max-width: 640px; margin: 0 auto"></logic-diagram>
+
+The ALU bit, drawn as a box, as the ALU uses it:
+
+<logic-diagram name="alu-slice-block" names="true" controls="none" style="max-width: 540px; margin: 0 auto"></logic-diagram>
+
+**A 4-bit ALU** is four ALU bits side by side, chained by their carries like
+the full adders of the adder. SUBTRACT, OP1 and OP0 go to all four, and SUBTRACT
+is also the first Cin, as in the adder-subtractor. Its ZERO flag takes the
+results after the selectors, so it also works for the logic operations: ZERO
+after an AND means that A and B have no 1 bit in common. Each bit's box shows
+the operation it performs.
+
+Set A to `0110` and B to `0011`, then try each operation:
+
+| Operation | OP1 OP0 | SUBTRACT | RESULT     |
+| :-------- | :-----: | :------: | :--------- |
+| ADD       |  `00`   |    0     | `1001` (9) |
+| SUB       |  `00`   |    1     | `0011` (3) |
+| AND       |  `01`   |    0     | `0010`     |
+| OR        |  `10`   |    0     | `0111`     |
+| XOR       |  `11`   |    0     | `0101`     |
+
+<logic-diagram name="four-bit-alu" names="true" controls="none"></logic-diagram>
+
+The machine's ALU works the same way, with eight bits instead of four. It only
+needs OP `00`: the control unit turns SUBTRACT off for `ADD` and on for `SUB`. A
+real processor also has [instructions](#kinds-of-instructions) for the logic
+operations.
 
 ### Adding numbers wider than the machine
 
