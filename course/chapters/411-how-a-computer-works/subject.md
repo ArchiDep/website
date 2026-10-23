@@ -560,8 +560,99 @@ instruction read from memory.
 
 ### Negative numbers: two's complement
 
-_To write:_ a reminder of how negative numbers are written in binary: invert
-every bit and add 1. Why it makes subtraction an addition.
+The machine demonstrated in the presentation has a `SUB` instruction, and its
+ALU can subtract as well as add. Yet the only arithmetic circuit the
+presentation built out of gates is the adder: no circuit that subtracts was ever
+shown. None is needed, as long as negative numbers are written in **two's
+complement**.
+
+A register or a memory cell has a **fixed number of digits**: a byte always has
+eight bits, no more and no less. A result that needs a ninth bit loses it, since
+there is no ninth bit to hold it. Two's complement uses that loss to write
+negative numbers without a minus sign.
+
+**In decimal first.** Imagine numbers of exactly two digits, from `00` to `99`,
+like a counter with two wheels. Adding 1 to `99` gives `100`, but the counter
+only shows `00`. So `99` behaves exactly like -1: add 1 and you get 0. In the
+same way, `98` is -2, `97` is -3, and so on. Deciding that `50` to `99` stand
+for -50 to -1 gives two-digit numbers from -50 to 49.
+
+![The values from -50 to 49, split in two: 0 to 49 are written 00 to 49, and -50 to -1 are written 50 to 99](slides/images/tens-complement.svg)
+
+To write -23 this way:
+
+1. Subtract each digit from 9, which gives 76. This is the **nine's
+   complement**.
+2. Add 1, which gives 77. This is the **ten's complement**, and it is how -23 is
+   written.
+
+Subtracting 23 is then adding 77, and dropping the digit that does not fit:
+
+```text
+   45
++  77     -23
+-----
+  122     22, once the third digit is dropped
+```
+
+What this avoids is **borrowing**, carrying in reverse when subtracting. In 52 -
+7, the 2 is smaller than the 7, so you borrow 1 from the column on its left: 12
+
+- 7 is 5, and the 5 of 52 becomes 4, which gives 45. (In French, a borrow and a
+  carry are both a _retenue_.) Like a carry, a borrow can ripple from column to
+  column. Subtracting from 9 never borrows, since no digit is larger than 9, so
+  the only calculations left are additions.
+
+**Binary works the same way.** Subtracting each bit from 1 is just inverting it,
+so negating a number is **inverting every bit and adding 1**. Here is -83:
+
+|              |       |     |     |     |     |     |     |     |     |
+| :----------- | :---: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| 83           |       |  0  |  1  |  0  |  1  |  0  |  0  |  1  |  1  |
+| Inverted     |       |  1  |  0  |  1  |  0  |  1  |  1  |  0  |  0  |
+| Plus 1: -83  |       |  1  |  0  |  1  |  0  |  1  |  1  |  0  |  1  |
+| 83 + -83 = 0 | ~~1~~ |  0  |  0  |  0  |  0  |  0  |  0  |  0  |  0  |
+
+With 8 bits, this gives numbers from -128 to 127:
+
+| Bits       | Value |
+| :--------- | ----: |
+| `01111111` |   127 |
+| `00000001` |     1 |
+| `00000000` |     0 |
+| `11111111` |    -1 |
+| `10101101` |   -83 |
+| `10000000` |  -128 |
+
+The highest (first) bit tells the sign: it is 1 for every negative number. A
+result outside the range is wrong: 100 + 50 gives `10010110`, which reads as
+-106. This is called an **overflow**.
+
+Programming languages store their integers this way, within the same kind of
+fixed bounds. In Java, a `byte` has 8 bits and holds numbers from -128 to 127,
+exactly as in the table above, so `(byte) 200` is -56. An `int` has 32 bits and
+holds numbers from -2,147,483,648 to 2,147,483,647: `Integer.MAX_VALUE + 1`
+overflows to `Integer.MIN_VALUE`, the most negative `int`.
+
+As always, [nothing in the bits says what they mean](#everything-is-numbers):
+`10101101` is 173 for a program that reads the byte as a number from 0 to 255,
+and -83 for a program that reads it in two's complement. The adder does not
+care: it adds bits the same way in both cases.
+
+**This is why subtraction is an addition.** To compute A - B, the processor adds
+A and -B, and -B is B with its bits inverted, plus 1. Turning [`s` into
+`S`](#processing-data-is-arithmetic) is subtracting 32 from 115, so adding -32,
+which is `11100000`:
+
+```text
+   01110011     115, s in UTF-8
++  11100000     -32
+-----------
+ 1 01010011     83, S in UTF-8, once the ninth bit is dropped
+```
+
+A processor needs no separate circuit to subtract: an adder, NOT gates to invert
+B, and a carry of 1 into the first column are enough.
 
 ### A simplified ALU
 
