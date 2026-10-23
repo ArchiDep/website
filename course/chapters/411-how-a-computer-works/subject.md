@@ -469,13 +469,94 @@ running, and the connections between them.
 
 ## Appendix: the cake is a lie
 
-_To write:_ the circuits the presentation only showed in part, each with its
-diagram, building up to the parts of the machine.
+You may have noticed that we saw some fundamental circuits during the
+presentation, but that some of them were not explained in detail like the ALU or
+the program counter. This appendix is for those who want to go deeper, and see
+how some of these more complex circuits are built from the simpler ones.
 
 ### A register
 
-_To write:_ a bit that is written only when told to, then eight of them side by
-side (`register-bit`, `register-bit-block`, `eight-bit-register`).
+The machine demonstrated in the presentation has two registers: the
+**accumulator**, which holds the value being calculated, and the **instruction
+register**, in the control unit, which holds the instruction being decoded and
+executed. A register is memory, like the D latches of [addressable
+memory](#memory-is-addressed): it keeps a value. But a D latch alone is not
+enough, because a register also has to:
+
+- **Take its new value at one precise instant.** `ADD` feeds the accumulator's
+  value into the adder, and the adder's result back into the accumulator. A
+  latch follows its input for as long as WRITE is 1, so it would pass the result
+  straight back to the adder, and the sum would run round in circles.
+- **Keep its value until it is told to change it**, however many times the
+  clock ticks.
+
+**The edge-triggered D flip-flop** solves the first problem. Its Q takes DATA's
+value only at the moment CLK rises from 0 to 1, the **rising edge**, and keeps
+that value the rest of the time, whatever DATA does. The wedge on its clock
+input marks it as edge-triggered. The presentation shows [how it is made of two
+D latches]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/57).
+
+Its clock starts paused in the following diagram, so that you can drive it by
+hand. Clicking the 0/1 half of a paused clock flips its level, and its ▶ half
+lets it run:
+
+1. Change DATA a few times: Q does not move.
+2. Raise CLK when DATA is 1: Q takes DATA's value.
+3. Change DATA again: Q still does not move, although CLK is 1.
+4. Lower CLK: nothing changes either. Only a rising edge changes Q.
+
+<logic-diagram name="d-flip-flop-block" clock="paused" names="true" controls="none" style="max-width: 480px; margin: 0 auto"></logic-diagram>
+
+A flip-flop stores DATA on every rising edge, so it does not solve the second
+problem: it cannot keep a value while the clock ticks. Choosing between keeping
+a value and storing a new one is the job of a **selector**. SELECT opens one of
+two ANDs, directly or through a NOT, and the OR passes on whatever gets through
+the open one:
+
+- While SELECT is 0, flip D0 and D1: only D0 reaches Y.
+- Turn SELECT on and flip them again: only D1 reaches Y.
+
+<logic-diagram name="selector" names="true" highlight="true" controls="none" style="max-width: 560px; margin: 0 auto"></logic-diagram>
+
+**One bit of a register** is a selector in front of a flip-flop, with a new
+input, LOAD, as SELECT:
+
+- **While LOAD is 1**, the selector lets DATA through to the flip-flop, which
+  stores it on the next rising edge.
+- **While LOAD is 0**, the selector lets the flip-flop's own Q back in. Each
+  rising edge stores the value the flip-flop already holds, so nothing changes.
+
+The clock runs on its own, as it does in a processor:
+
+1. With LOAD off, flip DATA: Q does not follow it, however many times the clock
+   ticks.
+2. Turn LOAD on: Q takes DATA's value on the next rising edge, and follows DATA
+   from then on, one edge late.
+3. Turn LOAD off: Q keeps its last value, whatever DATA does.
+
+<logic-diagram name="register-bit" clock="running" names="true" highlight="true" controls="none" style="max-width: 800px; margin: 0 auto"></logic-diagram>
+
+The register bit, drawn as a box, with DATA from above and Q below, as the
+register uses it. It behaves the same way:
+
+<logic-diagram name="register-bit-block" clock="running" names="true" controls="none" style="max-width: 400px; margin: 0 auto"></logic-diagram>
+
+**An 8-bit register** is eight register bits side by side, one per bit of a
+byte, sharing the same LOAD and the same clock. The bits run from the highest,
+`D7`, on the left, to the lowest, `D0`, on the right, so that the inputs and the
+lamps read as binary numbers:
+
+1. Set a byte on the inputs, such as `01010011`, which is 83.
+2. Turn LOAD on, and wait for a rising edge: the lamps show the byte.
+3. Turn LOAD off, then change the inputs: the register keeps 83.
+
+<logic-diagram name="eight-bit-register" names="true" controls="none"></logic-diagram>
+
+The accumulator and the instruction register of the machine are such registers.
+To execute `ADD`, the control unit turns the accumulator's LOAD on for a single
+tick, so that the adder's result is stored on one rising edge, and only once. It
+does the same with the instruction register during the fetch, to store the
+instruction read from memory.
 
 ### Negative numbers: two's complement
 
