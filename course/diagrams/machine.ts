@@ -81,7 +81,7 @@ const stepOf = (state: StepState) => step(state.caption, ...actionsOf(state));
 export default diagram({
   captions: {
     rest:
-      'A processor and a memory of sixteen cells, connected by a data bus and ' +
+      'This diagram shows a processor and a memory of sixteen cells, connected by a data bus and ' +
       'an address bus. The memory holds a program that multiplies 3 by 2 by ' +
       'adding 3 twice, and leaves its result in cell 14. The program counter ' +
       'is at 0, ready to start.',

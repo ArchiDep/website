@@ -97,7 +97,7 @@ const focus = focusOn(PARTS);
 export default diagram({
   captions: {
     rest:
-      'A 64-bit processor, connected by data and address buses to the ' +
+      'This diagram shows a 64-bit processor, connected by data and address buses to the ' +
       'firmware, the memory and the disk controller. The storage is behind ' +
       'the disk controller, which the processor asks to copy from it into ' +
       'memory.',

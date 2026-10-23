@@ -18,7 +18,7 @@ const CONNECTION = 'edge-sftp-client-sftp-session';
 export default diagram({
   captions: {
     rest:
-      'Your SFTP client is connected to your server, uploading the ' +
+      'In this diagram, your SFTP client is connected to your server, uploading the ' +
       'application, while your terminal is still connected over SSH.',
     start:
       'Your terminal is still connected to your server over SSH, and ' +

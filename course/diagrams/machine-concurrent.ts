@@ -26,7 +26,7 @@ const turns = PAIRS.flatMap(([first, second]) => [
 export default diagram({
   captions: {
     rest:
-      'A single core, and two programs in memory, A and B, beside the kernel ' +
+      'This diagram shows a single core, and two programs in memory, A and B, beside the kernel ' +
       'and init. The core runs a few of one program’s instructions, then the ' +
       'kernel switches it to the other: the programs take turns, they are ' +
       'concurrent.',

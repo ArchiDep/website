@@ -31,7 +31,7 @@ const guessitWaits = waiting('node-guessit');
 export default diagram({
   captions: {
     rest:
-      'Your browser talks to the Guess It application running on your server. ' +
+      'In this diagram, your browser talks to the Guess It application running on your server. ' +
       'Guess It talks to the PostgreSQL database server also running on your server. ' +
       'You started Guess It manually in your SSH session, in a shell running on the server.',
     start:

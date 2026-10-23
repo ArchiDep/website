@@ -28,7 +28,7 @@ const ALL = [0, 1, 2, 3, 4, 5];
 export default diagram({
   captions: {
     rest:
-      'Two cores, and two programs in memory, A and B, beside the kernel and ' +
+      'This diagram shows two cores, and two programs in memory, A and B, beside the kernel and ' +
       'init. Each core runs one of the programs, both at the same time: they ' +
       'are parallel.',
     start: 'A single core, and two programs in memory, A and B, both to run.'

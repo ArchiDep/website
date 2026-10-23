@@ -199,7 +199,7 @@ const disconnecting = (...names: string[]): Action[] => [
 export default diagram({
   captions: {
     rest:
-      'The processor drawn as a stack of cores, connected by the buses to the ' +
+      'This diagram shows the processor as a stack of cores, connected by the buses to the ' +
       'firmware, the memory, the disk controller and the device controllers. ' +
       'The storage and the devices are behind their controllers, and a device ' +
       'can interrupt the processor. Once booted, the memory holds the kernel, ' +

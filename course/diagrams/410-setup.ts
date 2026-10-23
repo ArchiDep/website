@@ -13,7 +13,7 @@ const SHELL = 'node-remote-shell';
 export default diagram({
   captions: {
     rest:
-      'PostgreSQL is installed and running on your server, listening on port ' +
+      'In this diagram, PostgreSQL is installed and running on your server, listening on port ' +
       '5432. Node.js is installed, but nothing of it runs.',
     start:
       'You start the exercise by connecting to your server over SSH. ' +

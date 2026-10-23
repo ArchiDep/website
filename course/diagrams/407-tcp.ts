@@ -15,7 +15,7 @@ const world = data(CONNECTION, 'World');
 export default diagram({
   captions: {
     rest:
-      'Alice’s netcat is connected to Bob’s, which listens on port 3000. ' +
+      'In this diagram, Alice’s netcat is connected to Bob’s, which listens on port 3000. ' +
       'The arrow shows who opened the connection: Alice.',
     start:
       'Two servers, separated by the Internet. Alice and Bob are each ' +

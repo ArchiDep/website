@@ -22,7 +22,7 @@ const CONNECTION = 'edge-ssh-client-ssh-session';
 export default diagram({
   captions: {
     rest:
-      'Your terminal’s shell started the SSH client, which is connected to ' +
+      'In this diagram, your terminal’s shell started the SSH client, which is connected to ' +
       '<code>example.com</code> on port 22. There, the SSH session started a ' +
       'shell, which runs your commands on the server.',
     start: 'Your computer.'

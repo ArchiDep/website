@@ -8,7 +8,7 @@ import { diagram } from '../src/diagrams/build/machine';
 export default diagram({
   captions: {
     rest:
-      'The booted server, running the SFTP deployment. Its memory holds the ' +
+      'This diagram shows the booted server, running the SFTP deployment. Its memory holds the ' +
       'kernel, init, the SSH server, an SSH session and its shell, Guess It ' +
       'and PostgreSQL, each a process with its own memory.',
     start: 'The booted server, running the SFTP deployment.'

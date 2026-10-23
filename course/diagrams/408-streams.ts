@@ -18,7 +18,7 @@ const CONNECTION = 'edge-ssh-client-ssh-session';
 export default diagram({
   captions: {
     rest:
-      'The SSH client inherited the standard streams of your shell: it reads ' +
+      'In this diagram, the SSH client inherited the standard streams of your shell: it reads ' +
       'what you type, and writes to your terminal. On the server, the shell ' +
       'and the commands it starts read from and write to the SSH session.',
     start:
