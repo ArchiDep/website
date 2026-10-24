@@ -13,6 +13,7 @@ main .diagram-figure .diagram-controls .enlarge {
   margin-left: auto;
 }
 main .diagram-figure:not([data-enlargeable]) .diagram-controls .enlarge,
+main figure.circuit:not([data-enlargeable]) .circuit-controls .enlarge,
 dialog.lightbox .diagram-controls .enlarge {
   display: none;
 }
@@ -160,6 +161,83 @@ dialog.lightbox .diagram-figure .diagram-caption {
   font-size: 1.25rem;
   line-height: 1.5;
   text-align: center;
+}
+
+/* --- A circuit ------------------------------------------------------------ */
+
+/* The circuit takes the room its instructions leave, beside it or below it as
+   the script decides with `data-layout`, and its card is as large as its
+   proportions allow there, but no larger than `--circuit-max-width`. Card and
+   instructions are in the page's colours, which the circuit is drawn for. */
+.lightbox-circuit {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 0;
+  margin: 0;
+
+  &[data-layout='side'] {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* The card and its bar, centred together in the room the instructions leave.
+   The bar is 3rem tall, with its margin, which the card leaves it. */
+.lightbox-circuit-frame {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+
+  & .circuit-controls {
+    justify-content: center;
+  }
+}
+
+.lightbox-circuit-card {
+  box-sizing: content-box;
+  width: min(
+    100cqw - 2rem,
+    (100cqh - 5rem) * var(--circuit-aspect),
+    var(--circuit-max-width)
+  );
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--color-base-100);
+}
+
+.lightbox-circuit-instructions {
+  box-sizing: border-box;
+  flex: none;
+  overflow: auto;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+
+  & > :first-child {
+    margin-top: 0;
+  }
+  & > :last-child {
+    margin-bottom: 0;
+  }
+
+  [data-layout='side'] > & {
+    width: 22rem;
+    max-height: 100%;
+  }
+  [data-layout='below'] > & {
+    width: 100%;
+    max-width: 70ch;
+    margin-inline: auto;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

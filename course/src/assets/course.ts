@@ -8,8 +8,13 @@ import { Socket } from 'phoenix';
 import { setUpPageDiagrams } from '../diagrams/runtime';
 import './course/aside';
 import './course/back-to-top';
+import { setUpCircuits } from './course/circuits';
 import { cloudServer, cloudServerDataType } from './course/cloud-server';
-import { enlargeDiagram, setUpLightbox } from './course/lightbox';
+import {
+  enlargeCircuit,
+  enlargeDiagram,
+  setUpLightbox
+} from './course/lightbox';
 import './course/randomize';
 import './course/search';
 import {
@@ -41,6 +46,7 @@ const standalone =
 defineLogicDiagramElement();
 defineStoryElement();
 setUpPageDiagrams(document, { enlarge: enlargeDiagram });
+setUpCircuits(document, { enlarge: enlargeCircuit });
 setUpLightbox();
 
 window['logOut'] = logOut;

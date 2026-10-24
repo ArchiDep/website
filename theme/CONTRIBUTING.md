@@ -336,9 +336,9 @@ document for the meaning and intended behavior of each feature:
   [Side-by-Side Columns][course-cols].
 - **Git diagrams** (`simgit-story`, in `simgit.css`) — the interactive [Git
   diagrams][course-git-diagrams].
-- **Lightbox** (`dialog.lightbox`, in `lightbox.css`) — pictures and
-  architecture diagrams shown as large as the window allows. See
-  [Lightbox][course-lightbox].
+- **Lightbox** (`dialog.lightbox`, in `lightbox.css`) — pictures,
+  architecture diagrams and logic circuits shown as large as the window allows.
+  See [Lightbox][course-lightbox].
 - **Progress indicators** (`#course-material-menu .course-item-*` /
   `.course-section-*`) — the done/due/next/future markers in the sidebar.
 - **Search** (`#search-dialog`) — the full-text search dialog shared with the

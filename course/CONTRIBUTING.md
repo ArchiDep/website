@@ -887,6 +887,10 @@ and `theme`. A circuit shows its names and no controls unless it says otherwise.
 than the text; without it, the circuit is as wide as the text. An attribute the
 element does not have fails the build.
 
+In the page, a circuit is shown in a box with its instructions, and a button
+under it puts it back as it started, so that the instructions can be followed
+again. It can also be [enlarged](#lightbox), keeping what the reader has set.
+
 Decks write the `<logic-diagram>` element directly instead, since a slide moves
 a circuit's focus as it is explained (see the Companion Gate documentation on
 Reveal.js).
@@ -1170,12 +1174,14 @@ analytics are disabled.
 
 ### Lightbox
 
-A page's pictures and [architecture diagrams](#architecture-diagrams) can be
-shown as large as the window allows, which matters where the course menu and the
-headings leave the text a narrow column. Nothing is written in the Markdown for
-it: [`src/assets/course/lightbox.ts`](./src/assets/course/lightbox.ts) offers it
-for every picture of a page that it would show markedly larger, except an emoji
-or a picture in a link, and explains how it decides and sizes what it shows. Its
+A page's pictures, [architecture diagrams](#architecture-diagrams) and [logic
+circuits](#logic-circuits) can be shown as large as the window allows, which
+matters where the course menu and the headings leave the text a narrow column. A
+circuit is shown with its instructions, beside it or below it. Nothing is
+written in the Markdown for it:
+[`src/assets/course/lightbox.ts`](./src/assets/course/lightbox.ts) offers it for
+every picture of a page that it would show markedly larger, except an emoji or a
+picture in a link, and explains how it decides and sizes what it shows. Its
 styles are the theme's, in
 [`theme/src/lightbox.css`](../theme/src/lightbox.css).
 

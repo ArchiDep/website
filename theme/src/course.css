@@ -170,14 +170,20 @@ main .note .content > :last-child {
   @apply mb-0;
 }
 
-/* An architecture diagram, its controls and its caption are one box, so that
- * the caption reads as the diagram's rather than as the next paragraph. The box
- * reaches out by its padding, which the page's own padding always has room for,
- * so that the drawing is as wide as the text. Its surface is a translucent
- * tint, which shows in both themes. Keyboard focus, which lets the arrow keys
- * step, is shown by its border. */
+/* An architecture diagram, with its controls and its caption, and a logic
+ * circuit, with its instructions and its controls, are each one box, so that
+ * what is written about them reads as theirs rather than as the paragraphs
+ * around them. The box reaches out by its padding, which the page's own padding
+ * always has room for, so that the drawing and the text in it are as wide as
+ * the text outside. Its surface is a translucent tint, which shows in both
+ * themes, and is left off paper like a note's. */
+main :is(.diagram-figure, figure.circuit) {
+  @apply my-6 -mx-3 rounded-box border border-base-content/10 screen:bg-base-content/5 p-3;
+}
+
+/* Keyboard focus, which lets the arrow keys step, is shown by its border. */
 main .diagram-figure {
-  @apply my-6 -mx-3 rounded-box border border-base-content/10 bg-base-content/5 p-3 outline-none;
+  @apply outline-none;
 
   &:focus-visible {
     @apply border-primary/60;
@@ -194,18 +200,33 @@ main .diagram-figure {
   }
 }
 
-/* A logic circuit, after the instructions that say what to do with it, spaced
- * like the prose around it. It is drawn no wider than its tag's `width`, and
- * centred when that is narrower than the text. */
+/* A logic circuit, after the instructions that say what to do with it. It is
+ * drawn no wider than its tag's `width`, and centred when that is narrower than
+ * the text. Its controls look like an architecture diagram's, which
+ * `course/src/diagrams/diagram.css` draws. */
 main figure.circuit {
-  @apply my-5;
-
   .circuit-instructions > :first-child {
     @apply mt-0;
   }
 
   logic-diagram {
     @apply mx-auto;
+  }
+}
+
+.circuit-controls {
+  @apply mt-3 flex flex-wrap items-center gap-2;
+
+  & button {
+    @apply cursor-pointer rounded-md border border-current/25 bg-current/8 px-3 py-0.5 text-[0.9em];
+  }
+
+  & .enlarge {
+    @apply ml-auto;
+  }
+
+  @media print {
+    display: none;
   }
 }
 
