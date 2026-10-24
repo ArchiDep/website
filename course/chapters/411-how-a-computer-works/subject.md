@@ -483,8 +483,9 @@ A shop might describe a desktop computer like this:
 - **Power supply**: 750 W
 - **Operating system**: Windows 11 Home 64-bit
 
-Every figure belongs to a part of [the modern machine of the
-presentation]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/67):
+Every figure belongs to a part of [the modern machine of the presentation]({%
+link chapters/411-how-a-computer-works/slides/slides.md
+%}#a-more-modern-machine):
 
 | In the description    | What it means                                                                                                                      | Part of the machine  |
 | :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :------------------- |
@@ -531,7 +532,8 @@ enough, because a register also has to:
 value only at the moment CLK rises from 0 to 1, the **rising edge**, and keeps
 that value the rest of the time, whatever DATA does. The wedge on its clock
 input marks it as edge-triggered. The presentation shows [how it is made of two
-D latches]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/57).
+D latches]({% link chapters/411-how-a-computer-works/slides/slides.md
+%}#two-latches-make-a-flip-flop).
 
 Its clock starts paused in the following diagram, so that you can drive it by
 hand. Clicking the 0/1 half of a paused clock flips its level, and its ▶ half
@@ -697,7 +699,8 @@ next section builds.
 A **full adder** adds one column of an addition: A, B, and the carry from the
 column on its right, Cin. It gives the column's SUM, and Cout, the carry for the
 column on its left. The presentation shows [how it is made of two half adders
-and an OR]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/37):
+and an OR]({% link chapters/411-how-a-computer-works/slides/slides.md
+%}#the-full-adder):
 
 <logic-diagram name="full-adder-block" names="true" controls="none" style="max-width: 320px; margin: 0 auto"></logic-diagram>
 
@@ -780,8 +783,8 @@ is asked for. With four circuits to choose from, it needs a **4-to-1 selector**:
 two select bits, S1 and S0, read as a binary number, pick which of four data
 inputs reaches Y. It is built like the 2-to-1 selector [of the
 register](#a-register), as the presentation [shows]({% link
-chapters/411-how-a-computer-works/slides/slides.md %}#/48). Set S1 and S0 to
-`00`, `01`, `10` and `11` in turn, and see which input gets through:
+chapters/411-how-a-computer-works/slides/slides.md %}#4-to-1-selector). Set S1
+and S0 to `00`, `01`, `10` and `11` in turn, and see which input gets through:
 
 <logic-diagram name="selector-block" names="true" highlight="true" controls="none" style="max-width: 340px; margin: 0 auto"></logic-diagram>
 
@@ -889,13 +892,14 @@ time.
 
 ### Flip-flops with preset and clear
 
-The machine's **program counter** holds the address of the next instruction.
-The presentation showed [a counter]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/61) made of D flip-flops, each one
-feeding its Q̅ back into its DATA, so that it flips on every rising edge of its
-clock. The first flip-flop is clocked by the clock. Each of the others is
-clocked by the Q̅ of the one before, so that it flips when the one before goes
-back to 0, like a carry. Read from right to left, Q2 Q1 Q0 count from `000` to
-`111`, then start over:
+The machine's **program counter** holds the address of the next instruction. The
+presentation showed [a counter]({% link
+chapters/411-how-a-computer-works/slides/slides.md %}#program-counter) made of D
+flip-flops, each one feeding its Q̅ back into its DATA, so that it flips on
+every rising edge of its clock. The first flip-flop is clocked by the clock.
+Each of the others is clocked by the Q̅ of the one before, so that it flips when
+the one before goes back to 0, like a carry. Read from right to left, Q2 Q1 Q0
+count from `000` to `111`, then start over:
 
 <logic-diagram name="counter" names="true" controls="none" style="max-width: 760px; margin: 0 auto"></logic-diagram>
 
@@ -928,11 +932,12 @@ away, whatever its clock and its DATA are doing. Once they are released, the
 flip-flop keeps that value, and works with its clock again.
 
 This flip-flop is built differently from the one of the presentation, out of
-three [SR latches]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/42) instead of two D latches. The latch on the right
-holds Q, and the two on the left set or reset it when the clock rises. Preset
-and clear act directly on the latch on the right, as its SET and RESET. Turning
-them on at the same time is therefore not allowed, by convention, as for the SR
-latch: it would make both Q and Q̅ 0.
+three [SR latches]({% link chapters/411-how-a-computer-works/slides/slides.md
+%}#sr-latch) instead of two D latches. The latch on the right holds Q, and the
+two on the left set or reset it when the clock rises. Preset and clear act
+directly on the latch on the right, as its SET and RESET. Turning them on at the
+same time is therefore not allowed, by convention, as for the SR latch: it would
+make both Q and Q̅ 0.
 
 The same flip-flop drawn as a box, with PRESET on top and CLEAR below:
 
@@ -996,11 +1001,12 @@ addresses. The control unit drives it:
 
 ### A bigger memory from smaller blocks
 
-The presentation already showed [a 4-bit addressable
-memory]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/50): four
-D latches, a [decoder]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/46)
-that sends WRITE to the latch at the address, and a 4-to-1 selector that passes
-that latch's value on to OUT. It has four [cells](#memory-is-addressed), one per
+The presentation already showed [a 4-bit addressable memory]({% link
+chapters/411-how-a-computer-works/slides/slides.md %}#addressable-memory): four
+D latches, a [decoder]({% link
+chapters/411-how-a-computer-works/slides/slides.md %}#2-to-4-decoder) that sends
+WRITE to the latch at the address, and a 4-to-1 selector that passes that
+latch's value on to OUT. It has four [cells](#memory-is-addressed), one per
 address, and each cell is a single latch:
 
 <logic-diagram name="addressable-memory" names="true" highlight="true" controls="none" style="max-width: 530px; margin: 0 auto"></logic-diagram>
@@ -1150,12 +1156,12 @@ as the machine's, with many more of each, and a few others:
 - **Moving data**, between memory and registers, and between registers. The
   machine has a single register, so `LOAD x` does not need to say where the
   value goes: always into the accumulator. A processor with [several
-  registers]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/67)
-  has to say which one, and its instruction set repeats the same operation for
-  each of them. The [Intel 8080][intel-8080], with its seven 8-bit registers,
-  has a `MOV` for every pair of them and of memory: 63 of its 256 operation
-  codes are `MOV`s. An x86-64 processor has 16 general-purpose registers, and an
-  ARM one 31. For example:
+  registers]({% link chapters/411-how-a-computer-works/slides/slides.md
+  %}#a-more-modern-machine) has to say which one, and its instruction set
+  repeats the same operation for each of them. The [Intel 8080][intel-8080],
+  with its seven 8-bit registers, has a `MOV` for every pair of them and of
+  memory: 63 of its 256 operation codes are `MOV`s. An x86-64 processor has 16
+  general-purpose registers, and an ARM one 31. For example:
   - `MOV B, C`, on the 8080, copies register C into register B. It is the byte
     `01 000 001`: `01` for `MOV`, `000` for B and `001` for C.
   - `MOV RAX, RBX`, on x86-64, copies register RBX into register RAX.
@@ -1358,8 +1364,8 @@ Fixing them cost some of that speed.
 ## Appendix: two queues, one coffee machine
 
 The presentation compared programs to [queues at a coffee machine]({% link
-chapters/411-how-a-computer-works/slides/slides.md %}#/73). Two queues at one
-machine take turns: they are **concurrent**. On a single core, the kernel
+chapters/411-how-a-computer-works/slides/slides.md %}#taking-turns). Two queues
+at one machine take turns: they are **concurrent**. On a single core, the kernel
 switches between processes many times a second, fast enough that they all seem
 to run at once, but only one runs at any moment:
 
