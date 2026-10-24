@@ -9,6 +9,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Tags do
   """
 
   alias ArchiDep.CourseSite.Renderer.Liquid.CalloutTag
+  alias ArchiDep.CourseSite.Renderer.Liquid.CircuitTag
   alias ArchiDep.CourseSite.Renderer.Liquid.ColsTag
   alias ArchiDep.CourseSite.Renderer.Liquid.IncludeTag
   alias ArchiDep.CourseSite.Renderer.Liquid.LinkTag
@@ -26,6 +27,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.Tags do
     |> Map.delete("render")
     |> Map.merge(%{
       "callout" => CalloutTag,
+      "circuit" => CircuitTag,
       "cols" => ColsTag,
       "include" => IncludeTag,
       "link" => LinkTag,

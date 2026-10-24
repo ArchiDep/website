@@ -194,6 +194,21 @@ main .diagram-figure {
   }
 }
 
+/* A logic circuit, after the instructions that say what to do with it, spaced
+ * like the prose around it. It is drawn no wider than its tag's `width`, and
+ * centred when that is narrower than the text. */
+main figure.circuit {
+  @apply my-5;
+
+  .circuit-instructions > :first-child {
+    @apply mt-0;
+  }
+
+  logic-diagram {
+    @apply mx-auto;
+  }
+}
+
 main .solution {
   @apply my-5;
 }

@@ -141,10 +141,13 @@ Say that **1 means current and 0 means no current**: a switch whose current
 closes another switch can make one bit control another. Wired in different
 ways, such switches make the operations of Boolean logic, the `!`, `&&` and `||`
 of your programming languages, which are called **logic gates**. Here, two
-switches in a row make AND: the lamp is lit only when A and B are both 1. Click
-the switches to try it:
+switches in a row make AND: the lamp is lit only when A and B are both 1.
 
-<logic-diagram name="relay-and" controls="none" style="max-width: 420px; margin: 0 auto"></logic-diagram>
+{% circuit name: relay-and, width: 420 %}
+
+Click the switches to try it.
+
+{% endcircuit %}
 
 Computers use binary because "no current" and "current" are easy to tell apart.
 Ten levels of current, one per decimal digit, would not be.
@@ -157,7 +160,8 @@ of.
 The sum and carry above are two logic gates: the sum is **XOR**, "exclusive or"
 (A or B, but not both), and the carry is **AND**. Together, they add two bits:
 
-<logic-diagram name="half-adder" names="true" controls="none" style="max-width: 700px; margin: 0 auto"></logic-diagram>
+{% circuit name: half-adder, width: 700 %}
+{% endcircuit %}
 
 Chain such circuits, one per column, and you have an adder. Wired in other ways,
 gates can also **remember** a bit, **select** one of several inputs to pass on,
@@ -182,7 +186,8 @@ Each bit of a cell is a small circuit that keeps the last value it was given.
 This one stores DATA while WRITE is 1, and keeps it once WRITE is back to 0,
 whatever DATA does afterwards:
 
-<logic-diagram name="d-latch-block" names="true" controls="none" style="max-width: 480px; margin: 0 auto"></logic-diagram>
+{% circuit name: d-latch-block, width: 480 %}
+{% endcircuit %}
 
 The number of bits in an address decides how many cells can be reached. A 4-bit
 address gives 2⁴ = 16 addresses, so a 16-byte memory. A 32-bit address gives
@@ -193,7 +198,8 @@ has.
 
 A **clock** is a circuit that switches between 0 and 1 at a steady pace:
 
-<logic-diagram name="clock-lamp" names="true" controls="none" style="max-width: 480px; margin: 0 auto"></logic-diagram>
+{% circuit name: clock-lamp, width: 480 %}
+{% endcircuit %}
 
 It keeps everything in the processor in step: every component that holds a
 value takes its new value on the same tick, so each step's result is ready
@@ -550,6 +556,8 @@ input marks it as edge-triggered. The presentation shows [how it is made of two
 D latches]({% link chapters/411-how-a-computer-works/slides/slides.md
 %}#two-latches-make-a-flip-flop).
 
+{% circuit name: d-flip-flop-block, clock: paused, width: 480 %}
+
 Its clock starts paused in the following diagram, so that you can drive it by
 hand. Clicking the 0/1 half of a paused clock flips its level, and its ▶ half
 lets it run:
@@ -559,7 +567,7 @@ lets it run:
 3. Change DATA again: Q still does not move, although CLK is 1.
 4. Lower CLK: nothing changes either. Only a rising edge changes Q.
 
-<logic-diagram name="d-flip-flop-block" clock="paused" names="true" controls="none" style="max-width: 480px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 A flip-flop stores DATA on every rising edge, so it does not solve the second
 problem: it cannot keep a value while the clock ticks. Choosing between keeping
@@ -567,10 +575,12 @@ a value and storing a new one is the job of a **selector**. SELECT opens one of
 two ANDs, directly or through a NOT, and the OR passes on whatever gets through
 the open one:
 
+{% circuit name: selector, highlight: true, width: 560 %}
+
 - While SELECT is 0, flip D0 and D1: only D0 reaches Y.
 - Turn SELECT on and flip them again: only D1 reaches Y.
 
-<logic-diagram name="selector" names="true" highlight="true" controls="none" style="max-width: 560px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 **One bit of a register** is a selector in front of a flip-flop, with a new
 input, LOAD, as SELECT:
@@ -580,6 +590,8 @@ input, LOAD, as SELECT:
 - **While LOAD is 0**, the selector lets the flip-flop's own Q back in. Each
   rising edge stores the value the flip-flop already holds, so nothing changes.
 
+{% circuit name: register-bit, clock: running, highlight: true, width: 800 %}
+
 The clock runs on its own, as it does in a processor:
 
 1. With LOAD off, flip DATA: Q does not follow it, however many times the clock
@@ -588,23 +600,26 @@ The clock runs on its own, as it does in a processor:
    from then on, one edge late.
 3. Turn LOAD off: Q keeps its last value, whatever DATA does.
 
-<logic-diagram name="register-bit" clock="running" names="true" highlight="true" controls="none" style="max-width: 800px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 The register bit, drawn as a box, with DATA from above and Q below, as the
 register uses it. It behaves the same way:
 
-<logic-diagram name="register-bit-block" clock="running" names="true" controls="none" style="max-width: 400px; margin: 0 auto"></logic-diagram>
+{% circuit name: register-bit-block, clock: running, width: 400 %}
+{% endcircuit %}
 
 **An 8-bit register** is eight register bits side by side, one per bit of a
 byte, sharing the same LOAD and the same clock. The bits run from the highest,
 `D7`, on the left, to the lowest, `D0`, on the right, so that the inputs and the
 lamps read as binary numbers:
 
+{% circuit name: eight-bit-register %}
+
 1. Set a byte on the inputs, such as `01010011`, which is 83.
 2. Turn LOAD on, and wait for a rising edge: the lamps show the byte.
 3. Turn LOAD off, then change the inputs: the register keeps 83.
 
-<logic-diagram name="eight-bit-register" names="true" controls="none"></logic-diagram>
+{% endcircuit %}
 
 The accumulator and the instruction register of the machine are such registers.
 To execute `ADD`, the control unit turns the accumulator's LOAD on for a single
@@ -717,27 +732,36 @@ column on its left. The presentation shows [how it is made of two half adders
 and an OR]({% link chapters/411-how-a-computer-works/slides/slides.md
 %}#the-full-adder):
 
-<logic-diagram name="full-adder-block" names="true" controls="none" style="max-width: 320px; margin: 0 auto"></logic-diagram>
+{% circuit name: full-adder-block, width: 320 %}
+{% endcircuit %}
 
 Four full adders, each one's Cout going into the next one's Cin, add two 4-bit
 numbers. The carry ripples from right to left, one full adder after the other,
-which is why this is called a **ripple-carry adder**. Set A to `0111` and B to
-`0011`: S shows `1010`, as in [adding in binary](#adding-in-binary).
+which is why this is called a **ripple-carry adder**.
 
-<logic-diagram name="four-bit-adder" names="true" controls="none" style="max-width: 820px; margin: 0 auto"></logic-diagram>
+{% circuit name: four-bit-adder, width: 820 %}
+
+Set A to `0111` and B to `0011`: S shows `1010`, as in [adding in
+binary](#adding-in-binary).
+
+{% endcircuit %}
 
 To subtract B instead, the adder has to add the two's complement of B: B with
 its bits inverted, plus 1. Adding 1 is easy: the first Cin is set to 1. Bits
 are inverted by XOR gates, which invert a bit only when told to:
 
+{% circuit name: xor-inverter, width: 470 %}
+
 - While INVERT is 0, OUT is B, unchanged.
 - While INVERT is 1, OUT is B, inverted.
 
-<logic-diagram name="xor-inverter" names="true" controls="none" style="max-width: 470px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 So a single input, SUBTRACT, goes into the first Cin, and into an XOR on each bit
 of B as its INVERT. While SUBTRACT is 0, the circuit adds. While it is 1, it
 subtracts:
+
+{% circuit name: adder-subtractor, width: 840 %}
 
 1. Set A to `0110` (6) and B to `0010` (2): S shows `1000` (8).
 2. Turn SUBTRACT on: the XORs give `1101`, B inverted, and S shows `0100` (4).
@@ -747,7 +771,7 @@ subtracts:
    means that the subtraction would have had to borrow from a fifth bit that
    does not exist: A was less than B, and the result went below 0.
 
-<logic-diagram name="adder-subtractor" names="true" controls="none" style="max-width: 840px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 Cout says something about the result besides the result itself. Such a bit is
 called a **flag**, and Cout is the **carry flag**. One more gate adds a **zero
@@ -755,12 +779,14 @@ flag**, ZERO, which is 1 when every bit of the result is 0: what a jump such as
 `JUMPZ` needs to know. That gate is a NOR of the result's bits: an OR followed
 by a NOT, whose output is 1 only when all its inputs are 0.
 
+{% circuit name: adder-subtractor-flags %}
+
 1. Turn SUBTRACT on, then set A and B to the same number: ZERO is lit, and so is
    Cout.
 2. Make A smaller than B: ZERO and Cout are both off.
 3. Make A larger than B: Cout is lit, and ZERO is off.
 
-<logic-diagram name="adder-subtractor-flags" names="true" controls="none"></logic-diagram>
+{% endcircuit %}
 
 So a circuit built to add and subtract also **compares** numbers, with nothing
 added but a NOR. To compare A and B, a processor subtracts B from A, ignores the
@@ -798,10 +824,14 @@ is asked for. With four circuits to choose from, it needs a **4-to-1 selector**:
 two select bits, S1 and S0, read as a binary number, pick which of four data
 inputs reaches Y. It is built like the 2-to-1 selector [of the
 register](#a-register), as the presentation [shows]({% link
-chapters/411-how-a-computer-works/slides/slides.md %}#4-to-1-selector). Set S1
-and S0 to `00`, `01`, `10` and `11` in turn, and see which input gets through:
+chapters/411-how-a-computer-works/slides/slides.md %}#4-to-1-selector).
 
-<logic-diagram name="selector-block" names="true" highlight="true" controls="none" style="max-width: 340px; margin: 0 auto"></logic-diagram>
+{% circuit name: selector-block, highlight: true, width: 340 %}
+
+Set S1 and S0 to `00`, `01`, `10` and `11` in turn, and see which input gets
+through.
+
+{% endcircuit %}
 
 **One bit of an ALU** is a full adder with its SUBTRACT XOR, an AND, an OR, an
 XOR, and a 4-to-1 selector whose select bits, OP1 and OP0, choose the
@@ -818,6 +848,8 @@ The logic gates take B before the SUBTRACT XOR, so that SUBTRACT only changes
 the arithmetic. Cin is an input here, since this bit has no neighbour on its
 right yet:
 
+{% circuit name: alu-slice, highlight: true, width: 640 %}
+
 1. Set A and B to 1, with Cin at 0.
 2. Set OP1 and OP0 to `00`, `01`, `10` and `11` in turn: RESULT shows 0 (A + B
    is `10`, so Cout is `1` and S is `0`), then 1 (A AND B is `1`), 1 (A OR B is
@@ -825,12 +857,13 @@ right yet:
 3. Watch the gates that are not selected: they go on computing all the time. The
    selector only picks which result gets through.
 
-<logic-diagram name="alu-slice" names="true" highlight="true" controls="none" style="max-width: 640px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 So we have a circuit that can perform addition, subtraction, AND, OR, and XOR,
 on 1 bit. Here's our 1-bit ALU slice, drawn as a box, as the ALU uses it:
 
-<logic-diagram name="alu-slice-block" names="true" controls="none" style="max-width: 540px; margin: 0 auto"></logic-diagram>
+{% circuit name: alu-slice-block, width: 540 %}
+{% endcircuit %}
 
 **A 4-bit ALU** is four 1-bit ALU slices side by side, chained by their carries
 like the full adders of the adder. SUBTRACT, OP1 and OP0 go to all four, and
@@ -838,6 +871,8 @@ SUBTRACT is also the first Cin, as in the adder-subtractor. Its ZERO flag takes
 the results after the selectors, so it also works for the logic operations: ZERO
 after an AND means that A and B have no 1 bit in common. Each bit's box shows
 the operation it performs.
+
+{% circuit name: four-bit-alu %}
 
 Set A to `0110` (6) and B to `0011` (3), then try each operation:
 
@@ -849,7 +884,7 @@ Set A to `0110` (6) and B to `0011` (3), then try each operation:
 | OR        |  `10`   |    0     | `0111`     |
 | XOR       |  `11`   |    0     | `0101`     |
 
-<logic-diagram name="four-bit-alu" names="true" controls="none"></logic-diagram>
+{% endcircuit %}
 
 The machine's ALU works the same way, with eight bits instead of four. It only
 needs OP `00`: the control unit turns SUBTRACT off for `ADD` and on for `SUB`. A
@@ -889,7 +924,11 @@ but its ALU would only need its first Cin to come from the carry flag of the
 previous instruction, instead of being 0.
 
 You can do the same on the 4-bit adder, to add 8-bit numbers, four bits at a
-time. To add 23 (`0001 0111`) and 45 (`0010 1101`):
+time.
+
+{% circuit name: four-bit-adder, width: 820 %}
+
+To add 23 (`0001 0111`) and 45 (`0010 1101`):
 
 1. Add the low halves: set A to `0111` and B to `1101`, with Cin at 0. S shows
    `0100`, and Cout is lit: 7 + 13 is 20, which does not fit in 4 bits.
@@ -898,7 +937,7 @@ time. To add 23 (`0001 0111`) and 45 (`0010 1101`):
    carry. S shows `0100`.
 4. The result is `0100 0100`: 68.
 
-<logic-diagram name="four-bit-adder" names="true" controls="none" style="max-width: 820px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 Subtraction works the same way, with a **subtract with borrow** instruction for
 the high bytes. And numbers wider than any register, such as Java's `BigInteger`
@@ -913,10 +952,13 @@ chapters/411-how-a-computer-works/slides/slides.md %}#program-counter) made of D
 flip-flops, each one feeding its Q̅ back into its DATA, so that it flips on
 every rising edge of its clock. The first flip-flop is clocked by the clock.
 Each of the others is clocked by the Q̅ of the one before, so that it flips when
-the one before goes back to 0, like a carry. Read from right to left, Q2 Q1 Q0
-count from `000` to `111`, then start over:
+the one before goes back to 0, like a carry.
 
-<logic-diagram name="counter" names="true" controls="none" style="max-width: 760px; margin: 0 auto"></logic-diagram>
+{% circuit name: counter, width: 760 %}
+
+Read from right to left, Q2 Q1 Q0 count from `000` to `111`, then start over.
+
+{% endcircuit %}
 
 This counter can only count up, from wherever it happens to be. A program
 counter needs two more things:
@@ -931,7 +973,11 @@ first flip-flop of this counter gets the clock: the others flip when the one
 before them goes back to 0, each at a different moment. The counter's
 flip-flops have to be forced to a value at once, whatever their clock does.
 
-**Preset and clear** do that. Its clock starts paused, and Q starts at 0:
+**Preset and clear** do that.
+
+{% circuit name: d-flip-flop-preset-clear %}
+
+Its clock starts paused, and Q starts at 0:
 
 1. Turn PRESET on: Q becomes 1 at once, while CLK stays at 0.
 2. Turn PRESET off: Q stays 1.
@@ -939,7 +985,7 @@ flip-flops have to be forced to a value at once, whatever their clock does.
 4. Turn CLEAR off: Q stays 0.
 5. Set DATA to 1, then raise CLK: Q becomes 1, as with any D flip-flop.
 
-<logic-diagram name="d-flip-flop-preset-clear" names="true" controls="none"></logic-diagram>
+{% endcircuit %}
 
 A flip-flop normally changes only on a rising edge of its clock. Preset and
 clear are a way around the clock: they force the flip-flop to 1 or to 0 straight
@@ -956,10 +1002,15 @@ make both Q and Q̅ 0.
 
 The same flip-flop drawn as a box, with PRESET on top and CLEAR below:
 
-<logic-diagram name="d-flip-flop-preset-clear-block" names="true" controls="none" style="max-width: 480px; margin: 0 auto"></logic-diagram>
+{% circuit name: d-flip-flop-preset-clear-block, width: 480 %}
+{% endcircuit %}
 
 **A loadable bit** uses preset and clear to load any value, 0 or 1, straight
-away. Its clock starts paused, and Q starts at 0:
+away.
+
+{% circuit name: loadable-flip-flop, width: 600 %}
+
+Its clock starts paused, and Q starts at 0:
 
 1. Set A to 1: Q stays 0.
 2. Turn LOAD on: Q becomes 1 at once.
@@ -968,7 +1019,7 @@ away. Its clock starts paused, and Q starts at 0:
 5. Turn RESET on: Q becomes 0.
 6. Turn RESET off: Q stays 0.
 
-<logic-diagram name="loadable-flip-flop" names="true" controls="none" style="max-width: 600px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 A is the value to load, and LOAD copies it into the flip-flop: it presets the
 flip-flop when A is 1, and clears it when A is 0. As long as LOAD is on, the
@@ -977,12 +1028,17 @@ flip-flop is left alone, and works with its clock like any other.
 
 The loadable bit drawn as a box, with A on top, and LOAD and RESET below:
 
-<logic-diagram name="loadable-flip-flop-block" names="true" controls="none" style="max-width: 440px; margin: 0 auto"></logic-diagram>
+{% circuit name: loadable-flip-flop-block, width: 440 %}
+{% endcircuit %}
 
 ### The program counter
 
 Built out of loadable bits instead of plain flip-flops, the
-[counter](#flip-flops-with-preset-and-clear) can jump. Its clock runs:
+[counter](#flip-flops-with-preset-and-clear) can jump.
+
+{% circuit name: loadable-counter, width: 820 %}
+
+Its clock runs:
 
 1. Watch it count, reading Q2 Q1 Q0 from right to left: `000`, `001`, `010`, and
    so on up to `111`, then `000` again.
@@ -996,7 +1052,7 @@ Built out of loadable bits instead of plain flip-flops, the
    there.
 6. Turn RESET off: the counter counts from 0 again: `001`, `010`, and so on.
 
-<logic-diagram name="loadable-counter" names="true" controls="none" style="max-width: 820px; margin: 0 auto"></logic-diagram>
+{% endcircuit %}
 
 Each bit still feeds its Q̅ back into its DATA and clocks the next bit, so the
 counter counts as before. LOAD and RESET take over from the clock: while one of
@@ -1024,7 +1080,8 @@ WRITE to the latch at the address, and a 4-to-1 selector that passes that
 latch's value on to OUT. It has four [cells](#memory-is-addressed), one per
 address, and each cell is a single latch:
 
-<logic-diagram name="addressable-memory" names="true" highlight="true" controls="none" style="max-width: 530px; margin: 0 auto"></logic-diagram>
+{% circuit name: addressable-memory, highlight: true, width: 530 %}
+{% endcircuit %}
 
 This memory grows in two ways:
 

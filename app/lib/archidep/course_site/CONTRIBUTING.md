@@ -887,10 +887,12 @@ Two consequences for anyone writing a tag:
 
 ### The tags the course writes
 
-Six block tags wrap prose in the HTML the theme styles:
+Seven block tags wrap prose in the HTML the theme styles:
 
 - [`note`](./renderer/liquid/note_tag.ex) (an aside)
 - [`callout`](./renderer/liquid/callout_tag.ex) (something not to skip)
+- [`circuit`](./renderer/liquid/circuit_tag.ex) (a logic circuit the reader
+  operates, after the instructions that say how)
 - [`cols`](./renderer/liquid/cols_tag.ex) (a row of columns)
 - [`solution`](./renderer/liquid/solution_tag.ex) (a collapsed answer, and the
   one tag whose output depends on which page it is on: an answer is left out of

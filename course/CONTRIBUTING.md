@@ -29,6 +29,7 @@ for AI assistants and automated agents.
     - [Solutions](#solutions)
     - [Mermaid Diagrams](#mermaid-diagrams)
     - [Architecture Diagrams](#architecture-diagrams)
+    - [Logic Circuits](#logic-circuits)
     - [Forced Markdown](#forced-markdown)
     - [Code Blocks](#code-blocks)
     - [Cloud Server Widget](#cloud-server-widget)
@@ -850,6 +851,46 @@ The partial carries its own stylesheet, and the site's scripts do the stepping:
 [`src/diagrams/runtime`](./src/diagrams/runtime), from `course.ts` in a page and
 as a reveal.js plugin in a deck.
 
+#### Logic Circuits
+
+The `circuit` tag shows a logic circuit the reader can operate: switches, gates,
+latches and the blocks built out of them, drawn and simulated in the browser by
+the `<logic-diagram>` element of the [Companion Gate][companion-gate] package,
+whose documentation lists the circuits and what each attribute does. The tag's
+body is the instructions that say what to do with the circuit, and is shown
+before it:
+
+```liquid
+{% circuit name: register-bit, clock: running, highlight: true, width: 800 %}
+
+The clock runs on its own, as it does in a processor:
+
+1. With LOAD off, flip DATA: Q does not follow it.
+2. Turn LOAD on: Q takes DATA's value on the next rising edge.
+
+{% endcircuit %}
+```
+
+Put in the body only what the reader is to do and watch, including what they
+need to know to do it, such as how the circuit starts. What the circuit means
+stays in the prose around it. A circuit with nothing to do has an empty body:
+
+```liquid
+{% circuit name: half-adder, width: 700 %}
+{% endcircuit %}
+```
+
+Its attributes are the element's, written as the tag's: `name`, `inputs`,
+`clock`, `highlight`, `focus`, `fixed`, `speed`, `autoplay`, `controls`, `names`
+and `theme`. A circuit shows its names and no controls unless it says otherwise.
+`width` is the widest it is drawn in the page, in pixels, centred when narrower
+than the text; without it, the circuit is as wide as the text. An attribute the
+element does not have fails the build.
+
+Decks write the `<logic-diagram>` element directly instead, since a slide moves
+a circuit's focus as it is explained (see the Companion Gate documentation on
+Reveal.js).
+
 #### Forced Markdown
 
 The `markdown` tag wraps its content in a `<div class="markdown">` and forces
@@ -1346,6 +1387,7 @@ agents.
 [loglevel]: https://github.com/pimterry/loglevel
 [lunr]: https://lunrjs.com
 [mermaid]: https://mermaid.js.org
+[companion-gate]: https://www.npmjs.com/package/companion-gate
 [preact]: https://preactjs.com
 [preact-signals]: https://preactjs.com/guide/v10/signals/
 [prettier]: https://prettier.io
