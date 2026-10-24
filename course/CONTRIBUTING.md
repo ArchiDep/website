@@ -891,6 +891,19 @@ In the page, a circuit is shown in a box with its instructions, and a button
 under it puts it back as it started, so that the instructions can be followed
 again. It can also be [enlarged](#lightbox), keeping what the reader has set.
 
+`instructions: enlarged` shows the instructions only with the enlarged circuit,
+for a circuit the page does not need to explain again, such as the block version
+of the circuit before it, which behaves the same way. Its instructions can then
+repeat the earlier ones without the page repeating them:
+
+```liquid
+{% circuit name: register-bit-block, clock: running, instructions: enlarged %}
+
+1. With LOAD off, flip DATA: Q does not follow it.
+
+{% endcircuit %}
+```
+
 Decks write the `<logic-diagram>` element directly instead, since a slide moves
 a circuit's focus as it is explained (see the Companion Gate documentation on
 Reveal.js).

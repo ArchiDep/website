@@ -99,6 +99,34 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTagTest do
                   ~s(<logic-diagram name="counter" controls="none" names="true"></logic-diagram>)
                 ), [error(~s(fixed must be true or false, not "yes"))]}
     end
+
+    test "hides the instructions of a circuit whose instructions are only shown enlarged" do
+      assert render("""
+             {% circuit name: register-bit-block, instructions: enlarged %}
+             Turn LOAD on.
+             {% endcircuit %}\
+             """) ==
+               {:ok,
+                circuit(
+                  ~s(<div class="circuit-instructions" hidden><p>Turn LOAD on.</p></div>),
+                  ~s(<logic-diagram name="register-bit-block" controls="none" names="true">) <>
+                    ~s(</logic-diagram>)
+                ), []}
+    end
+
+    test "reports instructions shown neither in the page nor enlarged, and shows them in the page" do
+      assert render("""
+             {% circuit name: register-bit-block, instructions: never %}
+             Turn LOAD on.
+             {% endcircuit %}\
+             """) ==
+               {:ok,
+                circuit(
+                  ~s(<div class="circuit-instructions"><p>Turn LOAD on.</p></div>),
+                  ~s(<logic-diagram name="register-bit-block" controls="none" names="true">) <>
+                    ~s(</logic-diagram>)
+                ), [error(~s(instructions must be page or enlarged, not "never"))]}
+    end
   end
 
   defp circuit(instructions, element),

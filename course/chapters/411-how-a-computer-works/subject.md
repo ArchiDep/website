@@ -605,7 +605,16 @@ The clock runs on its own, as it does in a processor:
 The register bit, drawn as a box, with DATA from above and Q below, as the
 register uses it. It behaves the same way:
 
-{% circuit name: register-bit-block, clock: running, width: 400 %}
+{% circuit name: register-bit-block, clock: running, width: 400, instructions: enlarged %}
+
+The clock runs on its own, as it does in a processor:
+
+1. With LOAD off, flip DATA: Q does not follow it, however many times the clock
+   ticks.
+2. Turn LOAD on: Q takes DATA's value on the next rising edge, and follows DATA
+   from then on, one edge late.
+3. Turn LOAD off: Q keeps its last value, whatever DATA does.
+
 {% endcircuit %}
 
 **An 8-bit register** is eight register bits side by side, one per bit of a
@@ -862,7 +871,13 @@ right yet:
 So we have a circuit that can perform addition, subtraction, AND, OR, and XOR,
 on 1 bit. Here's our 1-bit ALU slice, drawn as a box, as the ALU uses it:
 
-{% circuit name: alu-slice-block, width: 540 %}
+{% circuit name: alu-slice-block, highlight: true, names: false, width: 540, instructions: enlarged %}
+
+1. Set A and B to 1, with Cin at 0.
+2. Set OP1 and OP0 to `00`, `01`, `10` and `11` in turn: RESULT shows 0 (A + B
+   is `10`, so Cout is `1` and S is `0`), then 1 (A AND B is `1`), 1 (A OR B is
+   `1`), and 0 (A XOR B is `0`).
+
 {% endcircuit %}
 
 **A 4-bit ALU** is four 1-bit ALU slices side by side, chained by their carries
@@ -1002,7 +1017,16 @@ make both Q and Q̅ 0.
 
 The same flip-flop drawn as a box, with PRESET on top and CLEAR below:
 
-{% circuit name: d-flip-flop-preset-clear-block, width: 480 %}
+{% circuit name: d-flip-flop-preset-clear-block, width: 480, instructions: enlarged %}
+
+Its clock starts paused, and Q starts at 0:
+
+1. Turn PRESET on: Q becomes 1 at once, while CLK stays at 0.
+2. Turn PRESET off: Q stays 1.
+3. Turn CLEAR on: Q becomes 0 at once.
+4. Turn CLEAR off: Q stays 0.
+5. Set DATA to 1, then raise CLK: Q becomes 1, as with any D flip-flop.
+
 {% endcircuit %}
 
 **A loadable bit** uses preset and clear to load any value, 0 or 1, straight
@@ -1028,7 +1052,17 @@ flip-flop is left alone, and works with its clock like any other.
 
 The loadable bit drawn as a box, with A on top, and LOAD and RESET below:
 
-{% circuit name: loadable-flip-flop-block, width: 440 %}
+{% circuit name: loadable-flip-flop-block, width: 440, instructions: enlarged %}
+
+Its clock starts paused, and Q starts at 0:
+
+1. Set A to 1: Q stays 0.
+2. Turn LOAD on: Q becomes 1 at once.
+3. Set A to 0: Q becomes 0. Set A back to 1: Q becomes 1.
+4. Turn LOAD off, then set A to 0: Q stays 1.
+5. Turn RESET on: Q becomes 0.
+6. Turn RESET off: Q stays 0.
+
 {% endcircuit %}
 
 ### The program counter
@@ -1080,7 +1114,17 @@ WRITE to the latch at the address, and a 4-to-1 selector that passes that
 latch's value on to OUT. It has four [cells](#memory-is-addressed), one per
 address, and each cell is a single latch:
 
-{% circuit name: addressable-memory, highlight: true, width: 530 %}
+{% circuit name: addressable-memory, highlight: true, width: 530, instructions: enlarged %}
+
+It starts empty, with A1 A0 at `00`:
+
+1. Set DATA to 1, then turn WRITE on and off again: the lamp of cell `00` lights
+   up, and OUT shows 1.
+2. Set A1 A0 to `10`: OUT shows 0, the value of cell `10`.
+3. Turn WRITE on and off again, with DATA still at 1: cell `10` lights up too.
+4. Set DATA to 0, then A1 A0 back to `00`: OUT shows 1. Cell `00` keeps its 1,
+   whatever DATA is, as long as WRITE stays off.
+
 {% endcircuit %}
 
 This memory grows in two ways:

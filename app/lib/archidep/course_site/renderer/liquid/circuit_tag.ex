@@ -15,6 +15,11 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTag do
   does not have is reported and left out, as is a `width` that is not a number
   of pixels. A value the element cannot use is the element's to report, since it
   is the one that knows its circuits and their inputs.
+
+  `instructions: enlarged` keeps the instructions out of the page and shows them
+  only with the enlarged circuit, for a circuit the page has already explained:
+  the same circuit drawn as a block, for example, which behaves like the one
+  before it.
   """
 
   @behaviour Solid.Tag
@@ -29,13 +34,16 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTag do
   # one it reads by its presence alone.
   @element_attributes ~w(name autoplay clock controls fixed focus highlight inputs names speed theme)
 
-  @enforce_keys [:loc, :attributes, :width, :body, :problems]
-  defstruct [:loc, :attributes, :width, :body, :problems]
+  @instructions ~w(page enlarged)
+
+  @enforce_keys [:loc, :attributes, :width, :instructions, :body, :problems]
+  defstruct [:loc, :attributes, :width, :instructions, :body, :problems]
 
   @type t :: %__MODULE__{
           loc: Solid.Lexer.loc(),
           attributes: [{String.t(), String.t() | true}],
           width: pos_integer() | nil,
+          instructions: String.t(),
           body: Solid.Parser.parse_tree(),
           problems: [RenderError.reason()]
         }
@@ -46,6 +54,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTag do
          {:ok, attributes} <- Attributes.parse(tokens),
          {:ok, body, context} <- NestedBody.parse(context, "endcircuit") do
       {width, width_problems} = width(attributes)
+      {instructions, instructions_problems} = instructions(attributes)
       {element_attributes, attribute_problems} = element_attributes(attributes)
 
       {:ok,
@@ -53,8 +62,11 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTag do
          loc: loc,
          attributes: element_attributes,
          width: width,
+         instructions: instructions,
          body: body,
-         problems: name_problems(attributes) ++ attribute_problems ++ width_problems
+         problems:
+           name_problems(attributes) ++
+             attribute_problems ++ width_problems ++ instructions_problems
        }, context}
     end
   end
@@ -69,7 +81,7 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTag do
   defp element_attributes(attributes) do
     {given, unknown} =
       @defaults
-      |> Map.merge(Map.delete(attributes, "width"))
+      |> Map.merge(Map.drop(attributes, ["width", "instructions"]))
       |> Map.split(@element_attributes)
 
     {fixed, fixed_problems} = fixed(Map.get(given, "fixed"))
@@ -104,6 +116,20 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTag do
   defp value(true), do: true
   defp value(value), do: to_string(value)
 
+  defp instructions(attributes) do
+    case Map.get(attributes, "instructions", "page") do
+      instructions when instructions in @instructions ->
+        {instructions, []}
+
+      instructions ->
+        {"page",
+         [
+           {:invalid_tag, "circuit",
+            "instructions must be page or enlarged, not #{inspect(to_string(instructions))}"}
+         ]}
+    end
+  end
+
   defp width(attributes) do
     case Map.get(attributes, "width") do
       nil ->
@@ -130,13 +156,17 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.CircuitTag do
       {body, context!} = NestedBody.to_html(tag.body, context!, options)
 
       {~s(<figure class="circuit">) <>
-         instructions(String.trim(body)) <>
+         instructions(String.trim(body), tag.instructions) <>
          ~s(<logic-diagram#{attributes(tag)}></logic-diagram>) <>
          ~s(</figure>), context!}
     end
 
-    defp instructions(""), do: ""
-    defp instructions(body), do: ~s(<div class="circuit-instructions">#{body}</div>)
+    defp instructions("", _shown), do: ""
+
+    defp instructions(body, "page"), do: ~s(<div class="circuit-instructions">#{body}</div>)
+
+    defp instructions(body, "enlarged"),
+      do: ~s(<div class="circuit-instructions" hidden>#{body}</div>)
 
     defp attributes(tag) do
       Enum.map_join(tag.attributes, &attribute/1) <> style(tag.width)
