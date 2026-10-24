@@ -860,7 +860,7 @@ The same method, in binary instead of decimal, to add `0111` (7 in decimal) and
 
 - In the rightmost column, `1` + `1` = `10` in binary (2 in decimal): write the
   0 and carry the 1, as 8 + 7 = 15 does in decimal.
-- In the next column adds three bits, 1 + 1 and the carry, which makes `11` in
+- The next column adds three bits, 1 + 1 and the carry, which makes `11` in
   binary (3 in decimal): write a 1 and carry a 1.
 - In the next column, 0 + 1 and the carry makes `10` in binary (2 in decimal):
   write a 0 and carry a 1.

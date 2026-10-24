@@ -677,13 +677,12 @@ Subtracting 23 is then adding 77, and dropping the digit that does not fit:
   122     22, once the third digit is dropped
 ```
 
-What this avoids is **borrowing**, carrying in reverse when subtracting. In 52 -
-7, the 2 is smaller than the 7, so you borrow 1 from the column on its left: 12
-
-- 7 is 5, and the 5 of 52 becomes 4, which gives 45. (In French, a borrow and a
-  carry are both a _retenue_.) Like a carry, a borrow can ripple from column to
-  column. Subtracting from 9 never borrows, since no digit is larger than 9, so
-  the only calculations left are additions.
+What this avoids is **borrowing**, carrying in reverse when subtracting. To
+subtract 7 from 52, notice that the 2 is smaller than the 7, so you borrow 1
+from the column on its left: 12 minus 7 is 5, and the 5 of 52 becomes 4, which
+gives 45. (In French, a borrow and a carry are both a _retenue_.) Like a carry,
+a borrow can ripple from column to column. Subtracting from 9 never borrows,
+since no digit is larger than 9, so the only calculations left are additions.
 
 **Binary works the same way.** Subtracting each bit from 1 is just inverting it,
 so negating a number is **inverting every bit and adding 1**. Here is -83:
@@ -932,9 +931,8 @@ For example, 300 + 500:
 | 300 + 500 | `00000011` (3) | `00100000` (32)  |
 
 44 + 244 is 288, which does not fit in a byte: the low byte of the result is 288
-
-- 256 = 32, and the carry flag is 1. The high byte is then 1 + 1, plus the
-  carry: 3. And 3 × 256 + 32 is 800.
+minus 256, which is 32, and the carry flag is 1. The high byte is then 1 + 1,
+plus the carry: 3. And 3 × 256 + 32 is 800.
 
 The second addition needs an instruction that adds the carry flag as well. Real
 processors have one, usually called **add with carry**, `ADC`: the [Intel
