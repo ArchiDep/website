@@ -142,6 +142,13 @@ config :logger, :console,
 
 config :logger, level: :info
 
+# Download the precompiled NIFs of lumis and mdex_native from their maintainer's
+# Cloudflare mirror: the response headers of GitHub release downloads exceed the
+# 10 KiB limit of the HTTP client that rustler_precompiled uses.
+config :lumis, artifact_source: :cloudflare
+
+config :mdex_native, artifact_source: :cloudflare
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
