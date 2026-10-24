@@ -170,6 +170,30 @@ main .note .content > :last-child {
   @apply mb-0;
 }
 
+/* An architecture diagram, its controls and its caption are one box, so that
+ * the caption reads as the diagram's rather than as the next paragraph. The box
+ * reaches out by its padding, which the page's own padding always has room for,
+ * so that the drawing is as wide as the text. Its surface is a translucent
+ * tint, which shows in both themes. Keyboard focus, which lets the arrow keys
+ * step, is shown by its border. */
+main .diagram-figure {
+  @apply my-6 -mx-3 rounded-box border border-base-content/10 bg-base-content/5 p-3 outline-none;
+
+  &:focus-visible {
+    @apply border-primary/60;
+  }
+
+  .diagram-caption {
+    @apply mx-1 mt-3 text-[0.95em] text-base-content/80;
+  }
+
+  /* While stepping, the caption is the story being told: it stands out from
+   * the description at rest. */
+  &.stepping .diagram-caption {
+    @apply mx-0 rounded-field bg-primary/10 px-3 py-2 font-medium text-base-content;
+  }
+}
+
 main .solution {
   @apply my-5;
 }
