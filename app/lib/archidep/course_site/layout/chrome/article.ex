@@ -25,11 +25,26 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
   Whether the headings sit beside the text, and how large the text is, depends
   on the width of the column the page is drawn in rather than on the window's:
   from `lg` up the course menu takes a fixed part of the window, so a window
-  wide enough by its own measure can still leave too little room. The sizes
-  that decide it are named in `theme/src/theme.css`.
+  wide enough by its own measure can still leave too little room. The sizes that
+  decide it are named in `theme/src/theme.css`.
 
   The text's padding is set as `--content-pad` because what reaches out of the
   text into the padding — a code block, a callout — must know how far to go.
+
+  ## The aside is never taller than the window
+
+  The aside stays in place as the page scrolls and is at most as tall as the
+  part of the window below its top, so the cloud server card under the headings
+  is always in full view: it is what a student types from while doing an
+  exercise, which matters more than seeing every heading at once. A long list of
+  headings scrolls on its own instead. If the card is so tall that it would
+  leave the headings almost no room, it scrolls on its own too, so neither part
+  is pushed off the screen.
+
+  Until the aside sticks, its top is below the header, by an amount only the
+  browser knows; `course/src/assets/course/aside.ts` writes it into
+  `--aside-top`. Without that script the aside is as tall as the window, and the
+  bottom of the card is below it only until the page is scrolled.
 
   ## What the aside offers
 
@@ -116,47 +131,56 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
         </main>
       </div>
       <aside class="hidden @toc:block w-64 @prose-2xl:w-xs shrink-0">
-        <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
-        <nav class="toc" aria-labelledby="on-this-page-title">
-          <Toc.toc entries={@page.toc} />
-        </nav>
-        <div class="my-4 pl-4 flex items-center gap-4">
-          <a
-            :if={@page.links[:page_pdf]}
-            href={@page.links[:page_pdf]}
-            class="tooltip"
-            data-tip={@page.pdf_tooltip}
-            download
+        <div
+          id="on-this-page-aside"
+          class="sticky top-0 max-h-[calc(100dvh-var(--aside-top,0px))] py-2 flex flex-col"
+        >
+          <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
+          <nav
+            class="toc min-h-0 overflow-y-auto overscroll-contain"
+            aria-labelledby="on-this-page-title"
           >
-            <Heroicons.document_arrow_down class="size-6 opacity-50 hover:opacity-100" />
-          </a>
-          <a
-            :if={@page.links[:deck_pdf]}
-            href={@page.links[:deck_pdf]}
-            class="tooltip"
-            data-tip="Slides PDF"
-            download
-          >
-            <Heroicons.presentation_chart_line class="size-6 opacity-50 hover:opacity-100" />
-          </a>
-          <a
-            :if={@page.links[:source]}
-            href={@page.links[:source]}
-            class="tooltip"
-            data-tip="Source code"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Icons.github class="size-6 opacity-50 hover:opacity-100" />
-          </a>
-        </div>
-        <div class="pt-2 sticky top-0">
-          <div :if={@page.cloud_server} class="cloud-server-data" data-mode={@page.cloud_server}>
-          </div>
+            <Toc.toc entries={@page.toc} />
+          </nav>
+          <div class="shrink-0 max-h-[calc(100dvh-var(--aside-top,0px)-12rem)] overflow-y-auto overscroll-contain">
+            <div class="my-4 pl-4 flex items-center gap-4">
+              <a
+                :if={@page.links[:page_pdf]}
+                href={@page.links[:page_pdf]}
+                class="tooltip"
+                data-tip={@page.pdf_tooltip}
+                download
+              >
+                <Heroicons.document_arrow_down class="size-6 opacity-50 hover:opacity-100" />
+              </a>
+              <a
+                :if={@page.links[:deck_pdf]}
+                href={@page.links[:deck_pdf]}
+                class="tooltip"
+                data-tip="Slides PDF"
+                download
+              >
+                <Heroicons.presentation_chart_line class="size-6 opacity-50 hover:opacity-100" />
+              </a>
+              <a
+                :if={@page.links[:source]}
+                href={@page.links[:source]}
+                class="tooltip"
+                data-tip="Source code"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icons.github class="size-6 opacity-50 hover:opacity-100" />
+              </a>
+            </div>
 
-          <a href={"##{top_id()}"} id="back-to-top-side" class="btn btn-ghost btn-sm">
-            <Heroicons.arrow_up class="size-4" /> Back to top
-          </a>
+            <div :if={@page.cloud_server} class="cloud-server-data" data-mode={@page.cloud_server}>
+            </div>
+
+            <a href={"##{top_id()}"} id="back-to-top-side" class="btn btn-ghost btn-sm">
+              <Heroicons.arrow_up class="size-4" /> Back to top
+            </a>
+          </div>
         </div>
       </aside>
     </div>

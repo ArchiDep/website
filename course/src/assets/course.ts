@@ -6,6 +6,7 @@ import { isRight } from 'fp-ts/lib/Either';
 import { Socket } from 'phoenix';
 
 import { setUpPageDiagrams } from '../diagrams/runtime';
+import './course/aside';
 import './course/back-to-top';
 import { cloudServer, cloudServerDataType } from './course/cloud-server';
 import { enlargeDiagram, setUpLightbox } from './course/lightbox';

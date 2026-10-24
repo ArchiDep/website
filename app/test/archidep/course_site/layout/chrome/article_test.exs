@@ -181,21 +181,24 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
         </main>
       </div>
       <aside class="hidden @toc:block w-64 @prose-2xl:w-xs shrink-0">
-        <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
-        <nav class="toc" aria-labelledby="on-this-page-title">
-          #{Keyword.get(parts, :toc, toc_markup([@entry]))}
-        </nav>
-        <div class="my-4 pl-4 flex items-center gap-4">
-          #{Keyword.get(parts, :page_pdf, "")}
-          #{Keyword.get(parts, :deck_pdf, "")}
-          #{Keyword.get(parts, :source, source_markup(@source))}
-        </div>
-        <div class="pt-2 sticky top-0">
-          #{Keyword.get(parts, :aside_cloud_server, "")}
+        <div id="on-this-page-aside" class="sticky top-0 max-h-[calc(100dvh-var(--aside-top,0px))] py-2 flex flex-col">
+          <h2 id="on-this-page-title" class="text-xl font-bold">On this page</h2>
+          <nav class="toc min-h-0 overflow-y-auto overscroll-contain" aria-labelledby="on-this-page-title">
+            #{Keyword.get(parts, :toc, toc_markup([@entry]))}
+          </nav>
+          <div class="shrink-0 max-h-[calc(100dvh-var(--aside-top,0px)-12rem)] overflow-y-auto overscroll-contain">
+            <div class="my-4 pl-4 flex items-center gap-4">
+              #{Keyword.get(parts, :page_pdf, "")}
+              #{Keyword.get(parts, :deck_pdf, "")}
+              #{Keyword.get(parts, :source, source_markup(@source))}
+            </div>
 
-          <a href="#top" id="back-to-top-side" class="btn btn-ghost btn-sm">
-            #{icon(:arrow_up, "size-4")} Back to top
-          </a>
+            #{Keyword.get(parts, :aside_cloud_server, "")}
+
+            <a href="#top" id="back-to-top-side" class="btn btn-ghost btn-sm">
+              #{icon(:arrow_up, "size-4")} Back to top
+            </a>
+          </div>
         </div>
       </aside>
     </div>
@@ -231,19 +234,19 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
         ~s(      </div>)
 
   defp aside_cloud_server_markup(mode),
-    do: ~s(<div class="cloud-server-data" data-mode="#{mode}">\n      </div>)
+    do: ~s(<div class="cloud-server-data" data-mode="#{mode}">\n        </div>)
 
   defp download_markup(url, tooltip, name),
     do:
       ~s(<a href="#{url}" class="tooltip" data-tip="#{tooltip}" download>\n) <>
-        ~s(        #{icon(name, "size-6 opacity-50 hover:opacity-100")}\n) <>
-        ~s(      </a>)
+        ~s(            #{icon(name, "size-6 opacity-50 hover:opacity-100")}\n) <>
+        ~s(          </a>)
 
   defp source_markup(url),
     do:
       ~s(<a href="#{url}" class="tooltip" data-tip="Source code" target="_blank" rel="noopener noreferrer">\n) <>
-        ~s(        #{github()}\n) <>
-        ~s(      </a>)
+        ~s(            #{github()}\n) <>
+        ~s(          </a>)
 
   defp github,
     do: %{class: "size-6 opacity-50 hover:opacity-100"} |> Icons.github() |> Html.render()
