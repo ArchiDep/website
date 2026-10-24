@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: 'Run even where this workflow is normally dormant'
+        description: 'Print and publish every PDF even outside the public repository'
         type: boolean
         default: false
 
@@ -39,13 +39,16 @@ jobs:
     runs-on: ubuntu-24.04
     name: Print & publish the PDFs
     timeout-minutes: 60
-    # Dormant outside the public repository, where the minutes are metered; the
-    # dispatch input is how it is proved there anyway, once and deliberately.
-    if: github.repository == 'ArchiDep/website' || inputs.force
     env:
       ELIXIR_VERSION: 1.20.4
       ERLANG_VERSION: 29.1.2
       MIX_ENV: prod
+      # Outside the public repository, where the minutes are metered, a single
+      # chapter is printed and nothing is uploaded or published: enough to prove
+      # every tool a print needs, the browser Puppeteer installs first among
+      # them, before a change reaches the public repository. The dispatch input
+      # is how a full print is proved there anyway, once and deliberately.
+      PRINT_ALL: ${{ (github.repository == 'ArchiDep/website' || inputs.force) && 'true' || 'false' }}
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v7
@@ -59,6 +62,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Installed by name rather than by letting npm run install scripts, which
+      # would run the code of every package in the tree, not just Puppeteer's.
+      # The browser is the one the installed Puppeteer is built for.
+      - name: Install the browser the PDFs are printed with
+        run: npx puppeteer browsers install chrome
+        working-directory: course
 
       - name: Build the theme
         run: npm run build
@@ -161,8 +171,15 @@ jobs:
             echo 'No unprivileged user namespace restriction to lift'
           fi
 
+      # The chapter printed alone has both a subject and a slide deck, the two
+      # kinds of page a print goes through.
       - name: Print the PDFs
-        run: npm run pdf -- --build tmp/pdf-build --output tmp/pdf
+        run: |
+          args=(--build tmp/pdf-build --output tmp/pdf)
+          if [ "$PRINT_ALL" != true ]; then
+            args+=(--chapter 101)
+          fi
+          npm run pdf -- "${args[@]}"
 
       - name: Ensure there are no uncommitted changes
         run: |
@@ -173,6 +190,7 @@ jobs:
       # a human fetches while nothing does and the evidence of a run whose
       # publication is what failed.
       - name: Upload the PDFs
+        if: env.PRINT_ALL == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: pdf-${{ steps.edition.outputs.year }}
@@ -184,7 +202,7 @@ jobs:
       # exist yet. Naming it is what turns this step on, here and in the render
       # above; until then every step but this one runs.
       - name: Publish the PDFs
-        if: vars.ARCHIDEP_ARCHIVE_REPO != ''
+        if: env.PRINT_ALL == 'true' && vars.ARCHIDEP_ARCHIVE_REPO != ''
         env:
           ARCHIVE_REPO: ${{ vars.ARCHIDEP_ARCHIVE_REPO }}
           GH_TOKEN: ${{ secrets.ARCHIDEP_ARCHIVE_TOKEN }}

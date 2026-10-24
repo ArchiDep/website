@@ -1228,7 +1228,9 @@ any directory; `scripts/pdf --help` lists its options.
 Those steps are also what the [`pdf` workflow](../.github/workflows/pdf.yml)
 runs, on every change to `main` that could reach a PDF, so the published PDFs of
 the current edition are always the current material. It can be run by hand from
-the Actions tab as well.
+the Actions tab as well. Outside the public repository it prints a single
+chapter, which it neither uploads nor publishes: it proves the toolchain without
+the cost of a full print.
 
 As noted in the [`AGENTS.md`](./AGENTS.md), this is an expensive operation; run
 it locally only when you need the files themselves.
