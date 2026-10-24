@@ -249,6 +249,12 @@ settings` → `#configure-basic-settings`). The emoji shortcode a heading is
   and the like), which goes stale the day a chapter is renumbered or a page
   moves.
 
+- Link to slides about a particular concept by the anchor of the slide that
+  shows it, slugged from its heading like any other, never to the deck alone:
+  `[two queues at one coffee machine]({% link
+chapters/411-how-a-computer-works/slides/slides.md %}#taking-turns)`. A link to
+  the deck leaves the reader to find the slide among dozens.
+
 - Refer to a file sitting next to a document — an image, a PDF — by a plain
   relative path (`images/cli.jpg`, `./images/cli.jpg`, or `../images/cli.jpg`
   from a `slides.md` written at the root of its chapter, since a deck is
