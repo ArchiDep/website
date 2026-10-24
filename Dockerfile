@@ -52,7 +52,7 @@ FROM node:26.12.1-alpine AS app-assets
 RUN addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
     mkdir -p /build/course/ && \
-    chown build:build /build && \
+    chown -R build:build /build && \
     chmod 700 /build
 
 WORKDIR /build
@@ -79,7 +79,7 @@ FROM node:26.12.1-alpine AS course-assets
 RUN addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
     mkdir -p /build/course/ && \
-    chown build:build /build && \
+    chown -R build:build /build && \
     chmod 700 /build
 
 WORKDIR /build
