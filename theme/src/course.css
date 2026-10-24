@@ -218,7 +218,7 @@ main figure.circuit {
   @apply mt-3 flex flex-wrap items-center gap-2;
 
   & button {
-    @apply cursor-pointer rounded-md border border-current/25 bg-current/8 px-3 py-0.5 text-[0.9em];
+    @apply cursor-pointer rounded-md border border-current/25 bg-current/8 px-3 py-0.5 text-[0.9em] hover:border-current/40 hover:bg-current/16;
   }
 
   & .enlarge {

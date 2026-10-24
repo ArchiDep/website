@@ -508,6 +508,14 @@ border-radius: 6px;
 padding: 0.2em 0.75em;
 cursor: pointer;
 }
+.diagram-figure .diagram-controls button:hover:not(:disabled) {
+background: color-mix(in srgb, currentColor 16%, transparent);
+border-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+.diagram-figure .diagram-controls button.primary:hover:not(:disabled) {
+background: #1a5fcc;
+border-color: #1a5fcc;
+}
 .diagram-figure .diagram-controls button:disabled {
 opacity: 0.4;
 cursor: default;
