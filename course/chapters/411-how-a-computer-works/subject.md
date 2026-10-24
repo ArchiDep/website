@@ -887,7 +887,7 @@ the results after the selectors, so it also works for the logic operations: ZERO
 after an AND means that A and B have no 1 bit in common. Each bit's box shows
 the operation it performs.
 
-{% circuit name: four-bit-alu %}
+{% circuit name: four-bit-alu, highlight: true %}
 
 Set A to `0110` (6) and B to `0011` (3), then try each operation:
 
