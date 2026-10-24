@@ -1357,9 +1357,61 @@ Fixing them cost some of that speed.
 
 ## Appendix: two queues, one coffee machine
 
-_To write:_ the coffee queues, one core and several cores
-(`diagrams/machine-concurrent.html`, `diagrams/machine-parallel.html`), threads,
-Node.js, nginx and PHP-FPM.
+The presentation compared programs to [queues at a coffee machine]({% link
+chapters/411-how-a-computer-works/slides/slides.md %}#/73). Two queues at one
+machine take turns: they are **concurrent**. On a single core, the kernel
+switches between processes many times a second, fast enough that they all seem
+to run at once, but only one runs at any moment:
+
+{% include diagrams/machine-concurrent.html %}
+
+Two queues at two machines are served at the same time: they are **parallel**.
+Each core is a complete processor, and several processes, or several
+**threads** of one process, really run at the same time:
+
+{% include diagrams/machine-parallel.html %}
+
+A program does not get faster on more cores by itself. A single flow of
+instructions runs on one core, however many the computer has, while the others
+stay idle. To use them all, a program has to be organized so that its work can
+be split into parts that run at the same time. This is one of the most useful
+things to learn if you want to program better: today's processors get faster by
+adding cores much more than by ticking faster.
+
+Some work cannot be split. When each step needs the result of the previous one,
+such as the many rounds of hashing a password, more cores do not help: that
+part of the work limits how fast the whole can go, as [Amdahl's
+law][amdahl] describes. Knowing which work waits and which work computes also
+matters. Node.js runs all your JavaScript on a single thread, and handles many
+requests at once only because waiting for the network or the disk does not need
+it. A synchronous call such as `fs.readFileSync`, or a long computation, holds
+that thread: [every other request waits][node-event-loop] until it is done.
+
+Each language and platform has its own ways of organizing concurrent and
+parallel work, worth exploring:
+
+- **Processes**, isolated from one another, which the operating system runs on
+  any core. [PHP-FPM][php-fpm] keeps a pool of PHP processes, so that one can
+  run while the others wait for the database. nginx starts one worker process
+  per core.
+- **Threads**, several flows of instructions in one process, sharing its memory,
+  as in [Java][java-concurrency]. They are fast to communicate but complex to
+  manage: two threads changing the same data at the same time cause bugs that
+  only appear sometimes.
+- **An event loop**, as in Node.js and nginx: a single thread that never waits,
+  and moves on to other work while the network or the disk answers. JavaScript
+  writes it with [callbacks, promises, `async` and `await`][mdn-async]. Node.js
+  can also run JavaScript on several cores with [worker threads][node-workers].
+- **Goroutines** in [Go][go-concurrency]: lightweight threads, thousands of them
+  in one program, spread by Go across the cores, and communicating through
+  channels.
+- **Erlang and Elixir processes**: lightweight [processes][elixir-processes]
+  that share no memory and only exchange messages, the [actor model][actors].
+  The Erlang virtual machine, which also runs Elixir, starts one scheduler per
+  core and spreads its processes across them.
+- **Graphics cards**, with thousands of small processors applying the same
+  computation to many values at once, now used for [much more than
+  graphics][gpgpu], such as training AI models.
 
 ## Appendix: it's redstone all the way down
 
@@ -1367,6 +1419,8 @@ _To write:_ redstone computers, which climb from switches to a processor as the
 presentation does, at a size you can walk around in. A few fun references, not
 material to learn.
 
+[actors]: https://en.wikipedia.org/wiki/Actor_model
+[amdahl]: https://en.wikipedia.org/wiki/Amdahl%27s_law
 [arm]: https://en.wikipedia.org/wiki/AArch64
 [ascii]: https://en.wikipedia.org/wiki/ASCII
 [assembly]: https://en.wikipedia.org/wiki/Assembly_language
@@ -1374,9 +1428,17 @@ material to learn.
 [call-stack]: https://en.wikipedia.org/wiki/Call_stack
 [cpu-cache]: https://en.wikipedia.org/wiki/CPU_cache
 [docker-multi-platform]: https://docs.docker.com/build/building/multi-platform/
+[elixir-processes]: https://hexdocs.pm/elixir/processes.html
+[go-concurrency]: https://go.dev/tour/concurrency/1
+[gpgpu]: https://en.wikipedia.org/wiki/General-purpose_computing_on_graphics_processing_units
 [intel-8080]: https://en.wikipedia.org/wiki/Intel_8080
 [java-bytecode]: https://en.wikipedia.org/wiki/Java_bytecode
+[java-concurrency]: https://docs.oracle.com/javase/tutorial/essential/concurrency/
 [jit]: https://en.wikipedia.org/wiki/Just-in-time_compilation
+[mdn-async]: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Async_JS
+[node-event-loop]: https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop
+[node-workers]: https://nodejs.org/api/worker_threads.html
+[php-fpm]: https://www.php.net/manual/en/install.fpm.php
 [pipelining]: https://en.wikipedia.org/wiki/Instruction_pipelining
 [rosetta]: https://en.wikipedia.org/wiki/Rosetta_(software)
 [spectre-meltdown]: https://meltdownattack.com
