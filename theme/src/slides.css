@@ -45,19 +45,37 @@ body {
 
    Presented, the box is in the window's corner, drawn by `slides.ts`, and the
    title in the slide is not displayed, though it still paces the fragments. In
-   a PDF or a scrolled deck, it is in the slide's corner, and the slide is kept
-   at the top rather than centred vertically, so that the corner is the slide's
-   and not its content's.
+   a PDF or a scrolled deck, it is in the slide's corner, and the slide fills
+   the slide's height and centres its content in it, so that the corner is the
+   slide's and not its content's.
 
-   In a PDF, the slide then fills its page's height and centres its content in
-   it instead, as reveal.js centres every other slide by moving the slide down
-   (`top`), which would take the corner down with it. */
-.reveal:not(.corner-title-in-window) .slides section:has(> h3.corner-title) {
+   In a PDF, the slide is kept at the top rather than centred vertically, as
+   reveal.js centres every other slide by moving the slide down (`top`), which
+   would take the corner down with it.
+
+   A scrolled deck centres each slide in its page by its own top and
+   translation, which a slide kept at the top would undo by half its height. It
+   gives each slide the height of its content (`--slide-height` on the page),
+   so the slide is given back the deck's, as the viewport has it. */
+.reveal-viewport:not(.reveal-scroll)
+  .reveal:not(.corner-title-in-window)
+  .slides
+  section:has(> h3.corner-title) {
   top: 0 !important;
 }
 
 html.reveal-print .reveal .slides section:has(> h3.corner-title) {
   height: 100%;
+  align-content: center;
+}
+
+.reveal-viewport {
+  --deck-slide-height: var(--slide-height);
+}
+
+.reveal-scroll .scroll-page section:has(> h3.corner-title) {
+  --slide-height: var(--deck-slide-height);
+
   align-content: center;
 }
 
@@ -118,10 +136,19 @@ html.reveal-print .reveal .slides section:has(> h3.corner-title) {
    When printing, reveal.js lays nothing out and sets none of the window's
    properties: each slide is printed on a page of its own size, unscaled, so
    the diagram takes the whole slide. Neither the logos nor the controls are
-   printed, so no strip is kept for them. */
+   printed, so no strip is kept for them.
+
+   A scrolled deck, as embedded in a page, has neither a strip nor a slide
+   height to measure from: it gives each slide the height of its content, and
+   centres it in its page by its own top and translation, which a slide kept at
+   the top would undo by half its height. The diagram takes the whole page, so
+   the centred slide is the diagram. */
 .reveal .slides section.full-diagram {
-  top: 0 !important;
   padding: 0;
+}
+
+.reveal-viewport:not(.reveal-scroll) .reveal .slides section.full-diagram {
+  top: 0 !important;
 }
 
 .reveal .slides section.full-diagram :is(simgit-story, .diagram-figure) {
@@ -135,27 +162,37 @@ html.reveal-print .reveal .slides section:has(> h3.corner-title) {
     (var(--full-diagram-height) - var(--full-diagram-bottom)) /
       var(--full-diagram-scale)
   );
-  margin: calc(
-      (
-          var(--slide-height) - var(--full-diagram-height) /
-            var(--full-diagram-scale)
-        ) /
-        2
-    )
-    0 0
-    calc(
-      (
-          var(--slide-width) - var(--full-diagram-width) /
-            var(--full-diagram-scale)
-        ) /
-        2
-    );
+  margin: 0;
+  margin-top: calc(
+    (
+        var(--slide-height) - var(--full-diagram-height) /
+          var(--full-diagram-scale)
+      ) /
+      2
+  );
+  margin-left: calc(
+    (
+        var(--slide-width) - var(--full-diagram-width) /
+          var(--full-diagram-scale)
+      ) /
+      2
+  );
   border: none;
   border-radius: 0;
 
   @media print {
     --full-diagram-bottom: 0px;
   }
+}
+
+.reveal-scroll
+  .reveal
+  .slides
+  section.full-diagram
+  :is(simgit-story, .diagram-figure) {
+  --full-diagram-bottom: 0px;
+
+  margin-top: 0;
 }
 
 .reveal .slides section.full-diagram simgit-story::part(controls) {
