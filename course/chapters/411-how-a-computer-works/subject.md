@@ -70,8 +70,9 @@ there is: a light sky blue.
 {% cols %}
 
 An **image** is a grid of such colors, called **pixels**, so an image is a list
-of numbers, one per pixel, row by row. This Mario is 12 pixels wide and 16
-high: 192 pixels, so 192 bytes.
+of numbers, one per pixel, row by row. This Mario is 12 pixels wide and 16 high:
+192 pixels, so 192 bytes with an 8-bit color scheme. It would be 576 bytes with
+a modern 24-bit color scheme, 8 bits for each of red, green and blue.
 
 A **video** is a sequence of images shown fast enough for the eye to see
 movement, so it is a longer list of numbers.
