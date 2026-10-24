@@ -104,7 +104,7 @@ numbers is enough to manipulate any data:
   smaller from one frame to the next, until it reaches 0.
 
 Every program you use, however complex, comes down to calculations like these,
-on a very large number of numbers.
+on a very large amount of numbers.
 
 ### Adding in binary
 
