@@ -5,8 +5,8 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawBodyTest do
 
   describe "parse/2" do
     test "captures a body without reading any Liquid in it" do
-      assert parse("graph TD\n  A --> B\n{% endmermaid %}after", "endmermaid") ==
-               {:ok, "graph TD\n  A --> B\n", "after"}
+      assert parse("echo $HOME\n  ls -la\n{% endcode %}after", "endcode") ==
+               {:ok, "echo $HOME\n  ls -la\n", "after"}
     end
 
     test "captures a body containing what would otherwise be an expression" do

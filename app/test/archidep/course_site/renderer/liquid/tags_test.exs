@@ -7,7 +7,6 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.TagsTest do
   alias ArchiDep.CourseSite.Renderer.Liquid.IncludeTag
   alias ArchiDep.CourseSite.Renderer.Liquid.LinkTag
   alias ArchiDep.CourseSite.Renderer.Liquid.MarkdownTag
-  alias ArchiDep.CourseSite.Renderer.Liquid.MermaidTag
   alias ArchiDep.CourseSite.Renderer.Liquid.NoteTag
   alias ArchiDep.CourseSite.Renderer.Liquid.SolutionTag
   alias ArchiDep.CourseSite.Renderer.Liquid.Tags
@@ -24,7 +23,6 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.TagsTest do
                  "include" => IncludeTag,
                  "link" => LinkTag,
                  "markdown" => MarkdownTag,
-                 "mermaid" => MermaidTag,
                  "note" => NoteTag,
                  "solution" => SolutionTag
                })

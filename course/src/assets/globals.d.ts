@@ -4,8 +4,8 @@ declare global {
   interface Window {
     /**
      * The reveal.js deck of a slides page, put here by `src/assets/slides.ts`
-     * so that the scripts loaded beside it, such as the Mermaid renderer, can
-     * drive the same deck rather than build one of their own.
+     * so that code outside the bundle, such as the screenshot script, can drive
+     * the same deck rather than build one of its own.
      */
     deck?: RevealApi;
 

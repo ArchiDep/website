@@ -27,7 +27,6 @@ for AI assistants and automated agents.
       - [Tell Me More](#tell-me-more)
     - [Side-by-Side Columns](#side-by-side-columns)
     - [Solutions](#solutions)
-    - [Mermaid Diagrams](#mermaid-diagrams)
     - [Architecture Diagrams](#architecture-diagrams)
     - [Logic Circuits](#logic-circuits)
     - [Forced Markdown](#forced-markdown)
@@ -134,8 +133,6 @@ the dashboard functionality is only available during the current semester).
   - `src/assets/simgit/**/*.ts`: The stories behind the [interactive Git
     diagrams](#interactive-git-diagrams) shown in some slides and exercises.
   - `src/assets/slides.ts`: TypeScript file to set up slide presentations.
-  - `src/assets/slides-mermaid.ts`: TypeScript file to render Mermaid diagrams
-    in slides.
   - `src/diagrams/`: The toolchain of the [architecture
     diagrams](#architecture-diagrams), kept apart from the rest of the site so
     that it can become a project of its own: `build/` generates them, its core
@@ -726,23 +723,6 @@ Here is what you should have seen.
 {% endsolution %}
 ```
 
-#### Mermaid Diagrams
-
-The `mermaid` tag renders a [Mermaid][mermaid] diagram from its content. The
-diagram is rendered client-side (it shows a loading skeleton until then). Use
-Mermaid for diagrams and visualizations where appropriate.
-
-Mermaid diagrams on slides are rendered by
-[`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts).
-
-**Example usage:**
-
-```liquid
-{% mermaid %}
-graph LR A[Client] --> B[Server]
-{% endmermaid %}
-```
-
 #### Architecture Diagrams
 
 An architecture diagram draws the processes of a lesson and the connections
@@ -1095,15 +1075,11 @@ subsystem, in
 ### Build Output & Asset URLs
 
 Client-side assets are bundled by [esbuild][esbuild]
-([`build.mjs`](./build.mjs)), in three builds:
+([`build.mjs`](./build.mjs)), in two builds:
 
 - The `course` and `slides` entry points (and the stylesheet `slides` imports)
   are bundled into `app/priv/static/assets/course` as classic scripts, one file
   each.
-- The `slides-mermaid` entry point is bundled into the same directory as an ES
-  module, split into the chunks Mermaid loads on demand, and is loaded with
-  `<script type="module">`. Like a deferred script, a module runs once the page
-  is parsed, so it finds the deck `slides.js` has already set up.
 - The `search` entry point, which the dashboard loads as well, is bundled into
   `app/priv/static/assets/search`.
 
@@ -1114,11 +1090,10 @@ checks them, and CI runs it.
 site's single asset manifest.** Entry bundles are therefore named plainly
 (`course.js`), and the digest step — which runs over the whole static directory,
 after every bundler has written into it — is what gives them a content-hashed
-name and records it. Chunks are the exception: a module imports them by name and
-never consults a manifest, so they keep esbuild's own content hash.
+name and records it.
 
 esbuild does not empty its output directories, so a local `app/priv/static`
-keeps every chunk any earlier build produced. They are never published, since
+keeps every file any earlier build produced. They are never published, since
 images and CI start from an empty tree, but they take space and inflate any
 measurement of the directory. Delete `app/priv/static/assets` now and then, then
 rebuild and digest. The build does not do it itself, because the site build
@@ -1127,14 +1102,14 @@ a manifest left by an earlier digest would leave the local site naming files
 that are gone.
 
 **What a bundle fetches for itself is addressed relative to the file asking for
-it** — a chunk, a font a bundled stylesheet names. That is what esbuild does as
-long as no `publicPath` is set, and `npm run check:relative-assets` checks it,
-in CI and in `scripts/pdf`. None of that goes through the build's [URL
+it** — a font or an image a bundled stylesheet names. That is what esbuild does
+as long as no `publicPath` is set, and `npm run check:relative-assets` checks
+it, in CI and in `scripts/pdf`. None of that goes through the build's [URL
 seam][urls], and where a build publishes its assets is not known when they are
 bundled: the same bundle is served under an edition prefix, under a mount point,
 and from the root of the copy the PDFs are printed from. An address baked in
 here resolves in exactly one of those and 404s in the rest, which shows up as a
-deck printed with its diagrams missing and its titles in a fallback font.
+deck printed with its titles in a fallback font.
 
 The build reads `cache_manifest.json` to turn an asset's logical name into the
 name it was published under. **Do not hardcode hashed asset paths**: a page
@@ -1227,10 +1202,8 @@ once it has been digested.
 Slides are presented with [reveal.js][reveal], configured in
 [`src/assets/slides.ts`](./src/assets/slides.ts) (Markdown, highlight, notes and
 search plugins). The slide layout feeds the deck's Markdown into reveal.js,
-which splits it into slides itself. Mermaid diagrams are rendered lazily per
-slide by [`src/assets/slides-mermaid.ts`](./src/assets/slides-mermaid.ts).
-Useful query parameters include `?print-pdf` (PDF export layout), `?view=scroll`
-(continuous scroll) and `?show-notes`.
+which splits it into slides itself. Useful query parameters include `?print-pdf`
+(PDF export layout), `?view=scroll` (continuous scroll) and `?show-notes`.
 
 ### PDF Generation
 
@@ -1375,7 +1348,6 @@ other document.
   - [io-ts Documentation][io-ts-docs]
 - [Loglevel][loglevel] for client-side logging
 - [Lunr][lunr] for full-text search
-- [Mermaid][mermaid] for diagrams and visualizations
 - [Phoenix][phoenix] for real-time integration with the dashboard application
 - [Preact][preact] for client-side interactivity
   - [Preact Signals][preact-signals] for state management
@@ -1405,7 +1377,6 @@ agents.
 [phoenix]: https://hexdocs.pm/phoenix/Phoenix.Channel.html
 [loglevel]: https://github.com/pimterry/loglevel
 [lunr]: https://lunrjs.com
-[mermaid]: https://mermaid.js.org
 [companion-gate]: https://www.npmjs.com/package/companion-gate
 [preact]: https://preactjs.com
 [preact-signals]: https://preactjs.com/guide/v10/signals/

@@ -195,16 +195,15 @@ Element`, `as HTMLDialogElement`, `as HTMLCollectionOf<HTMLElement>`): in
   `noUncheckedIndexedAccess` typing an index as possibly `undefined`. A loop
   over the elements, or a check that throws, removes them.
 - **A value of a type the code cannot otherwise state**: `getNotesMode() as
-boolean` and `window as any` in `slides.ts`, `event as SlideChangedEvent` in
-  `slides-mermaid.ts`, `row as Row` in coffee-queues, `codeElement as
-Randomized` in `randomize.ts`, the match metadata of a search result in
-  `search.ts`, `Object.keys(…) as Operation[]` in `diagrams/machine/trace.ts`,
-  `definition as DiagramDefinition` in `diagrams/build/cli.ts`,
-  `this.#states.get(key) as T` in `diagrams/build/builder.ts`, and
-  `server.address() as AddressInfo` in the static server. These need the most
-  thought: some want an `io-ts` codec, some a narrower type upstream, and the
-  two that work around reveal.js's types, a declaration of what reveal.js
-  actually accepts.
+boolean` and `window as any` in `slides.ts`, `row as Row` in coffee-queues,
+  `codeElement as Randomized` in `randomize.ts`, the match metadata of a search
+  result in `search.ts`, `Object.keys(…) as Operation[]` in
+  `diagrams/machine/trace.ts`, `definition as DiagramDefinition` in
+  `diagrams/build/cli.ts`, `this.#states.get(key) as T` in
+  `diagrams/build/builder.ts`, and `server.address() as AddressInfo` in the
+  static server. These need the most thought: some want an `io-ts` codec, some a
+  narrower type upstream, and the two that work around reveal.js's types, a
+  declaration of what reveal.js actually accepts.
 
 One of the 43, `[] as readonly (readonly [number, number])[]` in `randomize.ts`,
 widens an empty array and cannot lie. A lint rule flags it all the same, and an

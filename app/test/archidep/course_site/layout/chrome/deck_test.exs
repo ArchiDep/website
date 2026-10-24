@@ -15,7 +15,6 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
     slides_css: "/assets/course/slides.css",
     theme_slides_css: "/assets/theme/slides.css",
     slides_js: "/assets/course/slides.js",
-    slides_mermaid_js: "/assets/course/slides-mermaid.js",
     heig_logo: "/favicons/heig.png",
     source: "https://github.com/ArchiDep/website/blob/abc123/course/x.md",
     page_pdf: "/pdf/Slides.pdf"
@@ -121,8 +120,6 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.DeckTest do
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="/assets/course/slides.css">
         <link rel="stylesheet" href="/assets/theme/slides.css">
-        <script type="module" src="/assets/course/slides-mermaid.js">
-        </script>
       </head>
       <body data-theme="light">
         <div class="reveal">

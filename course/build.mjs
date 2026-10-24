@@ -93,22 +93,6 @@ const builds = [
     outdir: path.join(staticAssets, 'course'),
     plugins: [labelled('course, slides')]
   },
-  // Mermaid loads each kind of diagram on demand, which only an ES module
-  // bundle can split into chunks, so this one is loaded with `<script
-  // type="module">`. A module resolves the chunks it imports relative to its
-  // own address, which is what lets the same bundle be served under an edition
-  // prefix, under a mount point, and from the root of an export: an address
-  // baked in here would resolve in exactly one of those.
-  {
-    ...baseOptions,
-    entryPoints: {
-      'slides-mermaid': './src/assets/slides-mermaid.ts'
-    },
-    format: 'esm',
-    outdir: path.join(staticAssets, 'course'),
-    plugins: [labelled('slides-mermaid')],
-    splitting: true
-  },
   // The search dialog, which the dashboard loads as well.
   {
     ...baseOptions,

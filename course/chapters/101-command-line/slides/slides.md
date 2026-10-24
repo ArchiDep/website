@@ -298,15 +298,7 @@ run a server later in this course.
 
 Three words, three different things <!-- .element: class="subtitle" -->
 
-{% mermaid %}
-
-flowchart LR
-you["You"] -- keystrokes --> term["Terminal"]
-term -- what you typed --> shell["Shell (bash, zsh)"]
-shell -- starts --> cmd["Command (ls, cd, git)"]
-cmd -- output --> term
-
-{% endmermaid %}
+<img class="w-11/12" src="./images/terminal-shell-command.svg" alt="Your keystrokes reach the terminal, which hands the line you typed to the shell (bash, zsh); the shell starts the command (ls, git, code), whose output the terminal shows" />
 
 **Notes:**
 

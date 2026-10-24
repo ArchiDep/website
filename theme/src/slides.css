@@ -228,14 +228,6 @@ a {
   @apply shadow-none;
 }
 
-pre.mermaid {
-  @apply text-center text-gray-600;
-}
-
-pre.mermaid.loading {
-  @apply w-1/2 h-60 skeleton text-transparent;
-}
-
 .reveal .slides section.title-slide {
   h1 {
     font-family: 'Bitcount Prop Single', sans-serif;

@@ -2,10 +2,9 @@ defmodule ArchiDep.CourseSite.Renderer.Liquid.RawBody do
   @moduledoc """
   Capture a block tag's body verbatim, without parsing any Liquid inside it.
 
-  This is what a tag whose body is code or a diagram wants: a `{{` in a shell
-  sample or a Jinja template is text, not the start of an expression, and
-  reading it as one would fail the build over a code block that is perfectly
-  correct.
+  This is what a tag whose body is code wants: a `{{` in a shell sample or a
+  Jinja template is text, not the start of an expression, and reading it as one
+  would fail the build over a code block that is perfectly correct.
 
   A tag whose body is prose wants the opposite —
   `ArchiDep.CourseSite.Renderer.Liquid.NestedBody` — because prose in this

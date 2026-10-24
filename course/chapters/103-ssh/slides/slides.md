@@ -35,20 +35,7 @@ SSH is a **cryptographic network protocol** for operating network services
 
 SSH is a **client-server** protocol.
 
-{% mermaid %}
-
-architecture-beta
-
-    service sshcl1(fluent:window-text-24-regular)[SSH Client]
-    service sshcl2(fluent:window-text-24-regular)[SSH Client]
-    service sshcl3(fluent:window-text-24-regular)[SSH Client]
-    service sshsrv(fluent:server-24-regular)[SSH Server]
-
-    sshcl1:R --> L:sshsrv
-    sshcl2:L --> R:sshsrv
-    sshcl3:R --> T:sshsrv
-
-{% endmermaid %}
+<img class="w-9/12" src="./images/ssh-client-server.svg" alt="Three SSH clients, run as ssh jde@example.com, ssh ana@example.com and ssh max@example.com, all connect to one SSH server listening on port 22" />
 
 **Notes:**
 

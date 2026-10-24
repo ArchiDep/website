@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 280" width="1080" height="280">
+  <title>Terminal, shell, command: your keystrokes reach the terminal, which hands the line you typed to the shell, which starts the command, whose output the terminal shows</title>
+  <style>
+    svg { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    .card { fill: #fff; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+    .keyboard rect { fill: #fff; stroke: #374151; stroke-width: 1.5; }
+    .keyboard .key { fill: #374151; stroke: none; }
+    .you { font-size: 18px; font-weight: 700; fill: #000; text-anchor: middle; }
+    .window .frame { fill: #1f2937; }
+    .window .bar { fill: #e5e7eb; }
+    .window .title { font-size: 15px; font-weight: 700; fill: #374151; text-anchor: middle; }
+    .window .prompt { font-size: 17px; fill: #9ca3af; }
+    .window .typed { fill: #fff; font-weight: 700; }
+    .window .output { font-size: 17px; fill: #d1d5db; }
+    .window .cursor { fill: #d1d5db; }
+    .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    .process text { fill: #fff; text-anchor: middle; }
+    .process .label { font-size: 20px; font-weight: 700; }
+    .process .command { font-size: 15px; font-weight: 700; }
+    .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    .edge.control path { stroke-dasharray: 4 5; }
+    .edge text { font-size: 17px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    .marker-comm { fill: #000; }
+    .marker-control { fill: #fff; stroke: #000; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="arrow-comm" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+    <marker id="arrow-control" viewBox="-1 -1 16 12" refX="14" refY="5" markerWidth="16" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-control" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="card" width="1080" height="280" rx="12"/>
+
+  <!-- You, at the keyboard. -->
+  <g class="keyboard">
+    <rect x="20" y="84" width="104" height="54" rx="7"/>
+    <rect class="key" x="30" y="93" width="10" height="9" rx="2"/>
+    <rect class="key" x="43" y="93" width="10" height="9" rx="2"/>
+    <rect class="key" x="56" y="93" width="10" height="9" rx="2"/>
+    <rect class="key" x="69" y="93" width="10" height="9" rx="2"/>
+    <rect class="key" x="82" y="93" width="10" height="9" rx="2"/>
+    <rect class="key" x="95" y="93" width="10" height="9" rx="2"/>
+    <rect class="key" x="108" y="93" width="7" height="9" rx="2"/>
+    <rect class="key" x="30" y="106" width="14" height="9" rx="2"/>
+    <rect class="key" x="47" y="106" width="10" height="9" rx="2"/>
+    <rect class="key" x="60" y="106" width="10" height="9" rx="2"/>
+    <rect class="key" x="73" y="106" width="10" height="9" rx="2"/>
+    <rect class="key" x="86" y="106" width="10" height="9" rx="2"/>
+    <rect class="key" x="99" y="106" width="16" height="9" rx="2"/>
+    <rect class="key" x="44" y="119" width="56" height="9" rx="2"/>
+  </g>
+  <text class="you" x="72" y="166">You</text>
+
+  <!-- The terminal: a window, which draws text and collects keystrokes. -->
+  <g class="window">
+    <rect class="frame" x="220" y="30" width="270" height="160" rx="10"/>
+    <path class="bar" d="M220,58 V40 A10,10 0 0 1 230,30 H480 A10,10 0 0 1 490,40 V58 Z"/>
+    <circle cx="238" cy="44" r="5.5" fill="#ff5f57"/>
+    <circle cx="256" cy="44" r="5.5" fill="#febc2e"/>
+    <circle cx="274" cy="44" r="5.5" fill="#28c840"/>
+    <text class="title" x="355" y="49">Terminal</text>
+    <text class="mono prompt" x="238" y="92">$&gt; <tspan class="typed">ls</tspan></text>
+    <text class="mono output" x="238" y="120" xml:space="preserve">notes.txt  photos</text>
+    <text class="mono prompt" x="238" y="148">$&gt;</text>
+    <rect class="cursor" x="270" y="134" width="10" height="18"/>
+  </g>
+
+  <g class="process">
+    <rect x="600" y="84" width="180" height="54" rx="8"/>
+    <text class="label" x="690" y="108">Shell</text>
+    <text class="mono command" x="690" y="128">bash, zsh</text>
+  </g>
+
+  <g class="process">
+    <rect x="870" y="84" width="180" height="54" rx="8"/>
+    <text class="label" x="960" y="108">Command</text>
+    <text class="mono command" x="960" y="128">ls, git, code</text>
+  </g>
+
+  <g class="edge comm">
+    <path d="M124,111 H220" marker-end="url(#arrow-comm)"/>
+    <text x="172" y="98">keystrokes</text>
+  </g>
+
+  <g class="edge comm">
+    <path d="M490,111 H600" marker-end="url(#arrow-comm)"/>
+    <text x="545" y="80">the line</text>
+    <text x="545" y="100">you typed</text>
+  </g>
+
+  <g class="edge control">
+    <path d="M780,111 H870" marker-end="url(#arrow-control)"/>
+    <text x="825" y="100">starts</text>
+  </g>
+
+  <g class="edge comm">
+    <path d="M960,138 V240 H355 V190" marker-end="url(#arrow-comm)"/>
+    <text x="657" y="246">its output, shown in the window</text>
+  </g>
+</svg>

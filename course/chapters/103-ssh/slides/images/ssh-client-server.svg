@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 290" width="900" height="290">
+  <title>SSH is a client-server protocol: several SSH clients connect to one SSH server, listening on port 22</title>
+  <style>
+    svg { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    .card { fill: #fff; }
+    .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    .process text { fill: #fff; text-anchor: middle; }
+    .process .label { font-size: 20px; font-weight: 700; }
+    .process .command { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 15px; font-weight: 700; }
+    .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    .marker-comm { fill: #000; }
+    .socket path { fill: none; stroke: #000; stroke-width: 1.75; stroke-linecap: round; }
+    .socket text { font-size: 17px; fill: #000; text-anchor: end; }
+  </style>
+  <defs>
+    <marker id="arrow-comm" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="card" width="900" height="290" rx="12"/>
+
+  <g class="process">
+    <rect x="30" y="28" width="250" height="56" rx="8"/>
+    <text class="label" x="155" y="53">SSH Client</text>
+    <text class="command" x="155" y="73">ssh jde@example.com</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="117" width="250" height="56" rx="8"/>
+    <text class="label" x="155" y="142">SSH Client</text>
+    <text class="command" x="155" y="162">ssh ana@example.com</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="206" width="250" height="56" rx="8"/>
+    <text class="label" x="155" y="231">SSH Client</text>
+    <text class="command" x="155" y="251">ssh max@example.com</text>
+  </g>
+
+  <g class="process">
+    <rect x="640" y="117" width="230" height="56" rx="8"/>
+    <text class="label" x="755" y="142">SSH Server</text>
+    <text class="command" x="755" y="162">sshd</text>
+    <g class="socket">
+      <path d="M640,127 L614,103 M640,163 L614,187"/>
+      <text x="618" y="96">22</text>
+    </g>
+  </g>
+
+  <g class="edge comm">
+    <path d="M280,56 C460,56 470,133 636,133" marker-end="url(#arrow-comm)"/>
+  </g>
+  <g class="edge comm">
+    <path d="M280,145 H636" marker-end="url(#arrow-comm)"/>
+  </g>
+  <g class="edge comm">
+    <path d="M280,234 C460,234 470,157 636,157" marker-end="url(#arrow-comm)"/>
+  </g>
+</svg>

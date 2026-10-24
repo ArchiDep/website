@@ -66,8 +66,7 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   @deck_assets [
     "/assets/course/slides.css",
     "/assets/theme/slides.css",
-    "/assets/course/slides.js",
-    "/assets/course/slides-mermaid.js"
+    "/assets/course/slides.js"
   ]
 
   # The three sets of pictures the chrome resolves, keyed as it keys them: the
@@ -548,7 +547,6 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.AssignsTest do
   defp asset_key("/assets/course/slides.css"), do: :slides_css
   defp asset_key("/assets/theme/slides.css"), do: :theme_slides_css
   defp asset_key("/assets/course/slides.js"), do: :slides_js
-  defp asset_key("/assets/course/slides-mermaid.js"), do: :slides_mermaid_js
 
   defp source_url(path), do: "https://github.com/ArchiDep/website/blob/abc123/#{path}"
 

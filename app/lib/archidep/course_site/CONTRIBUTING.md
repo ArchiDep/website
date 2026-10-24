@@ -887,7 +887,7 @@ Two consequences for anyone writing a tag:
 
 ### The tags the course writes
 
-Seven block tags wrap prose in the HTML the theme styles:
+Six block tags wrap prose in the HTML the theme styles:
 
 - [`note`](./renderer/liquid/note_tag.ex) (an aside)
 - [`callout`](./renderer/liquid/callout_tag.ex) (something not to skip)
@@ -900,8 +900,7 @@ Seven block tags wrap prose in the HTML the theme styles:
   written with `reveal: always`, and refused outright anywhere but a chapter,
   since only a chapter has an exercise for it to answer)
 - [`markdown`](./renderer/liquid/markdown_tag.ex) (a piece converted where the
-  page would not convert it)
-- [`mermaid`](./renderer/liquid/mermaid_tag.ex) (a diagram).
+  page would not convert it).
 
 They are registered in [`Tags`](./renderer/liquid/tags.ex) alongside the two
 inline ones, `link` and `include`.
@@ -918,9 +917,7 @@ Three rules run across all of them:
   location `Solid` hands a tag in a shape `Solid` can read back.
 - **A tag emits no whitespace of its own**, for the reason [every tag
   body](#every-tag-body-is-its-own-markdown-document) is its own document: a
-  blank line ends an HTML block. The one exception is `mermaid`, whose body may
-  contain blank lines and is therefore emitted inside a `pre` element, which
-  CommonMark reads to its closing tag rather than to the next blank line.
+  blank line ends an HTML block.
 - **A tag names the emoji it shows** rather than spelling out its shortcode, so
   that an emoji the site does not have fails the build instead of reaching a
   page as words. What it writes is the shortcode a page would write, left for

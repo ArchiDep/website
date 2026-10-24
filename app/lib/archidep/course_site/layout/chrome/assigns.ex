@@ -397,7 +397,6 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Assigns do
     |> required(:slides_css, {:asset, "/assets/course/slides.css"})
     |> required(:theme_slides_css, {:asset, "/assets/theme/slides.css"})
     |> required(:slides_js, {:asset, "/assets/course/slides.js"})
-    |> required(:slides_mermaid_js, {:asset, "/assets/course/slides-mermaid.js"})
   end
 
   # The search index is asked for by name rather than by digest, and the name is

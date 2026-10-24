@@ -32,8 +32,7 @@ defmodule ArchiDep.CourseSite.Layout.ChromeTest do
     "/assets/course/course.js",
     "/assets/course/slides.css",
     "/assets/theme/slides.css",
-    "/assets/course/slides.js",
-    "/assets/course/slides-mermaid.js"
+    "/assets/course/slides.js"
   ]
 
   # What this layout decides, over and above what its parts draw, is two things:
