@@ -63,9 +63,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Each Puppeteer release prints with one exact Chrome build, so the
+      # browser is keyed on Puppeteer's version: upgrading Puppeteer misses the
+      # cache and downloads the browser it is built for.
+      - name: Find the Puppeteer version
+        id: puppeteer
+        run: echo "version=$(node -p "require('puppeteer/package.json').version")" >> "$GITHUB_OUTPUT"
+        working-directory: course
+
+      - name: Cache the browser the PDFs are printed with
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ steps.puppeteer.outputs.version }}
+
       # Installed by name rather than by letting npm run install scripts, which
       # would run the code of every package in the tree, not just Puppeteer's.
-      # The browser is the one the installed Puppeteer is built for.
+      # The browser is the one the installed Puppeteer is built for. It returns
+      # without downloading anything when the cache already holds it.
       - name: Install the browser the PDFs are printed with
         run: npx puppeteer browsers install chrome
         working-directory: course
