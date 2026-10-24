@@ -1421,9 +1421,63 @@ parallel work, worth exploring:
 
 ## Appendix: it's redstone all the way down
 
-_To write:_ redstone computers, which climb from switches to a processor as the
-presentation does, at a size you can walk around in. A few fun references, not
-material to learn.
+Remember [the switches](#from-switches-to-a-machine): the logic does not depend
+on what they are made of. Relays, vacuum tubes and transistors all compute the
+same way. So does anything else that can make one signal turn another on or off,
+including blocks in a video game.
+
+In Minecraft, **redstone** dust carries a signal from block to block, like a
+wire. A **redstone torch** stuck to a block is lit unless the block is powered:
+it is a NOT. Two lines of dust that join make an OR, since either one powers
+what comes next. With NOT and OR, you can build every other gate: an AND is a
+NOT of the OR of two NOTs, so a torch on each input and one on the output. The
+inputs are green and the outputs pink:
+
+![Redstone logic gates in Minecraft: NAND, XOR, NOT, OR, AND and NOR, each a few blocks of redstone dust and torches](images/redstone-gates.png)
+
+From there, players climb the same ladder as the presentation: gates make
+adders, latches and clocks, and those make a processor. Here is a full adder,
+which adds A, B and the carry C, and gives the sum S and the carry C' for the
+next column:
+
+![A redstone full adder in Minecraft, made of gold blocks, redstone dust and torches, with inputs A, B and C and outputs S and C'](images/redstone-full-adder.png)
+
+_Screenshots by Jjlrjjlr, from the [Minecraft Wiki][wiki-redstone-logic],
+licensed under [CC BY-NC-SA 3.0][cc-by-nc-sa-3]._
+
+Redstone is not fast. Each torch takes a tenth of a second to react, so you can
+watch a carry ripple from one column of an adder to the next, and a redstone
+processor ticks about once a second, where yours ticks billions of times. It is
+not small either: a processor is the size of a building, which has the advantage
+that you can walk inside it.
+
+That did not stop anyone. In 2022, sammyuri and friends built a redstone
+computer that runs a tiny version of Minecraft, inside Minecraft. It needs a
+special server running the game thousands of times faster than normal; at normal
+speed, drawing a single frame would take days:
+
+<iframe src="https://www.youtube-nocookie.com/embed/-BP7DhHTU-I" title="I made Minecraft in Minecraft with redstone!" style="width: 100%; aspect-ratio: 16 / 9; border: 0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>
+
+_[I made Minecraft in Minecraft with redstone!][minecraft-in-minecraft], by
+sammyuri._
+
+To dig further:
+
+- **The Minecraft Wiki's [redstone circuits][wiki-redstone]**: every gate and
+  circuit of the presentation, in blocks, from the [logic
+  gates][wiki-redstone-logic] to adders and memory.
+- **[Digital Logic & Computer Architecture in Minecraft][umd-redstone]**: a
+  University of Maryland course that goes from gates to a processor, in
+  redstone.
+- **[Let's Make a Redstone Computer][mattbatwings]**: a video series by
+  mattbatwings, building a programmable processor one part at a time, the ALU
+  and registers included.
+- **[Nand2Tetris][nand2tetris]**: the same climb outside of any game, from a
+  single gate, NAND, to a computer running Tetris, in a simulator.
+
+And if you prefer your switches even less electric: Matt Parker built [a
+computer out of 10,000 dominoes][domino-computer]. It adds two binary numbers,
+once, and then someone has to set all the dominoes up again.
 
 [actors]: https://en.wikipedia.org/wiki/Actor_model
 [amdahl]: https://en.wikipedia.org/wiki/Amdahl%27s_law
@@ -1432,8 +1486,10 @@ material to learn.
 [assembly]: https://en.wikipedia.org/wiki/Assembly_language
 [branch-predictor]: https://en.wikipedia.org/wiki/Branch_predictor
 [call-stack]: https://en.wikipedia.org/wiki/Call_stack
+[cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
 [cpu-cache]: https://en.wikipedia.org/wiki/CPU_cache
 [docker-multi-platform]: https://docs.docker.com/build/building/multi-platform/
+[domino-computer]: https://www.youtube.com/watch?v=OpLU__bhu2w
 [elixir-processes]: https://hexdocs.pm/elixir/processes.html
 [go-concurrency]: https://go.dev/tour/concurrency/1
 [gpgpu]: https://en.wikipedia.org/wiki/General-purpose_computing_on_graphics_processing_units
@@ -1441,14 +1497,20 @@ material to learn.
 [java-bytecode]: https://en.wikipedia.org/wiki/Java_bytecode
 [java-concurrency]: https://docs.oracle.com/javase/tutorial/essential/concurrency/
 [jit]: https://en.wikipedia.org/wiki/Just-in-time_compilation
+[mattbatwings]: https://www.youtube.com/watch?v=osFa7nwHHz4
 [mdn-async]: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Async_JS
+[minecraft-in-minecraft]: https://www.youtube.com/watch?v=-BP7DhHTU-I
+[nand2tetris]: https://www.nand2tetris.org/
 [node-event-loop]: https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop
 [node-workers]: https://nodejs.org/api/worker_threads.html
 [php-fpm]: https://www.php.net/manual/en/install.fpm.php
 [pipelining]: https://en.wikipedia.org/wiki/Instruction_pipelining
 [rosetta]: https://en.wikipedia.org/wiki/Rosetta_(software)
 [spectre-meltdown]: https://meltdownattack.com
+[umd-redstone]: https://www.cs.umd.edu/class/fall2021/cmsc389E/digital-logic-computer-architecture-minecraft/
 [utf8]: https://en.wikipedia.org/wiki/UTF-8
 [virtual-memory]: https://en.wikipedia.org/wiki/Virtual_memory
+[wiki-redstone]: https://minecraft.wiki/w/Redstone_circuits
+[wiki-redstone-logic]: https://minecraft.wiki/w/Redstone_circuits/Logic
 [x86-64]: https://en.wikipedia.org/wiki/X86-64
 [x86-instructions]: https://en.wikipedia.org/wiki/X86_instruction_listings
