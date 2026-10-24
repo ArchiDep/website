@@ -959,15 +959,133 @@ addresses. The control unit drives it:
 
 ### A bigger memory from smaller blocks
 
-_To write:_ how a large RAM is assembled out of smaller blocks, part of the
-address choosing the block. No diagram yet.
+The presentation already showed [a 4-bit addressable
+memory]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/50): four
+D latches, a [decoder]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/46)
+that sends WRITE to the latch at the address, and a 4-to-1 selector that passes
+that latch's value on to OUT. It has four [cells](#memory-is-addressed), one per
+address, and each cell is a single latch:
+
+<logic-diagram name="addressable-memory" names="true" highlight="true" controls="none" style="max-width: 530px; margin: 0 auto"></logic-diagram>
+
+This memory grows in two ways:
+
+- **More addresses**: a third address bit, A2, gives 2³ = 8 addresses, with a
+  3-to-8 decoder and an 8-to-1 selector. That makes 8 cells of 1 bit each, an
+  8 × 1 memory: 8 bits, or 1 byte.
+- **More bits per address**: eight such 8 × 1 circuits side by side, given the
+  same address and the same WRITE, each with its own DATA line and its own OUT,
+  store 8 bits at each address. Each cell is now eight latches, one in each
+  circuit, read and written together over 8 data lines. That makes an 8 × 8
+  memory: 64 bits, or 8 bytes.
+
+A single decoder cannot grow forever, though: with 32 address bits, it would
+need 4,294,967,296 outputs. A large memory is built from smaller **blocks**
+instead, and the address is split in two:
+
+- **The high bits pick the block**, through a small decoder. Its output, the
+  block's **chip select**, turns that block on. Only the selected block reacts
+  to WRITE, and only it puts its value on the data bus.
+- **The low bits pick the cell**, in every block at once. Only the cell of the
+  selected block counts.
+
+The machine's sixteen cells of 8 bits could be four blocks of four such cells.
+A3 and A2 would go to a decoder picking the block, and A1 and A0 to every block.
+Address `1001` would be cell `01` of block `10`.
+
+Real memory repeats this at every level. A memory module is several chips side
+by side, each storing some of the bits of every address. Inside a chip, the bits
+are split into banks, and each bank is a grid whose bits are picked by row and
+by column, so that every decoder stays small.
+
+{% callout type: more, id: dram-cells %}
+
+Real RAM does not keep its bits in latches. A latch takes several transistors,
+and the memory of a computer has billions of bits. [**DRAM**, **d**ynamic
+**RAM**](https://en.wikipedia.org/wiki/Dynamic_random-access_memory), the memory
+of your computer, stores each bit as an electric charge in a tiny capacitor,
+with a single transistor to reach it. The charge leaks away, so the memory has
+to read and rewrite every bit many times a second: it is **refreshed**.
+
+Memory built of latches, [**SRAM** (**s**tatic
+**RAM**](https://en.wikipedia.org/wiki/Static_random-access_memory), is faster
+but larger, and is kept for the processor's registers and caches.
+
+{% endcallout %}
 
 ### The control unit
 
-_To write:_ nothing in it is fundamentally more complex than the rest of the
-processor: its own counter for the steps of the fetch, decode and execute cycle,
-and decoding circuitry that turns each instruction and step into control
-signals. In many processors, part of it is microcode. No diagram yet.
+The **control unit** gives every other part of the machine its orders: which
+component puts its value on the data bus, which one takes it in, what the ALU
+computes. It is the part that [follows the
+instructions](#the-processor-does-what-it-is-told), yet nothing in it is new. It
+is made of the circuits above:
+
+- **The instruction register**, a [register](#a-register) that holds the
+  instruction being executed.
+- **A step counter**, a [counter](#flip-flops-with-preset-and-clear) of its own,
+  separate from the program counter. It counts the steps of the cycle, fetch,
+  decode and execute, one per tick of the clock, and is reset to 0 for the next
+  instruction.
+- **Decoders and gates**, which turn the instruction and the current step into
+  **control signals**.
+
+One decoder takes the instruction's 4-bit operation code and lights one of its
+16 outputs, one per instruction: one line for `LOAD`, one for `ADD`, and so on.
+Another one takes the step counter, and lights one line per step, such as the
+`FETCH` and `EXECUTE` lines. Each control signal is then a few ANDs and ORs of
+those lines. A control unit for the machine could compute these, for example:
+
+| Control signal                   | On with these lines                                   |
+| :------------------------------- | :---------------------------------------------------- |
+| LOAD of the instruction register | `FETCH`                                               |
+| Address from the program counter | `FETCH` (the instruction's address otherwise)         |
+| Memory READ                      | `FETCH` OR (`EXECUTE` AND (`LOAD` OR `ADD` OR `SUB`)) |
+| Memory WRITE                     | `EXECUTE` AND `STORE`                                 |
+| LOAD of the accumulator          | `EXECUTE` AND (`LOAD` OR `ADD` OR `SUB`)              |
+| SUBTRACT of the ALU              | `EXECUTE` AND `SUB`                                   |
+| LOAD of the program counter      | `EXECUTE` AND (`JUMP` OR (`JUMPZ` AND the ZERO flag)) |
+
+Memory WRITE, for example, is one AND of the `EXECUTE` line and the `STORE`
+line. The address of the memory comes from a selector, as in the register, whose
+SELECT is the `FETCH` line: the program counter's address during the fetch, and
+the instruction's address otherwise.
+
+There is no `DECODE` line: decoding is the gates of the control unit computing
+the control signals, exemplified by the table above.
+
+A real processor has hundreds of instructions, and some of them take many more
+steps than others: the instructions of the [Intel 8080][intel-8080] took from 4
+to 18 ticks of its clock. The step counter is reset as soon as an instruction is
+done, and the gates turning instructions and steps into control signals become
+very many. Built of gates, such a control unit is called **hardwired**.
+
+{% note type: more %}
+
+Many processors use **microcode** instead: a small memory inside the control
+unit, addressed by the operation code and the step, whose cells each hold the
+control signals of one step, one bit per signal. Decoding an instruction then
+comes down to reading that memory, with a decoder and selectors, like any other.
+Changing what an instruction does means changing the contents of a memory
+instead of rewiring gates. Modern x86-64 processors decode their simple
+instructions with gates and run microcode for the complex ones, and their
+microcode can be updated to fix bugs, including security flaws.
+
+{% endnote %}
+
+{% cols columns: 5 %}
+
+<!-- col md:col-span-4 -->
+
+This is the one circuit of the machine the appendix does not draw. We are very
+sorry. Instead of a control unit, have this slice of cake. It is delicious and
+moist.
+
+<!-- col -->
+
+![A slice of layered cake with a cherry on top](images/cake.jpg)
+
+{% endcols %}
 
 ## Appendix: some assembly required
 
