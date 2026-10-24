@@ -1242,17 +1242,81 @@ instructions.
 
 ## Appendix: harder, better, faster, stronger
 
-_To write:_ the model of the machine still holds for a modern processor; almost
-everything that changed since makes it faster or keeps programs isolated. The
-machine of a modern processor (`diagrams/machine-boot.html`).
+A modern processor still works like the 8-bit machine demonstrated in the
+presentation: a program counter, registers, an ALU and a control unit, fetching,
+decoding and executing instructions from memory. Almost everything that changed
+since the 1970s does one of two things: it makes the processor **faster**, or it
+keeps programs **isolated** from one another. The same machine, with the numbers
+of a modern x86-64 processor:
+
+{% include diagrams/machine-boot.html %}
 
 ### More speed
 
-_To write:_ clock speeds, caches, pipelining, several cores.
+- **A faster clock.** The Intel 8080 ticked 2 million times per second (2 MHz);
+  a modern processor ticks billions of times per second (several GHz). Clock
+  speeds have barely risen since the mid-2000s, though: a faster clock makes a
+  processor too hot. Most of the speed gained since comes from doing more per
+  tick.
+- **Caches.** Reading from memory takes hundreds of ticks of a modern
+  processor's clock, which would leave it waiting most of the time.
+  [**Caches**][cpu-cache], small and fast memories inside the processor, keep
+  copies of the memory it used recently, and of what is next to it, since
+  programs tend to use the same data again, and data close together. The L1
+  cache is the smallest and the fastest, the L3 cache the largest and the
+  slowest.
+- **Pipelining.** Fetching, decoding and executing are done by different parts
+  of the processor, so they can work at the same time on different
+  instructions, like an assembly line: while one instruction executes, the next
+  one is decoded, and the one after it fetched. This is
+  [**pipelining**][pipelining]. A modern processor also has several ALUs, and
+  executes several instructions per tick, sometimes in a different order than
+  the program's, when they do not depend on one another.
+- **Guessing.** A conditional jump leaves the pipeline not knowing which
+  instruction comes next until it executes. Rather than wait, the processor
+  [**predicts**][branch-predictor] which way the jump will go, from which way it
+  went before, and starts on those instructions. If it guessed wrong, it throws
+  their results away. It is right most of the time.
+- **Several cores.** A processor today is several processors, called
+  **cores**, on one chip, sharing the same memory. Each core runs its own
+  instructions, so several programs, or several parts of one, can [truly run at
+  the same time](#appendix-two-queues-one-coffee-machine).
 
 ### More isolation
 
-_To write:_ kernel mode and user mode, virtual memory, system calls.
+The 8-bit machine demonstrated in the presentation runs a single program, which
+can do anything: read and write any memory cell, or stop the processor. On a
+computer that runs many processes, for many users, the operating system must be
+the only one that can do such things. The processor gives it the means:
+
+- **Kernel mode and user mode.** The processor has a bit saying whether it is
+  running the operating system's kernel, in **kernel mode**, or any other
+  program, in **user mode**. In user mode, the instructions that would affect
+  other programs, such as talking to devices or stopping the processor, are
+  forbidden: trying one stops the program and hands control to the kernel.
+- **System calls.** To get something done that it is not allowed to do, a
+  program uses a [system call](#kinds-of-instructions), such as `SYSCALL`. It
+  switches the processor to kernel mode, but jumps to an address the kernel
+  chose, never to one the program chose. The kernel checks the request, does the
+  work, and returns to user mode. This is how the operating system [hides the
+  hardware](#what-the-operating-system-does).
+- **Virtual memory.** Each process sees its memory as if it were alone in the
+  computer, from address 0 upwards. The processor translates every address a
+  process uses into an address of the physical memory, with tables that only the
+  kernel can change. A process cannot even name another process's memory. An
+  address with no translation stops the program: the infamous **segmentation
+  fault**. This is [**virtual memory**][virtual-memory], and it is how the
+  operating system [isolates processes](#what-the-operating-system-does).
+- **Interrupts.** A timer interrupts the processor many times a second, and
+  makes it jump into the kernel, whatever program was running. The kernel then
+  decides which process runs next, so that no program can keep the processor to
+  itself.
+
+Isolation is also where speed and safety meet. [Spectre and
+Meltdown][spectre-meltdown], discovered in 2018, showed that the guesses a
+processor makes to go faster could leak, through the cache, memory that a
+program is not allowed to read, such as the kernel's or another process's.
+Fixing them cost some of that speed.
 
 ## Appendix: the numbers, Mason, what do they mean?
 
@@ -1275,12 +1339,17 @@ material to learn.
 [arm]: https://en.wikipedia.org/wiki/AArch64
 [ascii]: https://en.wikipedia.org/wiki/ASCII
 [assembly]: https://en.wikipedia.org/wiki/Assembly_language
+[branch-predictor]: https://en.wikipedia.org/wiki/Branch_predictor
 [call-stack]: https://en.wikipedia.org/wiki/Call_stack
+[cpu-cache]: https://en.wikipedia.org/wiki/CPU_cache
 [docker-multi-platform]: https://docs.docker.com/build/building/multi-platform/
 [intel-8080]: https://en.wikipedia.org/wiki/Intel_8080
 [java-bytecode]: https://en.wikipedia.org/wiki/Java_bytecode
 [jit]: https://en.wikipedia.org/wiki/Just-in-time_compilation
+[pipelining]: https://en.wikipedia.org/wiki/Instruction_pipelining
 [rosetta]: https://en.wikipedia.org/wiki/Rosetta_(software)
+[spectre-meltdown]: https://meltdownattack.com
 [utf8]: https://en.wikipedia.org/wiki/UTF-8
+[virtual-memory]: https://en.wikipedia.org/wiki/Virtual_memory
 [x86-64]: https://en.wikipedia.org/wiki/X86-64
 [x86-instructions]: https://en.wikipedia.org/wiki/X86_instruction_listings

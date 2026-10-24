@@ -123,8 +123,8 @@ export default diagram({
     ),
     step('The whole processor again.', focus(...PARTS)),
     step(
-      'From now on, the processor is drawn as a box: what is inside it is no ' +
-        'longer shown.',
+      'From now on, the processor is drawn as an opaque box: what happens ' +
+        'inside is no longer shown.',
       opaque.leaving(
         'control-unit',
         'alu-others',
@@ -161,7 +161,7 @@ export default diagram({
       })
     ),
     step(
-      'The processor is drawn smaller: what follows happens outside it.',
+      'This diagram will now focus on what is outside the processor.',
       opaque.reshaped(
         {
           processor: { x: '40', y: '20', width: '160', height: '160' },
@@ -176,16 +176,16 @@ export default diagram({
       )
     ),
     step(
-      'It is one core of the processor, which has several, each following a ' +
-        'program of its own.',
+      'A modern processor has several cores, each its own processor, ' +
+        'following a program of its own.',
       opaque.leaving('processor-name'),
       opaque.into('processor', 'processor-tab', 'processor-pill'),
       opaque.arriving(['core-name']),
       opaque.arriving(['cores-behind'], { under: 'processor' })
     ),
     step(
-      'The firmware, the memory and the storage take the room the processor ' +
-        'leaves.',
+      'The processor reaches the firmware and the memory by their addresses, ' +
+        'on the buses, and the storage only through the disk controller.',
       opaque.leaving('storage-contents'),
       opaque.into(
         'data-bus-rail',
@@ -257,7 +257,7 @@ export default diagram({
     ),
     step(
       'UEFI: the firmware, which the processor runs first at power-on, from a ' +
-        'chip that is only read.',
+        'chip that is read-only.',
       focus(...FIRMWARE)
     ),
     step(
