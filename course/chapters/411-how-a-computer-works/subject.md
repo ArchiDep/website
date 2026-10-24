@@ -264,7 +264,7 @@ understands is its instructions: numbers, each one a tiny step. A program in any
 language has to become instructions before the processor can run it.
 
 This small JavaScript program multiplies 3 by 2 the way the machine demonstrated
-in the presentation does. Since that machine cannot multiply: we add 3 twice (or
+in the presentation does. Since that machine cannot multiply: add 3 twice (or
 however many times is needed), decrementing the counter until it reaches 0:
 
 ```js
@@ -468,12 +468,48 @@ should be able to draw the final state of the diagram (without the SSH
 processes). In this case, the browser, Guess It, and PostgreSQL: where they are
 running, and the connections between them.
 
+## Appendix: what's in the box?
+
+A shop might describe a desktop computer like this:
+
+- **Processor**: AMD Ryzen 7 7700X, 8 cores, 4.5 GHz (up to 5.4 GHz), 32 MB
+  L3 cache, 64-bit
+- **Memory**: 32 GB RAM (2 × 16 GB), Corsair Vengeance DDR5 6000 MHz
+- **Storage**: 2 TB Samsung 990 PRO NVMe M.2 SSD, PCIe 4.0, up to 7450 MB/s
+  read
+- **Graphics card**: NVIDIA GeForce RTX 4070, 12 GB GDDR6X
+- **Motherboard**: ASUS TUF Gaming B650-PLUS WIFI, UEFI
+- **Network**: Wi-Fi 6, 2.5 Gb Ethernet
+- **Power supply**: 750 W
+- **Operating system**: Windows 11 Home 64-bit
+
+Every figure belongs to a part of [the modern machine of the
+presentation]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/67):
+
+| In the description    | What it means                                                                                                                      | Part of the machine  |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :------------------- |
+| 8 cores               | Eight processors in one chip: up to eight programs, or parts of one, run at the same time                                          | Processor            |
+| 4.5 GHz (up to 5.4)   | Ticks per second, limited by the time signals take to cross the circuits, and by heat: it only speeds up while the chip stays cool | Clock                |
+| 64-bit                | The largest numbers added in one instruction, without carrying through software, and the size of an address                        | Registers and buses  |
+| 32 MB L3 cache        | The more of a program's data fits near the cores, the less often they wait for the memory                                          | Caches               |
+| 32 GB RAM (2 × 16 GB) | How much the running programs can hold at once. Two sticks, but one memory                                                         | Memory               |
+| DDR5 6000 MHz         | How much data the memory sends per second once it has started (not how long it takes to arrive)                                    | Memory               |
+| 2 TB SSD              | How many programs and files are kept with the power off                                                                            | Storage              |
+| NVMe, PCIe 4.0        | How the processor asks the storage for copies, and how the storage is connected                                                    | Disk controller      |
+| M.2                   | The shape of the slot                                                                                                              | None                 |
+| Up to 7450 MB/s read  | How fast programs and files are copied from the storage into memory, at best                                                       | Disk controller      |
+| RTX 4070, 12 GB       | A graphics card, with thousands of small processors of its own to compute pixels in parallel, and its own memory for them          | A device             |
+| B650, UEFI            | The board everything plugs into, and the program the processor runs first at power-on                                              | Buses and firmware   |
+| Wi-Fi 6, 2.5 Gb       | Network devices: at most 2.5 billion bits per second on the cable                                                                  | Devices              |
+| 750 W                 | The power the parts can draw at most: faster parts need more                                                                       | None                 |
+| Windows 11 64-bit     | Not hardware: a program on the storage, copied into memory at boot, made of the processor's 64-bit instructions                    | Storage, then memory |
+
 ## Appendix: the cake is a lie
 
-You may have noticed that we saw some fundamental circuits during the
-presentation, but that some of them were not explained in detail like the ALU or
-the program counter. This appendix is for those who want to go deeper, and see
-how some of these more complex circuits are built from the simpler ones.
+You may have noticed that some fundamental circuits were explained during the
+presentation, but that some of them were not shown in detail like the ALU or the
+program counter. This appendix is for those who want to know more, and see how
+some of these more complex circuits are built from the simpler ones.
 
 ### A register
 
@@ -734,10 +770,10 @@ on each pair of bits of A and B. For example, `s` is `S` with the bit worth 32
 set, so `S` OR `00100000` is `s`. This works for any other letter.
 
 This section explains how to build a simplified ALU with two arithmetic
-operations, addition and subtraction, and three logic operations, AND, OR and
-XOR. We've already seen that the same adder circuit can perform addition and
-subtraction with a SUBTRACT input for the two's complement of B, so we actually
-only need to choose between four circuits, one arithmetic and three logic.
+operations (addition and subtraction), and three logic operations (AND, OR and
+XOR). As has already been demonstrated, the same adder circuit can perform both
+addition and subtraction with the two's complement of B, so actually only four
+different kinds of circuits are needed, one arithmetic and three logic.
 
 An ALU computes every operation at once, and a selector passes on the one that
 is asked for. With four circuits to choose from, it needs a **4-to-1 selector**:
@@ -1318,12 +1354,6 @@ Meltdown][spectre-meltdown], discovered in 2018, showed that the guesses a
 processor makes to go faster could leak, through the cache, memory that a
 program is not allowed to read, such as the kernel's or another process's.
 Fixing them cost some of that speed.
-
-## Appendix: the numbers, Mason, what do they mean?
-
-_To write:_ each figure of a computer as a shop describes it (processor speed,
-cores, word size, cache, memory, storage) tied to the part of the machine it
-belongs to.
 
 ## Appendix: two queues, one coffee machine
 
