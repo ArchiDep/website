@@ -727,15 +727,23 @@ subtraction.
 
 ### A simplified ALU
 
-An ALU does more than arithmetic. It also performs **logic operations**, AND,
-OR and XOR, on each pair of bits of A and B. For example, `s` is `S` with the
-bit worth 32 set, so `S` OR `00100000` is `s`, whatever the letter.
+As its name implies, an **A**rithmetic **L**ogic **U**nit (**ALU**) does more
+than arithmetic. It also performs **logic operations**, such as AND, OR and XOR,
+on each pair of bits of A and B. For example, `s` is `S` with the bit worth 32
+set, so `S` OR `00100000` is `s`. This works for any other letter.
+
+This section explains how to build a simplified ALU with two arithmetic
+operations, addition and subtraction, and three logic operations, AND, OR and
+XOR. We've already seen that the same adder circuit can perform addition and
+subtraction with a SUBTRACT input for the two's complement of B, so we actually
+only need to choose between four circuits, one arithmetic and three logic.
 
 An ALU computes every operation at once, and a selector passes on the one that
-is asked for. With four operations to choose from, it needs a **4-to-1
-selector**: two select bits, S1 and S0, read as a binary number, pick which of
-four data inputs reaches Y. It is built like the 2-to-1 selector [of the
-register](#a-register), as the presentation [shows]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/48). Set S1 and S0 to
+is asked for. With four circuits to choose from, it needs a **4-to-1 selector**:
+two select bits, S1 and S0, read as a binary number, pick which of four data
+inputs reaches Y. It is built like the 2-to-1 selector [of the
+register](#a-register), as the presentation [shows]({% link
+chapters/411-how-a-computer-works/slides/slides.md %}#/48). Set S1 and S0 to
 `00`, `01`, `10` and `11` in turn, and see which input gets through:
 
 <logic-diagram name="selector-block" names="true" highlight="true" controls="none" style="max-width: 340px; margin: 0 auto"></logic-diagram>
@@ -756,25 +764,27 @@ the arithmetic. Cin is an input here, since this bit has no neighbour on its
 right yet:
 
 1. Set A and B to 1, with Cin at 0.
-2. Set OP1 and OP0 to `00`, `01`, `10` and `11` in turn: RESULT shows 0 (with
-   Cout at 1, since 1 + 1 is `10`), then 1, 1 and 0.
+2. Set OP1 and OP0 to `00`, `01`, `10` and `11` in turn: RESULT shows 0 (A + B
+   is `10`, so Cout is `1` and S is `0`), then 1 (A AND B is `1`), 1 (A OR B is
+   `1`), and 0 (A XOR B is `0`).
 3. Watch the gates that are not selected: they go on computing all the time. The
    selector only picks which result gets through.
 
 <logic-diagram name="alu-slice" names="true" highlight="true" controls="none" style="max-width: 640px; margin: 0 auto"></logic-diagram>
 
-The ALU bit, drawn as a box, as the ALU uses it:
+So we have a circuit that can perform addition, subtraction, AND, OR, and XOR,
+on 1 bit. Here's our 1-bit ALU slice, drawn as a box, as the ALU uses it:
 
 <logic-diagram name="alu-slice-block" names="true" controls="none" style="max-width: 540px; margin: 0 auto"></logic-diagram>
 
-**A 4-bit ALU** is four ALU bits side by side, chained by their carries like
-the full adders of the adder. SUBTRACT, OP1 and OP0 go to all four, and SUBTRACT
-is also the first Cin, as in the adder-subtractor. Its ZERO flag takes the
-results after the selectors, so it also works for the logic operations: ZERO
+**A 4-bit ALU** is four 1-bit ALU slices side by side, chained by their carries
+like the full adders of the adder. SUBTRACT, OP1 and OP0 go to all four, and
+SUBTRACT is also the first Cin, as in the adder-subtractor. Its ZERO flag takes
+the results after the selectors, so it also works for the logic operations: ZERO
 after an AND means that A and B have no 1 bit in common. Each bit's box shows
 the operation it performs.
 
-Set A to `0110` and B to `0011`, then try each operation:
+Set A to `0110` (6) and B to `0011` (3), then try each operation:
 
 | Operation | OP1 OP0 | SUBTRACT | RESULT     |
 | :-------- | :-----: | :------: | :--------- |
