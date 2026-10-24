@@ -1089,24 +1089,156 @@ moist.
 
 ## Appendix: some assembly required
 
-_To write:_ what a real processor's instructions look like, beyond the seven of
-the machine.
+The 8-bit machine that was demonstrated in the presentation has seven
+instructions of one byte each: four bits for the operation, and four for an
+address. A real processor's instructions follow the same idea, with more of
+everything. Each one is still a number: an **operation code**, followed by
+**operands** saying what the operation works on, such as a register, a memory
+address, or a value written in the instruction itself. An x86-64 instruction
+takes from 1 to 15 bytes, depending on its operation and operands. An ARM
+instruction always takes 4.
+
+Nobody writes these numbers by hand, even when programming at that level.
+Instructions are written in [**assembly language**][assembly], one line per
+instruction, with a short name for each operation, as `LOAD x` and `ADD x` are
+for the machine. A program called an **assembler** turns each line into its
+number. Since each line is one instruction, an assembly language belongs to one
+instruction set.
 
 ### Kinds of instructions
 
-_To write:_ the main kinds of instructions of a real processor, beyond the
-three of the machine. Linked from "Running a program".
+A real processor's instructions are of the same [three kinds](#running-a-program)
+as the machine's, with many more of each, and a few others:
+
+- **Moving data**, between memory and registers, and between registers. The
+  machine has a single register, so `LOAD x` does not need to say where the
+  value goes: always into the accumulator. A processor with [several
+  registers]({% link chapters/411-how-a-computer-works/slides/slides.md %}#/67)
+  has to say which one, and its instruction set repeats the same operation for
+  each of them. The [Intel 8080][intel-8080], with its seven 8-bit registers,
+  has a `MOV` for every pair of them and of memory: 63 of its 256 operation
+  codes are `MOV`s. An x86-64 processor has 16 general-purpose registers, and an
+  ARM one 31. For example:
+  - `MOV B, C`, on the 8080, copies register C into register B. It is the byte
+    `01 000 001`: `01` for `MOV`, `000` for B and `001` for C.
+  - `MOV RAX, RBX`, on x86-64, copies register RBX into register RAX.
+- **Computing**. Besides addition and subtraction: multiplication and division,
+  which the machine does not have; the [logic operations](#a-simplified-alu);
+  shifts, which move every bit of a number to the left or to the right; and
+  comparisons, which [subtract and only keep the
+  flags](#the-adder-subtractor). Most processors also have instructions for
+  decimal numbers, and for computing on several numbers at once. For example,
+  on x86-64:
+  - `ADD RAX, RBX` adds RBX to RAX, and `IMUL RAX, RBX` multiplies RAX by RBX.
+  - `SHL RAX, 1` **sh**ifts the bits of RAX one place to the **l**eft, which
+    doubles it, just as adding a 0 to the right of a decimal number multiplies
+    it by 10.
+  - `CMP RAX, RBX` subtracts RBX from RAX, but only keeps the flags for
+    **c**o**mp**arison.
+- **Deciding which instruction runs next**: jumps, conditional jumps for each
+  comparison (equal, less than, greater than, and so on), and [calling and
+  returning from functions](#structured-programming-the-stack). For example, on
+  x86-64:
+  - `JMP x` **j**u**mp**s to `x`, like the machine's `JUMP x`.
+  - `JE x`, "**j**ump if **e**qual", jumps to `x` if the zero flag is 1, like
+    the machine's `JUMPZ x`. After `CMP RAX, RBX`, that is when RAX and RBX are
+    equal. `JL x`, "**j**ump if **l**ess", jumps if RAX was less than RBX.
+- **The others**, such as [system calls](#more-isolation). On x86-64:
+  - `SYSCALL`, "**sys**tem **c**all", asks the operating system's kernel to
+    do something for the program, such as reading a file.
+  - `HLT` stops (**h**a**lt**s) the processor until a device needs it.
+
+An x86-64 processor has [about a thousand][x86-instructions] operations, and
+several thousand variants of them, for different registers and sizes.
 
 ### Structured programming: the stack
 
-_To write:_ push and pop, calling a function and returning from it: the stack
-behind functions.
+Programs are made of **functions**, which call one another. Here is the
+multiplication [from earlier](#from-program-to-instructions), as a function
+called twice:
+
+```js
+function multiply(a, b) {
+  return a * b;
+}
+
+let six = multiply(3, 2);
+let twelve = multiply(6, 2);
+```
+
+The function's instructions are in memory only once. Calling it is a jump to its
+first instruction. Returning is harder: the function must jump back to the
+instruction after the call, and that address is different for every call. The
+first call returns to store its result in the `six` variable, and the second, in
+the `twelve` variable. A jump to a fixed address cannot do that. The processor
+has to remember where to return. And since a function can call another one,
+which calls another, it has to remember a whole list of such addresses, and
+return to the latest one first.
+
+That list is the [**stack**][call-stack]: an area of memory, and a register,
+the **stack pointer**, holding the address of its top. Two instructions use it:
+
+- **`PUSH`** puts a value on top of the stack.
+- **`POP`** takes the value on top of the stack off it.
+
+Like a stack of plates, the last value pushed is the first one popped. Calling
+and returning are built on top of them:
+
+- **`CALL x`** pushes the address of the next instruction, the **return
+  address**, and jumps to `x`.
+- **`RET`** (for **RET**URN) pops the return address, and jumps to it.
+
+A function also keeps its own values on the stack, its local variables, and the
+registers it needs to give back as it found them. Each call gets its own part of
+the stack, which is why a function can call itself: each call has its own
+variables.
+
+Not every function call of your code becomes a `CALL`: a compiler often copies a
+small function's instructions where it is called, and passes values in registers
+rather than on the stack. An interpreter keeps a stack of its own for your
+program's functions. But the idea is the same everywhere, and you have already
+seen the stack:
+
+- **A stack trace**, printed when a program crashes, is the list of the
+  functions on the stack, read from their return addresses: the function that
+  failed, the one that called it, and so on.
+- **A stack overflow** happens when the stack is full, usually because a
+  function calls itself endlessly. Node.js stops with `RangeError: Maximum call
+stack size exceeded`, and Java with a `StackOverflowError`.
 
 ### Different instruction sets
 
-_To write:_ x86-64 and ARM; why a compiled program runs on one family only
-(Docker images for amd64 and arm64); compilers, interpreters, bytecode and
-just-in-time compilation.
+Each family of processors has its own instruction set. Two of them run almost
+every computer today:
+
+- [**x86-64**][x86-64], also called **amd64** or x64, by Intel and AMD: most
+  PCs and servers. It descends from the 8080, through the Intel 8086 of 1978.
+- [**ARM**][arm] (64-bit), also called **arm64** or AArch64: phones and
+  tablets, Macs since 2020, the Raspberry Pi, and more and more servers.
+
+Both families add, compare, jump and call, but the same operation is a
+different number in each. A compiled program is made of the instructions of one
+set, so it only runs on processors of that family. This is why software is
+often downloaded in one version per family, and why Docker images are [published
+for several platforms][docker-multi-platform], such as `linux/amd64` and
+`linux/arm64`, Docker pulling the one that matches your processor. Running a
+program built for the other family takes an **emulator**, which translates its
+instructions as it runs, more slowly: [Rosetta 2][rosetta] on Macs, or QEMU for
+Docker.
+
+A program written in an [interpreted language](#from-program-to-instructions)
+does not have this problem: the interpreter is compiled for each family, and
+your JavaScript or PHP is the same everywhere. Java sits in between: it is
+compiled to [**bytecode**][java-bytecode], the instructions of a processor that
+does not exist, the Java virtual machine (JVM), which is itself a program
+compiled for each family.
+
+To run fast, the JVM translates the parts of a program that run most often into
+the instructions of the real processor, while the program runs. This is
+[**just-in-time compilation**][jit] (JIT). Node.js does the same with
+JavaScript, and PHP can since version 8. The line between compilers and
+interpreters is blurry: what the processor runs, in the end, is always its own
+instructions.
 
 ## Appendix: harder, better, faster, stronger
 
@@ -1140,6 +1272,15 @@ _To write:_ redstone computers, which climb from switches to a processor as the
 presentation does, at a size you can walk around in. A few fun references, not
 material to learn.
 
+[arm]: https://en.wikipedia.org/wiki/AArch64
 [ascii]: https://en.wikipedia.org/wiki/ASCII
+[assembly]: https://en.wikipedia.org/wiki/Assembly_language
+[call-stack]: https://en.wikipedia.org/wiki/Call_stack
+[docker-multi-platform]: https://docs.docker.com/build/building/multi-platform/
 [intel-8080]: https://en.wikipedia.org/wiki/Intel_8080
+[java-bytecode]: https://en.wikipedia.org/wiki/Java_bytecode
+[jit]: https://en.wikipedia.org/wiki/Just-in-time_compilation
+[rosetta]: https://en.wikipedia.org/wiki/Rosetta_(software)
 [utf8]: https://en.wikipedia.org/wiki/UTF-8
+[x86-64]: https://en.wikipedia.org/wiki/X86-64
+[x86-instructions]: https://en.wikipedia.org/wiki/X86_instruction_listings
