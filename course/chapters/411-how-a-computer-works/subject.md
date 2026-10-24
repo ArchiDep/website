@@ -362,13 +362,28 @@ instruction.
 5. The init process starts **everything else**: the SSH server, a web server,
    your application.
 
-Every other process on the machine was started either by the init process, or
-by a process that it started, which is why the [process tree]({% link
-chapters/408-unix-processes/subject.md %}#process-tree) has init at its root.
+**You do not need to remember these stages, nor the names of the programs.**
+What matters is that a computer starting up is not magic either. It is a
+sequence of ordinary programs, each one copying the next into memory and
+handing over to it, until the operating system, the program that manages all
+the others, is running.
+
+Every other process on the machine was started either by the init process, or by
+a process that it started, which is why the [process tree]({% link
+chapters/408-unix-processes/subject.md %}#process-tree) has init (PID 1) at its
+root.
 
 A cloud server is usually a virtual machine: its firmware is provided by the
 cloud provider's software instead of a chip, but the chain is otherwise the
 same.
+
+{% note type: more %}
+
+Your own computer boots the same way. On Windows, the bootloader is the Windows
+Boot Manager, the kernel is `ntoskrnl.exe`, and several programs share the init
+process's job. On macOS, the init process is `launchd`.
+
+{% endnote %}
 
 ### Programs and processes
 
@@ -419,7 +434,7 @@ operating system provides:
 Guess It and PostgreSQL, from the SFTP deployment, are two processes on the same
 server. Neither can read the other's memory. Guess It talks to PostgreSQL
 through a socket: its database URL says `localhost:5432`, a port on the loopback
-address, which never leaves the server (it could you used an IP address).
+address, which never leaves the server (it could if you used an IP address).
 
 {% include diagrams/machine-processes.html %}
 
