@@ -8,6 +8,10 @@ what the processes of a deployment actually are.
 
 <!-- more -->
 
+A significant portion of this subject is inspired by [Code: The Hidden Language
+of Computer Hardware and Software][code], by Charles Petzold, which you should
+read if you want more detailed information on the subject.
+
 **Recommended reading**
 
 - [Unix Processes]({% link chapters/408-unix-processes/subject.md %})
@@ -1595,6 +1599,22 @@ And if you prefer your switches even less electric: Matt Parker built [a
 computer out of 10,000 dominoes][domino-computer]. It adds two binary numbers,
 once, and then someone has to set all the dominoes up again.
 
+## References
+
+- [Code: The Hidden Language of Computer Hardware and Software][code], by
+  Charles Petzold, second edition (2022)
+- [Code: interactive illustrations](https://www.codehiddenlanguage.com/), the
+  book's companion website, with circuits you can click through, chapter by
+  chapter
+- [Build an 8-bit computer from scratch](https://eater.net/8bit), by Ben Eater:
+  a video series building, on breadboards, a machine very close to the one of
+  the presentation, with almost the same instructions, control unit included
+- [Nand2Tetris][nand2tetris]: from a single gate, NAND, to a computer running
+  Tetris, in a simulator
+- [Operating Systems: Three Easy Pieces](https://pages.cs.wisc.edu/~remzi/OSTEP/),
+  by Remzi and Andrea Arpaci-Dusseau: a free online book on processes, virtual
+  memory and scheduling, which goes much further than this subject
+
 [actors]: https://en.wikipedia.org/wiki/Actor_model
 [amdahl]: https://en.wikipedia.org/wiki/Amdahl%27s_law
 [arm]: https://en.wikipedia.org/wiki/AArch64
@@ -1603,6 +1623,7 @@ once, and then someone has to set all the dominoes up again.
 [branch-predictor]: https://en.wikipedia.org/wiki/Branch_predictor
 [call-stack]: https://en.wikipedia.org/wiki/Call_stack
 [cc-by-nc-sa-3]: https://creativecommons.org/licenses/by-nc-sa/3.0/
+[code]: https://www.microsoftpressstore.com/Code
 [cpu-cache]: https://en.wikipedia.org/wiki/CPU_cache
 [docker-multi-platform]: https://docs.docker.com/build/building/multi-platform/
 [domino-computer]: https://www.youtube.com/watch?v=OpLU__bhu2w
