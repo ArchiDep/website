@@ -2162,49 +2162,11 @@ it runs on one core while the other stays idle. Program C is written to run on
 several cores: it has two threads, which the operating system can run on both
 cores at once.
 
-TODO: move some of the following notes to an appendix in the subject
-
-A program cannot choose a core itself. It asks the operating system for more
-processes or **threads** (several flows of instructions inside one process,
-sharing its memory), and the operating system decides which core runs each one
-and when.
-
-So a program does not get faster on a machine with more cores by itself.
-Program A, written as a single flow of instructions, runs on one core while the
-other stays idle. Program C is written to run on several cores: it has two
-threads, which the operating system runs on both cores at once. That only pays
-off if the language or its runtime supports it, if the program is written
-accordingly, and if its work can be split: two cores make program C twice as
-fast only if its work splits evenly between its threads.
-
-For a web developer, this means:
-
-- A single thread runs on only one core at a time, however many the machine
-  has. Node.js runs all your JavaScript on a single thread. It can still handle
-  many requests at once, because waiting for the network does not need a core:
-  the operating system tells it when data has arrived. But the JavaScript code
-  for all those requests takes turns on one core. Node.js does use a few
-  threads of its own, for example to read files, but not to run your code,
-  unless you create worker threads yourself.
-- For most web applications, one Node.js process is enough: they spend most of
-  their time waiting for the database or the network. Running several copies
-  only helps when the JavaScript itself does heavy work, such as rendering
-  pages on the server, or so that one copy keeps serving while another
-  restarts.
-- nginx works like Node.js: one worker handles thousands of connections. It
-  starts one worker per core, so that it can use them all.
-- PHP works the other way: a PHP process waits, doing nothing else, while the
-  database answers. PHP-FPM keeps a pool of PHP processes, often more than
-  there are cores, so that one can run while the others wait.
-- The Erlang virtual machine, which runs Elixir, starts one scheduler per core
-  and spreads its own lightweight processes across them.
-- Threads that share memory can change the same data at the same time, which
-  causes bugs that only appear sometimes. Processes cannot, because they are
-  isolated.
-
-<!-- TODO: call back when the improved deployments run Guess It as a Node.js
-     process, and in a PHP-FPM deployment if one is kept as an additional
-     exercise. -->
+Read on with [two queues, one coffee machine]({% link
+chapters/411-how-a-computer-works/subject.md
+%}#appendix-two-queues-one-coffee-machine), to go further: work that cannot be
+split, Node.js running all your JavaScript on a single thread, and how
+processes, threads, event loops, Go and Erlang organize work in parallel.
 
 [armstrong-coffee]: https://joearms.github.io/published/2013-04-05-concurrent-and-parallel-programming.html
 [eniac-tubes]: https://commons.wikimedia.org/wiki/File:ENIAC_Tubes_%282585374699%29.jpg
