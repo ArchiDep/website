@@ -13,7 +13,7 @@ document.querySelectorAll('nav.toc a').forEach(link => {
   });
 });
 
-function getElementFromLinkAnchor(link: Element): Element | undefined {
+export function getElementFromLinkAnchor(link: Element): Element | undefined {
   return pipe(
     O.fromNullable(link.getAttribute('href')),
     O.map(S.sliceToEnd(1)),

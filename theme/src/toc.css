@@ -16,6 +16,11 @@ aside .toc ul a {
   @apply border-l-2 border-l-gray-300 dark:border-l-gray-600 hover:border-l-gray-800 dark:hover:border-l-gray-200 py-0.5;
 }
 
+/* The heading being read. */
+aside .toc ul li a[aria-current] {
+  @apply border-l-gray-800 dark:border-l-gray-200 text-base-content;
+}
+
 aside .toc .toc-h1 > a {
   @apply pl-2 font-bold;
 
