@@ -1,4 +1,4 @@
-FROM node:24.4.0-alpine
+FROM node:26.12.1-alpine
 
 RUN apk add --no-cache bash && \
     addgroup -S archidep && \

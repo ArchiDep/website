@@ -198,7 +198,7 @@ jobs:
         with:
           cache: npm
           cache-dependency-path: package-lock.json
-          node-version: 24.4.0
+          node-version-file: .tool-versions
 
       - name: Install dependencies
         run: npm ci
@@ -240,7 +240,7 @@ jobs:
         with:
           cache: npm
           cache-dependency-path: package-lock.json
-          node-version: 24.4.0
+          node-version-file: .tool-versions
 
       - name: Install dependencies
         run: npm ci
@@ -405,7 +405,7 @@ jobs:
         with:
           cache: npm
           cache-dependency-path: package-lock.json
-          node-version: 24.4.0
+          node-version-file: .tool-versions
 
       - name: Install dependencies
         run: npm ci
@@ -443,7 +443,7 @@ jobs:
         with:
           cache: npm
           cache-dependency-path: package-lock.json
-          node-version: 24.4.0
+          node-version-file: .tool-versions
 
       - name: Install dependencies
         run: npm ci
@@ -468,7 +468,7 @@ jobs:
         with:
           cache: npm
           cache-dependency-path: package-lock.json
-          node-version: 24.4.0
+          node-version-file: .tool-versions
 
       - name: Install dependencies
         run: npm ci

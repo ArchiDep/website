@@ -47,7 +47,7 @@ FROM ${APP_DEPS_IMAGE} AS app-deps-image
 ##########################
 ### Application Assets ###
 ##########################
-FROM node:24.4.0-alpine AS app-assets
+FROM node:26.12.1-alpine AS app-assets
 
 RUN addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
@@ -74,7 +74,7 @@ RUN npm run --workspace app build:production
 #####################
 ### Course Assets ###
 #####################
-FROM node:24.4.0-alpine AS course-assets
+FROM node:26.12.1-alpine AS course-assets
 
 RUN addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
@@ -100,7 +100,7 @@ RUN npm run --workspace course build
 #############
 ### Theme ###
 #############
-FROM node:24.4.0-alpine AS theme
+FROM node:26.12.1-alpine AS theme
 
 RUN addgroup -S build && \
     adduser -D -G build -H -h /build -S build && \
