@@ -28,6 +28,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Normalise the two slide-deck source layouts](#normalise-the-two-slide-deck-source-layouts)
 - [Check that every slide the search links to can be reached](#check-that-every-slide-the-search-links-to-can-be-reached)
 - [Rate-limit socket token requests per session](#rate-limit-socket-token-requests-per-session)
+- [Tell outdated pages to reload after a deployment](#tell-outdated-pages-to-reload-after-a-deployment)
 
 <!-- END doctoc -->
 
@@ -728,7 +729,7 @@ costs at least a session lookup in the database. One tab running a buggy client
 once sent 80,089 of these requests in about nine hours, and an earlier storm
 exhausted the database connection pool, which Sentry reported over 3,000 times.
 That client was replaced by
-[`socket-connection.ts`](../../course/src/assets/course/socket-connection.ts),
+[`socket-connection.ts`][socket-connection],
 which keeps a single socket and at most one pending attempt. But a tab that was
 open before a deployment keeps running the old client until it is reloaded. And
 a logged-in user can call the endpoint as fast as they like, by mistake or on
@@ -764,12 +765,80 @@ a limit.
 - Whether refused requests should be logged once per session and window rather
   than once per request, so that a storm does not flood the logs again.
 
+## Tell outdated pages to reload after a deployment
+
+**Problem:** A page keeps running the JavaScript it was loaded with, however
+many deployments happen while it stays open. Nothing tells it that it is out of
+date. This matters most for the course pages: a tab still running the client
+that [`socket-connection.ts`][socket-connection] replaced keeps sending socket
+token requests in a loop until someone reloads it.
+
+The dashboard already has half of what LiveView offers for this. The [root
+layout](../lib/archidep_web/components/layouts/root.html.heex) marks its
+stylesheet and scripts with `phx-track-static`, and production has a
+`cache_static_manifest`. When a LiveView connects, its client sends the URLs of
+the tracked files, and `Phoenix.LiveView.static_changed?/1` tells whether they
+are still the current deployment's digested files. But nothing calls it, so the
+information goes unused. LiveView never reloads a page because its assets
+changed: the function only detects it.
+
+The course pages are not LiveViews.
+[`course.ts`](../../course/src/assets/course.ts) joins a plain Phoenix channel,
+which has no static tracking at all.
+
+**Why it is not being done now:** The client that looped has been replaced, and
+its tabs disappear as people reload or close them. Reloading outdated pages
+would mostly protect against a future bug in a client, which is worth having but
+not urgent.
+
+**Proposed approach:** Detect outdated pages on both sides, but react to them
+differently.
+
+- **Dashboard:** add a step to the existing
+  [`LiveHooks`](../lib/archidep_web/live_hooks.ex) `on_mount` hook that assigns
+  `static_changed?(socket)`, and show a banner in the layout asking the user to
+  reload. A banner rather than an automatic reload, because some dashboard pages
+  have forms that a reload would lose.
+- **Course pages:** rebuild static tracking by hand. A page loads its script
+  under a digested name (for example `/2025/assets/course/course-<digest>.js`),
+  which identifies the build it came from.
+  - The client sends the name of its script when it joins the `me` channel.
+  - [`UserChannel`](../lib/archidep_web/channels/user_channel.ex) compares it
+    with the current build's name and pushes `outdated` when they differ.
+  - The client reloads only while the page is visible, after a random delay so
+    that all open tabs do not reload at once after a deployment, and at most
+    once every few minutes, so that a cache still serving the old page for a
+    while cannot cause a reload loop. A course page is read, not edited, and the
+    browser restores the scroll position, so an automatic reload loses nothing.
+- **Tabs running a client from before this work:** they will never send a script
+  name nor understand `outdated`. Once the new client sends its marker,
+  `/auth/socket` could answer `401` to the token requests that lack it. The old
+  client handles a `401` by clearing its cached session, showing the page as
+  logged out, and never reconnecting again, which a reload fixes. Only worth
+  doing if the logs show such a tab still looping.
+
+**Open questions to resolve when scheduling this**
+
+- Where the application exposes the name of the course script in the build it
+  rendered, which it should know since it renders the site at boot.
+- Whether the course pages should also send the marker to `/auth/socket`, so
+  that the token request is refused before a socket is ever opened.
+- The `401` workaround has a side effect: the old client clears the session
+  cached in `localStorage`, which all tabs share. A tab running the new client
+  stays connected, but if its connection drops before the next session update
+  rewrites the cache, it will not reconnect until the page is shown again or
+  reloaded. Whether that is acceptable for as long as old tabs remain.
+- Whether this should be done together with the [rate limit on socket
+  tokens](#rate-limit-socket-token-requests-per-session), as both protect the
+  application from a misbehaving client.
+
 [build-workflow]: ../../.github/workflows/build.yml
 [check-relative-assets]: ../../course/src/scripts/check-relative-assets.ts
 [coveralls-config]: ../coveralls.json
 [pdf-script]: ../../course/src/scripts/pdf.ts
 [pdf-workflow]: ../../.github/workflows/pdf.yml
 [slides-ts]: ../../course/src/assets/slides.ts
+[socket-connection]: ../../course/src/assets/course/socket-connection.ts
 [static-server]: ../../course/src/scripts/utils/static-server.ts
 [course-site-refusals]: ../lib/archidep/course_site/CONTRIBUTING.md#what-it-refuses
 [hello-shell-exercise]: ../../course/chapters/102-hello-shell/exercise.md
