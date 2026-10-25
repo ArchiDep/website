@@ -106,6 +106,10 @@ instructions targeted towards AI agents.
     fit together, and the backlog only for decisions that differ from what was
     planned. You do not have to explain everything everywhere; err on the side
     of writing less.
+  - **Never write a `/** */` or `/* */` comment on a single line**, in any
+    language. Such a comment always spans at least three lines, its opening and
+    closing delimiters each on a line of their own. A short remark that does not
+    deserve that is a `//` comment.
   - **Code and test comments exist to explain the _purpose_ of the code as it
     stands now** — what it does and why, for a reader who has no other context.
     A comment that would be wrong or meaningless once some _other_ artifact

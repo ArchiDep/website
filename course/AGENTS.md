@@ -19,6 +19,11 @@ and automated agents interacting with this project.
   in them you could not check, such as an expected output you could not run.
   Only keep existing notes up to date: writing a chapter's notes from scratch is
   a task of its own, done when asked.
+- **Read the TypeScript Guidelines in [General Coding
+  Guidelines](./CONTRIBUTING.md#general-coding-guidelines) before writing or
+  changing any TypeScript**, in this directory or its tests, and check your diff
+  against them before calling the change done. They forbid constructs that
+  compile without complaint, so the type checker will not catch them for you.
 - **Run `npm run typecheck`** ([Formatting and
   Linting](./CONTRIBUTING.md#formatting-and-linting)) after changing any
   TypeScript in this directory, and fix what it reports before calling the
