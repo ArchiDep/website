@@ -232,7 +232,10 @@ function connectToApplication(): SocketConnection<Socket> {
 const socketTokenType = t.readonly(t.type({ token: t.string }));
 
 function fetchToken(): Promise<string> {
-  return fetch('/auth/socket')
+  return fetch('/auth/socket', {
+    // A stored response would hold a token that may have expired.
+    cache: 'no-store'
+  })
     .then(res => {
       if (!res.ok) {
         if (res.status === 401) {

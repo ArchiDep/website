@@ -436,8 +436,10 @@ defmodule ArchiDepWeb.Auth.AuthControllerTest do
   end
 
   defp assert_socket_token(conn, auth) do
-    response = conn |> get(~p"/auth/socket") |> json_response(200)
+    conn = get(conn, ~p"/auth/socket")
+    response = json_response(conn, 200)
 
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
     assert Map.keys(response) == ["token"]
 
     assert Token.verify(@endpoint, "user socket", response["token"], max_age: 300) ==

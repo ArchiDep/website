@@ -161,8 +161,7 @@ export function createSocketConnection<S extends ConnectableSocket>(
     cancelRetry();
 
     if (options.isPageHidden()) {
-      logger.debug('Will reconnect once the page is shown');
-      waitingForPage = true;
+      waitForPage();
       return;
     }
 
@@ -173,11 +172,16 @@ export function createSocketConnection<S extends ConnectableSocket>(
     cancelTimer = schedule(() => {
       cancelTimer = undefined;
       if (options.isPageHidden()) {
-        waitingForPage = true;
+        waitForPage();
       } else {
         attempt();
       }
     }, delay);
+  }
+
+  function waitForPage(): void {
+    logger.debug('Will reconnect once the page is shown');
+    waitingForPage = true;
   }
 
   function cancelRetry(): void {

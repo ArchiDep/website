@@ -69,7 +69,13 @@ defmodule ArchiDepWeb.Auth.AuthController do
       send_resp(conn, 401, "")
     else
       token = Token.sign(conn, "user socket", auth.session_id, max_age: 300)
-      json(conn, %{token: token})
+
+      # The token is a credential that expires within minutes, so a browser must
+      # neither keep it on disk nor present a stored one instead of asking
+      # again.
+      conn
+      |> put_resp_header("cache-control", "no-store")
+      |> json(%{token: token})
     end
   end
 
