@@ -270,8 +270,9 @@ A [`UserSession`](./schemas/user_session.ex) is created on every login. Sessions
 carry an opaque token and the client IP and user-agent, and are **valid for 30
 days** from creation. The optional "remember me" cookie (see [Web
 Wiring](#web-wiring)) persists for 60 days. Token and session-id validation, the
-`used_at`/metadata refresh, and listing of active sessions are implemented in
-the [`Sessions`](./use_cases/sessions.ex) use case.
+`used_at`/metadata refresh (written at most once a minute while the client stays
+the same), and listing of active sessions are implemented in the
+[`Sessions`](./use_cases/sessions.ex) use case.
 
 **Only the hash of a token is stored** — for a session and for a [login
 link](#login-links) alike. A token is a bearer credential, so a row holding one

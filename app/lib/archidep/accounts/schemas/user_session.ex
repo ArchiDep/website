@@ -20,6 +20,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
   @session_token_bytes 50
   @session_validity_in_days 30
   @one_day_in_seconds 24 * 60 * 60
+  @touch_interval_in_seconds 60
 
   @type t :: %__MODULE__{
           id: UUID.t(),
@@ -270,10 +271,35 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
         do: ClientMetadata.serialize_ip_address(client_metadata.ip_address),
         else: nil
 
+    if recently_touched_by?(session, client_ip_address, client_metadata.user_agent, now) do
+      {:ok, session}
+    else
+      update_touched(session, client_ip_address, client_metadata.user_agent, now)
+    end
+  end
+
+  # Every authenticated request and socket connection touches its session, so
+  # the row is only written again once its last use is old enough to be worth
+  # updating, or when the client changed.
+  defp recently_touched_by?(
+         %__MODULE__{
+           used_at: %DateTime{} = used_at,
+           client_ip_address: client_ip_address,
+           client_user_agent: client_user_agent
+         },
+         client_ip_address,
+         client_user_agent,
+         now
+       ),
+       do: DateTime.after?(used_at, DateTime.add(now, -@touch_interval_in_seconds, :second))
+
+  defp recently_touched_by?(_session, _client_ip_address, _client_user_agent, _now), do: false
+
+  defp update_touched(session, client_ip_address, client_user_agent, now) do
     updates = [
       used_at: now,
       client_ip_address: client_ip_address,
-      client_user_agent: client_metadata.user_agent
+      client_user_agent: client_user_agent
     ]
 
     case Repo.update_all(query_session_by_id(session), set: updates) do
@@ -286,7 +312,7 @@ defmodule ArchiDep.Accounts.Schemas.UserSession do
            session
            | used_at: now,
              client_ip_address: client_ip_address,
-             client_user_agent: client_metadata.user_agent
+             client_user_agent: client_user_agent
          }}
     end
   end

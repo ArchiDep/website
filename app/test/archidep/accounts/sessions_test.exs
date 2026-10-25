@@ -181,6 +181,71 @@ defmodule ArchiDep.Accounts.SessionsTest do
       assert_no_stored_events!()
     end
 
+    test "validates a session the same client used less than a minute ago without refreshing it",
+         %{validate_session_token: validate_session_token} do
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
+      metadata = client_metadata()
+
+      session =
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, used_by(metadata, DateTime.add(@now, -59, :second)))
+        )
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert {:ok, auth} = validate_session_token.(session.raw_token, metadata)
+      assert auth == expected_authentication(session, account, session.raw_token)
+
+      assert_session_untouched(session)
+      assert_no_row_count_diff(previous_counts)
+      assert_no_stored_events!()
+    end
+
+    test "refreshes a session the same client last used a minute ago", %{
+      validate_session_token: validate_session_token
+    } do
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
+      metadata = client_metadata()
+
+      session =
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, used_by(metadata, DateTime.add(@now, -60, :second)))
+        )
+
+      assert {:ok, auth} = validate_session_token.(session.raw_token, metadata)
+      assert auth == expected_authentication(session, account, session.raw_token)
+
+      assert_session_refreshed(session, metadata)
+      assert_no_stored_events!()
+    end
+
+    test "refreshes a session another client used less than a minute ago", %{
+      validate_session_token: validate_session_token
+    } do
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
+      metadata = client_metadata()
+
+      other_client =
+        Factory.build(:client_metadata,
+          ip_address: metadata.ip_address,
+          user_agent: "Other Agent"
+        )
+
+      session =
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, used_by(other_client, DateTime.add(@now, -10, :second)))
+        )
+
+      assert {:ok, auth} = validate_session_token.(session.raw_token, metadata)
+      assert auth == expected_authentication(session, account, session.raw_token)
+
+      assert_session_refreshed(session, metadata)
+      assert_no_stored_events!()
+    end
+
     test "rejects an unknown session token", %{validate_session_token: validate_session_token} do
       assert validate_session_token.("unknown-token", client_metadata()) ==
                {:error, :session_not_found}
@@ -243,6 +308,27 @@ defmodule ArchiDep.Accounts.SessionsTest do
 
       assert_session_refreshed(session, metadata)
 
+      assert_no_row_count_diff(previous_counts)
+      assert_no_stored_events!()
+    end
+
+    test "validates a session the same client used less than a minute ago without refreshing it",
+         %{validate_session_id: validate_session_id} do
+      account = AccountsFactory.insert(:user_account, root_account_attrs(@now))
+      metadata = client_metadata()
+
+      session =
+        AccountsFactory.insert(
+          :user_session,
+          session_attrs(account, @now, used_by(metadata, DateTime.add(@now, -59, :second)))
+        )
+
+      previous_counts = count_rows(@affected_tables)
+
+      assert {:ok, auth} = validate_session_id.(session.id, metadata)
+      assert auth == expected_authentication(session, account, nil)
+
+      assert_session_untouched(session)
       assert_no_row_count_diff(previous_counts)
       assert_no_stored_events!()
     end
@@ -310,6 +396,13 @@ defmodule ArchiDep.Accounts.SessionsTest do
 
   defp client_metadata,
     do: Factory.build(:client_metadata, ip_address: {192, 168, 1, 1}, user_agent: "Test Agent")
+
+  defp used_by(metadata, used_at),
+    do: [
+      used_at: used_at,
+      client_ip_address: ClientMetadata.serialize_ip_address(metadata.ip_address),
+      client_user_agent: metadata.user_agent
+    ]
 
   # The query preloads the user account (with its — here empty — Switch edu-ID
   # and preregistered user) but not the impersonated user account. The token is
