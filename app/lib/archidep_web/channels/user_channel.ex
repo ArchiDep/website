@@ -20,6 +20,7 @@ defmodule ArchiDepWeb.Channels.UserChannel do
   @impl Channel
   def join("me", _message, socket) do
     auth = socket.assigns.auth
+    :ok = put_session_log_metadata(auth)
 
     {:ok, student} =
       if root?(auth) do

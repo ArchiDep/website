@@ -50,6 +50,7 @@ defmodule ArchiDepWeb.LiveAuth do
        when is_binary(token) do
     case Accounts.validate_session_token(token, socket_metadata(socket)) do
       {:ok, auth} ->
+        :ok = put_session_log_metadata(auth)
         student = fetch_authenticated_student(auth)
 
         socket

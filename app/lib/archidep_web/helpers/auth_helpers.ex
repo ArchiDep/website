@@ -6,6 +6,8 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
   alias ArchiDep.Authentication
   alias ArchiDep.Servers.Schemas.ServerOwner
 
+  @session_log_prefix_length 8
+
   @spec logged_in?(Authentication.t()) :: boolean()
   def logged_in?(nil), do: false
   def logged_in?(_auth), do: true
@@ -44,4 +46,14 @@ defmodule ArchiDepWeb.Helpers.AuthHelpers do
 
   @spec username(Authentication.t()) :: String.t() | nil
   defdelegate username(auth), to: Authentication
+
+  @doc """
+  Labels the log lines of the calling process with the first characters of the
+  authenticated session's ID. That is enough to tell the lines of one browser
+  from those of another, and it identifies a user only to someone who can read
+  the sessions in the database.
+  """
+  @spec put_session_log_metadata(Authentication.t()) :: :ok
+  def put_session_log_metadata(%Authentication{session_id: session_id}),
+    do: Logger.metadata(session: String.slice(session_id, 0, @session_log_prefix_length))
 end

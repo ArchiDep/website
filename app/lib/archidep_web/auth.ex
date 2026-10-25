@@ -3,6 +3,7 @@ defmodule ArchiDepWeb.Auth do
   Helpers to handle HTTP authentication based on session cookies.
   """
 
+  import ArchiDepWeb.Helpers.AuthHelpers, only: [put_session_log_metadata: 1]
   import ArchiDepWeb.Helpers.ConnHelpers
   import ArchiDepWeb.Helpers.SocketHelpers
   import Phoenix.Controller
@@ -150,8 +151,12 @@ defmodule ArchiDepWeb.Auth do
   defp authenticate_with_token(%Conn{assigns: %{session_token: token}} = conn)
        when is_binary(token) do
     case Accounts.validate_session_token(token, conn_metadata(conn)) do
-      {:ok, auth} -> assign(conn, :auth, auth)
-      {:error, :session_not_found} -> assign(conn, :auth, nil)
+      {:ok, auth} ->
+        :ok = put_session_log_metadata(auth)
+        assign(conn, :auth, auth)
+
+      {:error, :session_not_found} ->
+        assign(conn, :auth, nil)
     end
   end
 

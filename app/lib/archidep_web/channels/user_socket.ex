@@ -8,6 +8,7 @@ defmodule ArchiDepWeb.Channels.UserSocket do
   use Phoenix.Socket, log: :debug
 
   import ArchiDep.Helpers.PipeHelpers
+  import ArchiDepWeb.Helpers.AuthHelpers, only: [put_session_log_metadata: 1]
   import ArchiDepWeb.Helpers.SocketHelpers
   import Plug.Conn, only: [send_resp: 3]
   alias ArchiDep.Accounts
@@ -27,6 +28,8 @@ defmodule ArchiDepWeb.Channels.UserSocket do
          {:ok, session_id} <-
            Token.verify(socket, "user socket", token, max_age: @five_minutes_in_seconds),
          {:ok, auth} <- Accounts.validate_session_id(session_id, connect_metadata(connect_info)) do
+      :ok = put_session_log_metadata(auth)
+
       socket
       |> assign(:auth, auth)
       |> ok()

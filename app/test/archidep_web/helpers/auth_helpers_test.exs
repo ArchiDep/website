@@ -102,4 +102,14 @@ defmodule ArchiDepWeb.Helpers.AuthHelpersTest do
 
   # username/1 delegates to ArchiDep.Authentication.username/1, which is covered
   # by that module's own tests.
+
+  describe "put_session_log_metadata/1" do
+    test "labels the process's log lines with the start of the session ID" do
+      auth = Factory.build(:authentication, session_id: "0b4c7e2a-5f1d-4a8e-9c3b-2d6f8e1a7b90")
+      previous_metadata = Logger.metadata()
+
+      assert AuthHelpers.put_session_log_metadata(auth) == :ok
+      assert Logger.metadata() == Keyword.put(previous_metadata, :session, "0b4c7e2a")
+    end
+  end
 end

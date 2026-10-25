@@ -564,7 +564,9 @@ context](../archidep/accounts/CONTRIBUTING.md#authentication). The web layer
   `on_mount(ArchiDepWeb.LiveAuth)`, so every live view requires a valid session;
   and
 - [`AuthHelpers`](./helpers/auth_helpers.ex) (`logged_in?/1`, `root?/1`,
-  `impersonating?/1`, `can_impersonate?/2`) gate UI and actions.
+  `impersonating?/1`, `can_impersonate?/2`) gate UI and actions, and
+  `put_session_log_metadata/1` labels a process's log lines with the start of
+  its session ID once it is authenticated.
 
 **Authorization** of business operations is done by the contexts' [policy
 modules][authorization] — at the context boundary, not in the web layer. A page
