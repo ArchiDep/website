@@ -26,7 +26,9 @@ defmodule ArchiDepWeb do
   @spec channel :: Macro.t()
   def channel do
     quote do
-      use Phoenix.Channel
+      # Every page of the course material joins a channel whenever it connects,
+      # which is too frequent to log at the default level.
+      use Phoenix.Channel, log_join: :debug
 
       import ArchiDep.Helpers.PipeHelpers
       alias ArchiDep.Authentication

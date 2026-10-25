@@ -33,6 +33,13 @@ defmodule ArchiDepWeb.EndpointTest do
       assert Endpoint.log_level(%{path_info: ["api", "health"]}) == false
     end
 
+    test "logs the socket token route at the debug level unless it fails" do
+      assert Endpoint.log_level(%{path_info: ["auth", "socket"], status: nil}) == :debug
+      assert Endpoint.log_level(%{path_info: ["auth", "socket"], status: 200}) == :debug
+      assert Endpoint.log_level(%{path_info: ["auth", "socket"], status: 401}) == :info
+      assert Endpoint.log_level(%{path_info: ["auth", "socket"], status: 500}) == :info
+    end
+
     test "logs any other route at the info level" do
       assert Endpoint.log_level(%{path_info: ["app"]}) == :info
       assert Endpoint.log_level(%{path_info: []}) == :info

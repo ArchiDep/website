@@ -186,7 +186,15 @@ defmodule ArchiDepWeb.Endpoint do
     do: :archidep |> Application.fetch_env!(__MODULE__) |> Keyword.fetch!(:session_signing_salt)
 
   # Disable logging for health check route
-  @spec log_level(Plug.Conn.t()) :: false | :info
+  @spec log_level(Plug.Conn.t()) :: false | :debug | :info
   def log_level(%{path_info: ["api", "health"]}), do: false
+
+  # Every page of the course material fetches a socket token whenever it
+  # connects, so only the requests that fail are worth logging. The level is
+  # asked for when the request starts, without a status yet, and again when it
+  # ends.
+  def log_level(%{path_info: ["auth", "socket"], status: status}) when status in [nil, 200],
+    do: :debug
+
   def log_level(_req), do: :info
 end

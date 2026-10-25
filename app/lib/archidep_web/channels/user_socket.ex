@@ -3,7 +3,9 @@ defmodule ArchiDepWeb.Channels.UserSocket do
   Persistent authenticated connection for user channels.
   """
 
-  use Phoenix.Socket
+  # Every page of the course material connects, which is too frequent to log at
+  # the default level. Refused connections still log a warning in `connect/3`.
+  use Phoenix.Socket, log: :debug
 
   import ArchiDep.Helpers.PipeHelpers
   import ArchiDepWeb.Helpers.SocketHelpers
