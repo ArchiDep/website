@@ -27,6 +27,7 @@ This is a living document. Add a level-2 heading per planned task and re-run
 - [Let the link tag name a document rather than a source path](#let-the-link-tag-name-a-document-rather-than-a-source-path)
 - [Normalise the two slide-deck source layouts](#normalise-the-two-slide-deck-source-layouts)
 - [Check that every slide the search links to can be reached](#check-that-every-slide-the-search-links-to-can-be-reached)
+- [Rate-limit socket token requests per session](#rate-limit-socket-token-requests-per-session)
 
 <!-- END doctoc -->
 
@@ -717,6 +718,51 @@ piece of tooling rather than one more test.
   mode the live site uses.
 - Whether one navigation check is enough, or whether it should cover a heading
   whose identifier the build numbered (`-1`) because the deck repeats it.
+
+## Rate-limit socket token requests per session
+
+**Problem:** Nothing limits how often a browser can ask
+[`/auth/socket`](../lib/archidep_web/auth/auth_controller.ex) for a socket
+token. A course page asks for one before each connection attempt, and a request
+costs at least a session lookup in the database. One tab running a buggy client
+once sent 80,089 of these requests in about nine hours, and an earlier storm
+exhausted the database connection pool, which Sentry reported over 3,000 times.
+That client was replaced by
+[`socket-connection.ts`](../../course/src/assets/course/socket-connection.ts),
+which keeps a single socket and at most one pending attempt. But a tab that was
+open before a deployment keeps running the old client until it is reloaded. And
+a logged-in user can call the endpoint as fast as they like, by mistake or on
+purpose.
+
+**Why it is not being done now:** The client fix removes the cause, and
+`UserSession.touch` now writes a session at most once a minute per client, so a
+token request is usually a single `SELECT`. Rate limiting would add a dependency
+and a plug for a risk that should now be rare. It is worth doing if the logs
+show another storm.
+
+**Proposed approach:** Count token requests per session and refuse those beyond
+a limit.
+
+- The key is the session ID from the authenticated `auth`. A session is the
+  `UserSession` created at login and shared by every tab of one browser. It is
+  not the IP address, which students on the school network or eduroam share: a
+  limit per address could lock a whole classroom out because of one tab.
+- The counters can live in memory (ETS), for example through Hammer or
+  PlugAttack, as the application runs on a single node. Counters that a restart
+  resets are acceptable.
+- The limit should be generous. A page needs one token per connection, so
+  something like 20 per minute leaves room for reconnections and many tabs.
+- Beyond the limit, answer `429 Too Many Requests` without touching the
+  database. The client treats any failure other than a 401 as a reason to wait
+  longer before retrying, so it needs no change.
+
+**Open questions to resolve when scheduling this**
+
+- Which library, or whether a small ETS counter written here is simpler.
+- Whether the socket connection itself (`UserSocket.connect/3`, which also reads
+  the session) needs the same limit, or whether limiting the tokens is enough.
+- Whether refused requests should be logged once per session and window rather
+  than once per request, so that a storm does not flood the logs again.
 
 [build-workflow]: ../../.github/workflows/build.yml
 [check-relative-assets]: ../../course/src/scripts/check-relative-assets.ts
