@@ -1158,8 +1158,10 @@ validated at runtime with [`io-ts`][io-ts] codecs (see
 **Real-time dashboard integration.** When not in standalone mode, the client
 opens a [Phoenix][phoenix] WebSocket channel to the dashboard application
 (authenticated via a token fetched from the application). Through this channel
-it receives the current session and live cloud server data, reconnecting
-automatically with exponential backoff. The session is cached in `localStorage`
+it receives the current session and live cloud server data. The page keeps a
+single socket, reconnected with a new token by
+[`src/assets/course/socket-connection.ts`](./src/assets/course/socket-connection.ts),
+whose module documentation explains how. The session is cached in `localStorage`
 and modelled as a small state machine (anonymous, cached, connected, connection
 error) in [`src/assets/course/session.ts`](./src/assets/course/session.ts); it
 drives the login/logout/impersonation UI and the [cloud server

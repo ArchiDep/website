@@ -3,6 +3,7 @@ import { G, O, pipe } from '@mobily/ts-belt';
 import { effect } from '@preact/signals';
 import ClipboardJS from 'clipboard';
 import { isRight } from 'fp-ts/lib/Either';
+import * as t from 'io-ts';
 import { Socket } from 'phoenix';
 
 import { setUpPageDiagrams } from '../diagrams/runtime';
@@ -17,6 +18,10 @@ import {
 } from './course/lightbox';
 import './course/randomize';
 import './course/search';
+import {
+  createSocketConnection,
+  type SocketConnection
+} from './course/socket-connection';
 import {
   anonymousSession,
   cachedSession,
@@ -116,162 +121,136 @@ if (!standalone) {
   $logoutButton.addEventListener('click', logOut);
 }
 
-const retryIntervals = [
-  500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 10_000, 20_000
-];
-const defaultRetryInterval = 30_000;
-let connectionAttempt = 0;
 const socketLogger = log.getLogger('socket');
 
-if (!standalone) {
-  connectSocket();
+const connection = standalone ? undefined : connectToApplication();
+
+function connectToApplication(): SocketConnection<Socket> {
+  const socketConnection = createSocketConnection({
+    createSocket: params => new Socket('/socket', { params }),
+    fetchToken,
+    shouldReconnect: () => localStorage.getItem('archidep:session') !== null,
+    authenticationFailed: err => err instanceof HttpAuthenticationError,
+    onClose: () => {
+      socketLogger.info('Connection closed');
+      const session = getSession(currentSession.value);
+      currentSession.value =
+        session === undefined ? anonymousSession() : cachedSession(session);
+    },
+    onAuthenticationFailed: () => {
+      // The session is presumably no longer valid. The user will have to leave
+      // the page or log in from another tab to connect again.
+      currentSession.value = anonymousSession();
+      localStorage.removeItem('archidep:session');
+    },
+    isPageHidden: () => document.visibilityState === 'hidden',
+    logger: socketLogger
+  });
+
+  const { socket } = socketConnection;
+
+  socket.onError(error => {
+    const errorMessage =
+      G.isString(error) || G.isNumber(error) ? String(error) : '(unknown)';
+    socketLogger.warn(`Connection error ${errorMessage}`);
+
+    currentSession.value = sessionConnectionError(
+      errorMessage,
+      getSession(currentSession.value)
+    );
+  });
+
+  // Phoenix rejoins the channel whenever the socket connects again.
+  const channel = socket.channel('me', {});
+
+  channel.on('cloudServerData', payload => {
+    cloudServer.value = pipe(
+      O.fromNullable(payload),
+      O.map(cloudServerDataType.decode),
+      O.flatMap(decoded => (isRight(decoded) ? O.Some(decoded.right) : O.None)),
+      O.toUndefined
+    );
+  });
+
+  channel.on('session', payload => {
+    const decodedSession = sessionType.decode(payload);
+    if (isRight(decodedSession)) {
+      const session = decodedSession.right;
+      currentSession.value = connectedSession(session);
+      socketLogger.debug(`Session ${session.sessionId} updated`);
+      localStorage.setItem('archidep:session', JSON.stringify(session));
+    } else {
+      socketLogger.error(
+        `Failed to decode 'session' channel payload: ${JSON.stringify(payload)}`
+      );
+      currentSession.value = sessionConnectionError(
+        'Failed to decode session payload',
+        getSession(currentSession.value)
+      );
+      localStorage.removeItem('archidep:session');
+    }
+  });
+
+  channel
+    .join()
+    .receive('ok', resp => {
+      socketConnection.established();
+      const decodedSession = sessionType.decode(resp);
+      if (isRight(decodedSession)) {
+        const session = decodedSession.right;
+        currentSession.value = connectedSession(session);
+        socketLogger.debug(`Welcome, ${session.username}!`);
+        localStorage.setItem('archidep:session', JSON.stringify(session));
+      } else {
+        socketLogger.error(
+          `Failed to decode 'me' channel payload: ${JSON.stringify(resp)}`
+        );
+      }
+    })
+    .receive('error', resp => {
+      socketLogger.warn(`Failed to join 'me' channel: ${JSON.stringify(resp)}`);
+    });
+
+  // Another tab logged in, or connected with a session this one lost.
+  window.addEventListener('storage', event => {
+    if (event.key === 'archidep:session' && event.newValue !== null) {
+      socketConnection.connect();
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'hidden') {
+      socketConnection.pageShown();
+    }
+  });
+
+  socketConnection.connect();
+
+  return socketConnection;
 }
 
-let connectionTimeout: NodeJS.Timeout | undefined;
+const socketTokenType = t.readonly(t.type({ token: t.string }));
 
-window.addEventListener('storage', event => {
-  if (event.key !== 'archidep:session' || event.newValue === null) {
-    return;
-  }
-
-  clearTimeout(connectionTimeout);
-  connectSocket();
-});
-
-function connectSocket(): void {
-  const retryInterval =
-    retryIntervals[connectionAttempt] ?? defaultRetryInterval;
-
-  socketLogger.debug('Connecting...');
-
-  fetch('/auth/socket')
+function fetchToken(): Promise<string> {
+  return fetch('/auth/socket')
     .then(res => {
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('archidep:session');
           throw new HttpAuthenticationError(res);
         }
 
         throw new Error(`Connection request failed with status ${res.status}`);
       }
 
-      return res;
+      return res.json();
     })
-    .then(res => res.json())
-    .then((data: { readonly token: string }) => {
-      const token = data.token;
-      const socket = new Socket('/socket', {
-        params: { token }
-      });
-
-      socket.onOpen(() => {
-        connectionAttempt = 0;
-      });
-
-      socket.onError(error => {
-        const errorMessage =
-          G.isString(error) || G.isNumber(error) ? String(error) : '(unknown)';
-        socketLogger.warn(`Connection error ${errorMessage}`);
-
-        currentSession.value = sessionConnectionError(
-          errorMessage,
-          getSession(currentSession.value)
-        );
-      });
-
-      socket.onClose(() => {
-        socket.disconnect();
-        socketLogger.info(
-          `Connection closed; will reconnect in ${retryInterval / 1000} seconds`
-        );
-        const session = getSession(currentSession.value);
-        currentSession.value =
-          session === undefined ? anonymousSession() : cachedSession(session);
-
-        if (localStorage.getItem('archidep:session') !== null) {
-          connectionAttempt++;
-          connectionTimeout = setTimeout(connectSocket, retryInterval);
-        } else {
-          connectionAttempt = 0;
-          clearTimeout(connectionTimeout);
-        }
-      });
-
-      socket.connect();
-
-      const channel = socket.channel('me', {});
-
-      channel.on('cloudServerData', payload => {
-        cloudServer.value = pipe(
-          O.fromNullable(payload),
-          O.map(cloudServerDataType.decode),
-          O.flatMap(decoded =>
-            isRight(decoded) ? O.Some(decoded.right) : O.None
-          ),
-          O.toUndefined
-        );
-      });
-
-      channel.on('session', payload => {
-        const decodedSession = sessionType.decode(payload);
-        if (isRight(decodedSession)) {
-          const session = decodedSession.right;
-          currentSession.value = connectedSession(session);
-          socketLogger.debug(`Session ${session.sessionId} updated`);
-          localStorage.setItem('archidep:session', JSON.stringify(session));
-        } else {
-          socketLogger.error(
-            `Failed to decode 'session' channel payload: ${JSON.stringify(
-              payload
-            )}`
-          );
-          currentSession.value = sessionConnectionError(
-            'Failed to decode session payload',
-            getSession(currentSession.value)
-          );
-          localStorage.removeItem('archidep:session');
-        }
-      });
-
-      channel
-        .join()
-        .receive('ok', resp => {
-          const decodedSession = sessionType.decode(resp);
-          if (isRight(decodedSession)) {
-            const session = decodedSession.right;
-            currentSession.value = connectedSession(session);
-            socketLogger.debug(`Welcome, ${session.username}!`);
-            localStorage.setItem('archidep:session', JSON.stringify(session));
-          } else {
-            socketLogger.error(
-              `Failed to decode 'me' channel payload: ${JSON.stringify(resp)}`
-            );
-          }
-        })
-        .receive('error', resp => {
-          socketLogger.warn(
-            `Failed to join 'me' channel: ${JSON.stringify(resp)}`
-          );
-        });
-    })
-    .catch(err => {
-      socketLogger.info(
-        `Failed to connect because: ${err.message}; will retry in ${retryInterval / 1000} second(s)`
-      );
-
-      if (err instanceof HttpAuthenticationError) {
-        // If authentication failed, this presumably means that the session is
-        // no longer valid. Clear the session and give up attempting to
-        // reconnect. The user will have to leave the page to log in again.
-        connectionAttempt = 0;
-        socketLogger.info('Authentication failed, giving up on reconnecting');
-        currentSession.value = anonymousSession();
-        localStorage.removeItem('archidep:session');
-        clearTimeout(connectionTimeout);
-      } else {
-        connectionAttempt++;
-        connectionTimeout = setTimeout(connectSocket, retryInterval);
+    .then((data: unknown) => {
+      const decoded = socketTokenType.decode(data);
+      if (isRight(decoded)) {
+        return decoded.right.token;
       }
+
+      throw new Error('Connection request returned no token');
     });
 }
 
@@ -302,8 +281,7 @@ function logOut(): void {
     .then(() => {
       localStorage.removeItem('archidep:session');
       logger.info('Logout successful');
-      connectionAttempt = 0;
-      clearTimeout(connectionTimeout);
+      connection?.stop();
     })
     .catch(err => logger.warn(`Logout failed: ${err.message}`));
 }
