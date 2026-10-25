@@ -44,6 +44,9 @@ config :archidep,
     course_dir: "/usr/share/archidep/course"
   ]
 
+# Production logs are kept for days, so each line carries its date as well.
+config :logger, :console, format: "$date $time $metadata[$level] $message\n"
+
 # Enable Prometheus metrics server
 config :archidep, ArchiDep.PromEx, disabled: false, metrics_server: [port: 42003]
 
