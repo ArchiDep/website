@@ -1170,6 +1170,48 @@ output, one at a time.
 
 ---
 
+### 4-to-1 selector
+
+<!-- .element: class="corner-title" -->
+
+<logic-diagram name="selector-4-to-1" names="true" highlight="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+The selector again, with four data inputs, `D0` to `D3`. One SELECT input can
+only choose between two, so it takes two select bits, `S1` and `S0`, read as a
+binary number: `00` lets `D0` through, `01` for `D1`, `10` for `D2` and `11` for
+`D3`.
+
+The ANDs have three inputs instead of two, and work the same way: the output is
+1 only when all three inputs are 1. Each AND gets one data input and one line of
+each select bit, which runs down two lines, as it is and inverted by a NOT. Each
+AND taps a different pair of lines, so that for given select bits only one AND
+has both its select inputs at 1. That AND lets its data input through.
+
+The OR has four inputs instead of two, and works the same way: its output is 1
+when any of its inputs is 1, so it passes on whatever comes out of the open AND.
+
+It is named **4-to-1** because a multiplexer is counted by its data: four inputs
+to one output.
+
+---
+
+### The selector as a block
+
+<!-- .element: class="hidden" -->
+
+<logic-diagram name="selector-block" names="true" highlight="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
+</logic-diagram>
+
+**Notes:**
+
+The same 4-to-1 selector drawn as a box: the select bits pick which of the four
+data inputs reaches the output.
+
+---
+
 ### 2-to-4 decoder
 
 <!-- .element: class="corner-title" -->
@@ -1184,15 +1226,15 @@ address, `A1` and `A0`, read as a two-bit binary number, picks which output:
 `Y0` for `00`, `Y1` for `01`, `Y2` for `10`, `Y3` for `11`. The other outputs
 stay at 0.
 
-The ANDs have three inputs instead of two, and work the same way: the output is
-1 only when all three inputs are 1. Each AND gets DATA and one line of each
-address bit, which runs down two lines, as it is and inverted by a NOT. Each AND
-taps a different pair of lines, so that for a given address only one AND has
-both its address inputs at 1. That AND lets DATA through.
+The address bits are wired like the 4-to-1 selector's select bits, each one as
+it is and inverted, so that only one three-input AND is open at a time. Every
+AND gets DATA, and the open one lets it through.
 
 It is called **2-to-4** because a decoder is counted by its address bits: 2 bits
 can say 2² = 4 different numbers, so they choose among 4 outputs. A 3-bit
-address gives a 3-to-8 decoder, and so on.
+address gives a 3-to-8 decoder, and so on. The 4-to-1 selector has the same two
+bits, but a multiplexer is counted by its data, which is why one is called
+4-to-1 and the other 2-to-4.
 
 A decoder with a data input like this one is also called a **demultiplexer**, or
 DEMUX, the multiplexer's mirror image, and a demultiplexer is counted by its
@@ -1213,45 +1255,6 @@ names are right for this circuit.
 The same decoder drawn as a box: the address picks which of the four outputs
 DATA reaches. The circuit inside does not change; the box hides it so that the
 diagrams that use it stay readable.
-
----
-
-### 4-to-1 selector
-
-<!-- .element: class="corner-title" -->
-
-<logic-diagram name="selector-4-to-1" names="true" highlight="true" controls="none" theme="light" style="width: 640px; margin: 0 auto">
-</logic-diagram>
-
-**Notes:**
-
-The selector again, with four data inputs, `D0` to `D3`. One SELECT input can
-only choose between two, so it takes two select bits, `S1` and `S0`, read as a
-binary number: `00` lets `D0` through, `01` for `D1`, `10` for `D2` and `11` for
-`D3`.
-
-The select bits are wired like the decoder's address bits, each one as it is and
-inverted, so that only one AND is open at a time. The OR has four inputs instead
-of two, and works the same way: its output is 1 when any of its inputs is 1, so
-it passes on whatever comes out of the open AND.
-
-It is named **4-to-1** because a multiplexer is counted by its data: four inputs
-to one output. Its two select bits are the same as the decoder's two address
-bits, which is why it is called 4-to-1 while the decoder is called 2-to-4.
-
----
-
-### The selector as a block
-
-<!-- .element: class="hidden" -->
-
-<logic-diagram name="selector-block" names="true" highlight="true" controls="none" theme="light" style="width: 480px; margin: 0 auto">
-</logic-diagram>
-
-**Notes:**
-
-The same 4-to-1 selector drawn as a box: the select bits pick which of the four
-data inputs reaches the output.
 
 ---
 
