@@ -525,23 +525,23 @@ Every figure belongs to a part of [the modern machine of the presentation]({%
 link chapters/411-how-a-computer-works/slides/slides.md
 %}#a-more-modern-machine):
 
-| In the description    | What it means                                                                                                                      | Part of the machine  |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :------------------- |
-| 8 cores               | Eight processors in one chip: up to eight programs, or parts of one, run at the same time                                          | Processor            |
-| 4.5 GHz (up to 5.4)   | Ticks per second, limited by the time signals take to cross the circuits, and by heat: it only speeds up while the chip stays cool | Clock                |
-| 64-bit                | The largest numbers added in one instruction, without carrying through software, and the size of an address                        | Registers and buses  |
-| 32 MB L3 cache        | The more of a program's data fits near the cores, the less often they wait for the memory                                          | Caches               |
-| 32 GB RAM (2 × 16 GB) | How much the running programs can hold at once. Two sticks, but one memory                                                         | Memory               |
-| DDR5 6000 MHz         | How much data the memory sends per second once it has started (not how long it takes to arrive)                                    | Memory               |
-| 2 TB SSD              | How many programs and files are kept with the power off                                                                            | Storage              |
-| NVMe, PCIe 4.0        | How the processor asks the storage for copies, and how the storage is connected                                                    | Disk controller      |
-| M.2                   | The shape of the slot                                                                                                              | None                 |
-| Up to 7450 MB/s read  | How fast programs and files are copied from the storage into memory, at best                                                       | Disk controller      |
-| RTX 4070, 12 GB       | A graphics card, with thousands of small processors of its own to compute pixels in parallel, and its own memory for them          | A device             |
-| B650, UEFI            | The board everything plugs into, and the program the processor runs first at power-on                                              | Buses and firmware   |
-| Wi-Fi 6, 2.5 Gb       | Network devices: at most 2.5 billion bits per second on the cable                                                                  | Devices              |
-| 750 W                 | The power the parts can draw at most: faster parts need more                                                                       | None                 |
-| Windows 11 64-bit     | Not hardware: a program on the storage, copied into memory at boot, made of the processor's 64-bit instructions                    | Storage, then memory |
+| In the description    | Part of the machine  | What it means                                                                                                                      |
+| :-------------------- | :------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| 8 cores               | Processor            | Eight processors in one chip: up to eight programs, or parts of one, run at the same time                                          |
+| 4.5 GHz (up to 5.4)   | Clock                | Ticks per second, limited by the time signals take to cross the circuits, and by heat: it only speeds up while the chip stays cool |
+| 64-bit                | Registers and buses  | The largest numbers added in one instruction, without carrying through software, and the size of an address                        |
+| 32 MB L3 cache        | Caches               | The more of a program's data fits near the cores, the less often they wait for the memory                                          |
+| 32 GB RAM (2 × 16 GB) | Memory               | How much the running programs can hold at once. Two sticks, but one memory                                                         |
+| DDR5 6000 MHz         | Memory               | How much data the memory sends per second once it has started (not how long it takes to arrive)                                    |
+| 2 TB SSD              | Storage              | How many programs and files are kept with the power off                                                                            |
+| NVMe, PCIe 4.0        | Disk controller      | How the processor asks the storage for copies, and how the storage is connected                                                    |
+| M.2                   | None                 | The shape of the slot                                                                                                              |
+| Up to 7450 MB/s read  | Disk controller      | How fast programs and files are copied from the storage into memory, at best                                                       |
+| RTX 4070, 12 GB       | A device             | A graphics card, with thousands of small processors of its own to compute pixels in parallel, and its own memory for them          |
+| B650, UEFI            | Buses and firmware   | The board everything plugs into, and the program the processor runs first at power-on                                              |
+| Wi-Fi 6, 2.5 Gb       | Devices              | Network devices: at most 2.5 billion bits per second on the cable                                                                  |
+| 750 W                 | None                 | The power the parts can draw at most: faster parts need more                                                                       |
+| Windows 11 64-bit     | Storage, then memory | Not hardware: a program on the storage, copied into memory at boot, made of the processor's 64-bit instructions                    |
 
 ## Appendix: the cake is a lie
 
