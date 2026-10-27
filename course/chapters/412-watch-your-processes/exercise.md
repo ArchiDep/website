@@ -75,17 +75,25 @@ a **different PID**: it is a new process, not the first one coming back.
 Finally, look at the file of the `sleep` program:
 
 ```bash
-$> ls -l /usr/bin/sleep
+$> ls -lL /usr/bin/sleep
 ```
+
+{% note type: more %}
+
+`/usr/bin/sleep` is a symbolic link, a reference to another file. The `-L`
+option makes `ls` describe the file it leads to, the program itself, instead of
+the link.
+
+{% endnote %}
 
 It was there before you ran `sleep`, it was there while `sleep` was running, and
 it is still there now.
 
-The file `/usr/bin/sleep` is a **program**: inert instructions in the storage of
-your server. Each time you ran `sleep`, the operating system copied that program
-into memory and started executing it: a **process**, with its own PID and its
-own memory. When the process ended, the kernel freed its memory, and nothing of
-it was left, except the program's file, ready to be run again.
+That file is a **program**: inert instructions in the storage of your server.
+Each time you ran `sleep`, the operating system copied that program into memory
+and started executing it: a **process**, with its own PID and its own memory.
+When the process ended, the kernel freed its memory, and nothing of it was left,
+except the program's file, ready to be run again.
 
 Running the same program twice gives two different processes. This is the
 difference between the program and the process described in [How a computer
@@ -93,57 +101,75 @@ works][hcw-processes].
 
 ## :exclamation: Climb the process tree
 
-In one terminal connected to your server, display every process as a tree:
+Open **two terminals**, and connect both to your server.
+
+In the second terminal, display every process as a tree:
 
 ```bash
 $> ps -ef --forest
 ```
 
-Find the `ps` command you just ran, near the bottom. Follow its parent process
-ID (`PPID`) to its parent, then to its parent's parent, and so on. Where do you
-end up?
+Find the `ps -ef --forest` command you just ran. Follow its parent process ID
+(`PPID`) to its parent, then to its parent's parent, and so on. Where do you end
+up?
 
 {% solution title: "Check your answer", emoji: thinking, reveal: always %}
 
 ```bash
 $> ps -ef --forest
 UID          PID    PPID  C STIME TTY          TIME CMD
-root           1       0  0 09:12 ?        00:00:03 /sbin/init
+root           2       0  0 09:12 ?        00:00:00 [kthreadd]
+root           3       2  0 09:12 ?        00:00:00  \_ [pool_workqueue_release]
+...
+root           1       0  0 09:12 ?        00:00:03 /usr/lib/systemd/systemd --system --deserialize=99
 ...
 root         888       1  0 09:12 ?        00:00:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
 root       12020     888  0 14:01 ?        00:00:00  \_ sshd-session: jde [priv]
-jde        12033   12020  0 14:01 ?        00:00:00      \_ sshd-session: jde@pts/1
-jde        12034   12033  0 14:01 pts/1    00:00:00          \_ -bash
-jde        12211   12034  0 14:09 pts/1    00:00:00              \_ ps -ef --forest
+jde        12033   12020  0 14:01 ?        00:00:00  |   \_ sshd-session: jde@pts/1
+jde        12034   12033  0 14:01 pts/1    00:00:00  |       \_ -bash
+root       12390     888  0 14:08 ?        00:00:00  \_ sshd-session: jde [priv]
+jde        12401   12390  0 14:08 ?        00:00:00      \_ sshd-session: jde@pts/2
+jde        12402   12401  0 14:08 pts/2    00:00:00          \_ -bash
+jde        12411   12402  0 14:09 pts/2    00:00:00              \_ ps -ef --forest
+...
 ```
 
-Your `ps` was started by your shell (`-bash`), which was started by your SSH
-session, which was started by the SSH server (`sshd`), which was started by
-**the init process, PID 1**.
+The PIDs on your server are different, but the chain is the same. In this
+example, your `ps`, PID 12411, has the PPID 12402: it was started by your shell
+(`-bash`). The shell's PPID, 12401, leads to your SSH session, which is two
+`sshd-session` processes, 12401 and its parent 12390. The PPID of 12390 is 888,
+the SSH server (`sshd`), whose own PPID is 1: **the init process, PID 1**. On
+Ubuntu, the init process is systemd: its line may show `/sbin/init` instead, the
+traditional name of the init program.
+
+The names in square brackets at the top of the tree, below PID 2 (`kthreadd`),
+are not programs: they are parts of the kernel itself, which it runs as
+processes of its own.
 
 {% endsolution %}
 
-Now start Guess It, as you did in the [SFTP deployment][sftp-run]:
+Now, in the first terminal, start Guess It, as you did in the [SFTP
+deployment][sftp-run]:
 
 ```bash
 $> cd ~/guessit-ex
 $> npm run dev
 ```
 
-In the other terminal, display the tree again. Which processes did running Guess
-It create? Then find PostgreSQL in the tree (look for `postgres`). Who started
-it?
+In the second terminal, display the tree again. Which processes did running
+Guess It create? Then find PostgreSQL in the tree (look for `postgres`). Who
+started it?
 
 {% solution title: "Check your answers", emoji: thinking, reveal: always %}
 
 ```bash
 $> ps -ef --forest
 ...
-jde        12034   12033  0 14:01 pts/1    00:00:00          \_ -bash
-jde        12305   12034  0 14:12 pts/1    00:00:00              \_ npm run dev
-jde        12316   12305  0 14:12 pts/1    00:00:00                  \_ sh -c node --watch server.js
-jde        12317   12316  0 14:12 pts/1    00:00:01                      \_ node --watch server.js
-jde        12328   12317  0 14:12 pts/1    00:00:00                          \_ /usr/bin/node server.js
+jde        12034   12033  0 14:01 pts/1    00:00:00  |       \_ -bash
+jde        12305   12034  0 14:12 pts/1    00:00:00  |           \_ npm run dev
+jde        12316   12305  0 14:12 pts/1    00:00:00  |               \_ sh -c node --watch server.js
+jde        12317   12316  0 14:12 pts/1    00:00:01  |                   \_ node --watch server.js
+jde        12328   12317  0 14:12 pts/1    00:00:00  |                       \_ /usr/bin/node server.js
 ...
 postgres     951       1  0 09:12 ?        00:00:00 /usr/lib/postgresql/.../bin/postgres -D /var/lib/postgresql/...
 postgres     960     951  0 09:12 ?        00:00:00  \_ postgres: ...: checkpointer
@@ -157,16 +183,17 @@ start it again whenever the file changes. None of them is called "Guess It": the
 program that runs is Node.js, and Guess It's JavaScript is data that Node.js
 reads.
 
-PostgreSQL was not started by you, but by the init process (PID 1), when your
-server booted. It is several processes too.
+PostgreSQL was not started by you, but by the init process (PID 1): when you
+installed it, and again each time your server boots. It is several processes
+too.
 
 {% endsolution %}
 
 Stop Guess It with `Ctrl+C` once you are done.
 
-Every process on your server was started by another process, which is its
-parent. Climbing the tree always ends at **the init process, PID 1**: the first
-process the kernel starts once it has [booted][hcw-booting]. It starts the
+Every program running on your server was started by another process, which is
+its parent. Climbing the tree always ends at **the init process, PID 1**: the
+first process the kernel starts once it has [booted][hcw-booting]. It starts the
 services of the server, such as the SSH server and PostgreSQL, which start
 others in turn.
 
@@ -207,6 +234,8 @@ Which one holds the variable `answer`?
 ```bash
 $> ps -f -u jde
 UID          PID    PPID  C STIME TTY          TIME CMD
+jde        12010       1  0 14:01 ?        00:00:00 /usr/lib/systemd/systemd --user
+jde        12012   12010  0 14:01 ?        00:00:00 (sd-pam)
 jde        12033   12020  0 14:01 ?        00:00:00 sshd-session: jde@pts/1
 jde        12034   12033  0 14:01 pts/1    00:00:00 -bash
 jde        12401   12390  0 14:20 ?        00:00:00 sshd-session: jde@pts/2
@@ -332,26 +361,26 @@ Architecture:             x86_64
   ...
 CPU(s):                   1
   ...
-  Model name:             Intel(R) Xeon(R) Platinum 8272CL CPU @ 2.60GHz
+  Model name:             Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
   ...
 Virtualization features:
   Hypervisor vendor:      Microsoft
   Virtualization type:    full
 Caches (sum of all):
-  L1d:                    32 KiB (1 instance)
+  L1d:                    48 KiB (1 instance)
   L1i:                    32 KiB (1 instance)
-  L2:                     1 MiB (1 instance)
-  L3:                     35.8 MiB (1 instance)
+  L2:                     1.3 MiB (1 instance)
+  L3:                     48 MiB (1 instance)
 ...
 
 $> free -h
                total        used        free      shared  buff/cache   available
-Mem:           907Mi       345Mi       112Mi       1.2Mi       610Mi       561Mi
-Swap:          2.0Gi       128Mi       1.9Gi
+Mem:           835Mi       271Mi       192Mi        18Mi       409Mi       563Mi
+Swap:          2.0Gi        24Mi       2.0Gi
 
 $> df -h /
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/root        29G  4.1G   25G  15% /
+/dev/root        28G  5.1G   23G  18% /
 ```
 
 Your figures may differ, depending on the size of the server you chose and on
@@ -361,10 +390,15 @@ the machine Azure runs it on.
   is a **64-bit** processor: its registers, and its addresses, are 64 bits wide,
   where [the machine of the presentation][hcw-instruction-set] had 8-bit values
   and 4-bit addresses.
-- `CPU(s)` is the number of **cores**: 1 or 2 on the servers of this course.
-  Each one is a complete processor.
-- If the model name ends with a speed in GHz, it is the speed of the
-  processor's **clock**: 2.6 billion ticks per second here.
+- `CPU(s)` is the number of **cores** the kernel can give work to: 1 or 2 on the
+  servers of this course. On a server with 2, `Thread(s) per core: 2` means that
+  they are two halves of one physical core, which executes the instructions of
+  two processes at once by interleaving them. The kernel uses them as two cores,
+  and so does this exercise.
+- If the model name says `64-Core`, that is the processor of the machine Azure
+  runs your server on, shared with many other virtual machines.
+- If the model name ends with a speed in GHz, it is the speed of the processor's
+  **clock**: 2.8 billion ticks per second here.
 - `L1d`, `L2` and `L3` are the processor's **caches**, small and fast memories
   inside the processor's chip that keep copies of recently used memory.
 - `Hypervisor vendor: Microsoft` says that your server is a **virtual machine**:
@@ -437,9 +471,9 @@ How does `user` compare with `real` this time?
 {% solution title: "Check your answer", emoji: thinking, reveal: always %}
 
 ```bash
-real    0m10.003s
-user    0m9.794s
-sys     0m0.205s
+real    0m10.006s
+user    0m9.678s
+sys     0m0.304s
 ```
 
 `user` is almost as long as `real`: the processor was busy executing this
@@ -448,23 +482,25 @@ process for the whole time.
 {% endsolution %}
 
 Finally, time a command that lists every file under `/usr`, and throws the list
-away into the [null device][null]:
+away into the [null device][null]. It may take several seconds:
 
 ```bash
 $> time ls -R /usr > /dev/null
 ```
 
-Which of the three durations is larger than for the other two commands?
+How does `sys` compare with `user` this time? And `real` with both of them?
 
-{% solution title: "Check your answer", emoji: thinking, reveal: always %}
+{% solution title: "Check your answers", emoji: thinking, reveal: always %}
 
 ```bash
-real    0m1.274s
-user    0m0.204s
-sys     0m0.581s
+real    0m14.900s
+user    0m0.241s
+sys     0m0.518s
 ```
 
-This time, `sys` is not close to zero. It may even be larger than `user`.
+This time, `sys` is as large as `user`, or larger, where it was a small fraction
+of `user` for `sha256sum`. And `real` is much longer than both put together, at
+least the first time you run the command.
 
 {% endsolution %}
 
@@ -481,7 +517,8 @@ worked for the process, and they only count while it does:
   operating system, with [system calls][hcw-os], to read every directory under
   `/usr`, and the kernel does the work.
 - The rest of `real` is time when the process **waited**, and the processor did
-  something else, or nothing. `sleep` only waited.
+  something else, or nothing. `sleep` only waited, and `ls` spent most of its
+  time waiting for the disk to answer.
 
 This is what the process boxes of an architecture diagram hide. A process that
 is "running", such as Guess It waiting for a request, mostly waits, and uses no
@@ -512,9 +549,9 @@ $> time timeout 10 sha256sum /dev/zero
 On a server with one core, running two commands:
 
 ```bash
-real    0m10.002s
-user    0m4.903s
-sys     0m0.098s
+real    0m10.005s
+user    0m5.007s
+sys     0m0.159s
 ```
 
 `real` is still 10 seconds, since `timeout` stops each command after 10 seconds.

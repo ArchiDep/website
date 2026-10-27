@@ -11,7 +11,7 @@
 - 408 Unix Processes: `ps` with `-f`, `-e` and `--forest`, the PPID, the init
   process, a `sleep` watched from a second SSH session, and the null device.
 - 404 Run your own virtual server on Microsoft Azure: the student logs in to
-  their server over SSH, with 1 core (`B1s`) or 2 (`B2ats_v2`), and added swap
+  their server over SSH, with 1 CPU (`B1s`) or 2 (`B2ats_v2`), and added swap
   space, which "Describe your server" shows.
 - 402 Unix Basics: `df -h`, under "Inspecting volumes".
 - 104 Hello SSH: an SSH key on the student's own computer, which "Which
@@ -38,13 +38,29 @@ processor" is optional.
 
 The commands are instruments: their other options are not in the course. In `ps`
 output, the `-` of `-bash` marks a login shell, the one an SSH session starts.
-`/sbin/init`, PID 1 in the tree, is systemd, under the name of the traditional
-init program.
+PID 1 is systemd: its command shows as `/sbin/init`, the name of the traditional
+init program, until systemd restarts itself during an upgrade, after which it
+shows as `/usr/lib/systemd/systemd --system --deserialize=…`. `ps -f -u` also
+lists `systemd --user` and `(sd-pam)` for the student: systemd's per-user
+service manager, started at login.
+
+`ls -lL /usr/bin/sleep` shows a file of about 11 MB with a link count of 116:
+Ubuntu's coreutils, rewritten in Rust, is a single program that does the work of
+every basic command, under 116 names (hard links) in
+`/usr/lib/cargo/bin/coreutils/`, and acts according to the name it was started
+with.
+
+A `B2ats_v2` server's 2 CPUs are the two hardware threads of a single AMD EPYC
+core (`Thread(s) per core: 2`, `Core(s) per socket: 1`), whose model name says
+`64-Core` for the whole physical chip. The page calls them two cores, as the
+kernel uses them.
 
 Not in the exercise: signals, and what `Ctrl+C` does, which "Process Management
 on Linux" explains; how the init process knows to start PostgreSQL at boot,
 which "Manage a PHP application with systemd as a Process Manager" shows; the
-two levels of `sshd-session` processes; shell quoting beyond whether `$` is
+two levels of `sshd-session` processes; the kernel threads below `kthreadd` (PID
+2), beyond the page's one sentence; the per-user systemd; hard links, and how
+one program serves many command names; shell quoting beyond whether `$` is
 replaced inside double or single quotes; and what `sys` time counts inside the
 kernel beyond "the kernel's instructions, on behalf of the process".
 
@@ -70,12 +86,13 @@ running applications:
   Expected after: a `sleep 60` line in `ps -f -u` while it runs, none
   afterwards, and a different PID for the second `sleep`. PIDs differ from the
   page's.
-  Question after: "`ls -l /usr/bin/sleep` shows the same file before, during and
-  after. Which of the two is the process?"
+  Question after: "`ls -lL /usr/bin/sleep` shows the same file before, during
+  and after. Which of the two is the process?"
 - **"Climb the process tree"**, the first tree.
   Question before: "Who started your shell?"
-  Expected after: `ps` under `-bash`, under two `sshd-session` lines, under
-  `sshd`, under PID 1.
+  Expected after: dozens of kernel threads in square brackets at the top, below
+  `kthreadd`; then `ps` under `-bash`, under two `sshd-session` lines, under
+  `sshd`, under PID 1, in the middle of the tree rather than at its bottom.
 - **"Climb the process tree"**, Guess It and PostgreSQL.
   Question before: "How many processes will `npm run dev` create, and what will
   they be called?"
@@ -101,15 +118,17 @@ running applications:
   Question before: "Which of these figures is the memory, and which the disk?"
   Expected after: `x86_64`, 1 or 2 CPUs, a hypervisor vendor of `Microsoft`,
   less than 1 GiB of `Mem`, 2 GiB of `Swap`, and a disk of about 30 GB. A
-  `B2ats_v2` server has an AMD processor, whose model name gives no speed.
+  `B2ats_v2` server has an AMD processor, whose model name gives no speed, and 2
+  CPUs that share one core.
   Question after: "Guess It and PostgreSQL fit in less than 1 GiB. Where are
   their files?"
 - **"Where does the time go?"**.
   Question before `sleep`: "`sleep` takes 2 seconds. How long does the
   processor work for it?"
   Expected after: `user` and `sys` close to 0 for `sleep`; `user` close to
-  `real` for `sha256sum`; `sys` well above 0 for `ls -R /usr`, and often larger
-  than `user`.
+  `real` for `sha256sum`, with `sys` a small fraction of it; `sys` as large as
+  `user` or larger for `ls -R /usr`, and, on a first run, a `real` of several
+  seconds, mostly spent waiting for the disk (15 s on a `B1s`).
   Question after: "Guess It is running and nobody plays. How much processor does
   it use?" (None while it waits.)
 - **"Take turns on the processor"** (optional).
