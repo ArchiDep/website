@@ -575,9 +575,9 @@ D latches]({% link chapters/411-how-a-computer-works/slides/slides.md
 
 {% circuit name: d-flip-flop-block, clock: paused, width: 480 %}
 
-Its clock starts paused in the following diagram, so that you can drive it by
-hand. Clicking the 0/1 half of a paused clock flips its level, and its ▶ half
-lets it run:
+The clock starts paused in this diagram, so that you can drive it by hand.
+Clicking the 0/1 half of a paused clock flips its level, and its ▶ half lets it
+run:
 
 1. Change DATA a few times: Q does not move.
 2. Raise CLK when DATA is 1: Q takes DATA's value.
@@ -599,17 +599,11 @@ the open one:
 
 {% endcircuit %}
 
-**One bit of a register** is a selector in front of a flip-flop, with a new
-input, LOAD, as SELECT:
-
-- **While LOAD is 1**, the selector lets DATA through to the flip-flop, which
-  stores it on the next rising edge.
-- **While LOAD is 0**, the selector lets the flip-flop's own Q back in. Each
-  rising edge stores the value the flip-flop already holds, so nothing changes.
+**One bit of a register** is a selector in front of a flip-flop.
 
 {% circuit name: register-bit, clock: running, highlight: true, width: 800 %}
 
-The clock runs on its own, as it does in a processor:
+The clock runs on its own in this diagram, as it does in a processor:
 
 1. With LOAD off, flip DATA: Q does not follow it, however many times the clock
    ticks.
@@ -618,6 +612,11 @@ The clock runs on its own, as it does in a processor:
 3. Turn LOAD off: Q keeps its last value, whatever DATA does.
 
 {% endcircuit %}
+
+- **While LOAD is 1**, the selector lets DATA through to the flip-flop, which
+  stores it on the next rising edge.
+- **While LOAD is 0**, the selector lets the flip-flop's own Q back in. Each
+  rising edge stores the value the flip-flop already holds, so nothing changes.
 
 The register bit, drawn as a box, with DATA from above and Q below, as the
 register uses it. It behaves the same way:
@@ -757,7 +756,12 @@ column on its left. The presentation shows [how it is made of two half adders
 and an OR]({% link chapters/411-how-a-computer-works/slides/slides.md
 %}#the-full-adder):
 
-{% circuit name: full-adder-block, width: 320 %}
+{% circuit name: full-adder-block, width: 320, instructions: enlarged %}
+
+1. Set A and B to 1: 1 + 1 = 2, `10` in binary, so SUM is 0 and Cout is 1, as
+   with the half adder.
+2. Also set Cin to 1: 1 + 1 + 1 = 3, `11` in binary, so SUM and Cout are both 1.
+
 {% endcircuit %}
 
 Four full adders, each one's Cout going into the next one's Cin, add two 4-bit
@@ -766,7 +770,7 @@ which is why this is called a **ripple-carry adder**.
 
 {% circuit name: four-bit-adder, width: 820 %}
 
-Set A to `0111` and B to `0011`: S shows `1010`, as in [adding in
+Set A to `0111` (7) and B to `0011` (3): S shows `1010` (10), as in [adding in
 binary](#adding-in-binary).
 
 {% endcircuit %}
@@ -788,13 +792,16 @@ subtracts:
 
 {% circuit name: adder-subtractor, width: 840 %}
 
-1. Set A to `0110` (6) and B to `0010` (2): S shows `1000` (8).
-2. Turn SUBTRACT on: the XORs give `1101`, B inverted, and S shows `0100` (4).
-   Cout is lit: it is the fifth bit, which is dropped.
-3. Swap A and B: S shows `1100`, which is -4 in 4-bit two's complement, where
-   numbers go from -8 to 7. Cout is now off. When subtracting, an unlit Cout
-   means that the subtraction would have had to borrow from a fifth bit that
-   does not exist: A was less than B, and the result went below 0.
+1. Set A to `0110` (6) and B to `0010` (2): S shows `1000` (8) because the
+   circuit is adding.
+2. Turn SUBTRACT on: the signals out of the XORs give `1101`, B inverted, and S
+   shows `0100` (4). Cout is lit: it is the fifth bit, which is dropped. The
+   circuit is now subtracting.
+3. Swap A and B, setting A to `0010` (2) and B to `0110` (6): S shows `1100`,
+   which is -4 in 4-bit two's complement, where numbers go from -8 to 7. Cout is
+   now off. When subtracting, an unlit Cout means that the subtraction would
+   have had to borrow from a fifth bit that does not exist: A was less than B,
+   and the result went below 0.
 
 {% endcircuit %}
 
@@ -853,7 +860,7 @@ chapters/411-how-a-computer-works/slides/slides.md %}#4-to-1-selector).
 
 {% circuit name: selector-block, highlight: true, width: 340 %}
 
-Set S1 and S0 to `00`, `01`, `10` and `11` in turn, and see which input gets
+Set S1 and S0 to `00`, `01`, `10` and `11` in turn, and see which D input gets
 through.
 
 {% endcircuit %}
@@ -875,11 +882,12 @@ right yet:
 
 {% circuit name: alu-slice, highlight: true, width: 640 %}
 
-1. Set A and B to 1, with Cin at 0.
-2. Set OP1 and OP0 to `00`, `01`, `10` and `11` in turn: RESULT shows 0 (A + B
-   is `10`, so Cout is `1` and S is `0`), then 1 (A AND B is `1`), 1 (A OR B is
-   `1`), and 0 (A XOR B is `0`).
-3. Watch the gates that are not selected: they go on computing all the time. The
+1. Set A and B to 1, with Cin at 0. With OP1 and OP0 at `00`: the ALU adds, so
+   RESULT shows 0 (A + B is `10`, so Cout is `1` and S is `0`).
+2. Set OP1 and OP0 to `01`: the ALU ANDs, so RESULT shows 1 (A AND B is `1`).
+3. Set OP1 and OP0 to `10`: the ALU ORs, so RESULT shows 1 (A OR B is `1`).
+4. Set OP1 and OP0 to `11`: the ALU XORs, so RESULT shows 0 (A XOR B is `0`).
+5. Watch the gates that are not selected: they go on computing all the time. The
    selector only picks which result gets through.
 
 {% endcircuit %}
@@ -917,16 +925,17 @@ Set A to `0110` (6) and B to `0011` (3), then try each operation:
 
 {% endcircuit %}
 
-The machine's ALU works the same way, with eight bits instead of four. It only
-needs OP `00`: the control unit turns SUBTRACT off for `ADD` and on for `SUB`. A
-real processor also has [instructions](#kinds-of-instructions) for the logic
-operations.
+The ALU of the demonstrated 8-bit CPU works on the same principles, with eight
+bits instead of four. A real processor also has
+[instructions](#kinds-of-instructions) for the logic operations.
 
 ### Adding numbers wider than the machine
 
-The machine's accumulator and ALU have 8 bits, so they handle numbers from 0 to 255. Programs still need larger numbers, and an 8-bit processor adds them the
-way you add on paper: one column at a time, carrying into the next. The columns
-are just wider: each one is a whole byte, instead of a digit.
+The accumulator and ALU of the demonstrated machine have 8 bits, so they handle
+numbers from 0 to 255. Programs still need larger numbers, and an 8-bit
+processor adds them the way you add on paper: one column at a time, carrying
+into the next. The columns are just wider: each one is a whole byte, instead of
+a digit.
 
 A 16-bit number is two bytes: a **high byte**, worth 256 times its value, and a
 **low byte**. To add two 16-bit numbers, a program:
@@ -1007,7 +1016,7 @@ flip-flops have to be forced to a value at once, whatever their clock does.
 
 {% circuit name: d-flip-flop-preset-clear %}
 
-Its clock starts paused, and Q starts at 0:
+The clock in this diagram starts paused, and Q starts at 0:
 
 1. Turn PRESET on: Q becomes 1 at once, while CLK stays at 0.
 2. Turn PRESET off: Q stays 1.
@@ -1034,7 +1043,7 @@ The same flip-flop drawn as a box, with PRESET on top and CLEAR below:
 
 {% circuit name: d-flip-flop-preset-clear-block, width: 480, instructions: enlarged %}
 
-Its clock starts paused, and Q starts at 0:
+The clock in this diagram starts paused, and Q starts at 0:
 
 1. Turn PRESET on: Q becomes 1 at once, while CLK stays at 0.
 2. Turn PRESET off: Q stays 1.
@@ -1049,7 +1058,7 @@ away.
 
 {% circuit name: loadable-flip-flop, width: 600 %}
 
-Its clock starts paused, and Q starts at 0:
+The clock in this diagram starts paused, and Q starts at 0:
 
 1. Set A to 1: Q stays 0.
 2. Turn LOAD on: Q becomes 1 at once.
@@ -1069,7 +1078,7 @@ The loadable bit drawn as a box, with A on top, and LOAD and RESET below:
 
 {% circuit name: loadable-flip-flop-block, width: 440, instructions: enlarged %}
 
-Its clock starts paused, and Q starts at 0:
+The clock in this diagram starts paused, and Q starts at 0:
 
 1. Set A to 1: Q stays 0.
 2. Turn LOAD on: Q becomes 1 at once.
@@ -1086,8 +1095,6 @@ Built out of loadable bits instead of plain flip-flops, the
 [counter](#flip-flops-with-preset-and-clear) can jump.
 
 {% circuit name: loadable-counter, width: 820 %}
-
-Its clock runs:
 
 1. Watch it count, reading Q2 Q1 Q0 from right to left: `000`, `001`, `010`, and
    so on up to `111`, then `000` again.
@@ -1234,7 +1241,7 @@ to 18 ticks of its clock. The step counter is reset as soon as an instruction is
 done, and the gates turning instructions and steps into control signals become
 very many. Built of gates, such a control unit is called **hardwired**.
 
-{% note type: more %}
+{% callout type: more, id: microcode %}
 
 Many processors use **microcode** instead: a small memory inside the control
 unit, addressed by the operation code and the step, whose cells each hold the
@@ -1245,7 +1252,7 @@ instead of rewiring gates. Modern x86-64 processors decode their simple
 instructions with gates and run microcode for the complex ones, and their
 microcode can be updated to fix bugs, including security flaws.
 
-{% endnote %}
+{% endcallout %}
 
 {% cols columns: 5 %}
 
