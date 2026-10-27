@@ -312,9 +312,17 @@ set, either ahead of time or as it runs. Examples: C, Go, Rust, Java, Erlang.
 
 An **interpreter** works differently: it is itself a program made of
 instructions, which reads your program as data and does what it says. Examples:
-Python, PHP, Ruby, JavaScript, Bash.
+Python, PHP, Ruby, Bash.
 
 Either way, what the processor runs is instructions.
+
+{% note type: more %}
+
+Modern CPUs have instructions and hardware for multiplication and division, and
+even for floating-point numbers or much more complex operations like hashing or
+encryption.
+
+{% endnote %}
 
 ### The machine
 
