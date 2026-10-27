@@ -466,7 +466,7 @@ address, which never leaves the server (it could if you used an IP address).
 This is the architecture of the [SFTP deployment]({% link
 chapters/410-sftp-deployment/exercise.md %}#architecture), as you ran it:
 
-{% include diagrams/410-running.html %}
+{% include diagrams/410-running-app.html %}
 
 An architecture diagram like this one draws processes and the connections
 between them, and leaves the machine out. Everything in this chapter is still
