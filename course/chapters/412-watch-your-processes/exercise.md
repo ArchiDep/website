@@ -429,22 +429,24 @@ is done. Try it on `sleep`:
 
 ```bash
 $> time sleep 2
-```
-
-`time` reports three durations. `real` is the time that passed on a clock. What
-do you think `user` and `sys` are, and why are they so small?
-
-{% solution title: "Check your answer", emoji: thinking, reveal: always %}
-
-```bash
-$> time sleep 2
 
 real    0m2.003s
 user    0m0.001s
 sys     0m0.002s
 ```
 
-`user` and `sys` are the time **the processor spent running the process**.
+`time` reports three durations:
+
+- `real` is the time that passed on a clock, from the start of the command to
+  its end.
+- `user` and `sys` are the time **the processor spent running the process**.
+  What separates the two comes later in this part.
+
+`sleep` ran for 2 seconds, yet the processor worked for it for only a few
+thousandths of a second. Why do you think `user` and `sys` are so small?
+
+{% solution title: "Check your answer", emoji: thinking, reveal: always %}
+
 `sleep` waited for 2 seconds, and a process that waits does not use the
 processor at all.
 
@@ -554,9 +556,18 @@ user    0m5.007s
 sys     0m0.159s
 ```
 
+On a server with two cores, running three commands:
+
+```bash
+real    0m10.004s
+user    0m6.552s
+sys     0m0.213s
+```
+
 `real` is still 10 seconds, since `timeout` stops each command after 10 seconds.
-But `user` is about **half** of what it was for a single command. On a server
-with two cores running three commands, it is about two thirds instead.
+But `user` is less than it was for a single command: about **half** of it with
+two commands on one core, and about **two thirds** with three commands on two
+cores.
 
 {% endsolution %}
 
