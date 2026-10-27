@@ -1670,11 +1670,26 @@ instruction, or to stop counting when the program is finished.
 
 ## Running a program
 
+---
+
+### What binary can represent
+
+<ul class="text-4xl">
+  <li>Numbers</li>
+  <li>Gray levels</li>
+  <li>Colors</li>
+  <li>Images</li>
+  <li>Videos</li>
+  <li>Text</li>
+  <li class="fragment"><strong>Instructions</strong></li>
+</ul>
+
 **Notes:**
 
-We mentioned that binary data can represent numbers, colors, images, videos, and
-text. There is one thing we left out: a computer can also run a program, which
-is a sequence of instructions that tell it what to do.
+We saw that binary data can represent numbers, gray levels, colors, images,
+videos and text. There is one thing we left out: a computer can also run a
+program, which is a sequence of instructions that tell it what to do. Those
+instructions are binary data too, stored in memory like everything else.
 
 ---
 
