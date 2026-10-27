@@ -595,6 +595,30 @@ Most programming languages write it `^`. For two booleans, it is the same as
 
 ---
 
+### The first bug that was caught (1947)
+
+<img src="images/bug.jpg" alt="A page of the Harvard Mark II's log book, with a moth taped to it" class="mx-auto h-120">
+
+**Notes:**
+
+Early computers were built out of relays like the ones of the previous circuits:
+they are called **electromechanical** computers, because their switches are
+moved by electromagnets.
+
+On 9 September 1947, the operators of the Harvard Mark II, a relay computer,
+found a moth trapped between the contacts of relay number 70, which stopped it
+from working. They taped the moth into the machine's log book, with the note
+"First actual case of bug being found".
+
+Engineers already called a fault a "bug" before that, which is the joke of the
+note: this time, it was a real one. Debugging these computers could mean
+finding the actual insect in the machine.
+
+_Picture: Naval Surface Warfare Center, Dahlgren, 1988, public domain, from
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:First_Computer_Bug,_1947.jpg)_
+
+---
+
 ### The buffer and NOT symbols
 
 <!-- .element: class="corner-title" -->
@@ -693,30 +717,6 @@ and B, with their truth tables:
 - **XOR** is 1 when exactly one input is 1.
 
 Each gate stands for a relay circuit like the ones before.
-
----
-
-### The first bug that was caught (1947)
-
-<img src="images/bug.jpg" alt="A page of the Harvard Mark II's log book, with a moth taped to it" class="mx-auto h-120">
-
-**Notes:**
-
-Early computers were built out of relays like the ones of the previous circuits:
-they are called **electromechanical** computers, because their switches are
-moved by electromagnets.
-
-On 9 September 1947, the operators of the Harvard Mark II, a relay computer,
-found a moth trapped between the contacts of relay number 70, which stopped it
-from working. They taped the moth into the machine's log book, with the note
-"First actual case of bug being found".
-
-Engineers already called a fault a "bug" before that, which is the joke of the
-note: this time, it was a real one. Debugging these computers could mean
-finding the actual insect in the machine.
-
-_Picture: Naval Surface Warfare Center, Dahlgren, 1988, public domain, from
-[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:First_Computer_Bug,_1947.jpg)_
 
 ---
 
