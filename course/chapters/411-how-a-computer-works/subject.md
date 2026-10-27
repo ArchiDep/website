@@ -144,12 +144,12 @@ There is no magic in a computer, only **switches controlled by electricity**.
 Say that **1 means current and 0 means no current**: a switch whose current
 closes another switch can make one bit control another. Wired in different
 ways, such switches make the operations of Boolean logic, the `!`, `&&` and `||`
-of your programming languages, which are called **logic gates**. Here, two
-switches in a row make AND: the lamp is lit only when A and B are both 1.
+of your programming languages, which are called **logic gates**.
 
 {% circuit name: relay-and, width: 420 %}
 
-Click the switches to try it.
+Here, two switches in a row make AND: the lamp is lit only when A and B are
+both 1. Click the switches to try it.
 
 {% endcircuit %}
 
