@@ -1289,6 +1289,24 @@ Any cell can be reached directly by its address, in any order. This is the
 
 ---
 
+### A 2-bit address gives a 4-bit memory
+
+<div class="grid grid-cols-4 gap-2 font-mono">
+  <div class="border p-2">00</div>
+  <div class="border p-2">01</div>
+  <div class="border p-2">10</div>
+  <div class="border p-2">11</div>
+</div>
+
+**Notes:**
+
+The addressable memory that was just shown, seen from the outside. Its 2 address
+bits give 2² possibilities, which is 4 addresses: `00`, `01`, `10` and `11`.
+Each address leads to a single D latch, so each one stores one bit, and the
+whole memory stores 4 bits.
+
+---
+
 ### A 4-bit address gives a 16-byte memory
 
 <div class="grid grid-cols-4 gap-2 font-mono">
