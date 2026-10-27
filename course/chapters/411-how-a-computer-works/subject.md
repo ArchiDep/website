@@ -162,9 +162,13 @@ transistors on one chip. The logic does not depend on what the switches are made
 of.
 
 The sum and carry above are two logic gates: the sum is **XOR**, "exclusive or"
-(A or B, but not both), and the carry is **AND**. Together, they add two bits:
+(A or B, but not both), and the carry is **AND**. Together, they add two bits.
 
 {% circuit name: half-adder, width: 700 %}
+
+Click A and B to try it: with one of them at 1, SUM is 1. Set both to 1, and
+SUM goes back to 0 while the carry, `Cout`, becomes 1.
+
 {% endcircuit %}
 
 Chain such circuits, one per column, and you have an adder. Wired in other ways,
@@ -186,11 +190,12 @@ cell has a number: its **address**. The processor reads or writes a cell by
 giving its address. Any cell can be reached directly, in any order, which is the
 "random access" of **RAM**, random access memory.
 
+{% circuit name: d-latch-block, width: 480 %}
+
 Each bit of a cell is a small circuit that keeps the last value it was given.
 This one stores DATA while WRITE is 1, and keeps it once WRITE is back to 0,
-whatever DATA does afterwards:
+whatever DATA does afterwards.
 
-{% circuit name: d-latch-block, width: 480 %}
 {% endcircuit %}
 
 The number of bits in an address decides how many cells can be reached. A 4-bit
