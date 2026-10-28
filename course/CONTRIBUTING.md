@@ -1283,8 +1283,9 @@ The `npm run screenshot` script
 of the course material as the running dev server shows it, with
 [Puppeteer][puppeteer]: a slide, a step of what a slide reveals, an
 [architecture diagram](#architecture-diagrams) of a page, enlarged or not, at
-any of its steps, or a code block of a page. It is for checking a change to a
-slide, a diagram or the highlighting of code without stepping or scrolling to it
+any of its steps, a code block of a page, or a page with the pointer over one of
+its elements. It is for checking a change to a slide, a diagram, the
+highlighting of code or a tooltip without stepping, scrolling or pointing to it
 by hand.
 
 ```bash
@@ -1301,6 +1302,9 @@ npm run screenshot -- 411 --diagram machine --enlarged --step 9
 
 # The 18th and 20th code blocks of the page, counted from the top
 npm run screenshot -- 101 --code 18,20
+
+# The window with the pointer over a link, to see its tooltip
+npm run screenshot -- 411 --hover 'a[data-tip="Source code"]' --size 1600x900
 ```
 
 A chapter is named by its number or its slug. A step is the number of steps

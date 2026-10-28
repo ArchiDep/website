@@ -186,13 +186,13 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
           <nav class="toc min-h-0 overflow-y-auto overscroll-contain" aria-labelledby="on-this-page-title">
             #{Keyword.get(parts, :toc, toc_markup([@entry]))}
           </nav>
-          <div class="shrink-0 max-h-[calc(100dvh-var(--aside-top,0px)-12rem)] overflow-y-auto overscroll-contain">
-            <div class="my-4 pl-4 flex items-center gap-4">
-              #{Keyword.get(parts, :page_pdf, "")}
-              #{Keyword.get(parts, :deck_pdf, "")}
-              #{Keyword.get(parts, :source, source_markup(@source))}
-            </div>
+          <div class="shrink-0 my-4 pl-4 flex items-center gap-4">
+            #{Keyword.get(parts, :page_pdf, "")}
+            #{Keyword.get(parts, :deck_pdf, "")}
+            #{Keyword.get(parts, :source, source_markup(@source))}
+          </div>
 
+          <div class="shrink-0 max-h-[calc(100dvh-var(--aside-top,0px)-15.5rem)] overflow-y-auto overscroll-contain">
             #{Keyword.get(parts, :aside_cloud_server, "")}
 
             <a href="#top" id="back-to-top-side" class="btn btn-ghost btn-sm">
@@ -239,14 +239,14 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.ArticleTest do
   defp download_markup(url, tooltip, name),
     do:
       ~s(<a href="#{url}" class="tooltip" data-tip="#{tooltip}" download>\n) <>
-        ~s(            #{icon(name, "size-6 opacity-50 hover:opacity-100")}\n) <>
-        ~s(          </a>)
+        ~s(          #{icon(name, "size-6 opacity-50 hover:opacity-100")}\n) <>
+        ~s(        </a>)
 
   defp source_markup(url),
     do:
       ~s(<a href="#{url}" class="tooltip" data-tip="Source code" target="_blank" rel="noopener noreferrer">\n) <>
-        ~s(            #{github()}\n) <>
-        ~s(          </a>)
+        ~s(          #{github()}\n) <>
+        ~s(        </a>)
 
   defp github,
     do: %{class: "size-6 opacity-50 hover:opacity-100"} |> Icons.github() |> Html.render()

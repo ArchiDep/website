@@ -1,7 +1,7 @@
 // Screenshots of the course material as the running dev server shows it: a
 // slide, a step of the diagram on it, a diagram of a page, enlarged or not, at
-// any of its steps, or a code block of a page. See "Screenshots" in
-// `course/CONTRIBUTING.md`.
+// any of its steps, a code block of a page, or a page with the pointer over one
+// of its elements. See "Screenshots" in `course/CONTRIBUTING.md`.
 import { execFile } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -25,6 +25,9 @@ const USAGE = `Usage: npm run screenshot -- <chapter> [options]
   --enlarged            In the page, the diagram enlarged in the lightbox
   --code <n[,n...]>     In the page, the nth code block (from 1), one shot
                         each; repeatable
+  --hover <selector>    In the page, the window with the pointer over the
+                        first element matching the CSS selector, such as a
+                        tooltip's link
   --step <n[,n...]>     With n steps reached (0: none), one shot each;
                         repeatable. Without it, a page's diagram is fully
                         drawn and a slide is as it is arrived at
@@ -49,6 +52,7 @@ const { values, positionals } = parseArgs({
     diagram: { type: 'string' },
     enlarged: { type: 'boolean', default: false },
     code: { type: 'string', multiple: true },
+    hover: { type: 'string' },
     step: { type: 'string', multiple: true },
     size: { type: 'string', default: '1280x800' },
     scale: { type: 'string', default: '1' },
@@ -126,6 +130,15 @@ if (
   (values.diagram !== undefined || values.step !== undefined)
 ) {
   fail('--code shoots a code block, which has no diagram and no steps');
+}
+if (
+  values.hover !== undefined &&
+  (values.slides ||
+    values.diagram !== undefined ||
+    values.step !== undefined ||
+    codeBlocks.length !== 0)
+) {
+  fail('--hover is for a page alone, without a diagram, steps or code blocks');
 }
 
 const baseUrl = values['base-url'];
@@ -324,9 +337,11 @@ function deckShot(slide: string | undefined, step: number | undefined): Shot {
 
 function pageShot(step: number | undefined): Shot {
   const diagram = values.diagram;
+  const hover = values.hover;
   const name =
     `${doc.num}-${diagram ?? 'page'}${values.enlarged ? '-enlarged' : ''}` +
-    (step === undefined ? '' : `-step-${step}`);
+    (step === undefined ? '' : `-step-${step}`) +
+    (hover === undefined ? '' : '-hover');
   return {
     label: name,
     take: async page => {
@@ -337,6 +352,18 @@ function pageShot(step: number | undefined): Shot {
       await page.goto(new URL(doc.url, baseUrl).toString(), {
         waitUntil: 'load'
       });
+
+      // What a hover shows is drawn where the pointer is, in the window: a
+      // full-page shot would also move sticky elements, such as the sidebar.
+      if (hover !== undefined) {
+        const target = await page.$(hover);
+        if (target === null) {
+          throw new Error(`Nothing in the page matches ${hover}`);
+        }
+        await target.hover();
+        await settle(page);
+        return { name, image: await page.screenshot() };
+      }
 
       if (diagram === undefined) {
         await settle(page);

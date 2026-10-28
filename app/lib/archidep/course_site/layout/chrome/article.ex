@@ -39,7 +39,9 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
   exercise, which matters more than seeing every heading at once. A long list of
   headings scrolls on its own instead. If the card is so tall that it would
   leave the headings almost no room, it scrolls on its own too, so neither part
-  is pushed off the screen.
+  is pushed off the screen. The download and source links between the two never
+  scroll: a block that scrolls clips whatever reaches out of it, such as the
+  tooltips that open above those links.
 
   Until the aside sticks, its top is below the header, by an amount only the
   browser knows; `course/src/assets/course/aside.ts` writes it into
@@ -142,38 +144,38 @@ defmodule ArchiDep.CourseSite.Layout.Chrome.Article do
           >
             <Toc.toc entries={@page.toc} />
           </nav>
-          <div class="shrink-0 max-h-[calc(100dvh-var(--aside-top,0px)-12rem)] overflow-y-auto overscroll-contain">
-            <div class="my-4 pl-4 flex items-center gap-4">
-              <a
-                :if={@page.links[:page_pdf]}
-                href={@page.links[:page_pdf]}
-                class="tooltip"
-                data-tip={@page.pdf_tooltip}
-                download
-              >
-                <Heroicons.document_arrow_down class="size-6 opacity-50 hover:opacity-100" />
-              </a>
-              <a
-                :if={@page.links[:deck_pdf]}
-                href={@page.links[:deck_pdf]}
-                class="tooltip"
-                data-tip="Slides PDF"
-                download
-              >
-                <Heroicons.presentation_chart_line class="size-6 opacity-50 hover:opacity-100" />
-              </a>
-              <a
-                :if={@page.links[:source]}
-                href={@page.links[:source]}
-                class="tooltip"
-                data-tip="Source code"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Icons.github class="size-6 opacity-50 hover:opacity-100" />
-              </a>
-            </div>
+          <div class="shrink-0 my-4 pl-4 flex items-center gap-4">
+            <a
+              :if={@page.links[:page_pdf]}
+              href={@page.links[:page_pdf]}
+              class="tooltip"
+              data-tip={@page.pdf_tooltip}
+              download
+            >
+              <Heroicons.document_arrow_down class="size-6 opacity-50 hover:opacity-100" />
+            </a>
+            <a
+              :if={@page.links[:deck_pdf]}
+              href={@page.links[:deck_pdf]}
+              class="tooltip"
+              data-tip="Slides PDF"
+              download
+            >
+              <Heroicons.presentation_chart_line class="size-6 opacity-50 hover:opacity-100" />
+            </a>
+            <a
+              :if={@page.links[:source]}
+              href={@page.links[:source]}
+              class="tooltip"
+              data-tip="Source code"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icons.github class="size-6 opacity-50 hover:opacity-100" />
+            </a>
+          </div>
 
+          <div class="shrink-0 max-h-[calc(100dvh-var(--aside-top,0px)-15.5rem)] overflow-y-auto overscroll-contain">
             <div :if={@page.cloud_server} class="cloud-server-data" data-mode={@page.cloud_server}>
             </div>
 
