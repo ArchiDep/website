@@ -22,7 +22,8 @@ Both cover what a byte can mean (a number, a gray level, an 8-bit color, a pixel
 of an image or video, an ASCII or UTF-8 character) and that transforming data is
 arithmetic; binary addition; the instruction set of the 8-bit machine, a small
 JavaScript multiplication turned into its instructions, compilers and
-interpreters; the machine stepping through that program; booting; what the
+interpreters; the machine stepping through that program; sequence, selection and
+iteration, which its instructions are enough for; booting; what the
 operating system does; and the four channels between isolated processes.
 
 The subject page alone has "A particular place, at a particular time", the
@@ -87,6 +88,10 @@ beyond the figures of "What's in the box?".
 - **Instruction set**, **operation code** (opcode), and the
   **fetch, decode, execute** cycle. The three kinds of instructions: moving
   data, computing, and deciding which instruction runs next (jumps).
+- **Sequence, selection, iteration**: the three building blocks of every
+  program, which is why the machine's few instructions can run any program. On
+  the machine: the program counter stepping through memory, `JUMPZ`, and a
+  `JUMP` back.
 - **Compiler**: translates a program into instructions, ahead of time or as it
   runs. **Interpreter**: a program made of instructions that reads your program
   as data.

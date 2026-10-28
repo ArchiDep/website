@@ -1821,15 +1821,93 @@ On each tick of the clock, every component that holds a value takes its new
 value at the same time, so each step's result is ready, and stays put, before
 the next step uses it.
 
-These few instructions are enough for the three building blocks of structured
-programming: **sequence** (the program counter steps through instructions one at
-a time), **selection** (`JUMPZ` chooses depending on the last result) and
-**iteration** (a jump back). Every `if` and every loop comes down to such jumps.
-
 Real processors of the time were more complex. They had several registers,
 longer addresses to reach more memory, and instructions longer than one byte.
 Their ALU also never computed on a value straight from memory: it was first
 copied into a register.
+
+---
+
+### Sequence, selection, iteration
+
+<!-- Each line is 1.6em high, and each arrow's SVG is as high as its lines, at
+     10 viewBox units per em, so that the arrows meet the lines they point to. -->
+<div class="flex items-start justify-center gap-16 font-mono text-2xl">
+  <div class="flex">
+    <svg viewBox="0 0 40 112" style="width: 4em; height: 11.2em" aria-hidden="true">
+      <g class="fragment" data-fragment-index="1" fill="none" stroke="#2563eb" stroke-width="2.5">
+        <path d="M8 4 V106" />
+        <path d="M3 99 L8 108 L13 99" />
+      </g>
+      <g class="fragment" data-fragment-index="3" fill="none" stroke="#15803d" stroke-width="2.5">
+        <path d="M38 104 H24 V56 H33" />
+        <path d="M26 50 L34 56 L26 62" />
+      </g>
+    </svg>
+    <div class="text-left [&>div]:h-[1.6em] [&>div]:leading-[1.6em] [&>div]:whitespace-pre">
+      <div>let a = 3;</div>
+      <div>let counter = 2;</div>
+      <div>let result = 0;</div>
+      <div>do {</div>
+      <div>  result = result + a;</div>
+      <div>  counter = counter - 1;</div>
+      <div>} while (<span class="relative">counter !== 0<span class="fragment absolute inset-0 rounded bg-orange-400/30" data-fragment-index="2"></span></span>);</div>
+    </div>
+  </div>
+  <div class="flex">
+    <svg viewBox="0 0 40 144" style="width: 4em; height: 14.4em" aria-hidden="true">
+      <g class="fragment" data-fragment-index="1" fill="none" stroke="#2563eb" stroke-width="2.5">
+        <path d="M8 4 V138" />
+        <path d="M3 131 L8 140 L13 131" />
+      </g>
+      <g class="fragment" data-fragment-index="3" fill="none" stroke="#15803d" stroke-width="2.5">
+        <path d="M38 120 H24 V8 H33" />
+        <path d="M26 2 L34 8 L26 14" />
+      </g>
+    </svg>
+    <div class="text-left [&>div]:h-[1.6em] [&>div]:leading-[1.6em] [&>div]:whitespace-pre">
+      <div><span class="opacity-50">0 </span> LOAD 14</div>
+      <div><span class="opacity-50">1 </span> ADD 12</div>
+      <div><span class="opacity-50">2 </span> STORE 14</div>
+      <div><span class="opacity-50">3 </span> LOAD 13</div>
+      <div><span class="opacity-50">4 </span> SUB 15</div>
+      <div><span class="opacity-50">5 </span> STORE 13</div>
+      <div><span class="opacity-50">6 </span> <span class="relative">JUMPZ 8<span class="fragment absolute inset-0 rounded bg-orange-400/30" data-fragment-index="2"></span></span></div>
+      <div><span class="opacity-50">7 </span> <span class="relative">JUMP 0<span class="fragment absolute inset-0 rounded bg-green-500/30" data-fragment-index="3"></span></span></div>
+      <div><span class="opacity-50">8 </span> HALT</div>
+    </div>
+    <svg viewBox="0 0 30 144" style="width: 3em; height: 14.4em" aria-hidden="true">
+      <g class="fragment" data-fragment-index="2" fill="none" stroke="#d9480f" stroke-width="2.5">
+        <path d="M4 104 H20 V136 H5" />
+        <path d="M12 130 L4 136 L12 142" />
+      </g>
+    </svg>
+  </div>
+</div>
+
+<div class="flex justify-center gap-12 text-3xl font-bold">
+  <span class="fragment text-blue-600" data-fragment-index="1">Sequence</span>
+  <span class="fragment text-[#d9480f]" data-fragment-index="2">Selection</span>
+  <span class="fragment text-green-700" data-fragment-index="3">Iteration</span>
+</div>
+
+**Notes:**
+
+These few instructions are enough to run any program, because every program, in
+any language, is built of three building blocks:
+
+- **Sequence**: instructions run one after the other. On the machine, the
+  program counter steps through memory, one address at a time.
+- **Selection**: the program chooses between two paths, depending on a value.
+  On the machine, `JUMPZ 8` leaves the loop if the counter has reached 0, and
+  otherwise lets the next instruction run. Every `if` is a selection.
+- **Iteration**: the program goes back to repeat instructions. On the machine,
+  `JUMP 0` goes back to the start of the loop, and `JUMPZ` decides when to stop.
+  Every loop is an iteration.
+
+In JavaScript, the `while` of the `do` loop is both a selection and an
+iteration: its condition chooses whether to go back. The machine splits it into
+two jumps.
 
 ---
 

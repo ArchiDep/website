@@ -342,6 +342,34 @@ its data fit in that memory. It is also conceptually very close to the
 processors of the 1970s, such as the [Intel
 8080][intel-8080].
 
+A handful of instructions is enough because every program, in any language, is
+built of three building blocks, and the machine has all three:
+
+- **Sequence**: instructions run one after the other, as the program counter
+  steps through memory.
+- **Selection**: the program chooses between two paths, depending on a value.
+  `JUMPZ` jumps or not, depending on the last result. Every `if` is a
+  selection.
+- **Iteration**: the program goes back to repeat instructions. `JUMP` goes back
+  to an earlier address, and a `JUMPZ` decides when to stop. Every loop is an
+  iteration.
+
+In the multiplication, the body of the loop is a sequence, and its
+`while (counter !== 0)` is both a selection and an iteration: it chooses whether
+to go back to `do`. The machine splits it into two jumps: `JUMPZ 8` leaves the
+loop when the counter reaches 0, and `JUMP 0` goes back to its start.
+
+{% note type: more %}
+
+That these three building blocks are enough is the [**structured program
+theorem**][structured-program-theorem], proved by Corrado Böhm and Giuseppe
+Jacopini in 1966. It became the basis of [**structured
+programming**][structured-programming], which, from the late 1960s, replaced the
+`goto` of early languages, a jump to any line of a program, with `if`s and
+loops.
+
+{% endnote %}
+
 ### A particular place, at a particular time
 
 This is the one thing to take away from the machine: **a running program is
@@ -1665,6 +1693,8 @@ once, and then someone has to set all the dominoes up again.
 [pipelining]: https://en.wikipedia.org/wiki/Instruction_pipelining
 [rosetta]: https://en.wikipedia.org/wiki/Rosetta_(software)
 [spectre-meltdown]: https://meltdownattack.com
+[structured-program-theorem]: https://en.wikipedia.org/wiki/Structured_program_theorem
+[structured-programming]: https://en.wikipedia.org/wiki/Structured_programming
 [umd-redstone]: https://www.cs.umd.edu/class/fall2021/cmsc389E/digital-logic-computer-architecture-minecraft/
 [utf8]: https://en.wikipedia.org/wiki/UTF-8
 [virtual-memory]: https://en.wikipedia.org/wiki/Virtual_memory
