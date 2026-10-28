@@ -1016,13 +1016,14 @@ flip-flops have to be forced to a value at once, whatever their clock does.
 
 {% circuit name: d-flip-flop-preset-clear %}
 
-The clock in this diagram starts paused, and Q starts at 0:
+The clock in this diagram starts paused:
 
-1. Turn PRESET on: Q becomes 1 at once, while CLK stays at 0.
-2. Turn PRESET off: Q stays 1.
-3. Turn CLEAR on: Q becomes 0 at once.
-4. Turn CLEAR off: Q stays 0.
-5. Set DATA to 1, then raise CLK: Q becomes 1, as with any D flip-flop.
+1. As in any D flip-flop, Q follows DATA only when CLK rises from 0 to 1: set
+   DATA to 1, then raise CLK, and Q becomes 1.
+2. With DATA at 1, turn CLEAR on: Q becomes 0 at once. Lower and raise CLK: Q
+   stays 0.
+3. Set DATA to 0, then turn CLEAR off: Q stays 0. Turn PRESET on: Q becomes 1 at
+   once, and stays 1 whatever CLK does.
 
 {% endcircuit %}
 
@@ -1041,31 +1042,32 @@ make both Q and Q̅ 0.
 
 The same flip-flop drawn as a box, with PRESET on top and CLEAR below:
 
-{% circuit name: d-flip-flop-preset-clear-block, width: 480, instructions: enlarged %}
+{% circuit name: d-flip-flop-preset-clear-block, clock: running, width: 480, instructions: enlarged %}
 
-The clock in this diagram starts paused, and Q starts at 0:
+The clock runs on its own in this diagram:
 
-1. Turn PRESET on: Q becomes 1 at once, while CLK stays at 0.
-2. Turn PRESET off: Q stays 1.
-3. Turn CLEAR on: Q becomes 0 at once.
-4. Turn CLEAR off: Q stays 0.
-5. Set DATA to 1, then raise CLK: Q becomes 1, as with any D flip-flop.
+1. As in any D flip-flop, Q follows DATA only when CLK rises from 0 to 1: set
+   DATA to 1, and Q becomes 1 the next time CLK rises.
+2. With DATA at 1, turn CLEAR on: Q becomes 0 at once, and stays 0 whatever CLK
+   does.
+3. Set DATA to 0, then turn CLEAR off: Q stays 0. Turn PRESET on: Q becomes 1 at
+   once, and stays 1 whatever CLK does.
 
 {% endcircuit %}
 
 **A loadable bit** uses preset and clear to load any value, 0 or 1, straight
 away.
 
-{% circuit name: loadable-flip-flop, width: 600 %}
+{% circuit name: loadable-flip-flop, clock: running, width: 600 %}
 
-The clock in this diagram starts paused, and Q starts at 0:
+The clock runs on its own in this diagram:
 
-1. Set A to 1: Q stays 0.
-2. Turn LOAD on: Q becomes 1 at once.
-3. Set A to 0: Q becomes 0. Set A back to 1: Q becomes 1.
-4. Turn LOAD off, then set A to 0: Q stays 1.
-5. Turn RESET on: Q becomes 0.
-6. Turn RESET off: Q stays 0.
+1. As in any D flip-flop, Q follows DATA only when CLK rises from 0 to 1: set
+   DATA to 1, and Q becomes 1 the next time CLK rises.
+2. With DATA at 1 and A at 0, turn LOAD on: Q becomes 0 at once. Set A to 1: Q
+   becomes 1 at once. While LOAD is on, Q follows A whatever DATA and CLK do.
+3. With DATA at 1, turn LOAD off: Q stays 1. Turn RESET on: Q becomes 0 at once,
+   and stays 0 whatever DATA and CLK do.
 
 {% endcircuit %}
 
@@ -1074,18 +1076,19 @@ flip-flop when A is 1, and clears it when A is 0. As long as LOAD is on, the
 flip-flop follows A. RESET clears it, whatever A is. When neither is on, the
 flip-flop is left alone, and works with its clock like any other.
 
-The loadable bit drawn as a box, with A on top, and LOAD and RESET below:
+This is the same loadable bit drawn as a box, with A on top, and LOAD and RESET
+below:
 
-{% circuit name: loadable-flip-flop-block, width: 440, instructions: enlarged %}
+{% circuit name: loadable-flip-flop-block, clock: running, width: 440, instructions: enlarged %}
 
-The clock in this diagram starts paused, and Q starts at 0:
+The clock runs on its own in this diagram:
 
-1. Set A to 1: Q stays 0.
-2. Turn LOAD on: Q becomes 1 at once.
-3. Set A to 0: Q becomes 0. Set A back to 1: Q becomes 1.
-4. Turn LOAD off, then set A to 0: Q stays 1.
-5. Turn RESET on: Q becomes 0.
-6. Turn RESET off: Q stays 0.
+1. As in any D flip-flop, Q follows DATA only when CLK rises from 0 to 1: set
+   DATA to 1, and Q becomes 1 the next time CLK rises.
+2. With DATA at 1 and A at 0, turn LOAD on: Q becomes 0 at once. Set A to 1: Q
+   becomes 1 at once. While LOAD is on, Q follows A whatever DATA and CLK do.
+3. With DATA at 1, turn LOAD off: Q stays 1. Turn RESET on: Q becomes 0 at once,
+   and stays 0 whatever DATA and CLK do.
 
 {% endcircuit %}
 
@@ -1096,12 +1099,12 @@ Built out of loadable bits instead of plain flip-flops, the
 
 {% circuit name: loadable-counter, width: 820 %}
 
-1. Watch it count, reading Q2 Q1 Q0 from right to left: `000`, `001`, `010`, and
-   so on up to `111`, then `000` again.
-2. Set A2 to 1, A1 to 0 and A0 to 1, which is `101`, 5: the count goes on as
-   before.
-3. Turn LOAD on, and leave it on for a few ticks: Q2 Q1 Q0 show `101`, and stay
-   there whatever the clock does.
+1. Watch it count, reading Q2, Q1, Q0 from right to left: `000`, `001`, `010`,
+   and so on up to `111`, then `000` again.
+2. Set A2 to 1, A1 to 0 and A0 to 1, which is `101`, 5: this has no effect on
+   Q2, Q1 or Q0. The count goes on as before.
+3. Turn LOAD on, and leave it on for a few ticks: Q2, Q1, Q0 show `101`, and
+   stay there whatever the clock does.
 4. Turn LOAD off: the counter counts on from `101`: `110`, `111`, `000`, and so
    on.
 5. Turn RESET on, and leave it on for a few ticks: Q2 Q1 Q0 show `000`, and stay
