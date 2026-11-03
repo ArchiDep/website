@@ -152,7 +152,7 @@ diff` or `git log -p`, is computed by comparing two snapshots, which is also
 
 ## Used in
 
-Most of the course: from "Deploy a PHP application with Git" on, deployments get
+Most of the course: from "Deploy a web application with Git" on, deployments get
 their code with Git, and "Collaborating with Git" is this subject applied
 between copies of a repository. Parts that later chapters lean on in particular:
 
@@ -163,7 +163,9 @@ between copies of a repository. Parts that later chapters lean on in particular:
   merge, and a conflict is a three-way merge on lines both sides changed. "Hello
   GitHub" and "Guess It" practise it on a group's repository, which later
   deployments start from.
-- "Deploy a PHP application with Git" clones and pulls on the server.
+- "Deploy a web application with Git" clones on the server, and shows a
+  configuration edited on the server as a modified file of the working
+  directory.
 - "Git Hooks" puts scripts in the Git directory (`.git/hooks`), which is why
   hooks are not versioned.
 - "Set up an automated deployment with Git hooks" uses a bare repository, a Git

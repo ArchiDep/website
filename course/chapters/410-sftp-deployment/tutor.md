@@ -58,8 +58,9 @@ flaws:
   runs where, and in which memory.
 - "How to improve our basic deployment" lists the flaws of this deployment,
   development mode and the upload of `node_modules` among them.
-- "Deploy a PHP application with Git" replaces the SFTP upload, and installs the
-  dependencies on the server.
+- "Deploy a web application with Git" replaces the SFTP upload with a clone in
+  `/srv/guessit`, installs the dependencies on the server, and reuses this
+  deployment's database, its password and its `guessit-ex` directory.
 - "Configure a PHP application through environment variables" moves the
   password out of `server.js`.
 - "Manage a PHP application with systemd as a Process Manager" keeps the
