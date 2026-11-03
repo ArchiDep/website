@@ -2,5 +2,6 @@
 --ignore-dir=cover
 --ignore-dir=deps
 --ignore-dir=.elixir_ls
+--ignore-file=ext:svg
 --ignore-file=is:erl_crash.dump
 --ignore-dir=priv/static

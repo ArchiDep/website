@@ -5,6 +5,7 @@
 --ignore-dir=app/priv/static
 --ignore-dir=digest/deps
 --ignore-dir=tmp
+--ignore-file=ext:svg
 --ignore-file=is:erl_crash.dump
 --ignore-file=is:mix.lock
 --ignore-file=is:package-lock.json
