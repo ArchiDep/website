@@ -38,7 +38,7 @@ To run on your machine:
 
 - [Elixir][elixir] 1.20.x
 - [Erlang/OTP][erlang] 29.x
-- [Node.js][node] 24.x
+- [Node.js][node] 26.x
 - [PostgreSQL][postgresql] 17.x
 - `ssh-keygen` to generate a key pair
 
