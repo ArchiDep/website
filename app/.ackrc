@@ -5,3 +5,4 @@
 --ignore-file=ext:svg
 --ignore-file=is:erl_crash.dump
 --ignore-dir=priv/static
+--ignore-dir=tmp
