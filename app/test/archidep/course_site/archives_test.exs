@@ -58,6 +58,7 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   @branching_in_2025 "/course/202-git-branching/slides/"
   @git_slides "/course/201-git/slides/"
   @collaborating_subject "/course/203-git-collaborating/"
+  @process_management_slides "/course/505-linux-process-management/slides/"
 
   describe "mapping/0" do
     test "answers for every page every edition published, with the page that succeeded it" do
@@ -160,12 +161,14 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   # 2025 published "Shell Scripting" as a chapter, so its manifest lists it
   # among them, right after the command line pages, rather than among the
   # cheatsheets where the course holds it now. "Collaborating with Git" was only
-  # a deck in 2025, so its subject is not among them.
+  # a deck in 2025, so its subject is not among them, and "Process Management on
+  # Linux" had no deck, so neither is that.
   defp pages_of_2025 do
     {command_line, rest} =
       current_pages()
       |> Enum.reject(
-        &(&1 == @shell_scripting or PageRef.output_path(&1) == @collaborating_subject)
+        &(&1 == @shell_scripting or
+            PageRef.output_path(&1) in [@collaborating_subject, @process_management_slides])
       )
       |> Enum.split_while(&command_line_page?/1)
 

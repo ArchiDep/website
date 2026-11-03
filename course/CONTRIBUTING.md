@@ -315,6 +315,12 @@ to extract metadata from filenames and directory structures.
   - A subject can also have accompanying slides. In this case, place a `slides`
     subdirectory next to the `subject.md` file, and put the `slides.md` file
     inside it.
+  - Adding, removing, renaming or renumbering a page — a chapter, a deck, a
+    cheatsheet — changes what the edition being taught publishes, so its
+    archive manifest is [recorded again][edition-manifest] in the same change.
+    Adding one that a finished edition never had also means telling
+    [`ArchivesTest`](../app/test/archidep/course_site/archives_test.exs), which
+    derives each finished edition's pages from the current ones.
   - Subjects, slides and exercices can have additional files, such as images or
     data files, placed in an `images` subdirectory next to their respective
     Markdown files.
@@ -1401,6 +1407,7 @@ agents.
 [io-ts-docs]: https://github.com/gcanti/io-ts/blob/master/index.md
 [simgit]: https://github.com/AlphaHydrae/simgit
 [course-site-structure]: ../app/lib/archidep/course_site/structure.ex
+[edition-manifest]: ../docs/rollover.md#what-the-new-edition-owes
 [emoji]: ../app/lib/archidep/emoji.ex
 [liquid]: https://shopify.github.io/liquid/
 [phoenix]: https://hexdocs.pm/phoenix/Phoenix.Channel.html

@@ -241,6 +241,12 @@
       "slug": "linux-process-management"
     },
     {
+      "path": "/course/505-linux-process-management/slides/",
+      "kind": "chapter_slides",
+      "num": 505,
+      "slug": "linux-process-management"
+    },
+    {
       "path": "/course/506-systemd-deployment/",
       "kind": "chapter",
       "num": 506,

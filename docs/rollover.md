@@ -299,7 +299,7 @@ rename, not at the next rollover.
 
 **The edition being taught owes nothing here.** `course/archives` holds a
 manifest for it too, and that one is not a record of anything finished: it is
-the current course, and it moves with it. So a page of it that has been
+the current course, and it moves with it. So a page of it that has been added,
 renumbered or renamed is not declared in `archives.yml` — which would refuse it
 as an override of a page that edition never published — but recorded again:
 
