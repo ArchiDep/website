@@ -205,7 +205,6 @@ evaluation. It also indicates what you do not need to remember by heart.
   - What an exit status is and what is the difference between and exit status
     of zero and a non-zero exit status.
   - What a Unix pipeline is and the syntax used to pipe commands together.
-  - What a Unix signal is and what the `kill` command does.
 
   You do not need to know:
   - The `ps`, `top`, `htop` and `free` commands.
@@ -214,7 +213,6 @@ evaluation. It also indicates what you do not need to remember by heart.
     standard output and standard error).
   - What stream redirection is.
   - The commands used in the pipeline exercise.
-  - The list of Unix signals, or how to trap signals.
 
 - [Unix networking](https://archidep.ch/course/406-unix-networking/)
 
@@ -258,6 +256,7 @@ evaluation. It also indicates what you do not need to remember by heart.
   You must know:
   - What a process manager is and that operating systems usually have one
     built in.
+  - What a Unix signal is and what the `kill` command does.
   - That Systemd is the standard process management tool on many Linux systems
     like Ubuntu.
   - That Systemd uses unit files to configure process management.
@@ -266,6 +265,7 @@ evaluation. It also indicates what you do not need to remember by heart.
 
   You do not need to know:
   - The list of process managers or lightweight process managers.
+  - The list of Unix signals, or how to trap signals.
   - The syntax of unit files or their location.
   - The syntax of systemd commands (`systemctl` and `journalctl`).
 

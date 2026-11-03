@@ -1111,9 +1111,10 @@ regularly updated. But new command line tools are also being developed today:
 [procs]: https://github.com/dalance/procs
 [rust]: https://www.rust-lang.org
 [semipredicate]: https://en.wikipedia.org/wiki/Semipredicate_problem
-[signals]: https://en.wikipedia.org/wiki/Signal_(IPC)
 [sleep]: https://linux.die.net/man/1/sleep
 [streams]: https://en.wikipedia.org/wiki/Standard_streams
 [top]: https://linux.die.net/man/1/top
 [unix-philosophy]: https://en.wikipedia.org/wiki/Unix_philosophy
 [unix-sockets]: https://en.wikipedia.org/wiki/Unix_domain_socket
+
+[signals]: {% link chapters/505-linux-process-management/subject.md %}#signals
