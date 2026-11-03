@@ -12,7 +12,7 @@ defmodule ArchiDep.MixProject do
       aliases: aliases(),
       deps: project_dependencies(),
       dialyzer: [
-        # Suppress false opaque-type warnings, still 50 on Elixir 1.20.4 / OTP
+        # Suppress false opaque-type warnings, still 50 on Elixir 1.20.5 / OTP
         # 29.1.2: 48 call_without_opaque from the MapSet inside every
         # %Ecto.Multi{} (MapSet wraps OTP's opaque :sets.set(), which dialyzer
         # sees as a plain map in the empty set Ecto.Multi.new/0 builds), and 2

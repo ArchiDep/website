@@ -45,7 +45,7 @@ jobs:
     name: Freeze an edition
     timeout-minutes: 60
     env:
-      ELIXIR_VERSION: 1.20.4
+      ELIXIR_VERSION: 1.20.5
       ERLANG_VERSION: 29.1.2
       MIX_ENV: prod
       YEAR: ${{ inputs.year }}

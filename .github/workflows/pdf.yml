@@ -40,7 +40,7 @@ jobs:
     name: Print & publish the PDFs
     timeout-minutes: 60
     env:
-      ELIXIR_VERSION: 1.20.4
+      ELIXIR_VERSION: 1.20.5
       ERLANG_VERSION: 29.1.2
       MIX_ENV: prod
       # Outside the public repository, where the minutes are metered, a single
