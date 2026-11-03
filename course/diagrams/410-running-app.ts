@@ -1,8 +1,8 @@
 // Running the application of "Deploy a web application with SFTP", without
 // creating its database: the application started by hand in the SSH session,
 // and a request served from the browser to the database and back. It is also
-// the architecture of "Deploy a web application with Git", whose processes are
-// the same.
+// the architecture of "Deploy a web application with Git" and "Configure a web
+// application through environment variables", whose processes are the same.
 import {
   ARRIVED,
   connect,

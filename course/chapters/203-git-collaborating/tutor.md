@@ -189,9 +189,10 @@ again. Parts that later chapters lean on in particular:
   without a conflict because it changes another line.
 - "Guess It": the group shares its work through its fork, and pulls whenever a
   push is refused.
-- "Deploy a web application with Git" clones on the server; "Configure a PHP
-  application through environment variables" counts the copies (GitHub, the
-  student's computer, the server) and pulls with `git pull <remote> <branch>`.
+- "Deploy a web application with Git" clones on the server; "Configure a web
+  application through environment variables" pushes a change from the student's
+  computer and pulls it on the server with `git pull <remote> <branch>`, after
+  discarding any uncommitted change to `server.js` there.
 - "Set up an automated deployment with Git hooks" adds a second remote on the
   student's own server (`user@host:path`) and pushes to it; the copy on GitHub
   falls behind, as in "Remotes do not sync".

@@ -1,232 +1,411 @@
 ---
-title: Configure a PHP application through environment variables
+title: Configure a web application through environment variables
 cloud_server: details
 excerpt_separator: <!-- more -->
 ---
 
 The goal of this exercise is to improve the configuration step of the [previous
-exercise]({% link chapters/501-git-clone-deployment/exercise.md %}) by using
-environment variables instead of hardcoded configuration values.
+exercise][git-deployment]: Guess It will take its configuration from environment
+variables, instead of having it written in `server.js`.
 
 <!-- more -->
 
-## :exclamation: Setup
+At the end of the previous exercise, the `server.js` file of your deployment had
+to contain the database password. If it was not already the right one, you
+edited it on your server, and left it uncommitted. Either way, the password is
+in the code.
 
-Make sure you have completed the [previous exercise]({% link
-chapters/501-git-clone-deployment/exercise.md %}) first.
+The third factor of The Twelve-Factor App, [Config][12factor-config], asks for a
+strict separation of the configuration from the code. The configuration is what
+can change between deploys, such as the database password or the database port,
+while the code stays the same. An application that reads its configuration from
+environment variables can be deployed anywhere without changing a line of its
+code.
 
-Stop your `php -S` command if it is still running.
+## :exclamation: Requirements
 
-{% note type: tip %}
+Make sure you have completed the [previous exercise][git-deployment] first. You
+will need its clone in `/srv/guessit`, and the `guessit-ex` directory of your
+SFTP deployment, which still holds the password of the `guessit` database user.
 
-You can use `Ctrl-C` to stop any command currently running in your terminal.
+## :exclamation: Stop the Git deployment
 
-{% endnote %}
+If Guess It is still running from the previous exercise, go to the terminal
+where it runs, and press `Ctrl-C`. Only one program at a time can listen on port 3000.
+
+If it is not running, there is nothing to stop: it stopped when the SSH
+connection you had started it in was closed.
 
 ## :exclamation: Update the configuration
 
 {% callout type: exercise %}
 
-Do this part of the exercise on your local machine, not on the server.
+Do this part of the exercise on your computer, not on the server.
 
 {% endcallout %}
 
-Clone the repository if you do not have it already:
+Open the `guessit-ex` directory of your fork, on your computer, in your editor.
+The configuration is at the top of `server.js`:
 
-```bash
-$> cd /path/to/projects
-$> git clone git@github.com:MyUser/php-todo-ex.git
+```js
+// The port the application listens on.
+const PORT = 3000;
+
+// The URL used to connect to the PostgreSQL database. It has the shape
+// postgresql://USER:PASSWORD@HOST:PORT/DATABASE. Change the password to match
+// the one you set when you ran schema.sql.
+const DATABASE_URL =
+  'postgresql://guessit:change-me-now@localhost:5432/guessit';
 ```
 
-{% note type: tip %}
+Your `DATABASE_URL` may have another password, and another port, if you
+configured it for your computer or for your server.
 
-Make sure to use your own [fork](https://guides.github.com/activities/forking/)
-of the repository, the same as in the [previous exercise]({% link
-chapters/501-git-clone-deployment/exercise.md %}).
+Modify these lines to take the configuration from the environment. In Node.js,
+the environment variables of the process are in `process.env`. For example,
+instead of:
 
-{% endnote %}
-
-Modify the first few lines of `index.php` to take configuration values from the
-environment if available.
-
-For example, instead of:
-
-```php
-<?php
-define('BASE_URL', '/');
+```js
+const PORT = 3000;
 ```
 
 Use this:
 
-```php
-<?php
-define('BASE_URL', getenv('TODOLIST_BASE_URL') ?: '/');
+```js
+const PORT = process.env.PORT || 3000;
 ```
 
-With this code, the `BASE_URL` variable will be equal to the value of the
-`TODOLIST_BASE_URL` environment variable if it has been set, or it will default
-to `/` if the environment variable is not available.
+With this code, `PORT` is the value of the `PORT` environment variable if it is
+set, or `3000` if it is not.
 
 {% note type: more %}
 
-This is accomplished using the [PHP shorthand ternary operator
-`?:`][php-shorthand-comparisons].
+The `||` operator returns its left side if it is truthy, and its right side
+otherwise. An environment variable that is not set is `undefined` in
+`process.env`, which is falsy.
 
 {% endnote %}
 
-**DO NOT** set a default value for the password, as it is a bad practice to
-hardcode sensitive values (as mentioned in the [Config section of The
-Twelve-Factor App](https://12factor.net/config)). The definition of the
-`DB_PASS` variable should have no default and look like this:
+Do the same for `DATABASE_URL`, with the `DATABASE_URL` environment variable.
+Its default can be the same URL **without the password**:
+`postgresql://guessit@localhost:5432/guessit`.
 
-```php
-<?php
-define('DB_PASS', getenv('TODOLIST_DB_PASS'));
+{% note type: warning %}
+
+**Do not** put a password in the default value of `DATABASE_URL`. A password
+must not be written in the code, as the [Config section of The Twelve-Factor
+App][12factor-config] explains: anyone who can read your repository, or its
+history, could read it.
+
+{% endnote %}
+
+Update the comments above both lines too, so that they say where the
+configuration comes from: "Change the password to match…" is no longer true.
+
+### :exclamation: Update the README
+
+The `README.md` file of your fork explains how to set up Guess It. Its setup
+step 2 still says to put the password in `server.js`:
+
+```md
+2. Set the same password in the `DATABASE_URL` at the top of `server.js`.
 ```
 
-Make sure to update the definitions of all other variables (`DB_USER`,
-`DB_NAME`, `DB_HOST` and `DB_PORT`) to take their value from the environment,
-with an appropriate default value.
+Replace that step with this one:
 
-{% note type: tip %}
+```md
+2. Whenever you run the application, set the `DATABASE_URL` environment
+   variable to the URL of the database, with the same password.
+```
 
-Regarding the default values, you may assume that for a typical deployment, a
-MySQL database server is available on the host machine itself (`127.0.0.1`) and
-exposed on the default MySQL port (`3306`).
+### :exclamation: Commit and push your changes
 
-{% endnote %}
+Check what you are about to commit:
 
-**Commit and push your changes** to the remote repository on GitHub.
+```bash
+$> git status
+$> git diff server.js README.md
+```
+
+Your copy may have other changes that you have not committed, such as the
+password you put in `schema.sql` during the [SFTP deployment][sftp]. Make sure
+no password is left in `server.js`, then commit **only** `server.js` and
+`README.md`, and push them to your fork on GitHub:
+
+```bash
+$> git add server.js README.md
+$> git commit -m "Take the configuration from the environment"
+$> git push
+```
 
 {% solution %}
 
-The configuration at the top of your index.php file in your PHP todolist
-repository should look like this:
+The configuration at the top of `server.js` should look like this:
 
-```php
-<?php
-define('BASE_URL', getenv('TODOLIST_BASE_URL') ?: '/');
+```js
+// The port the application listens on, taken from the PORT environment
+// variable if it is set.
+const PORT = process.env.PORT || 3000;
 
-// Database connection parameters.
-define('DB_USER', getenv('TODOLIST_DB_USER') ?: 'todolist');
-define('DB_PASS', getenv('TODOLIST_DB_PASS'));
-define('DB_NAME', getenv('TODOLIST_DB_NAME') ?: 'todolist');
-define('DB_HOST', getenv('TODOLIST_DB_HOST') ?: '127.0.0.1');
-define('DB_PORT', getenv('TODOLIST_DB_PORT') ?: '3306');
+// The URL used to connect to the PostgreSQL database, taken from the
+// DATABASE_URL environment variable if it is set. It has the shape
+// postgresql://USER:PASSWORD@HOST:PORT/DATABASE. The default has no password:
+// a password must not be written in the code.
+const DATABASE_URL =
+  process.env.DATABASE_URL || 'postgresql://guessit@localhost:5432/guessit';
 ```
-
-You should have at least three copies of the PHP todolist repository with this
-version of the code:
-
-- Your fork of the PHP todolist repository on GitHub (e.g.
-  https://github.com/JohnDoe/php-todo-ex, assuming `JohnDoe` is your GitHub
-  username).
-- Your local clone of that repository on your machine, which you used to make
-  the changes asked in the exercise.
-- Your clone of that repository on your cloud server.
 
 {% endsolution %}
 
-## :exclamation: Pull the latest version from the server
+{% note type: tip %}
+
+To run Guess It on your computer from now on, give it your local configuration
+in the environment, in the same way as on your server below: your local
+password, and the port `5434` if you run PostgreSQL with Docker Desktop.
+
+{% endnote %}
+
+## :exclamation: Pull the latest version on the server
 
 {% callout type: exercise %}
 
-You may now connect to your server to perform the rest of the exercise.
+Connect to your server for the rest of the exercise.
 
 {% endcallout %}
 
-Go into the cloned repository from the previous exercise (`~/todolist-repo` if
-you followed the instructions to the letter).
-
-You may have made manual configuration changes during the previous exercise. You
-must discard them with the `git restore <file>` command. This will remove any
-uncommitted changes and restore the latest version of the file that was
-committed in the repository:
+Go into your deployment, and check whether `server.js` has a change you have not
+committed:
 
 ```bash
-$> git restore index.php
+$> cd /srv/guessit
+
+$> git status
 ```
 
-You can now pull the latest version of the code from GitHub.
+If Git lists `server.js` as modified, you edited its password during the
+previous exercise. You no longer need that change, since the configuration will
+come from the environment. Discard it with `git restore`, which puts back the
+version of the file from the last commit:
 
-{% note type: tip %}
+```bash
+$> git restore server.js
+```
 
-The command to pull the latest changes is `git pull <remote> <branch>`. If you
-do not remember the name(s) of your remote(s), you can list them with the `git
-remote` command (or with `git remote -v` to also see their URLs).
+The password is not lost: it is still in `~/guessit-ex/server.js`, in your SFTP
+deployment.
+
+{% note type: more %}
+
+Git would not have let you pull with that change. The new commit changes
+`server.js` too, so pulling would replace your version of the file and lose your
+change, and Git never throws away a change you have not committed unless you ask
+it to.
 
 {% endnote %}
 
-{% solution %}
+Then pull the latest version of the code from GitHub:
 
-At the end of the exercise, the repository on your Azure server should have no
-uncommitted changes, i.e. the `git status` command should print "nothing to
-commit, working tree clean" when executed in the `~/todolist-repo` directory on
-your server.
+```bash
+$> git pull origin main
+...
+Fast-forward
+ README.md | ...
+ server.js | ...
+...
+```
+
+{% note type: tip %}
+
+If Git does not know the remote `origin`, list your remotes with the
+`git remote` command (or with `git remote -v` to also see their URLs), and use
+the name it prints instead.
+
+{% endnote %}
+
+Your deployment should now have no uncommitted changes: `git status` should
+print "nothing to commit, working tree clean".
+
+```bash
+$> git status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+```
+
+### :question: Optional: run the application without its configuration
+
+Start Guess It as in the previous exercise, without any environment variable:
+
+```bash
+$> npm run dev
+
+> guessit@1.0.0 dev
+> node --watch server.js
+
+Guess It is listening on http://localhost:3000
+```
+
+Open your server's IP address and port 3000 in your browser (e.g.
+`http://W.X.Y.Z:3000`). The home page says that the leaderboard could not be
+loaded, and the terminal shows:
+
+```bash
+Could not load the leaderboard: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+```
+
+The application started, and only failed when it tried to connect to the
+database. Why could it not connect?
+
+{% solution title: "Check your answer", emoji: thinking, reveal: always %}
+
+`DATABASE_URL` is not set, so the application used its default URL, which has
+no password. PostgreSQL asks the `guessit` user for one.
 
 {% endsolution %}
 
-## :exclamation: Run the PHP development server
+Stop it with `Ctrl-C`.
 
-Still in the cloned repository, run a PHP development server on port 3000 like
-in the previous exercise. Note that this time you must provide the appropriate
-configuration through environment variables:
+## :exclamation: Run the application
 
-- You must provide the `TODOLIST_DB_PASS` environment variable which has no
-  default value.
-- If the default values you have hardcoded for other variables are not suitable
-  for your server's environment, you must also provide the corresponding
-  environment variables with suitable values.
+Still in `/srv/guessit`, start the application again, but this time give it its
+configuration through the environment. The database URL is the one of your SFTP
+deployment, which has the password of the `guessit` database user:
+
+```bash
+$> grep guessit: ~/guessit-ex/server.js
+const DATABASE_URL = 'postgresql://guessit:********************************@localhost:5432/guessit';
+```
+
+Set it for the `npm run dev` command (replacing the URL with yours):
+
+```bash
+$> DATABASE_URL='postgresql://guessit:********************************@localhost:5432/guessit' npm run dev
+
+> guessit@1.0.0 dev
+> node --watch server.js
+
+Guess It is listening on http://localhost:3000
+```
 
 {% note type: tip %}
 
-You can execute a command with additional environment variables using the
-following syntax: `EXAMPLE='value' ANOTHER='one' command arg1 arg2`.
+`NAME='value' command` runs a command with an additional environment variable.
+You can set several at once: `EXAMPLE='value' ANOTHER='one' command`.
 
-The single quotes around the variables' values are optional if the value
-contains no spaces or special characters.
+The single quotes around the value are optional if it contains no spaces or
+special characters.
 
 {% endnote %}
 
+You do not need to set `PORT`: its default, `3000`, is the right port for your
+server.
+
 You (and everybody else) should be able to access the application in a browser
-at the correct IP address and port (e.g. `W.X.Y.Z:3000`) and it should work.
+at your server's IP address and port 3000 (e.g. `http://W.X.Y.Z:3000`), and its
+leaderboard should show the games won on your earlier deployments.
+
+![Guess It's home page, at the server's IP address and port 3000](images/guessit.png)
+
+{% note type: more %}
+
+You set the variable for `npm`, but it is `server.js` that reads it. `npm` runs
+`node --watch`, which runs `server.js` in another process. Each process gets a
+copy of the environment of the process that started it, so the variable reaches
+all of them.
+
+{% endnote %}
 
 ## :checkered_flag: What have I done?
 
-You have made your application configurable through the environment, as
-recommended in the [Config section of The Twelve-Factor
-App](https://12factor.net/config).
+You have made Guess It configurable through the environment, as recommended in
+the [Config section of The Twelve-Factor App][12factor-config].
 
-This means that you no longer need to make any changes to the code before
-deploying your application to any new environment. It can now be deployed
-_anywhere_, on any server or on any developer's local machine, without changing
-a single line of code.
+The code no longer changes from one deploy to another. Your fork, your computer
+and your server have the same `server.js`, and each deploy gives it its own
+configuration when it starts it. A database on another port, or with another
+password, needs no change to the code.
 
-You simply need to set the appropriate environment variables when running it,
-and the application will use that configuration instead of the hardcoded
-defaults. For example, if you are deploying the application on a server where
-the MySQL database server is exposed on a non-standard port like `5000`, simply
-set the `TODOLIST_DB_PORT` variable, and the application will happily connect to
-it.
+Your deployment is now exactly a commit of your repository, with nothing
+modified. Git can pull a new version without a local change in its way.
 
-### :classical_building: Architecture
+Configuration can have default values, as long as they are not secrets. The port
+and the database URL have one, but the database URL's has no password: a
+password in the code would be in the repository's history, for anyone who can
+read it. Not setting a default password also forces the person who deploys the
+application to explicitly set one rather than rely on an insecure default.
+
+An environment variable set for a command exists only in the process that
+command starts, and in the processes it starts in turn. That is how
+`DATABASE_URL` reached `server.js`, through `npm` and `node --watch`.
+
+Your configuration now lives in the command you typed. You have to type it
+again every time you start the application, and your shell keeps it in its
+history, password included.
+
+## :classical_building: Architecture
 
 This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise. Note that it has not changed
-compared to [the previous exercises]({% link
-chapters/501-git-clone-deployment/exercise.md %}#architecture)
-since we have neither created any new processes nor changed how they
-communicate.
+communication flow at the end of this exercise. It has not changed since [the
+previous exercises][sftp-architecture]: you have neither created new processes
+nor changed how they communicate. Only where Guess It gets its configuration
+from is different.
 
-![Diagram](./images/architecture.png)
+{% include diagrams/410-running-app.html %}
 
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="Configuration Through Environment Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="Configuration Through Environment Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
+## :boom: Troubleshooting
 
-[php-shorthand-comparisons]: https://stitcher.io/blog/shorthand-comparisons-in-php
+Here's a few tips about some problems you may encounter during this exercise.
+
+### :boom: `client password must be a string`
+
+The home page says that the leaderboard could not be loaded, and the terminal
+shows:
+
+```bash
+Could not load the leaderboard: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
+```
+
+Guess It did not get a `DATABASE_URL`, and used its default URL, which has no
+password. Make sure you typed it on the same line as `npm run dev`, before it,
+as in [Run the application][run]. A variable set on a line of its own is a
+variable of your shell, which the commands you run next do not get.
+
+### :boom: `password authentication failed for user "guessit"`
+
+The home page says that the leaderboard could not be loaded, and the terminal
+shows:
+
+```bash
+Could not load the leaderboard: error: password authentication failed for user "guessit"
+```
+
+The password in your `DATABASE_URL` is not the one of the `guessit` database
+user. Copy the URL from your SFTP deployment, in `~/guessit-ex/server.js`, as in
+[Run the application][run].
+
+If your previous deployments did not work either, see the [same problem in the
+SFTP deployment][sftp-password].
+
+### :boom: `Completed running 'server.js'`
+
+The application says it is listening, then stops at once:
+
+```bash
+...
+Guess It is listening on http://localhost:3000
+Completed running 'server.js'. Waiting for file changes before restarting...
+```
+
+Another program already listens on port 3000, most likely one of your previous
+deployments. Stop it as described in [Stop the Git deployment][stop-git], then
+start Guess It again.
+
+[12factor-config]: https://12factor.net/config
+[run]: #run-the-application
+[stop-git]: #stop-the-git-deployment
+
+[git-deployment]: {% link chapters/501-git-clone-deployment/exercise.md %}
+[sftp]: {% link chapters/410-sftp-deployment/exercise.md %}
+[sftp-architecture]: {% link chapters/410-sftp-deployment/exercise.md %}#architecture
+[sftp-password]: {% link chapters/410-sftp-deployment/exercise.md %}#password-authentication-failed-for-user-guessit

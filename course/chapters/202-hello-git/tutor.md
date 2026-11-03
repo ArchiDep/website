@@ -58,9 +58,9 @@ the later chapters. Those that lean on particular parts of the exercise:
 - "Unix Environment Variables" and the deployments after it take secrets out of
   the code, which is why a committed one matters. "Deploy a PHP application with
   Docker Compose" ignores a `.env` file exactly as here.
-- "Configure a PHP application through environment variables" throws away
-  changes on the server with `git restore`, practised only in "Discard a
-  change".
+- "Configure a web application through environment variables" throws away the
+  configuration edited into `server.js` on the server, if any, with `git
+restore`, practised only in "Discard a change".
 
 ## Key steps
 

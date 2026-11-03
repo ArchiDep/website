@@ -61,8 +61,9 @@ flaws:
 - "Deploy a web application with Git" replaces the SFTP upload with a clone in
   `/srv/guessit`, installs the dependencies on the server, and reuses this
   deployment's database, its password and its `guessit-ex` directory.
-- "Configure a PHP application through environment variables" moves the
-  password out of `server.js`.
+- "Configure a web application through environment variables" moves the password
+  out of `server.js`, into a `DATABASE_URL` environment variable copied from
+  this deployment's `server.js`.
 - "Manage a PHP application with systemd as a Process Manager" keeps the
   application running after the student logs out.
 

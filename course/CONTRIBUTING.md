@@ -713,6 +713,23 @@ whatever the chapter's progress, and is therefore in the page's source from the
 start: use it only for answers that give nothing away by being read early. Any
 other value of `reveal` fails the build, and the answer stays withheld.
 
+**A solution box holds only the answer to something the exercise asks the
+student to work out**: code to write, a command to find, a question to answer.
+Everything else is ordinary text or a [note](#notes), never a solution:
+
+- **The state a step should leave behind**, such as what `git status` should
+  print once it is done. A student needs it to check their work, now, and
+  withholding it until the class has covered the chapter helps nobody.
+- **An explanation of the material**, such as why a command behaves as it does.
+  If it is not essential to the exercise, it is a `more` note.
+- **The answer to a prediction or a "why?"** asked for in the exercise. It is a
+  solution, but one the student should check right away, so it takes `reveal:
+always`, titled "Check your answer" or "Check your prediction" with the
+  `thinking` emoji.
+
+Ask whether a student would lose something by reading the content before
+trying. If not, it is not a solution.
+
 **Example usage:**
 
 ```liquid
