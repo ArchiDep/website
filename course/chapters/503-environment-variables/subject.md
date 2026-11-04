@@ -25,7 +25,7 @@ When a process runs on a Unix system, it may query variables such as:
 
 - `HOME` - The home directory of the user running the process.
 - `LANG` - The default locale.
-- `TMP` - The directory in which to store temporary files.
+- `TMPDIR` - The directory in which to store temporary files.
 - And more.
 
 Another common example is the [`PATH`][path], an environment variable that
@@ -103,29 +103,36 @@ variable depends on how you set it:
 - You can set it for the current shell session.
 - You can set it in your shell configuration file (e.g. `.bashrc`).
 
-In order to test these techniques, download this [simple
-script](https://git.io/fpdar) which prints the value of an environment variable
-if set:
+To check what a program receives, use the `printenv` command. It prints the
+value of the environment variable you name, or nothing if it is not set:
 
 ```bash
-$> curl -sL https://git.io/fpdar > print-env-var.sh
+$> printenv PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-$> chmod 755 print-env-var.sh
-
-$> ./print-env-var.sh PATH
-The value of $PATH is /usr/local/sbin:/usr/local/bin:...
-
-$> ./print-env-var.sh FOO
-$FOO is not set
+$> printenv FOO
 ```
+
+`printenv` is a separate program run by your shell, so it shows the environment
+that the shell gave it, like any other program you run. `echo $FOO` cannot do
+that: the shell replaces `$FOO` by its value **before** `echo` runs, so it shows
+what the shell knows, not what a program receives.
+
+{% note type: tip %}
+
+Give `printenv` the name of the variable, without the dollar sign. With
+`printenv $FOO`, the shell replaces `$FOO` by its value first, and `printenv`
+looks for a variable named after that value instead.
+
+{% endnote %}
 
 #### Setting a variable for one command
 
-You can prefix a command by an environment variable assigment:
+You can prefix a command by an environment variable assignment:
 
 ```bash
-$> FOO=bar ./print-env-var.sh FOO
-The value of $FOO is bar
+$> FOO=bar printenv FOO
+bar
 ```
 
 This only sets the variable **for the process executed by that command**. As you
@@ -133,9 +140,16 @@ can see, the variable is still not set if we check later, even in the same shell
 session:
 
 ```bash
-$> ./print-env-var.sh FOO
-$FOO is not set
+$> printenv FOO
 ```
+
+{% note type: more %}
+
+This is also why `FOO=bar echo $FOO` prints an empty line: the shell has already
+replaced `$FOO` by its value, which is empty, before the assignment applies to
+`echo`.
+
+{% endnote %}
 
 #### Setting a variable for a shell session
 
@@ -145,11 +159,11 @@ running in the current shell session:
 ```bash
 $> export FOO=bar
 
-$> ./print-env-var.sh FOO
-The value of $FOO is bar
+$> printenv FOO
+bar
 
-$> ./print-env-var.sh FOO
-The value of $FOO is bar
+$> printenv FOO
+bar
 ```
 
 As you can see, the variable remains set.
@@ -158,9 +172,28 @@ However, if you close the shell and reopen a new one, the variable is no longer
 set:
 
 ```bash
-$> ./print-env-var.sh FOO
-$FOO is not set
+$> printenv FOO
 ```
+
+#### Shell variables and environment variables
+
+Without `export`, an assignment such as `BAZ=qux` only sets a **shell
+variable**. The shell knows it, but does not pass it to the programs it runs:
+
+```bash
+$> BAZ=qux
+
+$> echo $BAZ
+qux
+
+$> printenv BAZ
+```
+
+Every process receives a copy of the environment of its [parent
+process]({% link chapters/408-unix-processes/subject.md %}#parent-processes).
+`export` is what puts a variable into the environment of the shell, so that the
+processes it starts receive it. A program you run, such as a web application,
+can only read the variables that were exported to it.
 
 #### Setting a variable in the shell configuration file
 
@@ -182,15 +215,15 @@ file is only evaluated when the shell starts. But you can evaluate it with the
 ```bash
 $> source ~/.bashrc
 
-$> ./print-env-var.sh FOO
-The value of $FOO is bar
+$> printenv FOO
+bar
 ```
 
 The variable will still be set if you close this shell and launch another one:
 
 ```bash
-$> ./print-env-var.sh FOO
-The value of $FOO is bar
+$> printenv FOO
+bar
 ```
 
 ### Removing an environment variable
@@ -198,13 +231,12 @@ The value of $FOO is bar
 The `unset` command removes a variable from the environment:
 
 ```bash
-$> ./print-env-var.sh FOO
-The value of $FOO is bar
+$> printenv FOO
+bar
 
 $> unset FOO
 
-$> ./print-env-var.sh FOO
-$FOO is not set
+$> printenv FOO
 ```
 
 {% note type: tip %}
