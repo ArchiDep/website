@@ -317,6 +317,156 @@ Recursively find all files in the current directory containing the word "foo":
 $> grep -R foo .
 ```
 
+## Combining commands with pipes
+
+The pipe (`|`) sends what a command prints into the next command, instead of to
+your terminal. Most text commands read the lines you send them when you do not
+name a file, so you can chain them: each one does one small job on those lines,
+and passes the result on. The [Unix Processes subject][pipelines] explains how
+this works.
+
+{% note type: warning %}
+
+A pipe sends **text**, not arguments. `echo file.txt | cat` prints `file.txt`,
+not the contents of the file: `cat` reads the text it receives as if it were the
+contents of a file.
+
+{% endnote %}
+
+### Is it in there? (`grep`)
+
+Keep only the lines that contain a word. This is the most common use of a pipe:
+make a long output short enough to read.
+
+```bash
+$> ps -ef | grep nginx
+$> ls /etc | grep ssh
+$> apt list --installed | grep postgresql
+```
+
+| Option        | Effect                                                    |
+| :------------ | :-------------------------------------------------------- |
+| `grep -i foo` | Ignore case: also keep lines with `Foo` or `FOO`          |
+| `grep -v foo` | Invert: keep only the lines that do **not** contain `foo` |
+
+### How many? (`wc -l`)
+
+Count the lines a command prints:
+
+```bash
+$> ls ~/guessit-ex/node_modules | wc -l
+$> cat /etc/passwd | wc -l
+$> grep -r TODO . | wc -l
+```
+
+`wc -w` counts words instead of lines.
+
+### Only the first or last lines (`head`, `tail`)
+
+Keep the first or last lines of what a command prints (10 by default):
+
+```bash
+$> ls -t ~/Downloads | head -n 5
+$> sudo journalctl -u ssh | tail -n 20
+```
+
+The first command shows the five files of your `Downloads` directory that were
+modified last (`ls -t` sorts them by modification time, newest first).
+
+### Just the column I want (`cut`)
+
+Keep one or more columns of each line. `-d` gives the character that separates
+the columns (the **d**elimiter), and `-f` the numbers of the columns to keep
+(the **f**ields):
+
+```bash
+$> cat /etc/passwd | cut -d : -f 1
+root
+daemon
+...
+$> cat /etc/passwd | cut -d : -f 1,7
+root:/bin/bash
+daemon:/usr/sbin/nologin
+...
+```
+
+{% note type: tip %}
+
+`cut` uses exactly one character as the delimiter. When the columns are
+separated by several spaces, as in the output of `ps` or `ls -l`, each space
+counts as a separator, and the field numbers do not match the columns you see.
+
+{% endnote %}
+
+### Sorted, without duplicates (`sort`, `uniq`)
+
+| Command        | Effect                                                     |
+| :------------- | :--------------------------------------------------------- |
+| `sort`         | Sort the lines alphabetically                              |
+| `sort -n`      | Sort the lines as numbers (`9` before `18`)                |
+| `sort -r`      | Sort the lines in reverse order (combine with `-n`: `-nr`) |
+| `sort \| uniq` | Sort the lines and remove duplicates                       |
+| `uniq -c`      | Remove duplicates and count how many times each line came  |
+
+`uniq` only removes duplicates that are next to each other. That is why it
+almost always comes after `sort`.
+
+### What comes up most often? (`sort | uniq -c | sort -nr`)
+
+This pipeline answers "which ones, and how many of each?" about any list:
+
+```bash
+$> cat /etc/passwd | cut -d : -f 7 | sort | uniq -c | sort -nr
+     28 /usr/sbin/nologin
+      3 /bin/bash
+      1 /bin/sync
+      1 /bin/false
+```
+
+1. `cut` keeps the column you want to count, here the login shell of each user.
+2. `sort` puts identical lines next to each other.
+3. `uniq -c` replaces each group of identical lines by one line, with its count.
+4. `sort -nr` puts the largest count first.
+
+Add `| head -n 5` at the end to keep only the top five. The [Unix plumbing
+exercise][who-is-knocking] uses it to find which usernames attackers try most
+often on your server.
+
+### Too long to read? (`less`)
+
+Read a long output page by page, as with a file (type `q` to quit):
+
+```bash
+$> ps -ef | less
+$> apt list --installed | less
+```
+
+### Watch a log as it grows (`tail -f`)
+
+`tail -f` prints the last lines of a file, then keeps printing new lines as they
+are added, until you press [`Ctrl-C`](#stop-a-running-command-ctrl-c). Pipe it
+into `grep` to only see the lines you care about:
+
+```bash
+$> sudo tail -f /var/log/nginx/access.log | grep 404
+```
+
+### `sudo` in a pipeline
+
+`sudo` only applies to the command right after it, not to the whole pipeline.
+Put it before the command that needs it:
+
+```bash
+$> sudo journalctl -u ssh | grep Invalid
+```
+
+Here, `journalctl` runs as `root` because it needs to read the system logs, and
+`grep` runs as you, which is enough to filter what it receives.
+
+A redirection (`>`) is done by your shell, which runs as you, so
+`sudo echo foo > /etc/foo` fails with `Permission denied`. Use
+[`tee`](#create-a-file-echo-touch) instead.
+
 ## Running programs
 
 ### Run a program (`./program`)
@@ -443,6 +593,9 @@ Hello World
 ```
 
 [bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
+
+[pipelines]: {% link chapters/408-unix-processes/subject.md %}#pipelines
 [tee]: https://en.wikipedia.org/wiki/Tee_(command)
 [whee]: https://en.wiktionary.org/wiki/whee
+[who-is-knocking]: {% link chapters/409-unix-plumbing/exercise.md %}#who-is-knocking-at-your-door
 [zsh]: https://en.wikipedia.org/wiki/Z_shell

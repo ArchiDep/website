@@ -77,7 +77,10 @@ flaws:
   own?
 - **"Install Node.js".** Afterwards: `node -v` prints `v26.x.y`. An older
   version is Ubuntu's own `nodejs` package, installed when a NodeSource command
-  was skipped or failed.
+  was skipped or failed. A "more" note under the commands explains the
+  `curl … | sudo -E bash -` pipeline, in which `sudo` applies to `bash` only.
+  Sample question: "Which of the two commands of the pipeline needs `sudo`, and
+  why?" (`bash`, which installs packages; `curl` only downloads.)
 - **"What's running so far?"**. Installing PostgreSQL started it; installing
   Node.js only put files on the disk, and `node -v` ran and exited. What started
   PostgreSQL is left open on purpose, for "Manage a web application with systemd

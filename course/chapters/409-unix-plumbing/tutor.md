@@ -27,12 +27,17 @@ understand afterwards.
 The commands of the pipeline steps (`cut`, `fold`, `sort`, `uniq`, `tr`, `head`,
 `wc`) are given in a table with their options, below the questions. The step
 practises choosing and ordering them; their other options are not in the
-course.
+course. A note under the table links the "Combining commands with pipes"
+section of the command line cheatsheet, which lists common pipelines by the
+question they answer.
 
 Every step except "Download the song" ends in a question, with its answer in a
 solution box. Not in the exercise: `2>&1`, here documents, `tee`, regular
 expressions, and the SSH server configuration that the first step searches (its
-callout only says what the files are).
+callout only says what the files are). The optional "Who is knocking at your
+door?" step uses `journalctl -u ssh` only as a source of lines: what a service
+log is and the other options of `journalctl` come with process management,
+later in the course.
 
 ## Where it leads
 
@@ -45,8 +50,8 @@ server. What it practises is used throughout the deployments:
 - "Process Management on Linux" and "Manage a web application with systemd as a
   Process Manager" read what a service writes to its standard output and error
   with `journalctl`: the page's last paragraph points there.
-- Later exercises filter long outputs with `| grep`, such as `dpkg --list |
-grep php-fpm`.
+- Later exercises filter long outputs with `| grep`, such as `cat
+/etc/nginx/nginx.conf | grep include`.
 
 ## Key steps
 
@@ -92,6 +97,17 @@ rainbow`.
   daemon, a system user like the `nologin` ones.
   Question after: "Why do most users have `nologin`?" (System users run
   services; nobody should log in as one.)
+- **"Who is knocking at your door?"** (optional). Runs on the SSH server's log,
+  read with `sudo journalctl -u ssh`. A tip says to count the words of the
+  sample line to find the field of the username.
+  Question before: "Which commands of the song's challenge can you reuse to
+  rank the usernames?"
+  Expected after: a count of `Invalid user` lines in the hundreds or more, and
+  five common usernames such as `admin`, `test` or `ubuntu`; both differ from
+  server to server.
+  Question after: "Why has none of these attempts worked?" (The server refuses
+  passwords, as the `PasswordAuthentication no` of the first step showed, and
+  most of these users do not exist.)
 - **"Discard the errors"** (optional). The page sends the student to the
   subject's appendix on `/dev/null` first.
   Expected after: only the found lines, and no new file in the home directory.
@@ -128,6 +144,16 @@ rainbow`.
   top five**: `uniq -c` pads its counts with spaces, so sorting them as text
   works here by luck. Question that leads to it: "How would text sorting order
   `9` and `18` without the padding?"
+- **The top usernames of "Who is knocking at your door?" are all `user` or
+  `from`, or are IP addresses**: `cut` keeps the wrong field. Question that
+  leads to it: "Counting from the start of the sample line, which word is the
+  username?" (The eighth: the date and time are three words.)
+- **"Who is knocking at your door?" counts `0`, possibly with a `journalctl`
+  hint about not seeing messages from other users**: `sudo` was left out, or
+  put before `grep` rather than `journalctl`. Whether `journalctl` can read the
+  log without `sudo` depends on the student's groups, so leaving it out does not
+  always show. Question that leads to it: "Which
+  command of the pipeline needs to read the system's logs?"
 - **`cut -d : -f 7 /etc/passwd` without `cat`** is as correct as the solution's
   `cat /etc/passwd | cut …`. Every pipeline in the solutions starts with `cat`;
   either form is right.

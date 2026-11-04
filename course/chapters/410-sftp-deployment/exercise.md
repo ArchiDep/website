@@ -200,6 +200,16 @@ $> node -v
 v26.x.y
 ```
 
+{% note type: more %}
+
+The second command is a [pipe][unix-pipe], like the one that prepared the
+treasure hunt of [Hello Shell][hello-shell-hunt]: `curl` downloads the
+installation script of NodeSource and prints it, and `bash` reads that script
+from its standard input and runs it. `sudo` only applies to `bash`, which needs
+administrative privileges to install packages; `curl` runs as you.
+
+{% endnote %}
+
 ## :classical_building: What's running so far?
 
 Installing PostgreSQL started it, while installing Node.js only put its files on
@@ -835,6 +845,7 @@ On Ubuntu, the PostgreSQL superuser, `postgres`, can only connect from the
 [ex-repo]: https://github.com/ArchiDep/guessit-ex
 
 [guessit]: {% link chapters/205-guessit/exercise.md %}
+[hello-shell-hunt]: {% link chapters/102-hello-shell/exercise.md %}#prepare-the-hunt
 [hello-ssh-sftp]: {% link chapters/104-hello-ssh/exercise.md %}#copy-files-with-an-sftp-application
 [hello-ssh-winscp]: {% link chapters/104-hello-ssh/exercise.md %}#give-your-key-to-winscp-windows-only
 [linux-unattended-upgrades]: https://wiki.debian.org/UnattendedUpgrades

@@ -117,6 +117,12 @@ priorities, and threads.
   starts, with the data stored in between.
   **Correction:** all the processes of a pipeline run at the same time, the data
   flowing between them. That is why `ps -ef | grep sshd` lists `grep` itself.
+- **Misconception:** a pipe gives the output of one command to the next as
+  arguments.
+  **Correction:** the next command receives it as text on its standard input,
+  as if it were the contents of a file. `echo file.txt | cat` prints
+  `file.txt`, not the contents of `file.txt`.
+  Question that reveals it: "What does `echo file.txt | cat` print?"
 - **Misconception:** errors go through the pipe with the data.
   **Correction:** only the standard output is piped. The errors of each command
   still go to the terminal.

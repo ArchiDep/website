@@ -329,6 +329,14 @@ If you want to know more about any of these commands or their options, type
 
 {% endnote %}
 
+{% note type: more %}
+
+The [command line cheatsheet]({% link cheatsheets/command-line/cheatsheet.md
+%}#combining-commands-with-pipes) lists pipelines you will often use on a
+server, by the question they answer.
+
+{% endnote %}
+
 ### :space_invader: Challenge
 
 What are the five most used words in the song (case-insensitive), and how many
@@ -394,6 +402,92 @@ They are the system users you met in [Meet your server]({% link
 chapters/405-meet-your-server/exercise.md %}): users that run services rather
 than people. `/usr/sbin/nologin` or `/bin/false` refuses to log them in, so
 nobody can open a shell as one of them.
+
+{% endsolution %}
+
+## :question: Who is knocking at your door?
+
+Your server is on the internet, and its SSH port is open to anyone. Programs
+scan the internet for such servers all day long, and try to log in to them with
+common usernames and passwords.
+
+The SSH server writes each attempt in its log. The `journalctl` command displays
+what a service has logged; you will use it again later in the course. Reading
+the logs of the system requires administrative privileges, so run it with
+`sudo`:
+
+```bash
+$> sudo journalctl -u ssh
+```
+
+The log opens page by page, like a file in `less`: type `q` to quit. Many of its
+lines look like this one, an attempt to log in with a username that does not
+exist on your server:
+
+```
+Nov 04 10:12:33 jde sshd-session[48213]: Invalid user admin from 203.0.113.42 port 51234
+```
+
+Use pipelines to answer these questions about your server's log:
+
+- How many attempts to log in with a username that does not exist has your
+  server received?
+
+{% solution %}
+
+```bash
+$> sudo journalctl -u ssh | grep "Invalid user" | wc -l
+347
+```
+
+The quotes make `Invalid user` a single argument, the text that `grep` looks
+for. Your number will differ.
+
+{% endsolution %}
+
+- Which five usernames do they try most often?
+
+{% note type: tip %}
+
+Count the words of the line above to find which field holds the username. They
+are separated by single spaces.
+
+{% endnote %}
+
+{% solution %}
+
+```bash
+$> sudo journalctl -u ssh | \
+     grep "Invalid user" | \
+     cut -d ' ' -f 8 | \
+     sort | \
+     uniq -c | \
+     sort -nr | \
+     head -n 5
+52 admin
+31 user
+18 test
+12 ubuntu
+ 9 oracle
+```
+
+The username is the eighth field. The end of this pipeline is the same as in the
+challenge on the song: `sort | uniq -c | sort -nr` counts each line and puts the
+most frequent first. Your usernames and numbers will differ.
+
+Attempts with usernames that do exist on your server, such as `root`, are
+logged with other messages: they are not counted here.
+
+{% endsolution %}
+
+- None of these attempts has succeeded. Why?
+
+{% solution %}
+
+Your server refuses passwords: you saw the `PasswordAuthentication no` setting
+in the first step. Only a client holding a private key whose public key is in a
+user's `authorized_keys` file can log in, and these programs are guessing
+passwords. Most of the usernames they try do not even exist on your server.
 
 {% endsolution %}
 
@@ -475,6 +569,12 @@ Go back to your home directory with `cd` or `cd ~` and run the command again.
 
 You are not in the directory where you downloaded the file. Go back to your home
 directory with `cd` or `cd ~`, or download it again as in [Download the song](#download-the-song).
+
+### :boom: `grep: user: No such file or directory`
+
+You wrote `grep Invalid user` without quotes. The shell then gives `grep` two
+arguments: `Invalid`, the text to look for, and `user`, a file to search, which
+does not exist. Put quotes around the text: `grep "Invalid user"`.
 
 ### :boom: The `grep` lines on my server are not the same as the solution's
 
