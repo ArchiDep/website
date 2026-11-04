@@ -697,18 +697,12 @@ database in PostgreSQL.
 ## :classical_building: Architecture
 
 This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise.
+communication flow at the end of this exercise. Unlike in [the previous
+exercise][env-architecture], your shell no longer starts Guess It: systemd does,
+and starts it again whenever the server boots. Step through the diagram to see
+what happens when you start the service, log out, and reboot the server.
 
-![Diagram](./images/architecture.png)
-
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="Systemd Deployment Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="Systemd Deployment Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
+{% include diagrams/506-systemd.html %}
 
 ## :boom: Troubleshooting
 
@@ -898,6 +892,7 @@ SFTP deployment][sftp-password].
 [systemd-exec-start]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#ExecStart=
 [systemd-service-examples]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Examples
 
+[env-architecture]: {% link chapters/504-config-through-environment/exercise.md %}#architecture
 [env-deployment]: {% link chapters/504-config-through-environment/exercise.md %}
 [improve]: {% link chapters/413-how-to-improve/subject.md %}
 [meet-your-server-sudo]: {% link chapters/405-meet-your-server/exercise.md %}#ask-sudo-what-you-may-do

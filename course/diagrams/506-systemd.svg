@@ -1,0 +1,238 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 1100 700" width="1100" height="700">
+  <title>A Node.js application run by systemd</title>
+  <style id="diagram-styles">
+    svg.diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    svg.diagram .lane-heading { font-size: 24px; font-weight: 700; fill: #000; text-anchor: middle; }
+    svg.diagram .boundary line { stroke: #000; stroke-width: 5; stroke-dasharray: 14 12; }
+    svg.diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    svg.diagram .cloud text { font-size: 15px; fill: #666; text-anchor: middle; }
+    svg.diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    svg.diagram .process text { fill: #fff; text-anchor: middle; }
+    svg.diagram .process .label { font-size: 16px; font-weight: 700; }
+    svg.diagram .process .subtitle { font-size: 12px; font-style: italic; }
+    svg.diagram .process .command { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; font-weight: 700; }
+    svg.diagram .edge path { fill: none; stroke: #000; stroke-width: 1.25; }
+    svg.diagram .edge.control path { stroke-dasharray: 3 4; }
+    svg.diagram .edge text { font-size: 14px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    svg.diagram .edge text.beside { text-anchor: end; }
+    svg.diagram .socket path { fill: none; stroke: #000; stroke-width: 1.5; stroke-linecap: round; }
+    svg.diagram .process .socket text, svg.diagram .socket text { font-size: 14px; fill: #000; text-anchor: end; }
+    svg.diagram .marker-comm { fill: #000; }
+    svg.diagram .marker-control { fill: #fff; stroke: #000; stroke-width: 1.25; }
+    svg.diagram .legend .frame { fill: none; stroke: #999; stroke-dasharray: 2 2; }
+    svg.diagram .legend .title { font-size: 18px; font-style: italic; text-anchor: middle; }
+    svg.diagram .legend .entry { font-size: 12px; text-anchor: end; }
+  </style>
+  <defs id="diagram-defs">
+    <marker id="arrow-comm" viewBox="0 0 12 8" refX="12" refY="4" markerWidth="12" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L12,4 L0,8 z"/>
+    </marker>
+    <marker id="arrow-control" viewBox="-1 -1 14 10" refX="12" refY="4" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-control" d="M0,0 L12,4 L0,8 z"/>
+    </marker>
+  </defs>
+
+  <g id="lane-computer" class="lane"><text class="lane-heading" x="200" y="58">Your Computer</text></g>
+  <g id="lane-server" class="lane"><text class="lane-heading" x="820" y="58">Server</text></g>
+
+  <g id="boundary-internet" class="boundary">
+    <line x1="400" y1="48" x2="400" y2="680"/>
+    <line x1="540" y1="48" x2="540" y2="680"/>
+  </g>
+
+  <g id="cloud-internet" class="cloud">
+    <path d="M438,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+    <text x="470" y="80">Internet</text>
+  </g>
+
+  <!-- Before the reboot, shown only while stepping: your terminal's SSH
+       connection, its processes folded into stacks, the first named at the
+       back, the last at the front, the commands you run, and the processes
+       systemd had started. -->
+
+  <g id="node-terminal" class="process detail">
+    <rect x="92" y="182" width="250" height="46" rx="8"/>
+  </g>
+  <g id="node-local-shell" class="process detail">
+    <rect x="96" y="186" width="250" height="46" rx="8"/>
+  </g>
+  <g id="node-ssh-client" class="process detail">
+    <rect x="100" y="190" width="250" height="46" rx="8"/>
+    <text class="label" x="225" y="218">Terminal, Shell &amp; SSH Client</text>
+  </g>
+
+  <g id="node-sshd" class="process detail">
+    <rect x="600" y="96" width="160" height="46" rx="8"/>
+    <text class="label" x="680" y="124">SSH Server</text>
+    <g id="socket-sshd-22" class="socket">
+      <path d="M600,112 L582,96 M600,126 L582,142"/>
+      <text x="586" y="90">22</text>
+    </g>
+  </g>
+
+  <g id="node-ssh-session" class="process detail">
+    <rect x="594" y="184" width="200" height="46" rx="8"/>
+  </g>
+  <g id="node-remote-shell" class="process detail">
+    <rect x="600" y="190" width="200" height="46" rx="8"/>
+    <text class="label" x="700" y="218">SSH Session &amp; Shell</text>
+  </g>
+
+  <!-- Your terminal's second SSH connection, drawn where the first was, to
+       reboot the server. -->
+
+  <g id="node-terminal-again" class="process detail">
+    <rect x="92" y="182" width="250" height="46" rx="8"/>
+  </g>
+  <g id="node-local-shell-again" class="process detail">
+    <rect x="96" y="186" width="250" height="46" rx="8"/>
+  </g>
+  <g id="node-ssh-client-again" class="process detail">
+    <rect x="100" y="190" width="250" height="46" rx="8"/>
+    <text class="label" x="225" y="218">Terminal, Shell &amp; SSH Client</text>
+  </g>
+
+  <g id="node-ssh-session-again" class="process detail">
+    <rect x="594" y="184" width="200" height="46" rx="8"/>
+  </g>
+  <g id="node-remote-shell-again" class="process detail">
+    <rect x="600" y="190" width="200" height="46" rx="8"/>
+    <text class="label" x="700" y="218">SSH Session &amp; Shell</text>
+  </g>
+
+  <g id="node-reboot" class="process transient">
+    <rect x="600" y="280" width="140" height="46" rx="8"/>
+    <text class="label" x="670" y="300">reboot</text>
+    <text class="command" x="670" y="316">sudo reboot</text>
+  </g>
+
+  <g id="node-systemctl" class="process transient">
+    <rect x="600" y="280" width="230" height="46" rx="8"/>
+    <text class="label" x="715" y="300">systemctl</text>
+    <text class="command" x="715" y="316">sudo systemctl start guessit</text>
+  </g>
+
+  <g id="node-systemd-before-reboot" class="process detail">
+    <rect x="880" y="280" width="160" height="46" rx="8"/>
+    <text class="label" x="960" y="300">systemd</text>
+    <text class="subtitle" x="960" y="316">Init process, PID 1</text>
+  </g>
+
+  <g id="node-guessit-before-reboot" class="process transient">
+    <rect x="600" y="380" width="180" height="46" rx="8"/>
+    <text class="label" x="690" y="400">Guess It</text>
+    <text class="command" x="690" y="416">node server.js</text>
+    <g id="socket-guessit-before-reboot-3000" class="socket">
+      <path d="M600,396 L582,380 M600,410 L582,426"/>
+      <text x="586" y="374">3000</text>
+    </g>
+  </g>
+
+  <g id="node-postgresql-before-reboot" class="process detail">
+    <rect x="880" y="540" width="180" height="46" rx="8"/>
+    <text class="label" x="970" y="568">PostgreSQL</text>
+    <g id="socket-postgresql-before-reboot-5432" class="socket">
+      <path d="M880,556 L862,540 M880,570 L862,586"/>
+      <text x="866" y="534">5432</text>
+    </g>
+  </g>
+
+  <!-- After the reboot: what the fully drawn diagram shows. -->
+
+  <g id="node-systemd" class="process">
+    <rect x="880" y="280" width="160" height="46" rx="8"/>
+    <text class="label" x="960" y="300">systemd</text>
+    <text class="subtitle" x="960" y="316">Init process, PID 1</text>
+  </g>
+
+  <g id="node-browser" class="process">
+    <rect x="160" y="380" width="180" height="46" rx="8"/>
+    <text class="label" x="250" y="408">Browser</text>
+  </g>
+
+  <g id="node-guessit" class="process">
+    <rect x="600" y="380" width="180" height="46" rx="8"/>
+    <text class="label" x="690" y="400">Guess It</text>
+    <text class="command" x="690" y="416">node server.js</text>
+    <g id="socket-guessit-3000" class="socket">
+      <path d="M600,396 L582,380 M600,410 L582,426"/>
+      <text x="586" y="374">3000</text>
+    </g>
+  </g>
+
+  <g id="node-postgresql" class="process">
+    <rect x="880" y="540" width="180" height="46" rx="8"/>
+    <text class="label" x="970" y="568">PostgreSQL</text>
+    <g id="socket-postgresql-5432" class="socket">
+      <path d="M880,556 L862,540 M880,570 L862,586"/>
+      <text x="866" y="534">5432</text>
+    </g>
+  </g>
+
+  <!-- Edges before the reboot -->
+
+  <g id="edge-ssh-client-ssh-session" class="edge comm detail">
+    <path d="M350,213 H480 C540,213 540,213 594,213" marker-end="url(#arrow-comm)"/>
+    <text x="440" y="218">W.X.Y.Z</text>
+  </g>
+  <g id="edge-sshd-ssh-session" class="edge control detail">
+    <path d="M680,142 V184" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-ssh-client-ssh-session-again" class="edge comm detail">
+    <path d="M350,213 H480 C540,213 540,213 594,213" marker-end="url(#arrow-comm)"/>
+    <text x="440" y="218">W.X.Y.Z</text>
+  </g>
+  <g id="edge-sshd-ssh-session-again" class="edge control detail">
+    <path d="M680,142 V184" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-remote-shell-reboot" class="edge control transient">
+    <path d="M700,236 V280" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-remote-shell-systemctl" class="edge control transient">
+    <path d="M760,236 V280" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-systemd-guessit-before-reboot" class="edge control transient">
+    <path d="M940,326 V393 Q940,403 930,403 H780" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-systemd-sshd-before-reboot" class="edge control detail">
+    <path d="M920,280 V129 Q920,119 910,119 H760" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-systemd-postgresql-before-reboot" class="edge control detail">
+    <path d="M1010,326 V540" marker-end="url(#arrow-control)"/>
+  </g>
+
+  <!-- Edges after the reboot -->
+
+  <g id="edge-systemd-guessit" class="edge control">
+    <path d="M940,326 V393 Q940,403 930,403 H780" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-systemd-postgresql" class="edge control">
+    <path d="M1010,326 V540" marker-end="url(#arrow-control)"/>
+  </g>
+  <g id="edge-browser-guessit" class="edge comm">
+    <path d="M340,403 H600" marker-end="url(#arrow-comm)"/>
+    <text x="470" y="408">http://W.X.Y.Z:3000</text>
+  </g>
+  <g id="edge-guessit-postgresql" class="edge comm">
+    <path d="M690,426 V553 Q690,563 700,563 H880" marker-end="url(#arrow-comm)"/>
+    <text x="790" y="604">postgresql://guessit:pw@localhost:5432/guessit</text>
+  </g>
+
+  <g id="legend" class="legend" transform="translate(0,198)">
+    <rect class="frame" x="32" y="292" width="308" height="190"/>
+    <text class="title" x="186" y="318">Legend</text>
+    <g class="process">
+      <rect x="94" y="337" width="182" height="31" rx="6"/>
+      <text class="label" x="185" y="358">Process</text>
+    </g>
+    <text class="entry" x="147" y="397">Communication</text>
+    <g class="edge comm"><path d="M157,393 H320" marker-end="url(#arrow-comm)"/></g>
+    <text class="entry" x="147" y="419">Control</text>
+    <g class="edge control"><path d="M157,415 H320" marker-end="url(#arrow-control)"/></g>
+    <text class="entry" x="147" y="441">Network Boundary</text>
+    <g class="boundary"><line x1="157" y1="437" x2="322" y2="437"/></g>
+    <text class="entry" x="147" y="465">Listening Port</text>
+    <g class="process"><rect x="304" y="452" width="22" height="18" rx="3"/></g>
+    <g class="socket"><path d="M304,457 L291,448 M304,465 L291,474"/></g>
+  </g>
+</svg>
