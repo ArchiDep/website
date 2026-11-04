@@ -11,6 +11,7 @@ import {
   byId,
   create,
   firstDescendant,
+  hasClass,
   insertAfter,
   pathOf,
   prepend,
@@ -385,15 +386,19 @@ export function waiting(node: string): Wait {
 
 /**
  * The process works while this step is the current one. Marked by an empty
- * step inside the process, which was revealed by an earlier step and may work
- * in several.
+ * step inside the process, which may work in several. In the step that starts
+ * it, it works once it has appeared.
  */
 export function pulse(node: string): Action {
   return (builder, index) => {
     workLayer(builder, node);
-    builder.element(node).appendChild(
+    const element = builder.element(node);
+    const starting =
+      element.getAttribute('data-fragment-index') === String(index) &&
+      (hasClass(element, 'spawn') || hasClass(element, 'child'));
+    element.appendChild(
       create(builder.doc, 'g', {
-        class: 'fragment pulse',
+        class: starting ? 'fragment pulse starting' : 'fragment pulse',
         'data-fragment-index': index
       })
     );

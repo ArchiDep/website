@@ -243,6 +243,16 @@ svg.diagram .gone {
     transform-origin: center;
     animation: diagram-spin 2.4s cubic-bezier(0.3, 0.5, 0.5, 1) both;
   }
+  /* In the step that starts it, once it has appeared. */
+  svg.diagram .process:has(> .pulse.starting.current-fragment) > .glow,
+  svg.diagram .process:has(> .pulse.starting.current-fragment) .cog path {
+    animation-delay: var(--launch);
+  }
+  svg.diagram .process:has(> .pulse.starting.current-fragment) .cog {
+    animation:
+      diagram-fade-in 0.3s ease-out var(--launch) both,
+      diagram-fade-out 0.3s ease-in calc(var(--launch) + 2.3s) forwards;
+  }
 
   svg.diagram .packet.visible .leg:not(.visible) {
     animation: diagram-leg-1 0.9s ease-in-out both;
