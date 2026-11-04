@@ -39,9 +39,9 @@ address`, and private and public addresses.
 - Passwordless `sudo` is why the student's private key, and any terminal left
   logged in, are worth protecting. "The Image Gallery" shows what an attacker
   can do once they are on a server.
-- System users come back whenever a service runs as its own user: `www-data`
-  for nginx in "Deploy a static site with nginx", and a dedicated user to run an
-  application in "Manage a PHP application with systemd as a Process Manager".
+- System users come back whenever a service runs as its own user: `www-data` for
+  nginx in "Deploy a static site with nginx", and a dedicated user to run an
+  application in "Manage a web application with systemd as a Process Manager".
 - `htop` comes back in "Unix Processes", among the commands that
   show running processes.
 

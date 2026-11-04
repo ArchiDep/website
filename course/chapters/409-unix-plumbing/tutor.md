@@ -42,9 +42,9 @@ server. What it practises is used throughout the deployments:
 - "Deploy a web application with SFTP" runs the application in the student's
   terminal, where its output and errors appear, sends `schema.sql` to `psql`
   with `<`, and counts packages with `ls | wc -l`.
-- "Process Management on Linux" and "Manage a PHP application with systemd as
-  a Process Manager" read what a service writes to its standard output and
-  error with `journalctl`: the page's last paragraph points there.
+- "Process Management on Linux" and "Manage a web application with systemd as a
+  Process Manager" read what a service writes to its standard output and error
+  with `journalctl`: the page's last paragraph points there.
 - Later exercises filter long outputs with `| grep`, such as `dpkg --list |
 grep php-fpm`.
 

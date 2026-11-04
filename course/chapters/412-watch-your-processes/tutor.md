@@ -57,7 +57,7 @@ kernel uses them.
 
 Not in the exercise: signals, and what `Ctrl+C` does, which "Process Management
 on Linux" explains; how the init process knows to start PostgreSQL at boot,
-which "Manage a PHP application with systemd as a Process Manager" shows; the
+which "Manage a web application with systemd as a Process Manager" shows; the
 two levels of `sshd-session` processes; the kernel threads below `kthreadd` (PID
 2), beyond the page's one sentence; the per-user systemd; hard links, and how
 one program serves many command names; shell quoting beyond whether `$` is
@@ -75,7 +75,7 @@ running applications:
   process tree" shows.
 - "Process Management on Linux" explains `Ctrl+C`, and how to keep a program
   running after logout.
-- "Manage a PHP application with systemd as a Process Manager" has the init
+- "Manage a web application with systemd as a Process Manager" has the init
   process start the application at boot, as it starts PostgreSQL here.
 - "Docker" runs processes isolated from those of the host.
 

@@ -63,7 +63,7 @@ The appendices of the subject page are optional depth:
 Taught later:
 
 - Signals, `kill`, and process managers: "Process Management on Linux".
-- systemd starting an application at boot: "Manage a PHP application with
+- systemd starting an application at boot: "Manage a web application with
   systemd as a Process Manager".
 - Containers as isolated processes: "Docker".
 
@@ -180,7 +180,7 @@ processor each box stands for. Exercises that lean on particular parts:
   two memories, which computer runs a command, the server's processor, memory
   and disk, time spent computing or waiting, and processes taking turns on its
   cores.
-- "Process Management on Linux" and "Manage a PHP application with systemd as a
+- "Process Management on Linux" and "Manage a web application with systemd as a
   Process Manager" rely on the init process, systemd, starting everything else
   at boot.
 - "Docker" compares the boot chain with what the Docker Engine replaces, and

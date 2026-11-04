@@ -64,7 +64,7 @@ flaws:
 - "Configure a web application through environment variables" moves the password
   out of `server.js`, into a `DATABASE_URL` environment variable copied from
   this deployment's `server.js`.
-- "Manage a PHP application with systemd as a Process Manager" keeps the
+- "Manage a web application with systemd as a Process Manager" keeps the
   application running after the student logs out.
 
 ## Key steps
@@ -79,9 +79,9 @@ flaws:
   version is Ubuntu's own `nodejs` package, installed when a NodeSource command
   was skipped or failed.
 - **"What's running so far?"**. Installing PostgreSQL started it; installing
-  Node.js only put files on the disk, and `node -v` ran and exited. What
-  started PostgreSQL is left open on purpose, for "Manage a PHP application
-  with systemd as a Process Manager": do not explain it.
+  Node.js only put files on the disk, and `node -v` ran and exited. What started
+  PostgreSQL is left open on purpose, for "Manage a web application with systemd
+  as a Process Manager": do not explain it.
 - **"Install the dependencies".** Done on the student's computer, with the
   Node.js already installed there, not on the server. `npm ci` has to run again
   after the update: the fix of the cross-site scripting added the `mustache`

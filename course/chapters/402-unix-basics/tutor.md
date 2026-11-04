@@ -29,8 +29,9 @@ and humans".
 Taught later:
 
 - Services that run as their own user: `www-data` for nginx in "Deploy a static
-  site with nginx", and the suggestion of a dedicated system user in "Manage a
-  PHP application with systemd as a Process Manager".
+  site with nginx", and the dedicated system user `guessit`, created with
+  `useradd --system` in "Manage a web application with systemd as a Process
+  Manager".
 
 Not in the course: the special permission bits (setuid, setgid, sticky), the
 `umask`, access control lists, how file systems store files (inodes), PAM, and

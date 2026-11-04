@@ -46,7 +46,7 @@ Taught later:
   page names signals only in a note saying they come later.
 - Keeping a program running after logout, and reading a service's standard
   output and error with `journalctl`: "Process Management on Linux" and "Manage
-  a PHP application with systemd as a Process Manager".
+  a web application with systemd as a Process Manager".
 
 Not in the course: job control (`&`, `bg`, `fg`, `Ctrl-Z`, `nohup`), `2>&1`
 and the order of redirections, file descriptors above 2, named pipes, process
@@ -140,8 +140,8 @@ Parts that exercises lean on in particular:
   foreground, where it holds the terminal and its output appears in the SSH
   session; loads the database schema with `psql < schema.sql`; and compares
   `ls node_modules | wc -l` on the server and the student's computer.
-- "Process Management on Linux" and "Manage a PHP application with systemd as
-  a Process Manager" read the standard output and error of a service with
+- "Process Management on Linux" and "Manage a web application with systemd as a
+  Process Manager" read the standard output and error of a service with
   `journalctl`.
 - "Deploy a static site with nginx" and "Deploy a PHP website with nginx and
   the FastCGI process manager" filter a command's output with `| grep`.

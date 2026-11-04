@@ -8,10 +8,12 @@ the rest of the course.
 <!-- more -->
 
 - Transfering files manually through SFTP is slow and error-prone, all the more
-  so with the hundreds of files of `node_modules`. We will use **Git** to
-  reliably transfer files [from our central codebase][12factor-codebase] and
-  easily keep our deployment up-to-date over time. The dependencies will be
-  installed on the server instead of being uploaded.
+  so with the hundreds of files of `node_modules`. It also leaves the server in
+  an inconsistent state during the transfer, or if the transfer is interrupted.
+  We will use **Git** to reliably transfer files [from our central
+  codebase][12factor-codebase] and easily keep our deployment up-to-date over
+  time. The dependencies will be installed on the server instead of being
+  uploaded.
 - [Hardcoding configuration is a bad practice][12factor-config]. We will use
   **environment variables** so that our application can be dynamically
   configured and deployed in any environment without changing its source code.
@@ -20,15 +22,22 @@ the rest of the course.
   starting it automatically when the server boots, and restarting it
   automatically if it crashes.
 - We started the application with `npm run dev`, the same command as on our
-  computer. It runs the application in **development mode**, with `node
---watch`, which restarts it whenever one of its files changes. That is
-  convenient while you are editing the code, but not on a server. Every change
-  to a file causes an **unplanned downtime**, however short, while the
-  application restarts, at a moment nobody chose. A file changing halfway
-  through an upload restarts the application on a half-updated version of its
-  code, which may not work, or not start at all. If it crashes, it stays down
-  until another file changes. We will run it in **production mode** instead,
-  with `node server.js`, so that it only restarts when we decide to.
+  computer. It runs the application in [**development
+  mode**][guessit-development], with `node --watch`, which restarts it whenever
+  one of its files changes. That is convenient while you are editing the code,
+  but not on a server. Every change to a file causes an **unplanned downtime**,
+  however short, while the application restarts, at a moment nobody chose. A
+  file changing halfway through an upload restarts the application on a
+  half-updated version of its code, which may not work, or not start at all. If
+  it crashes, it stays down until another file changes. We will run it in
+  [**production mode**][guessit-production] instead, with `node server.js`, so
+  that it only restarts when we decide to.
+- We deployed and ran the application with our own user account, which [can run
+  any command as `root` with `sudo`, without a password][meet-your-server-sudo].
+  An attacker who found a vulnerability letting them run commands through the
+  application would run them as us, so they could become `root` and take over
+  the whole server. We will run the application as a **dedicated user** which
+  has no `sudo` access, and can only touch what the application needs.
 - Accessing a web application through an IP address is not user-friendly. We
   will obtain a domain and configure its DNS zone file so that our application
   is accessible with a human-readable **domain name**.
@@ -44,16 +53,12 @@ the rest of the course.
   served over HTTP and not HTTPS. We will obtain a **TLS/SSL certificate**
   signed by a trusted certificate authority so that our application can be
   served over HTTPS and recognized as secure by browsers.
-- We deployed and ran the application with our own user account, which [can run
-  any command as `root` with `sudo`, without a password][meet-your-server-sudo].
-  An attacker who found a vulnerability letting them run commands through the
-  application would run them as us, so they could become `root` and take over
-  the whole server. We will deploy the application with a **dedicated user**
-  which has no `sudo` access, and can only touch what the application needs.
 
 [12factor-codebase]: https://12factor.net/codebase
 [12factor-config]: https://12factor.net/config
 [apache]: https://httpd.apache.org
+[guessit-development]: https://github.com/ArchiDep/guessit-ex#run-in-development-mode
+[guessit-production]: https://github.com/ArchiDep/guessit-ex#run-in-production-mode
 [nginx]: https://www.nginx.com
 
 [meet-your-server-sudo]: {% link chapters/405-meet-your-server/exercise.md %}#ask-sudo-what-you-may-do

@@ -171,8 +171,8 @@ particular:
   stopping the previous deployment, which holds the port while it runs.
   "Configure a web application through environment variables" does the same,
   with the port read from a `PORT` environment variable that defaults to 3000.
-- "Manage a PHP application with systemd as a Process Manager" runs `php -S
-0.0.0.0:3000`, reached at the server's public address and port 3000.
+- "Manage a web application with systemd as a Process Manager" has systemd run
+  Guess It, still on port 3000 and reached at the server's public address.
 - "Domain Name System (DNS)" and "Domain name configuration" give the public
   address a name.
 - "Reverse Proxying" and the nginx deployments put nginx on port 80 in front of
