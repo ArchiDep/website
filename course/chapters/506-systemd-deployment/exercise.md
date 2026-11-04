@@ -18,13 +18,6 @@ Connect to your cloud server with SSH for this exercise.
 
 <!-- more -->
 
-At the end of the [previous exercise][env-deployment], you started Guess It by
-typing a command, with its configuration in it. It runs as long as that SSH
-connection stays open, and no longer: when the connection closes, the
-application receives a [`SIGHUP` signal][sighup] and stops. If it crashes, or if
-the server reboots, nothing starts it again until you type the command once
-more.
-
 ## :exclamation: Requirements
 
 Make sure you have completed the [previous exercise][env-deployment] first. You
@@ -102,9 +95,17 @@ It later in this exercise.
 
 ## :question: What this exercise improves
 
+At the end of the [previous exercise][env-deployment], you started Guess It by
+typing a command, with its configuration in it. It runs as long as that SSH
+connection stays open, and no longer: when the connection closes, the
+application receives a [`SIGHUP` signal][sighup] and stops. If it crashes, or if
+the server reboots, nothing starts it again until you type the command once
+more.
+
 systemd can run Guess It for you, so that you do not have to start it manually
 every time. In addition to setting up systemd, you will also make three
-improvements:
+improvements to fix some of the flaws listed in [How to improve our basic
+deployment][improve]:
 
 - Run Guess It with a **dedicated user** instead of your own user. This protects
   your server if an attacker finds a way to run commands through the

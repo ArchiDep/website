@@ -10,10 +10,18 @@ variables, instead of having it written in `server.js`.
 
 <!-- more -->
 
-At the end of the previous exercise, the `server.js` file of your deployment had
-to contain the database password. If it was not already the right one, you
-edited it on your server, and left it uncommitted. Either way, the password is
-in the code.
+## :exclamation: Requirements
+
+Make sure you have completed the [previous exercise][git-deployment] first. You
+will need its clone in `/srv/guessit`, and the `guessit-ex` directory of your
+SFTP deployment, which still holds the password of the `guessit` database user.
+
+## :question: Why are we doing this?
+
+At the end of the [previous SFTP deployment exercise][sftp], the `server.js`
+file of your deployment had to contain the database password. If it was not
+already the right one, you edited it on your server, and left it uncommitted.
+Either way, the password is in the code.
 
 The third factor of The Twelve-Factor App, [Config][12factor-config], asks for a
 strict separation of the configuration from the code. The configuration is what
@@ -21,12 +29,6 @@ can change between deploys, such as the database password or the database port,
 while the code stays the same. An application that reads its configuration from
 environment variables can be deployed anywhere without changing a line of its
 code.
-
-## :exclamation: Requirements
-
-Make sure you have completed the [previous exercise][git-deployment] first. You
-will need its clone in `/srv/guessit`, and the `guessit-ex` directory of your
-SFTP deployment, which still holds the password of the `guessit` database user.
 
 ## :exclamation: Stop the Git deployment
 

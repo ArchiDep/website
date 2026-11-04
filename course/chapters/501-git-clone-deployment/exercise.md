@@ -17,18 +17,30 @@ Connect to your cloud server with SSH for this exercise.
 
 <!-- more -->
 
-Why a new deployment, when your server already has Guess It in `~/guessit-ex`?
-That directory is not your codebase. It is a copy of the directory on your
-computer as it was the day you uploaded it, with your configuration in
-`server.js`, the `node_modules` installed on your computer, and anything else
-that happened to be there. Nothing ties it to a commit of your repository, so
-nothing tells you which version of the code it is.
+## :exclamation: Requirements
+
+Make sure you have completed the [previous exercise][sftp] first. Your new
+deployment uses the same Node.js, the same PostgreSQL database and the same
+`guessit` database user, with the password you chose then.
+
+## :question: Why are we doing this?
+
+Why a new deployment, when your server already has Guess It in `~/guessit-ex`
+from the [previous SFT deployment exercise][sftp]? That directory is not your
+codebase. It is a copy of the directory on your computer as it was the day you
+uploaded it, with your configuration in `server.js`, the `node_modules`
+installed on your computer, and anything else that happened to be there. Nothing
+ties it to a commit of your repository, so nothing tells you which version of
+the code it is.
 
 The first factor of The Twelve-Factor App, [Codebase][12factor-codebase], asks
 for one codebase tracked in revision control, and many deploys of it. Your
 codebase is the repository of your fork, on GitHub. The copy on your computer is
 one deploy of it, and your server will have another: a clone of the same
 repository, made from the codebase rather than copied from another deploy.
+
+Using Git instead of copying files manually makes our deployments more robust,
+predictable, and easier to update.
 
 {% callout type: more, id: sftp-hosting %}
 
@@ -40,12 +52,6 @@ a host lets you deploy with Git, or deploys automatically from your repository,
 prefer that.
 
 {% endcallout %}
-
-## :exclamation: Requirements
-
-Make sure you have completed the [previous exercise][sftp] first. Your new
-deployment uses the same Node.js, the same PostgreSQL database and the same
-`guessit` database user, with the password you chose then.
 
 ## :question: Optional: find your way around your server again
 
