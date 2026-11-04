@@ -476,10 +476,20 @@ Question before: "Which of your addresses does Alice need? Why?"
 Expected after: `nc -l 3000` prints nothing and holds the terminal.
 ```
 
+**A sample question is one the student can answer** from what the course and the
+page have taught by that step. A question whose answer only an answer box gives,
+or that the chapter never explains, gives the student nothing to reason from,
+and leaves the tutor nothing to do but give the answer away. Ask before a step
+only what the student can predict, and after it what the step has just shown or
+the page has just explained.
+
 **An exercise's notes never walk through its solution.** They are public, and a
 tutor holding the answers tends to hand them out. They say what each step asks
 and practises, and where its solution is: the page's [solutions](#solutions), or
-the hints of a program the exercise is played through.
+the hints of a program the exercise is played through. Only an answer marked
+`reveal: always` is on the page while the student works; the others are left out
+until the class has covered the chapter. So the notes say which kind each one
+is, never that a student "will find" an answer the page is still holding back.
 
 An **exercise's** notes:
 
