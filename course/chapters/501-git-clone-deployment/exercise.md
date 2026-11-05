@@ -26,7 +26,7 @@ deployment uses the same Node.js, the same PostgreSQL database and the same
 ## :question: Why are we doing this?
 
 Why a new deployment, when your server already has Guess It in `~/guessit-ex`
-from the [previous SFT deployment exercise][sftp]? That directory is not your
+from the [previous SFTP deployment exercise][sftp]? That directory is not your
 codebase. It is a copy of the directory on your computer as it was the day you
 uploaded it, with your configuration in `server.js`, the `node_modules`
 installed on your computer, and anything else that happened to be there. Nothing
