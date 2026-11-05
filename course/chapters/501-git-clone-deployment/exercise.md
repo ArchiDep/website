@@ -151,9 +151,9 @@ is: you will need the password it holds.
 ## :exclamation: Create the deployment directory
 
 By convention, Linux systems keep the files of what a server serves in the
-`/srv` directory (for _serve_). You will deploy Guess It in `/srv/guessit`
-rather than in your home directory. Look at the permissions of your home
-directory:
+`/srv` directory (for "**s**e**rv**e"). You will deploy Guess It in
+`/srv/guessit` rather than in your home directory. Look at the permissions of
+your home directory:
 
 ```bash
 $> ls -ld ~
