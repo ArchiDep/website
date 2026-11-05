@@ -405,6 +405,7 @@ counts as a separator, and the field numbers do not match the columns you see.
 | `sort`         | Sort the lines alphabetically                              |
 | `sort -n`      | Sort the lines as numbers (`9` before `18`)                |
 | `sort -r`      | Sort the lines in reverse order (combine with `-n`: `-nr`) |
+| `sort -h`      | Sort sizes like `du -h` prints them (`900K` before `1.2G`) |
 | `sort \| uniq` | Sort the lines and remove duplicates                       |
 | `uniq -c`      | Remove duplicates and count how many times each line came  |
 
@@ -432,6 +433,53 @@ Add `| head -n 5` at the end to keep only the top five. The [Unix plumbing
 exercise][who-is-knocking] uses it to find which usernames attackers try most
 often on your server.
 
+### What fills the disk? (`du`, `sort -h`)
+
+`du` (**d**isk **u**sage) shows how much space files and directories take. `-s`
+prints one total per directory instead of a line for every file inside it, and
+`-h` prints sizes a human can read, like `68M` or `1.1G`. `sort -h` sorts those
+sizes in the right order:
+
+```bash
+$> sudo du -sh /var/* | sort -h | tail -n 5
+4.0M    /var/backups
+24M     /var/www
+68M     /var/cache
+312M    /var/log
+1.1G    /var/lib
+```
+
+The biggest directory comes last. Run the same command on it (`sudo du -sh
+/var/lib/* | ...`) to find out what inside it takes the space.
+
+### Who is visiting my site? (nginx logs)
+
+nginx writes one line per request it answers in `/var/log/nginx/access.log`:
+
+```
+203.0.113.42 - - [05/Nov/2026:14:03:12 +0100] "GET /about HTTP/1.1" 200 1534 "-" "Mozilla/5.0 ..."
+```
+
+Separated by spaces, column 1 is the IP address of the client, column 7 the path
+it asked for, and column 9 the status code of the response (the date counts as
+two columns, because it contains a space). With
+[`cut`](#just-the-column-i-want-cut) and the [counting
+pipeline](#what-comes-up-most-often-sort--uniq--c--sort--nr), you can ask:
+
+```bash
+# Which IP addresses send the most requests?
+$> sudo cat /var/log/nginx/access.log | cut -d ' ' -f 1 | sort | uniq -c | sort -nr | head -n 5
+
+# Which status codes does the server answer with, and how often?
+$> sudo cat /var/log/nginx/access.log | cut -d ' ' -f 9 | sort | uniq -c | sort -nr
+
+# Which paths are asked for but not found?
+$> sudo cat /var/log/nginx/access.log | grep ' 404 ' | cut -d ' ' -f 7 | sort | uniq -c | sort -nr | head -n 5
+```
+
+Bots sometimes send requests that nginx cannot read, and their lines have fewer
+columns. A few odd values in the counts usually come from those lines.
+
 ### Too long to read? (`less`)
 
 Read a long output page by page, as with a file (type `q` to quit):
@@ -450,6 +498,51 @@ into `grep` to only see the lines you care about:
 ```bash
 $> sudo tail -f /var/log/nginx/access.log | grep 404
 ```
+
+### Turn lines into arguments (`xargs`)
+
+A pipe sends text, not arguments. Some commands only use their arguments and
+ignore the text you send them: `code` opens the files you name, in Visual Studio
+Code. `xargs` reads the lines it receives, and runs the command you give it with
+those lines added as arguments:
+
+```bash
+$> git diff --name-only | xargs code
+$> grep -Rl TODO . | xargs code
+```
+
+The first command opens every file you have modified but not yet staged with
+`git add`: `git diff --name-only` prints their paths, one per line. The second
+opens every file containing the word "TODO": `grep -l` prints the name of each
+file that matches instead of the matching lines.
+
+{% note type: tip %}
+
+- Run the `git diff` example from the root directory of your repository: the
+  paths Git prints start from there.
+- `xargs` splits what it receives on spaces too, so a file name containing a
+  space becomes two arguments, neither of which exists.
+- On macOS, the `code` command must first be installed from Visual Studio Code:
+  open the Command Palette and run _Shell Command: Install 'code' command in
+  PATH_.
+
+{% endnote %}
+
+### Copy to the clipboard (`pbcopy`, `clip.exe`)
+
+Send what a command prints to your clipboard, then paste it anywhere with
+`Cmd-V` (macOS) or `Ctrl-V` (Windows):
+
+```bash
+# On macOS
+$> cat ~/.ssh/id_ed25519.pub | pbcopy
+
+# In the WSL on Windows
+$> cat ~/.ssh/id_ed25519.pub | clip.exe
+```
+
+This is the safest way to copy a long value, such as a public key: selecting it
+with the mouse in the terminal can miss a character or add a line break.
 
 ### `sudo` in a pipeline
 
