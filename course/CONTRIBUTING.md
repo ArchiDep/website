@@ -1317,9 +1317,9 @@ of the course material as the running dev server shows it, with
 [Puppeteer][puppeteer]: a slide, a step of what a slide reveals, an
 [architecture diagram](#architecture-diagrams) of a page, enlarged or not, at
 any of its steps, a code block of a page, or a page with the pointer over one of
-its elements. It is for checking a change to a slide, a diagram, the
-highlighting of code or a tooltip without stepping, scrolling or pointing to it
-by hand.
+its elements, or one element of a page alone. It is for checking a change to a
+slide, a diagram, the highlighting of code or a tooltip without stepping,
+scrolling or pointing to it by hand.
 
 ```bash
 # The slide showing the machine diagram, with 9 then 10 steps reached
@@ -1335,6 +1335,9 @@ npm run screenshot -- 411 --diagram machine --enlarged --step 9
 
 # The 18th and 20th code blocks of the page, counted from the top
 npm run screenshot -- 101 --code 18,20
+
+# One element of the page alone, here as a phone shows it
+npm run screenshot -- 506 --element .file-map --size 390x844
 
 # The window with the pointer over a link, to see its tooltip
 npm run screenshot -- 411 --hover 'a[data-tip="Source code"]' --size 1600x900
