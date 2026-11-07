@@ -107,6 +107,7 @@ Many of these directories are common to all Unix systems.
 | `/opt`    | Locally installed software                                 |
 | `/root`   | Home directory of the `root` superuser                     |
 | `/sbin`   | System binaries (for system administration)                |
+| `/srv`    | Files of what the server serves, such as a website         |
 | `/tmp`    | Temporary files not expected to survive a reboot           |
 | `/usr`    | Non-system-critical executables, libraries and resources   |
 | `/var`    | Variable files (e.g. lock/log files, databases)            |

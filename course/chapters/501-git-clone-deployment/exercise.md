@@ -441,6 +441,40 @@ different.
 
 {% include diagrams/410-running-app.html %}
 
+## :file_folder: Where is everything?
+
+These are the files and directories of your server that matter for this
+deployment.
+
+<div class="file-map">
+
+| Path                                                                           | What it is                                                             | What you did                                                                                                       | Who uses it                                                               |
+| :----------------------------------------------------------------------------- | :--------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| :file_folder: `/srv/guessit` <span class="new">new</span>                      | Your deployment: a clone of your repository                            | Created it with `sudo mkdir`, gave it to yourself with `sudo chown`, and cloned your fork into it with `git clone` | You, to deploy and start the application                                  |
+| :page_facing_up: `/srv/guessit/server.js` <span class="new">new</span>         | The code of the application, with the database password                | Cloned it with `git clone`, then gave it your password with `nano` or `vim` if it did not have it                  | `node`, which runs it. Git sees your change as a modification of the code |
+| :page_facing_up: `/srv/guessit/package-lock.json` <span class="new">new</span> | The exact versions of the dependencies                                 | Cloned it with `git clone`                                                                                         | `npm ci`, to install those versions                                       |
+| :file_folder: `/srv/guessit/node_modules` <span class="new">new</span>         | The dependencies of the application                                    | Installed them with `npm ci`, on the server                                                                        | `node`, when the code loads a dependency                                  |
+| :file_folder: `/var/lib/postgresql`                                            | The data of PostgreSQL, including the `guessit` database and its games | Created the database in it with `schema.sql`, in the [SFTP deployment][sftp-schema]                                | PostgreSQL, for both of your deployments                                  |
+| :page_facing_up: `~/guessit-ex/server.js`                                      | The code of the original SFTP deployment, with the password            | Uploaded it in the [SFTP deployment][sftp-upload]                                                                  | You, to copy the password. Nothing runs it any more                       |
+
+</div>
+
+Two directories of the [file hierarchy][unix-directories] matter most here: `/srv`
+holds what the server serves, and `/var` the files that change while it runs,
+such as the database your two deployments share.
+
+You can explore all of this yourself: `ls -l` shows what a directory contains,
+with its permissions, and `cat`, `head` and `tail` what a file contains, as in the
+[command line cheatsheet][command-line-cheatsheet]. For example:
+
+```bash
+# /srv belongs to root, your deployment to you.
+$> ls -ld /srv /srv/guessit
+
+# The dependencies of your deployment, which Git did not clone.
+$> ls /srv/guessit/node_modules
+```
+
 ## :boom: Troubleshooting
 
 Here's a few tips about some problems you may encounter during this exercise.
@@ -532,9 +566,13 @@ previous exercise][sftp-password].
 [12factor-codebase]: https://12factor.net/codebase
 [create-directory]: #create-the-deployment-directory
 
+[command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
 [guessit]: {% link chapters/205-guessit/exercise.md %}
 [sftp]: {% link chapters/410-sftp-deployment/exercise.md %}
 [sftp-architecture]: {% link chapters/410-sftp-deployment/exercise.md %}#architecture
 [sftp-password]: {% link chapters/410-sftp-deployment/exercise.md %}#password-authentication-failed-for-user-guessit
+[sftp-schema]: {% link chapters/410-sftp-deployment/exercise.md %}#initialize-the-database
+[sftp-upload]: {% link chapters/410-sftp-deployment/exercise.md %}#upload-the-application
 [stop-sftp]: #stop-the-sftp-deployment
+[unix-directories]: {% link chapters/402-unix-basics/subject.md %}#common-unix-directories
 [update-configuration]: #update-the-configuration

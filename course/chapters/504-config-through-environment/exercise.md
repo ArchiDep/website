@@ -355,6 +355,34 @@ from is different.
 
 {% include diagrams/410-running-app.html %}
 
+## :file_folder: Where is everything?
+
+These are the files and directories of your server that matter for this
+deployment.
+
+<div class="file-map">
+
+| Path                                                                           | What it is                                                  | What you did                                                                  | Who uses it                                              |
+| :----------------------------------------------------------------------------- | :---------------------------------------------------------- | :---------------------------------------------------------------------------- | :------------------------------------------------------- |
+| :page_facing_up: `/srv/guessit/server.js` <span class="changed">changed</span> | The code of the application, without the password           | Changed it on your computer, then ran `git restore` if needed, and `git pull` | `node`, which finds the configuration in its environment |
+| :page_facing_up: `/srv/guessit/README.md` <span class="changed">changed</span> | How to set up Guess It                                      | Changed it on your computer, then ran `git pull`                              | Anyone setting up Guess It                               |
+| :file_folder: `/srv/guessit`                                                   | Your deployment: a clone of your repository                 | Cloned it in the [Git deployment][git-clone]                                  | You, to deploy and start the application                 |
+| :page_facing_up: `~/guessit-ex/server.js`                                      | The code of the original SFTP deployment, with the password | Uploaded it in the [SFTP deployment][sftp-upload]                             | You, to copy the database URL. Nothing runs it any more  |
+
+</div>
+
+Two directories of the [file hierarchy][unix-directories] matter most here: `/srv`
+holds what the server serves, and `/home`, where `~` is, the files of its users.
+
+You can explore all of this yourself: `ls -l` shows what a directory contains,
+with its permissions, and `cat`, `head` and `tail` what a file contains, as in the
+[command line cheatsheet][command-line-cheatsheet]. For example:
+
+```bash
+# The database URLs of your two deployments: only one has the password.
+$> grep postgresql: ~/guessit-ex/server.js /srv/guessit/server.js
+```
+
 ## :boom: Troubleshooting
 
 Here's a few tips about some problems you may encounter during this exercise.
@@ -407,7 +435,11 @@ start Guess It again.
 [run]: #run-the-application
 [stop-git]: #stop-the-git-deployment
 
+[command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
+[git-clone]: {% link chapters/501-git-clone-deployment/exercise.md %}#clone-the-repository
 [git-deployment]: {% link chapters/501-git-clone-deployment/exercise.md %}
 [sftp]: {% link chapters/410-sftp-deployment/exercise.md %}
 [sftp-architecture]: {% link chapters/410-sftp-deployment/exercise.md %}#architecture
 [sftp-password]: {% link chapters/410-sftp-deployment/exercise.md %}#password-authentication-failed-for-user-guessit
+[sftp-upload]: {% link chapters/410-sftp-deployment/exercise.md %}#upload-the-application
+[unix-directories]: {% link chapters/402-unix-basics/subject.md %}#common-unix-directories

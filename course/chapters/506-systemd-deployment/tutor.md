@@ -46,6 +46,11 @@ with `systemctl`, systemd starting Guess It as `guessit`, logging out, coming
 back, and rebooting, after which systemd starts PostgreSQL then Guess It without
 anyone logged in.
 
+The "Where is everything?" table lists the files and directories the deployment
+relies on: what each is, what the student did to it, and who uses it. It is
+where the page says that `useradd` wrote to `/etc/passwd`. Sample question: "Which
+of these files does the application itself read?"
+
 Not in the exercise: `Environment=`, which the page names only to say that unit
 files are readable by everyone; `systemctl edit` and drop-in files; `Type=`,
 `Requires=` and `Wants=`; the restart limits behind `Start request repeated too

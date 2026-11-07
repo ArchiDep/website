@@ -41,6 +41,10 @@ startup, `git stash`, and a password with special characters in a URL.
 The architecture diagram is 410's, unchanged: only where Guess It gets its
 configuration from differs.
 
+The "Where is everything?" table lists the files and directories that matter for
+the deployment: what each is, what the student did to it, and who uses it.
+Sample question: "Which of these files holds the database password now?"
+
 ## Where it leads
 
 Every later deployment of an application configures it through the environment.

@@ -704,6 +704,42 @@ what happens when you start the service, log out, and reboot the server.
 
 {% include diagrams/506-systemd.html %}
 
+## :file_folder: Where is everything?
+
+These are the files and directories of your server that matter for this
+deployment.
+
+<div class="file-map">
+
+| Path                                                                                | What it is                                                  | What you did                                                                                    | Who uses it                                                                    |
+| :---------------------------------------------------------------------------------- | :---------------------------------------------------------- | :---------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| :page_facing_up: `/etc/systemd/system/guessit.service` <span class="new">new</span> | The unit file: how and when to run Guess It                 | Wrote it with `sudo nano`                                                                       | systemd, to know how to run the application                                    |
+| :file_folder: `/etc/guessit` <span class="new">new</span>                           | The configuration directory of Guess It                     | Created it with `sudo mkdir`                                                                    | Nothing directly: it holds the configuration file                              |
+| :page_facing_up: `/etc/guessit/guessit.env` <span class="new">new</span>            | The configuration, with the database password               | Created it with `sudo touch`, protected it with `sudo chmod 600`, and wrote it with `sudo nano` | systemd, as `root`. The application only gets the variables in its environment |
+| :page_facing_up: `/etc/passwd` <span class="changed">changed</span>                 | The list of the server's Unix users                         | Ran `useradd`, which added the `guessit` user                                                   | systemd, to find the `guessit` user that runs the application                  |
+| :file_folder: `/srv/guessit` <span class="changed">changed</span>                   | Your deployment: a clone of your repository                 | Gave it to the `guessit` group with `chown`, and closed it to other users with `chmod`          | You, to deploy. The `guessit` user reads it                                    |
+| :page_facing_up: `/srv/guessit/server.js`                                           | The code of the application, without the password           | Cloned it with `git clone`, and updated it with `git pull`                                      | `node`, run by systemd as the `guessit` user                                   |
+| :page_facing_up: `/usr/bin/node`                                                    | The Node.js program                                         | Installed it with `apt-get install`, in the [SFTP deployment][sftp-install-node]                | systemd runs it, as `ExecStart` says                                           |
+| :page_facing_up: `~/guessit-ex/server.js`                                           | The code of the original SFTP deployment, with the password | Uploaded it in the [SFTP deployment][sftp-upload]                                               | You, to copy the database URL. Nothing runs it any more                        |
+
+</div>
+
+Two directories of the [file hierarchy][unix-directories] matter most here: `/etc`
+holds the configuration of the server, and `/srv` what it serves.
+
+You can explore all of this yourself: `ls -l` shows what a directory contains,
+with its permissions, and `cat`, `head` and `tail` what a file contains, as in the
+[command line cheatsheet][command-line-cheatsheet]. Use `sudo` for what only
+`root` can read. For example:
+
+```bash
+# The line `useradd` added to /etc/passwd and its surroundings.
+$> grep -C 1 guessit /etc/passwd
+
+# The unit systemd has loaded.
+$> sudo systemctl status guessit
+```
+
 ## :boom: Troubleshooting
 
 Here's a few tips about some problems you may encounter during this exercise.
@@ -892,14 +928,18 @@ SFTP deployment][sftp-password].
 [systemd-exec-start]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#ExecStart=
 [systemd-service-examples]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Examples
 
+[command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
 [env-architecture]: {% link chapters/504-config-through-environment/exercise.md %}#architecture
 [env-deployment]: {% link chapters/504-config-through-environment/exercise.md %}
 [improve]: {% link chapters/413-how-to-improve/subject.md %}
 [meet-your-server-sudo]: {% link chapters/405-meet-your-server/exercise.md %}#ask-sudo-what-you-may-do
 [service-unit-file]: {% link chapters/505-linux-process-management/subject.md %}#service-unit-file
 [sftp]: {% link chapters/410-sftp-deployment/exercise.md %}
+[sftp-install-node]: {% link chapters/410-sftp-deployment/exercise.md %}#install-nodejs
+[sftp-upload]: {% link chapters/410-sftp-deployment/exercise.md %}#upload-the-application
 [sftp-password]: {% link chapters/410-sftp-deployment/exercise.md %}#password-authentication-failed-for-user-guessit
 [sighup]: {% link chapters/505-linux-process-management/subject.md %}#unix-signals-in-the-real-world
 [sigint]: {% link chapters/505-linux-process-management/subject.md %}#the-terminal-interrupt-signal-sigint
 [system-users]: {% link chapters/405-meet-your-server/exercise.md %}#the-accounts-of-the-server
+[unix-directories]: {% link chapters/402-unix-basics/subject.md %}#common-unix-directories
 [trapping-signals]: {% link chapters/505-linux-process-management/subject.md %}#trapping-signals

@@ -42,6 +42,10 @@ processes students are expected to be able to draw are three from the last one:
 the browser, Guess It and PostgreSQL. Nothing SSH-related is expected: the SSH
 processes are folded into two stacks, since 103 explained them.
 
+The "Where is everything?" table lists the files and directories the deployment
+relies on: what each is, what the student did to it, and who uses it. It is
+where the page says that PostgreSQL keeps its data in `/var/lib/postgresql`.
+
 Not in the exercise: how NodeSource's script configures APT, PostgreSQL's
 authentication configuration, and percent-encoding passwords in a URL, which
 the random hexadecimal password avoids. Unix sockets appear only in a "more"

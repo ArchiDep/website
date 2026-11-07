@@ -28,6 +28,7 @@ for AI assistants and automated agents.
     - [Side-by-Side Columns](#side-by-side-columns)
     - [Solutions](#solutions)
     - [Architecture Diagrams](#architecture-diagrams)
+    - [File Maps](#file-maps)
     - [Logic Circuits](#logic-circuits)
     - [Forced Markdown](#forced-markdown)
     - [Code Blocks](#code-blocks)
@@ -210,8 +211,9 @@ materials.
   and is designed for a column of them: a heading without one breaks it. The
   exercises use `:exclamation:` for a step to do, `:question:` for an optional
   one, `:space_invader:` for a harder optional one, `:checkered_flag:` for "What
-  have I done?", `:classical_building:` for an architecture diagram and `:boom:`
-  for "Troubleshooting" and its entries.
+  have I done?", `:classical_building:` for an architecture diagram,
+  `:file_folder:` for a [file map](#file-maps) and `:boom:` for
+  "Troubleshooting" and its entries.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.
@@ -869,6 +871,48 @@ to a few conventions:
 The partial carries its own stylesheet, and the site's scripts do the stepping:
 [`src/diagrams/runtime`](./src/diagrams/runtime), from `course.ts` in a page and
 as a reveal.js plugin in a deck.
+
+#### File Maps
+
+A deployment exercise can end with a "Where is everything?" section, after
+"Architecture" and before "Troubleshooting": a table of the files and directories the
+deployment relies on, which ties the commands of the exercise to what they left
+on disk. It is a plain Markdown table with four columns, in a `file-map` element:
+
+```markdown
+<div class="file-map">
+
+| Path                                                      | What it is | What you did | Who uses it |
+| :-------------------------------------------------------- | :--------- | :----------- | :---------- |
+| :file_folder: `/etc/guessit` <span class="new">new</span> | ...        | ...          | ...         |
+| :file_folder: `/srv/guessit`                              | ...        | ...          | ...         |
+
+</div>
+```
+
+The theme relies on the columns being these four, in this order: it repeats their
+names where it stacks them on a narrow screen. A path heads its row rather than
+taking a column of its own.
+
+Its rows are paths of the server. A file on the student's computer has no row,
+since its path is not known, but a cell can mention it.
+
+The rows are the files and directories that make up the deployment, not the ones
+that change as a side effect of working on the server, such as `.git` or
+`~/.bash_history`: those would come back in the table of every exercise.
+
+The first cell starts with `:file_folder:` for a directory or `:page_facing_up:`
+for a file, then says how the exercise left the path, in the colors of a Git diff:
+`<span class="new">new</span>`, `<span class="changed">changed</span>` or
+`<span class="removed">removed</span>`. A row without one comes from a previous
+exercise, and is grayed out.
+
+A table does not list everything on the server that the deployment relies on,
+only what is relevant to what the student has just done. A path from an earlier
+exercise has a row only if the exercise uses it or the student needs it to make
+sense of the new rows. A row does not have to come back in a later exercise just
+because an earlier table had it: PostgreSQL's data directory, for example, is in
+the table of the exercise that installs PostgreSQL, and in no later one.
 
 #### Logic Circuits
 

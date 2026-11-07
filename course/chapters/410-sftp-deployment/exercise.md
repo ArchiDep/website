@@ -638,6 +638,41 @@ communication flow at the end of this exercise.
 
 {% include diagrams/410-running.html %}
 
+## :file_folder: Where is everything?
+
+These are the files and directories of your server that matter for this
+deployment.
+
+<div class="file-map">
+
+| Path                                                                    | What it is                                                             | What you did                                                                      | Who uses it                                                      |
+| :---------------------------------------------------------------------- | :--------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| :file_folder: `~/guessit-ex` <span class="new">new</span>               | The application you uploaded from your computer                        | Uploaded it with your SFTP application                                            | You, to start the application with `npm run dev`                 |
+| :page_facing_up: `~/guessit-ex/server.js` <span class="new">new</span>  | The code of the application, with the database password                | Changed the password in it on your computer, then uploaded it                     | `node`, which runs it                                            |
+| :page_facing_up: `~/guessit-ex/schema.sql` <span class="new">new</span> | The SQL that creates the database user, the database and its table     | Changed the password in it on your computer, uploaded it, then ran it with `psql` | `psql` ran the queries in it once, then nothing reads it anymore |
+| :file_folder: `~/guessit-ex/node_modules` <span class="new">new</span>  | The dependencies of the application                                    | Installed them with `npm ci` on your computer, then uploaded them                 | `node`, when the code loads a dependency                         |
+| :page_facing_up: `/usr/bin/node` <span class="new">new</span>           | The Node.js program                                                    | Installed it with `apt-get install`                                               | `npm run dev`, which runs `node --watch server.js`               |
+| :file_folder: `/var/lib/postgresql` <span class="new">new</span>        | The data of PostgreSQL, including the `guessit` database and its games | Installed PostgreSQL with `apt`, then ran `schema.sql`                            | PostgreSQL, which runs as the `postgres` user                    |
+
+</div>
+
+Three directories of the [file hierarchy][unix-directories] matter most here:
+`/home`, where `~` is, holds the files of the server's users, `/usr` the
+programs you installed, and `/var` the files that change while the server runs,
+such as databases.
+
+You can explore all of this yourself: `ls -l` shows what a directory contains,
+with its permissions, and `cat`, `head` and `tail` what a file contains, as in the
+[command line cheatsheet][command-line-cheatsheet]. For example:
+
+```bash
+# The files you uploaded, with their permissions.
+$> ls -l ~/guessit-ex
+
+# The data of PostgreSQL belongs to the postgres user, not to you.
+$> ls -l /var/lib/postgresql
+```
+
 ## :boom: Troubleshooting
 
 Here's a few tips about some problems you may encounter during this exercise.
@@ -858,7 +893,9 @@ On Ubuntu, the PostgreSQL superuser, `postgres`, can only connect from the
 [sftp]: https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
 [tcp]: {% link chapters/407-tcp/exercise.md %}
 
+[command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
 [sysadmin-cheatsheet-apt]: {% link cheatsheets/sysadmin/cheatsheet.md %}#installing--upgrading
+[unix-directories]: {% link chapters/402-unix-basics/subject.md %}#common-unix-directories
 [unix-pipe]: {% link chapters/408-unix-processes/subject.md %}#pipelines
 [unix-redirection]: {% link chapters/408-unix-processes/subject.md %}#stream-redirection
 [unix-socket]: https://en.wikipedia.org/wiki/Unix_domain_socket
