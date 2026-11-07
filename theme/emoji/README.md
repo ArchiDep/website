@@ -27,3 +27,7 @@ refreshed.
    into this directory.
 2. Add the emoji to `ArchiDep.Emoji`, whose test asserts that every registered
    emoji has a file here and that every file here is registered.
+3. If `app/priv/static/cache_manifest.json` exists, as it does once anything has
+   been digested locally, a page showing the emoji cannot be rendered until the
+   file is in that manifest. Run `npm run build:emoji` in `theme`, then
+   `mix assets.deploy` in `app`.
