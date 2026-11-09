@@ -43,15 +43,16 @@ sections:
       redirection and pipelines, and basic networking (IP addresses, ports, TCP,
       and an HTTP request typed by hand). It ends with a first, deliberately
       naive deployment of a Node.js application uploaded with SFTP and run in
-      development mode, and a list of its flaws that the next sections fix. Linux internals, such as the kernel or scheduling, are out of scope.
+      development mode, and a list of its flaws that the next sections fix.
+      Linux internals, such as the kernel or scheduling, are out of scope.
   - title: Advanced Deployment
     description: >-
       Fixing the flaws of the basic deployment one by one, on the student's own
       server: deploying with `git clone` and `git pull`, configuring the
       application through environment variables (following the Twelve-Factor
       App), running it as a systemd service, giving it a domain name with DNS
-      records, serving it through nginx as a reverse proxy, running PHP with
-      PHP-FPM, and adding HTTPS with Let's Encrypt and Certbot. Separate
+      records, serving it through nginx as a reverse proxy beside other sites on
+      the same port, and adding HTTPS with Let's Encrypt and Certbot. Separate
       applications cover what that one does not: a static site served by nginx,
       a multi-component application behind a reverse proxy, and an application
       scaled horizontally behind a load balancer. Each tool is taught as far as

@@ -510,6 +510,8 @@ You (and everybody else) should be able to access the application in a browser
 at your server's IP address and port 3000 (e.g. `http://W.X.Y.Z:3000`), and its
 leaderboard should show the games won on your earlier deployments.
 
+![Guess It's home page, at the server's IP address and port 3000](images/guessit.png)
+
 Look at the application's process:
 
 ```bash
@@ -659,6 +661,8 @@ WantedBy=multi-user.target
 ```
 
 {% endsolution %}
+
+![Guess It's home page, at the server's IP address and port 3000](images/guessit.png)
 
 ## :checkered_flag: What have I done?
 

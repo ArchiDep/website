@@ -49,8 +49,6 @@ Taught later:
   the configuration from an environment file: "Manage a web application with
   systemd as a Process Manager".
 - Reloading nginx with `systemctl reload`: "Reverse Proxying".
-- PHP-FPM as the process manager of a PHP application: "Deploy a PHP website
-  with nginx and the FastCGI process manager".
 
 Not in the course: job control (`&`, `bg`, `fg`, `Ctrl-Z`, `nohup`, `disown`),
 `screen` and `tmux`, `pkill` and `killall`, writing a signal handler, signal
@@ -139,5 +137,6 @@ Exercises that lean on particular parts:
   own, and the latter edits one, with `daemon-reload` and `restart`.
 - "Reverse Proxying" and "Deploy a static site with nginx" reload nginx's
   configuration with `systemctl reload`.
-- "Deploy a PHP website with nginx and the FastCGI process manager" runs
-  PHP-FPM, a lightweight process manager, as a systemd service.
+- "Deploy a web application with nginx as a reverse proxy" stops and starts
+  Guess It with `systemctl`, and shows nginx's master process, started by
+  systemd as `root`, with its worker processes as children.

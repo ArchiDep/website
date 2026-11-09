@@ -177,8 +177,9 @@ particular:
   address a name.
 - "Reverse Proxying" and the nginx deployments put nginx on port 80 in front of
   an application on `127.0.0.1`, and use `ss -tlpn` to see who listens where.
-  "Deploy a PHP website with nginx and the FastCGI process manager" restricts
-  PHP-FPM to `127.0.0.1`.
+  "Deploy a web application with nginx as a reverse proxy" has students predict
+  that nginx must start as `root` to listen on port 80, a well-known port,
+  before finding its master process running as `root`.
 - "TLS/SSL Certificates" and "Provision an SSL certificate using Certbot by
   Let's Encrypt" add port 443.
 - "Docker Isolation" shows containers' networks as subnets, in CIDR notation

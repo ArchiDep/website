@@ -4,17 +4,11 @@ cloud_server: details
 excerpt_separator: <!-- more -->
 ---
 
-This guide describes how to deploy the same [PHP Todolist][repo] as in previous
-exercises, but this time behind nginx acting as a reverse proxy, and with the
-[FastCGI Process Manager (FPM)][php-fpm] instead of the [PHP development
-server][php-dev-server], which is much more suitable for a production
-deployment.
-
-This guide assumes that you are familiar with [reverse proxying]({% link
-chapters/509-reverse-proxy/subject.md %}), that you have nginx installed, and
-that you have done the [systemd exercise]({% link
-chapters/506-systemd-deployment/exercise.md %}) and the the [DNS exercise]({%
-link chapters/508-dns-config/exercise.md %}).
+The goal of this exercise is to put [nginx][nginx] in front of Guess It, as a
+[reverse proxy][reverse-proxy], so that Guess It is reached by a name of its
+own, with no port in the address. nginx will serve it on port 80, beside the
+clock you deployed in the [previous exercise][static-deployment]. Guess It
+itself does not change: systemd keeps running it on port 3000.
 
 {% callout type: exercise %}
 
@@ -24,432 +18,336 @@ Connect to your cloud server with SSH for this exercise.
 
 <!-- more -->
 
-## :exclamation: Identify your PHP-FPM version
+## :exclamation: Requirements
 
-During this exercise, you will use a package and service called `php-fpm` that
-you installed on your server back during the first deployment exercise. The
-version of `php-fpm` running on your server will depend on which Ubuntu version
-you chose when configuring your Azure instance. It will likely be `8.5` for
-Ubuntu 26.04.
-
-You can check which version you have by running either of the following
-commands:
+Make sure you have completed the [previous exercise][static-deployment] first:
+nginx must be installed, and serving the clock. You also need Guess It running
+as a systemd service, as in the [systemd exercise][systemd-deployment]. Check
+that it is:
 
 ```bash
-$> ls /etc/php
-8.5
-
-$> dpkg --list | grep php-fpm
-ii  php-fpm   2:8.5+99ubuntu1   ...
+$> sudo systemctl status guessit
+● guessit.service - Guess It
+     Loaded: loaded (/etc/systemd/system/guessit.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-11-12 09:42:26 UTC; 1h 3min ago
+...
 ```
 
-In this case, the output indicates that version `8.5` is installed. The
-remaining sections of the exercise assume that this is the case. **If not**, you
-will need to **modify the commands containing the version number accordingly**.
+## :exclamation: Choose the name of the site
 
-{% callout type: more, id: php-fpm %}
+Like the clock, Guess It gets a name of its own: `guessit.` followed by the
+hostname you noted in the [DNS exercise][dns-exercise]. For example, if your
+hostname is `jde.archidepN.ch`, Guess It will be at `guessit.jde.archidepN.ch`.
 
-When you did the [systemd exercise]({% link
-chapters/506-systemd-deployment/exercise.md %}), you used the PHP development
-server (with the command `/usr/bin/php -S 0.0.0.0:3000`). As [its documentation
-states][php-dev-server], it is meant for development, not to be used on a
-production server. One of the main reasons it's a bad idea to use it on a server
-is because it is **single-threaded**, and can only serve _one request at a
-time_.
-
-During the [SFTP exercise]({% link chapters/410-sftp-deployment/exercise.md %}),
-you installed the `php-fpm` package, which provides the PHP [FastCGI Process
-Manager (FPM)][php-fpm].
-
-PHP-FPM is both a **process manager** and a **FastCGI server**:
-
-- It will run multiple PHP processes to be able to serve requests from multiple
-  clients at the same time.
-- A web server (such as nginx) can ask it to execute PHP files using the
-  [FastCGI protocol][fastcgi].
-
-Use the following command for more information on how PHP-FPM manages processes
-(for version 8.5):
-
-```bash
-$> grep -A 50 -m 1 "number of child processes" /etc/php/8.5/fpm/pool.d/www.conf
-```
-
-The `php-fpm` package is integrated with systemd out of the box (its service
-file is `/lib/systemd/system/php8.5-fpm.service` for version 8.5). It should
-already be running:
-
-```bash
-$> sudo systemctl status php8.5-fpm
-● php8.5-fpm.service - The PHP 8.5 FastCGI Process Manager
-   Loaded: loaded (/lib/systemd/system/php8.5-fpm.service; enabled; vendor preset: enabled)
-   Active: active (running) since Thu 2019-01-10 17:58:07 UTC; 27min ago
-   ...
-```
-
-{% endcallout %}
-
-## :exclamation: Configure PHP-FPM to listen on a port
-
-The PHP [FastCGI Process Manager (FPM)][php-fpm] can accept connections either
-on a local TCP port or by default through a Unix domain socket.
-
-{% note type: more %}
-
-A [Unix domain socket][unix-socket] is a special kind of Unix file (denoted by
-the type `s` when listed by `ls -l`) which allows bidirectional communication
-between processes on the same machine by writing to and reading from that file.
-
-{% endnote %}
-
-Because we've been making TCP (HTTP/SSH/SFTP) connections so far, we'll
-configure PHP-FPM to also listen on a port rather than a domain socket for
-consistency.
-
-You will need to edit the PHP-FPM web configuration file which you can find at
-`/etc/php/8.5/fpm/pool.d/www.conf` (for version 8.5). Edit this file:
-
-```bash
-$> sudo nano /etc/php/8.5/fpm/pool.d/www.conf
-```
-
-Find the section configuring the listening address (the `listen = ...` key):
-
-```
-; The address on which to accept FastCGI requests.
-; Valid syntaxes are:
-;   'ip.add.re.ss:port'    - to listen on a TCP socket to a specific IPv4 address on
-;                            a specific port;
-;   '[ip:6:addr:ess]:port' - to listen on a TCP socket to a specific IPv6 address on
-;                            a specific port;
-;   'port'                 - to listen on a TCP socket to all addresses
-;                            (IPv6 and IPv4-mapped) on a specific port;
-;   '/path/to/unix/socket' - to listen on a unix socket.
-; Note: This value is mandatory.
-listen = /run/php/php8.5-fpm.sock
-```
-
-{% note type: tip %}
-
-You can search for a specific word in nano by typing the `Ctrl-W` shortcut, then
-typing your word (e.g. "listen") and finally pressing the `Enter` key. This will
-scroll to the first occurrence of the word in the file. You can find further
-occurrences of the word by typing `Ctrl-W` followed by `Enter` again.
-
-{% endnote %}
-
-Remove the existing `listen = /run/php/php8.5-fpm.sock` line, or comment it by
-adding a `;` comment character at the beginning of the line. Then add a new
-`listen = 9000` line. This will instruct PHP-FPM to listen on port 9000 rather
-than using the Unix domain socket file:
-
-```
-; listen = /run/php/php8.5-fpm.sock
-listen = 9000
-```
-
-{% note type: more %}
-
-Why port 9000, you ask? Why not? It does not matter which port you choose, as
-long as another process does not already listen on that port.
-
-{% endnote %}
-
-By default, PHP-FPM will accept connections from anywhere, including outside the
-server if the firewall lets the client through. For the sake of security, it is
-better to configure PHP-FPM to only accept local connections, i.e. from
-processes running on the same machine like nginx.
-
-Find the section configuring allowed clients (the `listen.allowed_clients = ...`
-key). If it is commented, remove the leading `;` comment character, and make
-sure the value is set to `127.0.0.1` (local clients only):
-
-```
-; List of addresses (IPv4/IPv6) of FastCGI clients which are allowed to connect.
-; Equivalent to the FCGI_WEB_SERVER_ADDRS environment variable in the original
-; PHP FCGI (5.2.2+). Makes sense only with a tcp listening socket. Each address
-; must be separated by a comma. If this value is left blank, connections will be
-; accepted from any ip address.
-; Default Value: any
-listen.allowed_clients = 127.0.0.1
-```
-
-For these changes to take effect, you must restart the PHP-FPM service:
-
-```bash
-$> sudo systemctl restart php8.5-fpm
-```
-
-### :question: Optional: check something is listening on port 9000
-
-Running the `ss -tlpn` command should confirm that there is indeed a process
-listening on port 9000 on the server (the line indicating `*:9000` as the local
-address and port):
-
-```bash
-$> ss -tlpn
-State   Recv-Q  Send-Q  Local Address:Port  Peer Address:Port
-LISTEN  0       128                 *:9000             *:*     (php-fpm)
-LISTEN  0       80          127.0.0.1:3306       0.0.0.0:*     (mysqld)
-LISTEN  0       128     127.0.0.53%lo:53         0.0.0.0:*     (systemd-resolve)
-LISTEN  0       128           0.0.0.0:80         0.0.0.0:*     (nginx IPv4)
-LISTEN  0       128              [::]:80            [::]:*     (nginx IPv6)
-LISTEN  0       128           0.0.0.0:22         0.0.0.0:*     (sshd IPv4)
-LISTEN  0       128              [::]:22            [::]:*     (sshd IPv6)
-```
-
-## :exclamation: Add the `TODOLIST_DB_PASS` environment variable to PHP-FPM
-
-The PHP todolist application requires the `TODOLIST_DB_PASS` environment
-variable to successfully connect to its database. You previously set that
-variable in the systemd service file you created during the [systemd
-exercise]({% link chapters/506-systemd-deployment/exercise.md %}):
-`/etc/systemd/system/todolist.service`.
-
-In this exercise, systemd will no longer be running your application directly.
-It runs [PHP-FPM][php-fpm], which will in turn execute your application's PHP
-code. By default, PHP-FPM does not pass environment variables from systemd to
-the application. Therefore, you need to configure PHP-FPM to add this variable
-to your application's environment.
-
-Edit the PHP-FPM web configuration file again:
-
-```bash
-$> sudo nano /etc/php/8.5/fpm/pool.d/www.conf
-```
-
-Find the environment section which looks like this:
-
-```
-; Pass environment variables like LD_LIBRARY_PATH. All $VARIABLEs are taken from
-; the current environment.
-; Default Value: clean env
-;env[HOSTNAME] = $HOSTNAME
-;env[PATH] = /usr/local/bin:/usr/bin:/bin
-;env[TMP] = /tmp
-;env[TMPDIR] = /tmp
-;env[TEMP] = /tmp
-```
-
-Add a line to define the `TODOLIST_DB_PASS` variable with the correct value.
-
-{% note type: tip %}
-
-Quote the value with double quotes (`"`) if it contains whitespace or special
-characters. Also, be sure to remove the leading `;` which makes the line a
-comment.
-
-{% endnote %}
-
-### :exclamation: Reload PHP-FPM
-
-For the change to take effect, you must restart the PHP-FPM service:
-
-```bash
-$> sudo systemctl restart php8.5-fpm
-```
-
-Make sure it is still running:
-
-```bash
-$> sudo systemctl status php8.5-fpm
-● php8.5-fpm.service - The PHP 8.5 FastCGI Process Manager
-   Loaded: loaded (/lib/systemd/system/php8.5-fpm.service; enabled; vendor preset: enabled)
-   Active: active (running) since Thu 2019-01-10 17:58:07 UTC; 3s ago
-   ...
-```
-
-{% note type: tip %}
-
-If PHP-FPM is no longer running, you may have corrupted the configuration file.
-If the problem is not clear in the output of the `status` command, check the
-entire logs with `sudo journalctl -u php8.5-fpm` to see if you can find more
-information.
-
-{% endnote %}
+You do not need to add a DNS record for it. Your wildcard record, `*.jde`,
+already points every name under your hostname to your server.
 
 ## :exclamation: Create an nginx configuration file to serve the application
 
-Create an nginx configuration file named `todolist` for the application. Put it
-in nginx's `/etc/nginx/sites-available` directory like in the previous exercise.
+Create an nginx configuration file named `guessit` in nginx's
+`/etc/nginx/sites-available` directory, as you did for the clock, with `sudo
+nano`.
 
-In this exercise, you want to configure nginx as a reverse proxy: when it
-receives a request for the PHP todolist, it should proxy it to PHP-FPM (in other
-words, nginx should ask PHP-FPM to execute the application's PHP code, because
-nginx itself does not know how to execute PHP code).
+Take the [reverse proxy configuration example from the course][proxy-config] and
+put it in the file. You must modify it to:
 
-You can start with the [reverse proxy configuration]({% link
-chapters/509-reverse-proxy/subject.md %}#reverse-proxy-configuration), but you
-need to make the following changes:
-
-- Like in the previous exercise, adapt the server name and root directory.
-
-  You can use the existing `todolist-repo` directory you have been using in
-  previous PHP todolist exercises. There is no need to clone another copy.
-
-{% note type: tip %}
-
-In the DNS exercise, you should have configured a wildcard domain name like
-`*.jde.archidep.ch`. This means that any subdomain you want under
-`jde.archidep.ch`, for example `todolist.jde.archidep.ch`, should reach your
-server.
-
-{% endnote %}
-
-- PHP-FPM uses the [FastCGI protocol][fastcgi] to receive requests to execute
-  PHP code. This means that you cannot use [nginx's `proxy_pass`
-  directive][nginx-proxy-pass] to define your proxy since it works with the HTTP
-  protocol. Instead, you must **replace** it with two other directives:
-  - You must configure nginx to set various FastCGI parameters. You could do
-    this yourself, but nginx helpfully provides a configuration snippet which
-    you can simply include like this:
-
-    ```
-    include snippets/fastcgi-php.conf;
-    ```
-
-  - You must tell nginx to proxy requests with the FastCGI protocol, and where
-    to proxy them to, with its [`fastcgi_pass` directive][nginx-fastcgi-pass].
-    This allows you to proxy requests either to a domain and IP address (e.g.
-    `localhost:9000`) or to a [Unix domain socket][unix-socket].
-
-    You have previously configured PHP-FPM to listen on a port. Therefore,
-    according to the [documentation][nginx-fastcgi-pass], you should configure a
-    FastCGI proxy to `localhost` or `127.0.0.1` (since PHP-FPM is running on the
-    same machine as nginx) and the same port you used in the PHP-FPM web
-    configuration file for the `listen` key.
-
-    This will make nginx proxy HTTP requests to PHP-FPM through that local port.
-    PHP-FPM will then execute the PHP code and give the result to nginx, which
-    will send it back to the client in the HTTP response.
+- Use the name you chose for the site, such as `guessit.jde.archidepN.ch`, in
+  the `server_name` directive.
+- Remove the `root` directive. nginx has no files of Guess It to send: Guess It
+  builds every page itself, so nginx must forward every request to it.
+- Forward the requests to the address where Guess It listens, with [nginx's
+  `proxy_pass` directive][nginx-proxy-pass]. Guess It runs on the same server as
+  nginx, so the address is the server's own [loopback address][loopback],
+  `127.0.0.1`, followed by the port Guess It listens on.
 
 {% solution %}
 
-Your `/etc/nginx/sites-available/todolist` file on your server should look
+Your `/etc/nginx/sites-available/guessit` file on your server should look
 something like this:
 
-```
+```nginx
 server {
   listen 80;
-  server_name todolist.jde.archidep.ch;
-  root /home/jde/todolist-repo;
+  server_name guessit.jde.archidepN.ch;
 
-  # Proxy requests for dynamic content to PHP-FPM.
+  # Forward every request to Guess It.
   location / {
-    include snippets/fastcgi-php.conf;
-    fastcgi_pass localhost:9000;
+    proxy_pass http://127.0.0.1:3000;
   }
 }
 ```
 
 {% endsolution %}
 
-{% note type: more %}
-
-The `include` directive provided above will include the file
-`/etc/nginx/snippets/fastcgi-php.conf`, which will in turn include
-`/etc/nginx/fastcgi.conf`. If you want to know what is required to make nginx
-properly proxy a request with the FastCGI protocol, you can look at the contents
-of these two files.
-
-{% endnote %}
-
 ### :exclamation: Enable the nginx configuration
 
-Enable the `todolist` configuration by creating the correct symbolic link:
+Enable the `guessit` configuration by creating the correct symbolic link:
 
 ```bash
-$> sudo ln -s /etc/nginx/sites-available/todolist /etc/nginx/sites-enabled/todolist
+$> sudo ln -s /etc/nginx/sites-available/guessit /etc/nginx/sites-enabled/guessit
 ```
 
 Make sure the symbolic link points to the correct file:
 
 ```bash
-$> ls -l /etc/nginx/sites-enabled/todolist
-lrwxrwxrwx 1 root root 32 Jan 10 17:07 /etc/nginx/sites-enabled/todolist -> /etc/nginx/sites-available/todolist
+$> ls -l /etc/nginx/sites-enabled/guessit
+lrwxrwxrwx 1 root root 34 Nov 12 10:51 /etc/nginx/sites-enabled/guessit -> /etc/nginx/sites-available/guessit
 ```
 
-### :exclamation: Reload the nginx configuration
+## :exclamation: Reload the nginx configuration
 
-Check whether the changes you have made are valid:
+Check whether the changes you have made are valid, then tell nginx to reload its
+configuration:
 
 ```bash
 $> sudo nginx -t
 nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
 nginx: configuration file /etc/nginx/nginx.conf test is successful
-```
 
-Tell nginx to reload its configuration:
-
-```bash
 $> sudo nginx -s reload
 ```
 
 ## :exclamation: See it in action
 
-Visit http://todolist.jde.archidep.ch (replacing `jde` with your username and
-`archidep.ch` with your assigned domain) and you should see the PHP todolist
-working.
+Visit the name of the site in your browser, e.g.
+`http://guessit.jde.archidepN.ch` (with your own hostname after `guessit.`). You
+should see Guess It, with the games won on your earlier deployments in its
+leaderboard, and no port in the address.
+
+Visit the clock too, e.g. `http://clock.jde.archidepN.ch`: it still works. The
+same nginx serves both, on the same port 80.
+
+## :exclamation: Stop Guess It behind nginx's back
+
+Stop Guess It, but not nginx:
+
+```bash
+$> sudo systemctl stop guessit
+```
+
+Reload Guess It in your browser. You get an error page that says `502 Bad
+Gateway`, with `nginx` under it. Reload the clock: it still works.
+
+Guess It is not running, yet you got an answer. Who sent you this error page,
+and why?
+
+{% solution title: "Check your answer", emoji: thinking, reveal: always %}
+
+nginx did. It is still running, and still listening on port 80, so it received
+your browser's request as before. It tried to connect to Guess It at
+`127.0.0.1:3000` to forward the request, but nothing listens on that port any
+more, so the connection was refused. nginx could not get a page from Guess It,
+so it answered the browser itself, with a `502 Bad Gateway` error: the
+application it proxies to failed.
+
+Its error log says so:
+
+```bash
+$> sudo tail -n 1 /var/log/nginx/error.log
+... [error] ... connect() failed (111: Connection refused) while connecting to upstream, client: ..., server: guessit.jde.archidepN.ch, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", ...
+```
+
+The **upstream** is what nginx calls the application it proxies requests to.
+
+The clock does not need Guess It, so nginx keeps serving it.
+
+{% endsolution %}
+
+Start Guess It again, and reload it in your browser, which should show the game
+again:
+
+```bash
+$> sudo systemctl start guessit
+```
+
+## :exclamation: Find out who listens on port 80
+
+Guess It runs as the `guessit` user, which you created in the [systemd
+exercise][dedicated-user]. nginx listens on port 80, one of the [well-known
+ports][well-known-ports]. Which user do you think nginx must have been started
+as to listen on it?
+
+Check your answer by listing the processes of nginx (`-C nginx` selects the
+processes whose command is `nginx`):
+
+```bash
+$> ps -f -C nginx
+```
+
+{% solution title: "Check your answer", emoji: thinking, reveal: always %}
+
+The command shows something like this:
+
+```bash
+$> ps -f -C nginx
+UID          PID    PPID  C STIME TTY          TIME CMD
+root         812       1  0 09:41 ?        00:00:00 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+www-data   11024     812  0 10:52 ?        00:00:00 nginx: worker process
+www-data   11025     812  0 10:52 ?        00:00:00 nginx: worker process
+```
+
+You may have a different number of worker processes: nginx starts one per
+processor core by default.
+
+nginx must start as `root`: on Linux, only `root` may listen on a port below 1024. systemd, which runs as `root`, started the **master process** of nginx
+when the server booted, and it is still running as `root`. It opened port 80.
+
+The master process does not handle requests itself. It starts **worker
+processes**, its children (their parent PID is the master's PID), which run as
+the `www-data` user, as the `user www-data;` line of `/etc/nginx/nginx.conf`
+says. They are the ones that read the clock's files, and connect to Guess It.
+
+{% endsolution %}
 
 ## :checkered_flag: What have I done?
 
-You have replaced the [PHP development server][php-dev-server] you had been
-using until now with [PHP-FPM][php-fpm], a production-grade PHP process manager
-and FastCGI implementation which is much more optimized and supports concurrent
-requests. This means, among other things, that many more clients can now access
-the PHP todolist at the same time without having to wait on each other.
+You have put nginx in front of Guess It as a reverse proxy. A browser now
+reaches Guess It by a name of its own, with no port in the address. Guess It
+itself has not changed: systemd still runs it, as the `guessit` user, on port 3000.
 
-You have also configured nginx to act as a reverse proxy, forwarding requests
-for the PHP todolist application to PHP-FPM. When it receives an HTTP request,
-nginx will forward it to PHP-FPM using the FastCGI protocol. PHP-FPM will
-execute your application's PHP code and give the result to nginx, which will
-send it back to the client. The communication flow looks something like this:
+nginx receives the browser's request on port 80, and **proxies** it to Guess It
+on `127.0.0.1:3000`, which is your server talking to itself. For Guess It, nginx
+is a client like any browser. nginx then sends Guess It's answer back to the
+browser. There are two HTTP connections, one from the browser to nginx and one
+from nginx to Guess It: a browser that uses Guess It's name never talks to Guess
+It directly.
 
-    Browser ↔ Nginx ↔ PHP-FPM
+nginx and Guess It are separate processes. When Guess It was stopped, nginx was
+still there to receive the request, and answered with a `502 Bad Gateway` error
+of its own, while the clock went on working.
 
-This is a bit more complex than what you had before:
+For the clock, nginx sends files it reads from disk, which is what `root` tells
+it. For Guess It, there are no files to send: Guess It builds every page when it
+is asked for it, so the configuration has `proxy_pass` instead.
 
-    Browser ↔ PHP development server
+Only one process can listen on a given port. If Guess It listened on port 80
+itself, there would be no room on that port for the clock, or for any other
+application: that is the problem of **multiple production deployments on one
+server**, one of the flaws listed in [How to improve our basic
+deployment][improve]. nginx solves it by holding port 80 for every site, and
+sending each request to the right one by the name in its `Host` header. Guess It
+and the clock now share it, and any number of other applications can join them:
+each listens on a port of its own, which nobody types, and gets a configuration
+in nginx with a name of its own.
 
-But on the other hand, you are using PHP-FPM which is much more suitable for a
-production deployment. You are also using nginx, which allows you to deploy
-other applications and websites on the same server in addition to the PHP
-todolist.
+Port 80 is a well-known port, which only `root` may listen on. Serving Guess It
+on port 80 without nginx would mean running it with `sudo`, as `root`, and
+undoing what its dedicated user protects. nginx handles this for you: its master
+process starts as `root` to open the port, and its worker processes, which do
+the actual work, run as `www-data`. Guess It keeps listening on port 3000, which
+any user may do.
 
-In real production deployments, you will often find several processes plugged
-together to achieve the same goal. Here, nginx receives and dispatches the
-clients' requests, while PHP-FPM manages your PHP application(s), and your
-application does what it's supposed to do. This allows each process to focus on
-one thing and do it well. The PHP todolist application does not have to know
-about the other applications and websites that might be running on the server.
+Several flaws of the basic deployment are now fixed: Guess It has a domain name,
+no port in its address, and shares the server with other sites. One flaw of that
+list remains: Guess It is still served over HTTP, not HTTPS, and browsers mark
+it as not secure.
 
 ### :classical_building: Architecture
 
 This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise:
+communication flow at the end of this exercise. Unlike in the [systemd
+exercise][systemd-architecture], the browser does not connect to Guess It: it
+connects to nginx, which connects to Guess It. Step through the diagram to see
+what happens when a browser requests Guess It's home page.
 
-![Diagram](./images/architecture.png)
-
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="PHP-FPM Deployment Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="PHP-FPM Deployment Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
+{% include diagrams/511-nginx-reverse-proxy.html %}
 
 {% note %}
 
-Note that this diagram only shows the processes involved in this exercise,
-ignoring the other applications we have also deployed on the server.
+Note that this diagram simplifies nginx by showing only one process, while in
+reality it has a master process and several worker processes, but this is
+sufficient to understand the architecture.
 
 {% endnote %}
 
-[fastcgi]: https://en.wikipedia.org/wiki/FastCGI
-[php-dev-server]: http://php.net/manual/en/features.commandline.webserver.php
-[php-fpm]: http://php.net/manual/en/install.fpm.php
-[repo]: https://github.com/ArchiDep/php-todo-ex
-[nginx-fastcgi-pass]: http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_pass
+## :file_folder: Where is everything?
+
+These are the files and directories of your server that matter for this
+deployment.
+
+<div class="file-map">
+
+| Path                                                                               | What it is                                                                          | What you did                                     | Who uses it                                                     |
+| :--------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- | :----------------------------------------------- | :-------------------------------------------------------------- |
+| :page_facing_up: `/etc/nginx/sites-available/guessit` <span class="new">new</span> | The configuration of Guess It: its name, and the address to forward its requests to | Wrote it with `sudo nano`                        | nginx, through the link in `sites-enabled`                      |
+| :page_facing_up: `/etc/nginx/sites-enabled/guessit` <span class="new">new</span>   | A symbolic link to the configuration of Guess It, which enables it                  | Created it with `sudo ln -s`                     | nginx, which includes everything in `sites-enabled`             |
+| :page_facing_up: `/etc/systemd/system/guessit.service`                             | The unit file of Guess It, which runs it on port 3000 as the `guessit` user         | Stopped and started the service with `systemctl` | systemd, to run Guess It, which nginx forwards requests to      |
+| :page_facing_up: `/var/log/nginx/error.log`                                        | The errors nginx has met, such as an upstream it could not connect to               | Read it while Guess It was stopped               | You, to [find out why][bad-gateway] nginx answers with an error |
+
+</div>
+
+`/srv/guessit` is not in this table: nginx never reads Guess It's files, unlike
+those of the clock in `/srv/clock`. Only Guess It does.
+
+You can explore all of this yourself: `ls -l` shows what a directory contains,
+with its permissions, and `cat`, `head` and `tail` what a file contains, as in
+the [command line cheatsheet][command-line-cheatsheet]. Use `sudo` for what only
+`root` can read. For example:
+
+```bash
+# The configurations nginx has enabled, and where their links point.
+$> ls -l /etc/nginx/sites-enabled
+
+# The processes of nginx, and the users they run as.
+$> ps -f -C nginx
+```
+
+## :boom: Troubleshooting
+
+Here's a few tips about some problems you may encounter during this exercise.
+
+### :boom: `[emerg] could not build the server_names_hash, you should increase server_names_hash_bucket_size`
+
+Your domain name is too long for nginx's default settings. Fix it as in the
+[same problem in the static site exercise][server-names-hash].
+
+### :boom: I see nginx's welcome page instead of Guess It
+
+nginx has no enabled configuration with the name in your browser's address bar,
+so it answers with its default site. Check that:
+
+- The address is the name of the site, with `guessit.` in front of your
+  hostname.
+- The `server_name` directive in `/etc/nginx/sites-available/guessit` is
+  exactly that name.
+- The symbolic link `/etc/nginx/sites-enabled/guessit` exists and points to your
+  configuration (`ls -l /etc/nginx/sites-enabled`).
+- You have reloaded nginx's configuration since your last change.
+
+### :boom: 502 Bad Gateway
+
+nginx received the request, but could not get an answer from Guess It. Look at
+the end of nginx's error log:
+
+```bash
+$> sudo tail /var/log/nginx/error.log
+```
+
+If it says `connect() failed (111: Connection refused) while connecting to
+upstream`, nothing listens at the address of your `proxy_pass` directive:
+
+- Check that Guess It is running with `sudo systemctl status guessit`, and start
+  it with `sudo systemctl start guessit` if it is not. If it does not start, see
+  the troubleshooting of the [systemd exercise][systemd-troubleshooting].
+- Check that the address in `proxy_pass` is `http://127.0.0.1:3000`, the port
+  Guess It listens on, as `sudo systemctl status guessit` shows on its last
+  line.
+
+[bad-gateway]: #502-bad-gateway
+
+[loopback]: {% link chapters/406-unix-networking/slides/slides.md %}#theres-no-place-like-127001
+[nginx]: http://nginx.org/
 [nginx-proxy-pass]: http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass
-[unix-socket]: https://en.wikipedia.org/wiki/Unix_domain_socket
+
+[command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
+[dedicated-user]: {% link chapters/506-systemd-deployment/exercise.md %}#create-a-dedicated-user
+[dns-exercise]: {% link chapters/508-dns-config/exercise.md %}
+[improve]: {% link chapters/413-how-to-improve/subject.md %}
+[proxy-config]: {% link chapters/509-reverse-proxy/subject.md %}#reverse-proxy-configuration
+[reverse-proxy]: {% link chapters/509-reverse-proxy/subject.md %}
+[server-names-hash]: {% link chapters/510-nginx-static-deployment/exercise.md %}#emerg-could-not-build-the-server_names_hash-you-should-increase-server_names_hash_bucket_size
+[static-deployment]: {% link chapters/510-nginx-static-deployment/exercise.md %}
+[systemd-architecture]: {% link chapters/506-systemd-deployment/exercise.md %}#architecture
+[systemd-deployment]: {% link chapters/506-systemd-deployment/exercise.md %}
+[systemd-troubleshooting]: {% link chapters/506-systemd-deployment/exercise.md %}#troubleshooting
+[well-known-ports]: {% link chapters/406-unix-networking/slides/slides.md %}#well-known-ports
