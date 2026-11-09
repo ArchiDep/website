@@ -8,8 +8,8 @@ The goal of this exercise is to set up a real domain name for your application.
 
 {% callout type: exercise %}
 
-You only need your favorite browser for this exercise (assuming you have
-completed previous exercises and the PHP todolist is running on your server).
+You only need your favorite browser for this exercise, as long as you have
+completed the previous exercises and Guess It is running on your server.
 
 {% endcallout %}
 
@@ -25,28 +25,32 @@ chapters/506-systemd-deployment/exercise.md %}).
 In this exercise, you will configure actual subdomains in the worldwide DNS
 system to point to your server.
 
-You must use the subdomain that has been assigned to you for this course. If you
-are logged in, you can copy the **Hostname** from your cloud server's details
-card on this page, or from the [dashboard](/app).
+You must use the subdomain that has been assigned to you for this course: the
+**Hostname** shown on your cloud server's details card, on this page if you are
+logged in, or on the [dashboard](/app). Make a note of it. For example, if your
+hostname is `jde.archidep2.ch`:
+
+- `archidep2.ch` is the domain you will select in Gandi.net.
+- `jde` is the name you will give to your DNS records.
 
 ## :exclamation: Configure a DNS zone with Gandi.net
 
 - Connect to [Gandi.net](https://gandi.net) with the user account provided to
   you by the teacher.
-- Go under the "Domain" tab in the left menu and select the correct domain
-  depending on your assigned subdomain.
+- Go under the "Domain" tab in the left menu and select the domain of the
+  hostname you noted above.
 - Go under the "DNS Records" tab in the domain's top menu.
 - Add two new `A` records to map subdomains to **your server's public IP
   address**:
-  1. Assuming your personal subdomain for the course is `jde.archidep.ch`,
-     you should use `jde` as the **name of the DNS record**.
-  2. Then, create a wildcard subdomain using `*.jde` as the **name of the
-     DNS record**, and the same IP address. This will direct any second-level
-     subdomain like `foo.jde.archidep.ch` to your server.
+  1. Assuming your personal subdomain for the course is `jde.archidep2.ch`, use
+     `jde` as the **name of the DNS record**.
+  2. Then, create a wildcard subdomain using `*.jde` as the **name of the DNS
+     record**, and the same IP address. This will direct any second-level
+     subdomain like `foo.jde.archidep2.ch` to your server.
 
 Assuming your server's IP address is `W.X.Y.Z` and your username is `jde`,
-you should have the following DNS records (among others) in the domain's zone
-file:
+the domain's zone file must now contain the following DNS records (among
+others):
 
 ```
 *.jde 1800 IN A W.X.Y.Z
@@ -55,23 +59,24 @@ jde 1800 IN A W.X.Y.Z
 
 ## :exclamation: Access the domain name
 
-Once you have configured it correctly, you (and everybody else) should be able
-to access the todolist application at http://jde.archidep.ch:3000 in
-your browser (if you have completed the previous exercises).
+Once you have configured it correctly, you (and everybody else) can reach Guess
+It at `http://jde.archidep2.ch:3000` in a browser, instead of
+`http://W.X.Y.Z:3000`. It is the same application, still listening on port 3000:
+only the name in the address has changed.
 
 {% note type: tip %}
 
-You might have to wait a few minutes for the change to take effect.
-especially if you make a mistake in configuring the DNS record and then fix
-it. This is because DNS records are cached for a time (the TTL you
-configured), by all intermediaries and also by your machine.
+You might have to wait a few minutes for the change to take effect, especially
+if you make a mistake in configuring the DNS record and then fix it. This is
+because DNS records are cached for a time (the TTL you configured), by all
+intermediaries and also by your machine.
 
 {% endnote %}
 
 ## :checkered_flag: What have I done?
 
 You have created a mapping in the [domain name system][dns] between your custom
-subdomain (e.g. `jde.archidep1.ch`) and the IP address of your server.
+subdomain (e.g. `jde.archidep2.ch`) and the IP address of your server.
 
 You have done this by modifying the [DNS zone file][dns-zone-file] for the
 course's domain. When a computer requests to know the IP address for your
@@ -85,20 +90,11 @@ human-friendly domain name instead of an IP address.
 
 This is a simplified architecture of the main running processes and
 communication flow at the end of this exercise. The only thing that has changed
-compared to [the previous exercise]({% link
-chapters/506-systemd-deployment/exercise.md %}#architecture) is that you are now
-using a domain name instead of an IP address to reach your application.
+compared to [the previous exercise][systemd-architecture] is that you are now
+using a domain name instead of an IP address to reach your application. Step
+through the diagram to see what happens when a browser requests the home page.
 
-![Diagram](./images/architecture.png)
-
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="DNS Configuration Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="DNS Configuration Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
+{% include diagrams/508-dns.html %}
 
 ## :boom: Troubleshooting
 
@@ -115,7 +111,7 @@ changes take effect.
 {% note type: tip %}
 
 In the meantime, you can simply create a new DNS entry. For example, if you
-created `jde.archidep1.ch`, you can create `jde2.archidep1.ch`. This new entry
+created `jde.archidep2.ch`, you can create `jde2.archidep2.ch`. This new entry
 will work immediately. The old one you fixed will work eventually once the cache
 has cleared.
 
@@ -124,4 +120,5 @@ has cleared.
 [dns]: https://en.wikipedia.org/wiki/Domain_Name_System
 [dns-name-server]: https://en.wikipedia.org/wiki/Name_server
 [dns-zone-file]: https://en.wikipedia.org/wiki/Zone_file
-[systemd]: https://en.wikipedia.org/wiki/Systemd
+
+[systemd-architecture]: {% link chapters/506-systemd-deployment/exercise.md %}#architecture
