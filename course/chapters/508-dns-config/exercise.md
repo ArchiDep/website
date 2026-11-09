@@ -73,6 +73,51 @@ intermediaries and also by your machine.
 
 {% endnote %}
 
+### :question: Optional: check the DNS resolution yourself
+
+You can ask the DNS for the IP address of your domain name yourself, without a
+browser. The `dig` command asks a DNS server and prints its answer:
+
+```bash
+$> dig jde.archidep2.ch
+...
+;; ANSWER SECTION:
+jde.archidep2.ch.       1800    IN      A       W.X.Y.Z
+...
+```
+
+The answer section must contain your server's public IP address. It is the
+record you added in Gandi.net, in the same format as in the zone file above. The
+number after the name is how many seconds the answer may still be cached: 1800
+at most, the TTL of your record, and less if it was already in a cache.
+
+A name under your wildcard record, such as `foo.jde.archidep2.ch`, must give the
+same address.
+
+{% note type: tip %}
+
+If your shell says `dig: command not found`, run it on your server, over SSH.
+
+{% endnote %}
+
+You can also use `ping`, as you did to find Google's IP address in [Make TCP
+connections][tcp-ping]. It prints the address the name resolves to on its first
+line:
+
+```bash
+$> ping -c 1 jde.archidep2.ch
+PING jde.archidep2.ch (W.X.Y.Z) 56(84) bytes of data.
+```
+
+What follows does not matter here. If your server does not answer `ping`, `ping`
+reports `100% packet loss` after a few seconds: the name still resolved to your
+server's address, which is what you are checking.
+
+Finally, an online tool such as [Google's Dig][google-dig] asks the DNS from
+Google's servers rather than from your machine. Its answer does not depend on
+what your machine has cached, which is useful after you have fixed a mistake in
+a record.
+
 ## :checkered_flag: What have I done?
 
 You have created a mapping in the [domain name system][dns] between your custom
@@ -120,5 +165,8 @@ has cleared.
 [dns]: https://en.wikipedia.org/wiki/Domain_Name_System
 [dns-name-server]: https://en.wikipedia.org/wiki/Name_server
 [dns-zone-file]: https://en.wikipedia.org/wiki/Zone_file
+[google-dig]: https://toolbox.googleapps.com/apps/dig/
+
+[tcp-ping]: {% link chapters/407-tcp/exercise.md %}#talk-dirty-http-to-google
 
 [systemd-architecture]: {% link chapters/506-systemd-deployment/exercise.md %}#architecture
