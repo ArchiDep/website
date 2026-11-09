@@ -196,13 +196,13 @@ Nginx has many [directives][nginx-directives] that can be put in various context
 These are the most commonly used ones in the `server` context,
 used to serve websites (static or dynamic):
 
-| Directive                              | Example value                         | Description                                                                                   |
-| :------------------------------------- | :------------------------------------ | :-------------------------------------------------------------------------------------------- |
-| [`listen`][nginx-directive-listen]     | `80`, `localhost:8000`                | Port (and optional address) on which to listen and accept requests from.                      |
-| [`server_name`][nginx-server-names]    | `example.com, www.example.com`        | Comma-separated list of domain names. Determine which `server` block handles client requests. |
-| [`root`][nginx-directive-root]         | `/home/jde/www/site`, `/var/www/site` | The root directory for requests.                                                              |
-| [`index`][nginx-directive-index]       | `index.html`                          | Define files that will be used as an index, i.e. served by default if there is no URL path.   |
-| [`location`][nginx-directive-location] | `/api`, `~* \.jpg$`                   | Vary configuration based on the URL.                                                          |
+| Directive                              | Example value                  | Description                                                                                   |
+| :------------------------------------- | :----------------------------- | :-------------------------------------------------------------------------------------------- |
+| [`listen`][nginx-directive-listen]     | `80`, `localhost:8000`         | Port (and optional address) on which to listen and accept requests from.                      |
+| [`server_name`][nginx-server-names]    | `example.com, www.example.com` | Comma-separated list of domain names. Determine which `server` block handles client requests. |
+| [`root`][nginx-directive-root]         | `/srv/site`, `/var/www/site`   | The root directory for requests.                                                              |
+| [`index`][nginx-directive-index]       | `index.html`                   | Define files that will be used as an index, i.e. served by default if there is no URL path.   |
+| [`location`][nginx-directive-location] | `/api`, `~* \.jpg$`            | Vary configuration based on the URL.                                                          |
 
 ## nginx configuration examples
 
@@ -235,20 +235,20 @@ Each of the following examples can be put in a separate file in the `/etc/nginx/
 - Instruct nginx to reload its configuration with this command:
 
   ```bash
-  $> sudo systemctl nginx reload
+  $> sudo systemctl reload nginx
   ```
 
 ### Static website configuration
 
 This configuration tells nginx to serve the static files in the directory
-`/home/jde/example` when a request arrives on port 80 for the domain
-`example.com`. This demonstrates nginx's capabilities as a basic **web server**.
+`/srv/example` when a request arrives on port 80 for the domain `example.com`.
+This demonstrates nginx's capabilities as a basic **web server**.
 
 ```nginx
 server {
   listen 80;
   server_name example.com;
-  root /home/jde/example;
+  root /srv/example;
   index index.html;
 
   # Instruct the browser to cache images, icons,

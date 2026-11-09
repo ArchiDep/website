@@ -5,7 +5,10 @@ excerpt_separator: <!-- more -->
 ---
 
 The goal of this exercise is to deploy a static website (only HTML, JavaScript
-and CSS) with [nginx][nginx].
+and CSS) with [nginx][nginx]. It is a simple first use of nginx: it only serves
+files, with no application behind it to reverse proxy to. Once you know how to
+configure nginx for something this simple, you will use it to continue improving
+the basic deployment of Guess It.
 
 {% callout type: exercise %}
 
@@ -17,31 +20,87 @@ Connect to your cloud server with SSH for this exercise.
 
 ## :exclamation: Requirements
 
-This guide assumes that you are familiar with [reverse proxying]({% link
+This exercise assumes that you are familiar with [reverse proxying]({% link
 chapters/509-reverse-proxy/subject.md %}) and that you have completed the
-[previous DNS configuration exercise]({% link chapters/508-dns-config/exercise.md
-%}), where you configured an A record for your server in the domain name system.
+[previous DNS configuration exercise][dns-exercise], where you configured DNS
+records for your server in the domain name system.
 
 ## :exclamation: Install nginx on the server
 
 **Connect to your server** and make sure you have nginx installed [as shown
-during the course]({% link
-chapters/509-reverse-proxy/subject.md %}#installing-nginx).
+during the course]({% link chapters/509-reverse-proxy/subject.md
+%}#installing-nginx):
+
+```bash
+$> sudo apt install nginx
+```
 
 ## :exclamation: Put the static website on the server
 
 It is suggested that you use the provided [HTML, JavaScript and CSS
 clock][repo], but you could deploy any other static HTML website.
 
-**Still on your server**, clone the following repository into your home
-directory: [https://github.com/ArchiDep/static-clock-website][repo]
+You will deploy it in `/srv/clock`, as you deployed Guess It in `/srv/guessit`.
+nginx reads the files of the sites it serves as the `www-data` user, as the
+first line of its main configuration file says:
+
+```bash
+$> head -n 1 /etc/nginx/nginx.conf
+user www-data;
+```
+
+Create the directory, give it to yourself and to the `www-data` group, and close
+it to every other user (replace `jde` with your Unix username):
+
+```bash
+$> sudo mkdir /srv/clock
+
+$> sudo chown jde:www-data /srv/clock
+
+$> chmod 750 /srv/clock
+
+$> ls -ld /srv/clock
+drwxr-x--- 2 jde www-data 4096 Nov 19 10:12 /srv/clock
+```
+
+You own the directory (`rwx`), so you can deploy in it without `sudo`. The
+`www-data` user, the only member of the `www-data` group, can read and enter it
+(`r-x`), but not change it. Every other user can do nothing with it (`---`).
+This is what you did for the `guessit` user when you [let Guess It read its
+code][read-code].
+
+{% note type: more %}
+
+Your home directory would not do: it is closed to other users (`drwxr-x---`),
+and `www-data` is one of them.
+
+{% endnote %}
+
+**Still on your server**, clone the following repository into the directory:
+[https://github.com/ArchiDep/static-clock-website][repo]
+
+```bash
+$> git clone https://github.com/ArchiDep/static-clock-website.git /srv/clock
+```
 
 Make sure the files are there:
 
 ```bash
-$> ls static-clock-website
+$> ls /srv/clock
 index.html  README.md  script.js  style.css
 ```
+
+## :exclamation: Choose the name of the site
+
+The clock gets a name of its own: `clock.` followed by the hostname you noted
+in the [DNS exercise][dns-exercise]. For example, if your hostname is
+`jde.archidepN.ch`, the clock will be at `clock.jde.archidepN.ch`.
+
+You do not need to add a DNS record for it. Your wildcard record, `*.jde`,
+already points every name under your hostname to your server.
+
+Every site you deploy on your server from now on gets a name of its own in the
+same way, so that each name stands for one site.
 
 ## :exclamation: Create an nginx configuration file to serve the website
 
@@ -58,11 +117,11 @@ not need its configuration to have a particular extension.
 {% endnote %}
 
 Take the [static configuration example from the course]({% link
-chapters/509-reverse-proxy/subject.md %}#static-website-configuration) and put it
-in the file. You should modify it to:
+chapters/509-reverse-proxy/subject.md %}#static-website-configuration) and put
+it in the file. You must modify it to:
 
-- Use the subdomain you configured for your server during the previous DNS
-  exercise. This is done by customizing [nginx's `server_name`
+- Use the name you chose for the site, such as `clock.jde.archidepN.ch`. This is
+  done by customizing [nginx's `server_name`
   directive](http://nginx.org/en/docs/http/server_names.html) in your `server`
   block.
 - Serve the files in the repository you just cloned. This is done by customizing
@@ -75,20 +134,20 @@ Read [How nginx processes a
 request](http://nginx.org/en/docs/http/request_processing.html) and [Serving
 Static Content section of the nginx Beginner's
 Guide](http://nginx.org/en/docs/beginners_guide.html#static) if you want to know
-more..
+more.
 
 {% endnote %}
 
 {% solution %}
 
-You `/etc/nginx/sites-available/clock` file on your server should look something
-like this:
+Your `/etc/nginx/sites-available/clock` file on your server should look
+something like this:
 
 ```nginx
 server {
   listen 80;
-  server_name jde.archidep.ch;
-  root /home/jde/static-clock-website;
+  server_name clock.jde.archidepN.ch;
+  root /srv/clock;
   index index.html;
 
   # Cache images, icons, video, audio, HTC, etc.
@@ -147,52 +206,8 @@ Make sure the symbolic link points to the correct file:
 
 ```bash
 $> ls -l /etc/nginx/sites-enabled/clock
-lrwxrwxrwx 1 root root 32 Jan 10 17:07 /etc/nginx/sites-enabled/clock -> /etc/nginx/sites-available/clock
+lrwxrwxrwx 1 root root 32 Nov 19 10:20 /etc/nginx/sites-enabled/clock -> /etc/nginx/sites-available/clock
 ```
-
-## :exclamation: Give nginx access to the files
-
-In recent Ubuntu versions, nginx does not have access to your home directory by
-default. When reading files, nginx uses the `www-data` user (you can see this
-configured in `/etc/nginx/nginx.conf`).
-
-If you look at the permissions for your home directory, it will probably be
-`rwxr-x---`, meaning that your user has access to it, your group has access to
-it, but other users don't:
-
-```bash
-$> ls -la /home
-total 16
-drwxr-xr-x  4 root      root      4096 Oct 19 13:01 .
-drwxr-xr-x 19 root      root      4096 Nov 23 11:23 ..
-drwxr-x--- 15 jde       jde       4096 Nov 23 15:34 jde
-```
-
-You should give permission to the `www-data` user to access your home directory.
-One way to quickly do this by adding the `www-data` user to your group (replace
-`jde` with your Unix username):
-
-```bash
-$> sudo usermod -a -G jde www-data
-```
-
-{% callout type: more, id: www-data-security-note %}
-
-This is not necessarily the best solution from a security standpoint. It means
-that nginx will likely have read/execution access to all the directories and
-files owned by your user. This is probably more than it should have.
-
-The clean and secure solution would be to put the files in a dedicated directory
-with appropriate permissions, somewhere outside your home directory.
-
-For example, you could create a `/var/www/clock` directory owned by you and
-clone the repository there. If you don't want other users to access this
-directory, you could even restrict permissions further by making this directory
-owned by you and the `www-data` group (e.g. `sudo chown e:www-data
-/var/www/clock`), and removing all permissions for other users (e.g. with `sudo
-chmod o-a /var/www/clock`).
-
-{% endcallout %}
 
 ## :exclamation: Reload the nginx configuration
 
@@ -225,57 +240,153 @@ command helpfully allows you to do that in a much simpler way:
 $> sudo nginx -s reload
 ```
 
+If the command indicates no errors, nginx should have reloaded its
+configuration.
+
 {% note type: more %}
 
 The `-s` option sends a **s**ignal to the nginx master process.
 
-You can also do the same thing through systemd with the following command: `sudo
-systemctl nginx reload`. This will also ask nginx to reload its configuration.
+You can also reload nginx through systemd, the same way you managed Guess It:
+`sudo systemctl reload nginx` runs the same `nginx -s reload` command, which
+sends the same `HUP` signal.
+
+Do not confuse it with `sudo systemctl restart nginx`, which stops nginx and
+starts it again. A restart closes the connections in progress, and if the new
+configuration has an error, nginx does not start again: every site it serves is
+down. A reload keeps nginx running, and if the new configuration has an error,
+nginx keeps the old one.
 
 {% endnote %}
 
-If the command indicates no errors, nginx should have reloaded its
-configuration.
-
 ## :exclamation: See it in action
 
-Visit the subdomain of your server, e.g. http://jde.archidep.ch (replacing `jde`
-with your username and `archidep.ch` with your assigned subdomain) and you
-should see the website working.
+Visit the name of the site in your browser, e.g. `http://clock.jde.archidepN.ch`
+(with your own hostname after `clock.`), and you should see the clock. The
+address has no port: the browser connects to port 80 (the default port for
+insecure HTTP), where nginx listens.
+
+Now visit your hostname without `clock.` in front of it, e.g.
+`http://jde.archidepN.ch`. You get nginx's welcome page instead, because none of
+your configurations has that name. nginx answers it with its default site, the
+`default` configuration in `/etc/nginx/sites-enabled`.
+
+Guess It is still at `http://jde.archidepN.ch:3000`, as before. nginx is not
+involved: the browser connects to Guess It directly, on port 3000.
+
+## :question: Optional: hide the Git repository for security
+
+Your clone contains a `.git` directory, where Git keeps the history of the
+repository, and nginx serves it like any other file. Try it: visit
+`/.git/config` on the clock's address, e.g.
+`http://clock.jde.archidepN.ch/.git/config`.
+
+The clock's repository is public anyway, so it's not a security concern in this
+particular exercise. But the repository of another site could hold something you
+do not want to publish, such as an old version of a file with a password in it.
+
+To refuse such requests, add this `location` block inside the `server` block of
+your configuration:
+
+```nginx
+  # Refuse requests for the Git repository.
+  location ~ /\.git {
+    deny all;
+  }
+```
+
+Test the configuration and reload it as above. The same address now gives a 403
+Forbidden error.
 
 ## :checkered_flag: What have I done?
 
-You have configured nginx to act as a web server to serve static content (HTML,
-JavaScript and CSS that can be sent unmodified to the client) under your custom
-subdomain.
+You have deployed a static website: files that nginx sends to the browser
+unchanged. Nothing of the site runs on your server. The browser runs the clock's
+JavaScript itself.
 
-You can serve any static web content this way. You can also make nginx serve as
-many separate websites as you want under different domains by creating multiple
-configuration files with different `server_name` directives, all on the same
-server (your Azure instance).
+nginx listens on port 80, the default port of HTTP. A browser connects to it
+when the address has no port, which is why the clock's address needs none.
+systemd started nginx when you installed it, and starts it again whenever the
+server boots, as it does Guess It.
+
+Only one process can listen on port 80, but nginx can serve several sites on
+it. The browser sends the name of the site in the `Host` header of its request,
+as you did yourself when you [talked HTTP to Google][tcp-host]. nginx serves the
+site whose `server_name` is that name, and its default site when no
+configuration has it.
+
+The DNS sends every name under your hostname to the same address, thanks to
+your wildcard record. It cannot tell the sites apart: nginx does, by name. A new
+site needs a configuration with a new name, and no new DNS record.
+
+A configuration in `sites-available` does nothing until a symbolic link in
+`sites-enabled`, which nginx includes, points to it. nginx reads a changed
+configuration only when told to reload it: the `HUP` signal makes it read its
+configuration again without stopping. `nginx -t` checks a configuration before
+you do that.
+
+nginx reads the files of the site as the `www-data` user. `/srv/clock` belongs
+to the `www-data` group, so nginx can read the site but not modify it, while you
+own it and deploy it as yourself.
+
+Several problems from [the list of improvements to the basic
+deployment][improve] are still unsolved. One of them is that Guess It still
+needs its port in the address, since nginx has nothing to do with it. Guess It
+is not a set of files nginx can send: it is a program that builds each page when
+it is asked for it. Serving it on port 80, beside the clock, will need something
+more.
 
 ### :classical_building: Architecture
 
 This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise:
+communication flow at the end of this exercise. Step through the diagram to see
+what happens when a browser requests the clock.
 
-![Diagram](./images/architecture.png)
-
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="Nginx Static Deployment Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="Nginx Static Deployment Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
+{% include diagrams/510-nginx-static.html %}
 
 {% note %}
 
 Note that this diagram only shows the processes involved in this exercise,
-ignoring the PHP Todolist we have also deployed on the server.
+ignoring Guess It, which is still running on the server.
 
 {% endnote %}
+
+## :file_folder: Where is everything?
+
+These are the files and directories of your server that matter for this
+deployment.
+
+<div class="file-map">
+
+| Path                                                                                  | What it is                                                                                   | What you did                                                                                                             | Who uses it                                             |
+| :------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| :page_facing_up: `/etc/nginx/sites-available/clock` <span class="new">new</span>      | The configuration of the clock: its name and where its files are                             | Wrote it with `sudo nano`                                                                                                | nginx, through the link in `sites-enabled`              |
+| :page_facing_up: `/etc/nginx/sites-enabled/clock` <span class="new">new</span>        | A symbolic link to the configuration of the clock, which enables it                          | Created it with `sudo ln -s`                                                                                             | nginx, which includes everything in `sites-enabled`     |
+| :page_facing_up: `/etc/nginx/sites-enabled/default` <span class="new">new</span>      | A symbolic link to nginx's default site, its welcome page                                    | Installed nginx with `apt`, which created it                                                                             | nginx, for a name that none of your configurations has  |
+| :page_facing_up: `/etc/nginx/nginx.conf` <span class="new">new</span>                 | The main configuration of nginx, which includes `sites-enabled` and sets the `www-data` user | Installed nginx with `apt`, which created it                                                                             | nginx                                                   |
+| :file_folder: `/srv/clock` <span class="new">new</span>                               | The deployment of the clock: a clone of its repository                                       | Created it with `sudo mkdir`, gave it to yourself and the `www-data` group with `sudo chown`, and closed it with `chmod` | You, to deploy; nginx, as `www-data`, to read it        |
+| :page_facing_up: `/srv/clock/index.html` <span class="new">new</span>                 | The home page of the clock                                                                   | Cloned it with `git clone`, with `style.css` and `script.js`                                                             | nginx, which sends it unchanged to the browser          |
+| :page_facing_up: `/usr/lib/systemd/system/nginx.service` <span class="new">new</span> | The unit file of nginx                                                                       | Installed nginx with `apt`, which created it and enabled the service                                                     | systemd, to start nginx when the server boots           |
+| :page_facing_up: `/var/log/nginx/error.log` <span class="new">new</span>              | The errors nginx has met, such as a file it could not read                                   | Nothing, unless something went wrong                                                                                     | You, to [find out why][error-page] a page does not work |
+
+</div>
+
+Two directories of the [file hierarchy][unix-directories] matter most here:
+`/etc/nginx` holds the configuration of nginx, and `/var/log` the logs of the
+server's programs.
+
+You can explore all of this yourself: `ls -l` shows what a directory contains,
+with its permissions, and `cat`, `head` and `tail` what a file contains, as in
+the [command line cheatsheet][command-line-cheatsheet]. Use `sudo` for what only
+`root` can read. For example:
+
+```bash
+# The configurations nginx has enabled, and where their links point.
+$> ls -l /etc/nginx/sites-enabled
+
+# The unit systemd has loaded for nginx.
+$> sudo systemctl status nginx
+```
 
 ## :boom: Troubleshooting
 
@@ -294,6 +405,18 @@ In that case, edit the main nginx configuration with `sudo nano
 server_names_hash_bucket_size 256;
 ```
 
+### :boom: I see nginx's welcome page instead of the clock
+
+nginx has no enabled configuration with the name in your browser's address bar,
+so it answers with its default site. Check that:
+
+- The address is the name of the site, with `clock.` in front of your hostname.
+- The `server_name` directive in `/etc/nginx/sites-available/clock` is exactly
+  that name.
+- The symbolic link `/etc/nginx/sites-enabled/clock` exists and points to your
+  configuration (`ls -l /etc/nginx/sites-enabled`).
+- You have reloaded nginx's configuration since your last change.
+
 ### :boom: The nginx configuration is correct but I get an error page in the browser
 
 If your nginx configuration is syntactically correct (i.e. `sudo nginx -t` shows
@@ -301,7 +424,7 @@ no error) but you still get an error page in the browser, you can take a look at
 the nginx error log to see if it helps identify the issue:
 
 ```bash
-$> sudo cat /var/log/nginx/error.log
+$> sudo tail /var/log/nginx/error.log
 ```
 
 Also take a look at the following subsections depending on the error you see in
@@ -311,52 +434,46 @@ your browser.
 
 If you get a 403 Forbidden error, it usually means that nginx has insufficient
 permissions to access the directory you have specified with the `root` directive
-(or the `index.html` file in that directory). Make sure that the `www-data` user
-nginx is running as can access all the directories in the `root` you have
-specified.
+(or the `index.html` file in that directory). The error log says so:
 
-If you have Ubuntu 22+, this may be due to the fact that the permissions of your
-Unix user's home directory are more restrictive than in the past. You can check
-whether this is the case by listing all home directories with their permissions:
-
-```bash
-$> ls -la /home
-total 16
-drwxr-xr-x  4 root      root      4096 Oct 19 13:01 .
-drwxr-xr-x 19 root      root      4096 Nov 23 11:23 ..
-drwxr-x--- 15 jde       jde       4096 Nov 23 15:34 jde
+```
+... [error] ... "/srv/clock/index.html" is forbidden (13: Permission denied), ...
 ```
 
-If the permissions of your home directory are `drwxr-xr-x`, then this solution
-does not apply to you. However, if the permissions are `drwxr-x---` like above,
-then read on.
-
-You should give permission to the `www-data` user (the user nginx runs as) to
-access your home directory. You can do this by adding it to your group (replace
-`jde` with your Unix username):
+Check the permissions of the directory:
 
 ```bash
-$> sudo usermod -a -G jde www-data
+$> ls -ld /srv/clock
+drwxr-x--- 3 jde www-data 4096 Nov 19 10:14 /srv/clock
 ```
 
-Restart nginx once you have changed the permissions:
-
-```bash
-$> sudo nginx -s reload
-```
+Its group must be `www-data`, and the group's permissions `r-x`. If they are
+not, run the `sudo chown` and `chmod` commands of [Put the static website on the
+server][put-website] again.
 
 #### :boom: 404 Not Found
 
 If you get a 404 Not Found error page, it usually means nginx cannot find a file
 to serve (e.g. the `index.html` page) in the directory you have specified with
-the `root` directive.
+the `root` directive. The error log says which file it looked for:
+
+```
+... [error] ... "/srv/clok/index.html" is not found (2: No such file or directory), ...
+```
 
 Are you sure that the value of your `root` directive is correct? Does that
 directory actually exist?
 
+[error-page]: #the-nginx-configuration-is-correct-but-i-get-an-error-page-in-the-browser
 [hard-link]: https://en.wikipedia.org/wiki/Hard_link
 [nginx]: http://nginx.org/
 [nginx-signals]: http://nginx.org/en/docs/control.html
-[nginx-static]: https://docs.nginx.com/nginx/admin-guide/web-server/serving-static-content/
-[previous-ex]: dns-configuration.md
+[put-website]: #put-the-static-website-on-the-server
 [repo]: https://github.com/ArchiDep/static-clock-website
+
+[command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
+[dns-exercise]: {% link chapters/508-dns-config/exercise.md %}
+[improve]: {% link chapters/413-how-to-improve/subject.md %}
+[read-code]: {% link chapters/506-systemd-deployment/exercise.md %}#let-the-application-read-its-code
+[tcp-host]: {% link chapters/407-tcp/exercise.md %}#talk-dirty-http-to-google
+[unix-directories]: {% link chapters/402-unix-basics/subject.md %}#common-unix-directories
