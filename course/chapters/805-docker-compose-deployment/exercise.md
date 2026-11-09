@@ -77,7 +77,7 @@ changes.
 
 Take a look at the [architecture of the PHP todolist deployment with nginx and
 the FastCGI process manager exercise]({% link
-chapters/512-nginx-php-fpm-deployment/exercise.md %}#architecture) you did
+chapters/511-nginx-reverse-proxy-deployment/exercise.md %}#architecture) you did
 earlier in the course:
 
 ![Simplified architecture](./images/original-architecture.png)
@@ -417,7 +417,7 @@ with the [PHP development
 server](https://www.php.net/manual/en/features.commandline.webserver.php). Then,
 you improved upon that deployment by using the [FastCGI Process Manager
 (FPM)](https://php-fpm.org) instead during the [PHP-FPM deployment exercise]({%
-link chapters/512-nginx-php-fpm-deployment/exercise.md %}).
+link chapters/511-nginx-reverse-proxy-deployment/exercise.md %}).
 
 You will now replicate this deployment in the form of Docker containers.
 
@@ -450,7 +450,7 @@ $> docker run -it -v /path/to/app:/app bitnami/php-fpm
 
 That's _almost good enough_ to run the PHP todolist. There's just one catch: in
 the PHP-FPM deployment exercise, we had to [add environment variables to FPM]({%
-link chapters/512-nginx-php-fpm-deployment/exercise.md
+link chapters/511-nginx-reverse-proxy-deployment/exercise.md
 %}#add-the-todolist_db_pass-environment-variable-to-php-fpm).
 
 We have to do the same with Docker. But we don't want to do exactly the same: we
@@ -686,7 +686,7 @@ So what about that web server?
 
 The last service you need is the reverse proxy. You will use [nginx][nginx],
 much like in the [PHP-FPM deployment exercise]({% link
-chapters/512-nginx-php-fpm-deployment/exercise.md %}), except that you will of
+chapters/511-nginx-reverse-proxy-deployment/exercise.md %}), except that you will of
 course run it as a service in an isolated container.
 
 Since nginx is one of the most popular reverse proxies and web servers, there is
@@ -703,7 +703,7 @@ chapters/802-docker-fibscale/exercise.md %}#map-your-containers-ports).
 
 The reverse proxy must **proxy requests to the application** service. You know
 how to do this from the [FPM exercise]({% link
-chapters/512-nginx-php-fpm-deployment/exercise.md
+chapters/511-nginx-reverse-proxy-deployment/exercise.md
 %}#create-an-nginx-configuration-file-to-serve-the-application): you must create
 an nginx site configuration file to serve the application.
 

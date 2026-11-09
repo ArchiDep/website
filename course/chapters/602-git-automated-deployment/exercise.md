@@ -10,7 +10,7 @@ commits to a server.
 <!-- more -->
 
 It assumes that you have performed the previous [nginx & PHP-FPM exercise]({%
-link chapters/512-nginx-php-fpm-deployment/exercise.md %}).
+link chapters/511-nginx-reverse-proxy-deployment/exercise.md %}).
 
 ## :exclamation: Set up directories
 
@@ -310,7 +310,7 @@ on your server. You could add any command you wanted to your deployment script.
 This is a simplified architecture of the main running processes and
 communication flow at the end of this exercise. Note that it has not changed
 compared to [the previous exercises]({% link
-chapters/512-nginx-php-fpm-deployment/exercise.md
+chapters/511-nginx-reverse-proxy-deployment/exercise.md
 %}#architecture) since we have neither created any new
 processes nor changed how they communicate:
 

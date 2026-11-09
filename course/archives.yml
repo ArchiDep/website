@@ -40,3 +40,7 @@
   # "Unix Pipeline" became "Unix plumbing", named for redirections as well as
   # pipelines.
   /course/407-pipeline/: /course/409-unix-plumbing/
+  # "Deploy a PHP website with nginx and the FastCGI process manager" became
+  # "Deploy a web application with nginx as a reverse proxy", on Guess It, which
+  # replaced the PHP Todolist and needs no FastCGI process manager.
+  /course/512-nginx-php-fpm-deployment/: /course/511-nginx-reverse-proxy-deployment/

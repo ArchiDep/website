@@ -18,12 +18,14 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   # in the order that manifest lists them.
   @current_edition "2026"
 
-  # Three of the pages 2025 published are published at another path now: "Shell
+  # Some of the pages 2025 published are published at another path now: "Shell
   # Scripting" was chapter 102 and is a cheatsheet, which moved the three
   # chapters that followed it up one number; the graded exercise, which 2025
   # named after the application it had students deploy, is named for what it is;
-  # and "Guess It" answers for "PHP Todolist", on the application that replaced
-  # it. Every other page is still published at the path 2025 knew it by.
+  # "Guess It" answers for "PHP Todolist", on the application that replaced it;
+  # and the reverse proxy deployment of that application, which 2025 named after
+  # PHP-FPM, traded numbers with the Revolutionary Product's. Every other page is
+  # still published at the path 2025 knew it by.
   @shell_scripting {:cheatsheet, "shell-scripting"}
   @path_in_2025 %{
     "/cheatsheets/shell-scripting/" => "/course/102-shell-scripting/",
@@ -32,6 +34,8 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     "/course/103-ssh/slides/" => "/course/104-ssh/slides/",
     "/course/104-hello-ssh/" => "/course/105-hello-ssh/",
     "/course/205-guessit/" => "/course/205-php-todolist/",
+    "/course/511-nginx-reverse-proxy-deployment/" => "/course/512-nginx-php-fpm-deployment/",
+    "/course/512-revprod-deployment/" => "/course/511-revprod-deployment/",
     "/course/603-graded-deployment/" => "/course/603-floodit-deployment/"
   }
   # The Basic Deployment section was reordered after 2025, so it is not written
@@ -140,22 +144,27 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     ]
   end
 
+  # The Advanced Deployment section is listed in the order of the numbers 2025
+  # gave its pages, which the two reverse proxy deployments no longer follow now
+  # that they have traded them.
   defp published_in_2025 do
-    {before, rest} =
-      pages_of_2025()
-      |> Enum.map(&path_in_2025/1)
-      |> Enum.split_while(fn {path, _page} -> not basic_deployment?(path) end)
-
     basic_deployment =
       Enum.map(@basic_deployment_in_2025, fn {path, current_path} ->
         {path, current_page(current_path)}
       end)
 
-    before ++
-      basic_deployment ++ Enum.reject(rest, fn {path, _page} -> basic_deployment?(path) end)
+    pages_of_2025()
+    |> Enum.map(&path_in_2025/1)
+    |> replace_section("/course/4", fn _pages -> basic_deployment end)
+    |> replace_section("/course/5", &Enum.sort_by(&1, fn {path, _page} -> path end))
   end
 
-  defp basic_deployment?(path), do: String.starts_with?(path, "/course/4")
+  defp replace_section(pages, prefix, replace) do
+    in_section? = fn {path, _page} -> String.starts_with?(path, prefix) end
+    {before, rest} = Enum.split_while(pages, &(not in_section?.(&1)))
+    {section, after_section} = Enum.split_while(rest, in_section?)
+    before ++ replace.(section) ++ after_section
+  end
 
   # A manifest lists the home page, then the chapters, then the cheatsheets.
   # 2025 published "Shell Scripting" as a chapter, so its manifest lists it

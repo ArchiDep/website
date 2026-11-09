@@ -1,5 +1,5 @@
 ---
-title: Deploy a PHP website with nginx and the FastCGI process manager
+title: Deploy a web application with nginx as a reverse proxy
 cloud_server: details
 excerpt_separator: <!-- more -->
 ---

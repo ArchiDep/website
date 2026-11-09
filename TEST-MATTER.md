@@ -426,8 +426,8 @@ during the following exercises:
   [:classical_building: (architecture)](https://archidep.ch/course/506-systemd-deployment/#classical_building-architecture)
 - [Configure a domain name](https://archidep.ch/course/508-dns-config/)
   [:classical_building: (architecture)](https://archidep.ch/course/508-dns-config/#classical_building-architecture)
-- [Deploy a PHP application with nginx and the FastCGI process manager](https://archidep.ch/course/512-nginx-php-fpm-deployment/)
-  [:classical_building: (architecture)](https://archidep.ch/course/512-nginx-php-fpm-deployment/#classical_building-architecture)
+- [Deploy a web application with nginx as a reverse proxy](https://archidep.ch/course/511-nginx-reverse-proxy-deployment/)
+  [:classical_building: (architecture)](https://archidep.ch/course/511-nginx-reverse-proxy-deployment/#classical_building-architecture)
 
 You must understand how to use a reverse proxy to deploy several web sites or
 applications on the same server and use other features such as SSL termination,
@@ -436,10 +436,10 @@ following exercises:
 
 - [Deploy a static site with nginx](https://archidep.ch/course/510-nginx-static-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/510-nginx-static-deployment/#classical_building-architecture)
-- [Deploy a multi-component web application with nginx](https://archidep.ch/course/511-revprod-deployment/)
-  [:classical_building: (architecture)](https://archidep.ch/course/511-revprod-deployment/#classical_building-architecture)
-- [Deploy a PHP application with nginx and the FastCGI process manager](https://archidep.ch/course/512-nginx-php-fpm-deployment/)
-  [:classical_building: (architecture)](https://archidep.ch/course/512-nginx-php-fpm-deployment/#classical_building-architecture)
+- [Deploy a web application with nginx as a reverse proxy](https://archidep.ch/course/511-nginx-reverse-proxy-deployment/)
+  [:classical_building: (architecture)](https://archidep.ch/course/511-nginx-reverse-proxy-deployment/#classical_building-architecture)
+- [Deploy a multi-component web application with nginx](https://archidep.ch/course/512-revprod-deployment/)
+  [:classical_building: (architecture)](https://archidep.ch/course/512-revprod-deployment/#classical_building-architecture)
 - [Provision an SSL certificate using Certbot by Let's Encrypt](https://archidep.ch/course/514-certbot-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/514-certbot-deployment/#classical_building-architecture)
 - [Horizontally scale a web application with nginx as a load balancer](https://archidep.ch/course/515-fibscale-deployment/)

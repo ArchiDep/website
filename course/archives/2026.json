@@ -289,16 +289,16 @@
       "slug": "nginx-static-deployment"
     },
     {
-      "path": "/course/511-revprod-deployment/",
+      "path": "/course/511-nginx-reverse-proxy-deployment/",
       "kind": "chapter",
       "num": 511,
-      "slug": "revprod-deployment"
+      "slug": "nginx-reverse-proxy-deployment"
     },
     {
-      "path": "/course/512-nginx-php-fpm-deployment/",
+      "path": "/course/512-revprod-deployment/",
       "kind": "chapter",
       "num": 512,
-      "slug": "nginx-php-fpm-deployment"
+      "slug": "revprod-deployment"
     },
     {
       "path": "/course/513-tls/slides/",
