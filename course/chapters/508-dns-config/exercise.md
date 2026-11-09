@@ -120,16 +120,36 @@ a record.
 
 ## :checkered_flag: What have I done?
 
-You have created a mapping in the [domain name system][dns] between your custom
-subdomain (e.g. `jde.archidep2.ch`) and the IP address of your server.
+You have given your server a name. Anyone on the Internet can now reach Guess It
+at `http://jde.archidep2.ch:3000` (for example), without knowing your server's
+IP address.
 
-You have done this by modifying the [DNS zone file][dns-zone-file] for the
-course's domain. When a computer requests to know the IP address for your
-subdomain, the [DNS name servers][dns-name-server] of the domain provider
-(gandi.net) will give them the IP address in the mapping you have configured.
+The name works because you added records to a [DNS zone][dns-zone]: the part of
+the [domain name system][dns] that one manager is responsible for. The course
+manages the zone of its domain at Gandi.net, and gave you access to add your own
+records to it, as a company does with the subdomains of its own domain.
 
-This allows your applications and websites to be accessible through a
-human-friendly domain name instead of an IP address.
+An `A` record maps a name to an IPv4 address, and nothing else. A browser first
+asks the DNS for the address of the name you typed, then connects to that
+address exactly as if you had typed the address yourself. The port is not part
+of the DNS: `:3000` is still needed, and the connection still reaches the same
+process listening on that port.
+
+Your wildcard record, `*.jde`, maps every name under `jde.archidep2.ch` to the
+same address, so that a name such as `foo.jde.archidep2.ch` needs no record of
+its own.
+
+An answer from the DNS is kept in caches, on your machine and on the DNS servers
+in between, for as long as the record's TTL allows. That is why a corrected
+record can take minutes to work: the old answer is still served from a cache. A
+name that was never looked up is in no cache, so it works straight away.
+
+Several problems from [the list of improvements to the basic
+deployment][improve] are still unsolved. One of them is that the address still
+needs a port. Your server will host several sites, each under a name of its own,
+and they cannot all listen on the same port, since only one process can listen
+on a given port. The DNS does not solve this: it maps names to addresses, never
+to ports. Something more will be needed.
 
 ### :classical_building: Architecture
 
@@ -163,10 +183,9 @@ has cleared.
 {% endnote %}
 
 [dns]: https://en.wikipedia.org/wiki/Domain_Name_System
-[dns-name-server]: https://en.wikipedia.org/wiki/Name_server
-[dns-zone-file]: https://en.wikipedia.org/wiki/Zone_file
+[dns-zone]: https://en.wikipedia.org/wiki/DNS_zone
 [google-dig]: https://toolbox.googleapps.com/apps/dig/
 
-[tcp-ping]: {% link chapters/407-tcp/exercise.md %}#talk-dirty-http-to-google
-
+[improve]: {% link chapters/413-how-to-improve/subject.md %}
 [systemd-architecture]: {% link chapters/506-systemd-deployment/exercise.md %}#architecture
+[tcp-ping]: {% link chapters/407-tcp/exercise.md %}#talk-dirty-http-to-google
