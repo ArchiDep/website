@@ -295,10 +295,10 @@
       "slug": "nginx-reverse-proxy-deployment"
     },
     {
-      "path": "/course/512-revprod-deployment/",
+      "path": "/course/512-fibscale-deployment/",
       "kind": "chapter",
       "num": 512,
-      "slug": "revprod-deployment"
+      "slug": "fibscale-deployment"
     },
     {
       "path": "/course/513-tls/slides/",
@@ -313,10 +313,10 @@
       "slug": "certbot-deployment"
     },
     {
-      "path": "/course/515-fibscale-deployment/",
+      "path": "/course/515-revprod-deployment/",
       "kind": "chapter",
       "num": 515,
-      "slug": "fibscale-deployment"
+      "slug": "revprod-deployment"
     },
     {
       "path": "/course/601-git-hooks/",

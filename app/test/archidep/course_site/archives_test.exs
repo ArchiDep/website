@@ -23,9 +23,10 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   # chapters that followed it up one number; the graded exercise, which 2025
   # named after the application it had students deploy, is named for what it is;
   # "Guess It" answers for "PHP Todolist", on the application that replaced it;
-  # and the reverse proxy deployment of that application, which 2025 named after
-  # PHP-FPM, traded numbers with the Revolutionary Product's. Every other page is
-  # still published at the path 2025 knew it by.
+  # the reverse proxy deployment of that application, which 2025 named after
+  # PHP-FPM, took the Revolutionary Product's number; and the Revolutionary
+  # Product traded the number it was given then with FibScale's. Every other page
+  # is still published at the path 2025 knew it by.
   @shell_scripting {:cheatsheet, "shell-scripting"}
   @path_in_2025 %{
     "/cheatsheets/shell-scripting/" => "/course/102-shell-scripting/",
@@ -35,7 +36,8 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     "/course/104-hello-ssh/" => "/course/105-hello-ssh/",
     "/course/205-guessit/" => "/course/205-php-todolist/",
     "/course/511-nginx-reverse-proxy-deployment/" => "/course/512-nginx-php-fpm-deployment/",
-    "/course/512-revprod-deployment/" => "/course/511-revprod-deployment/",
+    "/course/512-fibscale-deployment/" => "/course/515-fibscale-deployment/",
+    "/course/515-revprod-deployment/" => "/course/511-revprod-deployment/",
     "/course/603-graded-deployment/" => "/course/603-floodit-deployment/"
   }
   # The Basic Deployment section was reordered after 2025, so it is not written
@@ -145,8 +147,8 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   end
 
   # The Advanced Deployment section is listed in the order of the numbers 2025
-  # gave its pages, which the two reverse proxy deployments no longer follow now
-  # that they have traded them.
+  # gave its pages, which the reverse proxy deployments no longer follow now that
+  # they have traded them.
   defp published_in_2025 do
     basic_deployment =
       Enum.map(@basic_deployment_in_2025, fn {path, current_path} ->

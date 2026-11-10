@@ -438,12 +438,12 @@ following exercises:
   [:classical_building: (architecture)](https://archidep.ch/course/510-nginx-static-deployment/#classical_building-architecture)
 - [Deploy a web application with nginx as a reverse proxy](https://archidep.ch/course/511-nginx-reverse-proxy-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/511-nginx-reverse-proxy-deployment/#classical_building-architecture)
-- [Deploy a multi-component web application with nginx](https://archidep.ch/course/512-revprod-deployment/)
-  [:classical_building: (architecture)](https://archidep.ch/course/512-revprod-deployment/#classical_building-architecture)
+- [Horizontally scale a web application with nginx as a load balancer](https://archidep.ch/course/512-fibscale-deployment/)
+  [:classical_building: (architecture)](https://archidep.ch/course/512-fibscale-deployment/#classical_building-architecture)
 - [Provision an SSL certificate using Certbot by Let's Encrypt](https://archidep.ch/course/514-certbot-deployment/)
   [:classical_building: (architecture)](https://archidep.ch/course/514-certbot-deployment/#classical_building-architecture)
-- [Horizontally scale a web application with nginx as a load balancer](https://archidep.ch/course/515-fibscale-deployment/)
-  [:classical_building: (architecture)](https://archidep.ch/course/515-fibscale-deployment/#classical_building-architecture)
+- [Deploy a multi-component web application with nginx](https://archidep.ch/course/515-revprod-deployment/)
+  [:classical_building: (architecture)](https://archidep.ch/course/515-revprod-deployment/#classical_building-architecture)
 - The graded deployment exercise (published later in the semester)
 
 You must understand how to set up automated deployments with Git hooks, which

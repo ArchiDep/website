@@ -1470,7 +1470,7 @@ part of any common network.
 ### :space_invader: One-command horizontal scaling
 
 If you performed the [horizontal scaling exercise with the Fibscale
-application]({% link chapters/515-fibscale-deployment/exercise.md %}), you may
+application]({% link chapters/512-fibscale-deployment/exercise.md %}), you may
 recall that configuring horizontal scaling with systemd was fairly complex.
 
 Do you know what it takes to perform horizontal scaling on your machine or on
@@ -1521,7 +1521,7 @@ application service's containers.
 
 You don't even have to use [an nginx `upstream` directive][nginx-upstream]
 directive like you did in the [original horizontal scaling exercise]({% link
-chapters/515-fibscale-deployment/exercise.md
+chapters/512-fibscale-deployment/exercise.md
 %}#configure-nginx-to-balance-the-load-among-the-available-fibscale-instances).
 Nginx simply contacts the service available at the `app` hostname, and Docker
 Compose balances the load across the service's containers out of the box!
