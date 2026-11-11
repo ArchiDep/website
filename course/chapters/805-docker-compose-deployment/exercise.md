@@ -716,16 +716,16 @@ a few commands to look around in the container:
 
 ```bash
 # List the contents of the /etc/nginx directory
-$> docker run --rm -it --entrypoint ls nginx:1.29-alpine /etc/nginx
+$> docker run --rm -it --entrypoint ls nginx:1.30-alpine /etc/nginx
 conf.d fastcgi.conf fastcgi_params mime.types modules nginx.conf scgi_params uwsgi_params
 
 # List the includes in nginx's main configuration file
-$> docker run --rm -it --entrypoint grep nginx:1.29-alpine include /etc/nginx/nginx.conf
+$> docker run --rm -it --entrypoint grep nginx:1.30-alpine include /etc/nginx/nginx.conf
     include       /etc/nginx/mime.types;
     include /etc/nginx/conf.d/*.conf;
 
 # Display the contents of the default site configuration present in the image
-$> docker run --rm -it --entrypoint ls nginx:1.29-alpine /etc/nginx/conf.d
+$> docker run --rm -it --entrypoint ls nginx:1.30-alpine /etc/nginx/conf.d
 default.conf
 ```
 
@@ -900,7 +900,7 @@ $> docker compose ps
 NAME             IMAGE                 COMMAND                  SERVICE   CREATED          STATUS         PORTS
 todolist-app-1   todolist/app          "php-fpm -F --pid /o…"   app       28 minutes ago   Up 3 seconds   9000/tcp
 todolist-db-1    mysql:9.5.0           "docker-entrypoint.s…"   db        28 minutes ago   Up 3 seconds   3306/tcp, 33060/tcp
-todolist-rp-1    nginx:1.29-alpine     "/docker-entrypoint.…"   rp        28 minutes ago   Up 3 seconds   0.0.0.0:12000->80/tcp
+todolist-rp-1    nginx:1.30-alpine     "/docker-entrypoint.…"   rp        28 minutes ago   Up 3 seconds   0.0.0.0:12000->80/tcp
 ```
 
 You can also use `docker compose stop [service]`, `docker compose start
@@ -1087,7 +1087,7 @@ name: todolist
 
 services:
   rp:
-    image: nginx:1.29-alpine
+    image: nginx:1.30-alpine
     ports:
       - '12000:80'
     depends_on:
@@ -1129,7 +1129,7 @@ name: todolist
 
 services:
   rp:
-    image: nginx:1.29-alpine
+    image: nginx:1.30-alpine
     ports:
       - '12000:80'
     depends_on:
@@ -1253,7 +1253,7 @@ $> sudo docker compose ps
 NAME             IMAGE                 COMMAND                  SERVICE   CREATED          STATUS          PORTS
 todolist-app-1   todolist/app          "php-fpm -F --pid /o…"   app       2 minutes ago    Up 2 minutes    9000/tcp
 todolist-db-1    mysql:9.5.0           "docker-entrypoint.s…"   db        20 minutes ago   Up 20 minutes   3306/tcp, 33060/tcp
-todolist-rp-1    nginx:1.29-alpine     "/docker-entrypoint.…"   rp        2 minutes ago    Up 2 minutes    0.0.0.0:12000->80/tcp, :::12000->80/tcp
+todolist-rp-1    nginx:1.30-alpine     "/docker-entrypoint.…"   rp        2 minutes ago    Up 2 minutes    0.0.0.0:12000->80/tcp, :::12000->80/tcp
 ```
 
 Create a new nginx site configuration file on your server with `sudo nano
@@ -1498,7 +1498,7 @@ todolist-repo-app-1   todolist/app          "php-fpm -F --pid /o…"   app      
 todolist-repo-app-2   todolist/app          "php-fpm -F --pid /o…"   app       5 seconds ago    Up 2 seconds    9000/tcp
 todolist-repo-app-3   todolist/app          "php-fpm -F --pid /o…"   app       5 seconds ago    Up 3 seconds    9000/tcp
 todolist-repo-db-1    mysql:9.5.0           "docker-entrypoint.s…"   db        51 minutes ago   Up 51 minutes   3306/tcp, 33060/tcp
-todolist-repo-rp-1    nginx:1.29-alpine     "/docker-entrypoint.…"   rp        14 seconds ago   Up 12 seconds   0.0.0.0:12000->80/tcp, :::12000->80/tcp
+todolist-repo-rp-1    nginx:1.30-alpine     "/docker-entrypoint.…"   rp        14 seconds ago   Up 12 seconds   0.0.0.0:12000->80/tcp, :::12000->80/tcp
 ```
 
 Starting from the initial architecture of the exercise, the architecture of the
@@ -1545,7 +1545,7 @@ name: todolist
 
 services:
   rp:
-    image: nginx:1.29-alpine
+    image: nginx:1.30-alpine
     ports:
       - '${TODOLIST_PORT:-12000}:80'
     depends_on:

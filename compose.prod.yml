@@ -2,7 +2,7 @@ name: archidep
 
 services:
   rp:
-    image: 'traefik:v3.7.10'
+    image: 'traefik:v3.7.18'
     container_name: 'traefik'
     command:
       - '--log.level=DEBUG'
@@ -22,7 +22,7 @@ services:
   # rendered by the application beside it rather than built into an image of
   # ours, so nothing here is rebuilt when the site changes.
   assets-server:
-    image: nginx:1.29-alpine
+    image: nginx:1.30-alpine
     labels:
       - 'traefik.enable=true'
       # What the course material site publishes: an edition's own tree, under

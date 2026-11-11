@@ -443,7 +443,7 @@ container is lost when the container is removed.
 Let's demonstrate this. Run a new container from the official `nginx` image:
 
 ```bash
-$> docker run -d --name web -p 3000:80 nginx:1.29
+$> docker run -d --name web -p 3000:80 nginx:1.30
 ```
 
 {% note type: more %}
@@ -460,7 +460,7 @@ You should see this container running with `docker ps`:
 ```bash
 $> docker ps
 CONTAINER ID   IMAGE        COMMAND                  CREATED         STATUS        PORTS                                     NAMES
-b720d8b8d7d7   nginx:1.29   "/docker-entrypoint.…"   2 seconds ago   Up 1 second   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp   web
+b720d8b8d7d7   nginx:1.30   "/docker-entrypoint.…"   2 seconds ago   Up 1 second   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp   web
 ```
 
 Since you have published its main port, you should also be able to access this
@@ -723,7 +723,7 @@ your changes are still there.
 Run a second container named `web2` based on the same official `nginx` image:
 
 ```bash
-$> docker run -d --name web2 -p 3001:80 nginx:1.29
+$> docker run -d --name web2 -p 3001:80 nginx:1.30
 ```
 
 You should have two containers running, one exposed on port 3000 and the other
@@ -732,8 +732,8 @@ on port 3001:
 ```bash
 $> docker ps
 CONTAINER ID   IMAGE        COMMAND                  CREATED          STATUS         PORTS                                     NAMES
-d85ff1b3ecf4   nginx:1.29   "/docker-entrypoint.…"   2 minutes ago    Up 2 minutes   0.0.0.0:3001->80/tcp, [::]:3001->80/tcp   web2
-b720d8b8d7d7   nginx:1.29   "/docker-entrypoint.…"   49 minutes ago   Up 3 minutes   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp   web
+d85ff1b3ecf4   nginx:1.30   "/docker-entrypoint.…"   2 minutes ago    Up 2 minutes   0.0.0.0:3001->80/tcp, [::]:3001->80/tcp   web2
+b720d8b8d7d7   nginx:1.30   "/docker-entrypoint.…"   49 minutes ago   Up 3 minutes   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp   web
 ```
 
 Now visit both [http://localhost:3000](http://localhost:3000) and
@@ -779,7 +779,7 @@ Now you haven't just stopped the containers, you have also removed them. Re-run
 the `web` container with the same command as before:
 
 ```bash
-$> docker run -d --name web -p 3000:80 nginx:1.29
+$> docker run -d --name web -p 3000:80 nginx:1.30
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) in your browser again:
@@ -899,7 +899,7 @@ directory from the host machine into the container at the path
 `/usr/share/nginx/html`, where nginx serves its static files from:
 
 ```bash
-$> docker run -d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
+$> docker run -d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.30
 ```
 
 The new `-v` (or `--volume`) option creates a **bind mount** from the current
@@ -1096,7 +1096,7 @@ Re-run the `web` container with the same command as before, including the bind
 mount:
 
 ```bash
-$> docker run -d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.29
+$> docker run -d --name web -p 3000:80 -v "$PWD:/usr/share/nginx/html" nginx:1.30
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) in your browser again. You
