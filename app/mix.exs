@@ -98,6 +98,7 @@ defmodule ArchiDep.MixProject do
       {:lumis_wasm_nginx, "~> 0.26.1"},
       {:lumis_wasm_php, "~> 0.26.7"},
       {:lumis_wasm_powershell, "~> 0.26.3"},
+      {:lumis_wasm_python, "~> 0.26.7"},
       {:lumis_wasm_sql, "~> 0.26.5"},
       {:lumis_wasm_yaml, "~> 0.26.2"},
       {:mdex, "~> 0.14.2"},

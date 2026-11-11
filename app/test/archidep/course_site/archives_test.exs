@@ -25,8 +25,9 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
   # "Guess It" answers for "PHP Todolist", on the application that replaced it;
   # the reverse proxy deployment of that application, which 2025 named after
   # PHP-FPM, took the Revolutionary Product's number; and the Revolutionary
-  # Product traded the number it was given then with FibScale's. Every other page
-  # is still published at the path 2025 knew it by.
+  # Product traded the number it was given then with FibScale's, whose exercise
+  # is now named after Brewscale, the application that replaced it. Every other
+  # page is still published at the path 2025 knew it by.
   @shell_scripting {:cheatsheet, "shell-scripting"}
   @path_in_2025 %{
     "/cheatsheets/shell-scripting/" => "/course/102-shell-scripting/",
@@ -36,7 +37,7 @@ defmodule ArchiDep.CourseSite.ArchivesTest do
     "/course/104-hello-ssh/" => "/course/105-hello-ssh/",
     "/course/205-guessit/" => "/course/205-php-todolist/",
     "/course/511-nginx-reverse-proxy-deployment/" => "/course/512-nginx-php-fpm-deployment/",
-    "/course/512-fibscale-deployment/" => "/course/515-fibscale-deployment/",
+    "/course/512-brewscale-deployment/" => "/course/515-fibscale-deployment/",
     "/course/515-revprod-deployment/" => "/course/511-revprod-deployment/",
     "/course/603-graded-deployment/" => "/course/603-floodit-deployment/"
   }

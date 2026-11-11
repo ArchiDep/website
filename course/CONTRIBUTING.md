@@ -214,6 +214,18 @@ materials.
   have I done?", `:classical_building:` for an architecture diagram,
   `:file_folder:` for a [file map](#file-maps) and `:boom:` for
   "Troubleshooting" and its entries.
+- **Mark every switch between machines in an exercise with an `exercise`
+  [callout](#callouts)**, not a sentence in passing: where the exercise starts,
+  and wherever its steps go from running commands on the student's server to
+  running them on their own computer, or back. Only the steps need them: the
+  sections that conclude an exercise, such as "What have I done?" or a [file
+  map](#file-maps), do not. A student who misses the switch types the next
+  command on the wrong machine, and nothing tells them so until it fails in a
+  confusing way. Say which machine, and which terminal when several are open:
+  "Do this part of the exercise on your computer, not on your server", "Go back
+  to your terminal that is still connected to your server over SSH for this
+  part". Using a browser to look at the result of a step is not a switch, and
+  needs no callout.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.

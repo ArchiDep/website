@@ -63,6 +63,7 @@
   "lumis_wasm_nginx": {:hex, :lumis_wasm_nginx, "0.26.1", "537aa229e9336ad5aa3f9f6de6885b02e56a6a563263849908fe59aac1e38475", [:mix], [], "hexpm", "99bcbf47921d2682b7274844d92e3265c8da5ef45719ca3eb48f40bc356c3761"},
   "lumis_wasm_php": {:hex, :lumis_wasm_php, "0.26.7", "ad2a99b8f820d0529e38af00a6c532fd4ad3454c277a3412ae689b93b3a215bf", [:mix], [], "hexpm", "c33fc4054b1a591c53403dea9c460367fec1b1011425b649ec1aa7777872902a"},
   "lumis_wasm_powershell": {:hex, :lumis_wasm_powershell, "0.26.5", "6cb3a26cd8d6b6e6e7b9cd1e54205b9fffd63f89f9388b89e96ec8658e99cec1", [:mix], [], "hexpm", "cb454761bd2c8be5d3c730450d2b84e8d21bc3ec4ae3acac8a1961247c3b4a6a"},
+  "lumis_wasm_python": {:hex, :lumis_wasm_python, "0.26.7", "6e5ddddf8c8002da22492b2e88a131239d1376bf049da20a918ba04322341c78", [:mix], [], "hexpm", "1efb4f3f2002fd5ad3487eabd1267acea3241400c01a4480bbcd98f4313f8803"},
   "lumis_wasm_sql": {:hex, :lumis_wasm_sql, "0.26.5", "fb78c1c9416dd104fa520d7a10c4834178d2003d31d68af806dcb067aa9a5edd", [:mix], [], "hexpm", "22f3efa0e67af049787144b5eb1cb1ec5b98fd06cc7b0208b28e236f2bbf1955"},
   "lumis_wasm_yaml": {:hex, :lumis_wasm_yaml, "0.26.2", "62e352316de63b46e608ff820505ea4c9b05e7ec0ca88ee2379536c53106e027", [:mix], [], "hexpm", "c6f572313b3f59bf6a079ec221f302285100a9d59136fb12de9de499dbe26591"},
   "makeup": {:hex, :makeup, "1.2.1", "e90ac1c65589ef354378def3ba19d401e739ee7ee06fb47f94c687016e3713d1", [:mix], [{:nimble_parsec, "~> 1.4", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm", "d36484867b0bae0fea568d10131197a4c2e47056a6fbe84922bf6ba71c8d17ce"},

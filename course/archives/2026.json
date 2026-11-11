@@ -295,10 +295,10 @@
       "slug": "nginx-reverse-proxy-deployment"
     },
     {
-      "path": "/course/512-fibscale-deployment/",
+      "path": "/course/512-brewscale-deployment/",
       "kind": "chapter",
       "num": 512,
-      "slug": "fibscale-deployment"
+      "slug": "brewscale-deployment"
     },
     {
       "path": "/course/513-tls/slides/",
