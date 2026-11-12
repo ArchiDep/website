@@ -39,7 +39,14 @@ hostname is `jde.archidep2.ch`:
   you by the teacher.
 - Go under the "Domain" tab in the left menu and select the domain of the
   hostname you noted above.
-- Go under the "DNS Records" tab in the domain's top menu.
+
+  <p class='center'><img class='w80' src='images/gandi-domains.png' /></p>
+
+- Go under the "DNS Records" tab in the domain's top menu. Gandi.net shows the
+  records of the domain's DNS zone in a table:
+
+  <p class='center'><img class='w80' src='images/gandi-dns-zone.png' /></p>
+
 - Add two new `A` records to map subdomains to **your server's public IP
   address**:
   1. Assuming your personal subdomain for the course is `jde.archidep2.ch`, use
@@ -48,14 +55,25 @@ hostname is `jde.archidep2.ch`:
      record**, and the same IP address. This will direct any second-level
      subdomain like `foo.jde.archidep2.ch` to your server.
 
+  For both records, set the TTL to 300 seconds (5 minutes), the shortest
+  Gandi.net allows, instead of its default of 10800 seconds (3 hours). If you
+  make a mistake in a record, you will then wait at most 5 minutes for the
+  corrected one to be seen.
+
+  <p class='center'><img class='w75' src='images/gandi-dns-record.png' /></p>
+
 Assuming your server's IP address is `W.X.Y.Z` and your username is `jde`,
 the domain's zone file must now contain the following DNS records (among
 others):
 
 ```
-*.jde 1800 IN A W.X.Y.Z
-jde 1800 IN A W.X.Y.Z
+*.jde 300 IN A W.X.Y.Z
+jde 300 IN A W.X.Y.Z
 ```
+
+You can see the zone file itself in Gandi.net's "Text Mode":
+
+<p class='center'><img class='w80' src='images/gandi-dns-zone-text.png' /></p>
 
 ## :exclamation: Access the domain name
 
@@ -63,6 +81,8 @@ Once you have configured it correctly, you (and everybody else) can reach Guess
 It at `http://jde.archidep2.ch:3000` in a browser, instead of
 `http://W.X.Y.Z:3000`. It is the same application, still listening on port 3000:
 only the name in the address has changed.
+
+![Guess It in a browser, at the domain name of its server](./images/guessit-domain.svg)
 
 {% note type: tip %}
 
@@ -75,21 +95,29 @@ intermediaries and also by your machine.
 
 ### :question: Optional: check the DNS resolution yourself
 
-You can ask the DNS for the IP address of your domain name yourself, without a
-browser. The `dig` command asks a DNS server and prints its answer:
+You can ask the DNS for the IP address of your domain name yourself, without
+opening Guess It.
+
+The simplest is an online tool such as [Google's Dig][google-dig]: enter your
+domain name, and it shows the `A` record of that name, with your server's public
+IP address. It asks the DNS from Google's servers rather than from your machine,
+so its answer does not depend on what your machine has cached, which is useful
+after you have fixed a mistake in a record.
+
+On the command line, the `dig` command asks a DNS server and prints its answer:
 
 ```bash
 $> dig jde.archidep2.ch
 ...
 ;; ANSWER SECTION:
-jde.archidep2.ch.       1800    IN      A       W.X.Y.Z
+jde.archidep2.ch.       300     IN      A       W.X.Y.Z
 ...
 ```
 
 The answer section must contain your server's public IP address. It is the
 record you added in Gandi.net, in the same format as in the zone file above. The
-number after the name is how many seconds the answer may still be cached: 1800
-at most, the TTL of your record, and less if it was already in a cache.
+number after the name is how many seconds the answer may still be cached: 300 at
+most, the TTL of your record, and less if it was already in a cache.
 
 A name under your wildcard record, such as `foo.jde.archidep2.ch`, must give the
 same address.
@@ -112,11 +140,6 @@ PING jde.archidep2.ch (W.X.Y.Z) 56(84) bytes of data.
 What follows does not matter here. If your server does not answer `ping`, `ping`
 reports `100% packet loss` after a few seconds: the name still resolved to your
 server's address, which is what you are checking.
-
-Finally, an online tool such as [Google's Dig][google-dig] asks the DNS from
-Google's servers rather than from your machine. Its answer does not depend on
-what your machine has cached, which is useful after you have fixed a mistake in
-a record.
 
 ## :checkered_flag: What have I done?
 

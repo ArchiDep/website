@@ -3,15 +3,10 @@ title: Domain Name System (DNS)
 excerpt_separator: <!-- more -->
 ---
 
-Learn the basics of the [Domain Name System (DNS)][dns] and configure a domain
-name for your server with [Gandi.net][gandi].
+Learn the basics of the [Domain Name System (DNS)][dns], and how a DNS zone
+maps domain names to IP addresses.
 
 <!-- more -->
-
-**You will need**
-
-- A server with a public IP address
-- A Gandi account that is the administrator or technical contact for a domain
 
 **Recommended reading**
 
@@ -26,7 +21,7 @@ administrative responsibility has been delegated to a single manager.
 
 As the manager of a DNS zone, you can modify the [DNS zone file][dns-zone-file],
 a text file which describes that zone. It contains **mappings between domain
-name and IP addresses** and other resources, in the form of resource records.
+names and IP addresses** and other resources, in the form of resource records.
 
 A **resource record** is described by one line in the following format:
 
@@ -37,7 +32,8 @@ name   ttl   record class   record type   record data
 The meaning of each field is:
 
 - `name` - Subdomain name (or `@` for the domain itself).
-- `ttl` - Time during which DNS resolution of this record should be cached.
+- `ttl` - Time to live: how many seconds the answer for this record may be
+  cached.
 - `record class` - Namespace of the record information, usually `IN` for the Internet.
 - `record type` - Type of record.
 - `record data` - Record data (depending on the record type).
@@ -53,12 +49,14 @@ most common:
 | `AAAA`  | IPv6 address record   | Maps a domain name to an IPv6 address.                                                                  |
 | `CNAME` | Canonical name record | Alias of one name to another (e.g. `www`).                                                              |
 | `MX`    | Mail exchange record  | Maps a domain name to a list of message transfer agents.                                                |
+| `NS`    | Name server record    | Names the DNS servers that answer for a zone.                                                           |
 | `SOA`   | Start of authority    | Authoritative information about the zone, e.g. primary name server & email of the domain administrator. |
 | `TXT`   | Text record           | Arbitrary machine-readable data.                                                                        |
 
 ### DNS record example
 
-Let's look at a real example which you might find in a zone file:
+Let's look at a real example which you might find in a zone file. The first
+line only names the fields: it is not part of the zone file.
 
 ```
 name   ttl   record class   record type   record data
@@ -94,9 +92,34 @@ here is how to read that record:
 - It defines a cache time of 300 seconds (5 minutes) during which clients will
   not perform DNS resolution again if they have the mapping already.
 
-## Managing DNS on Gandi.net
+## Resolving a domain name
 
-<!-- slide-front-matter class: center, middle -->
+You have probably seen how DNS resolution works before. This is a reminder,
+since it explains why the TTL of a record matters.
+
+When your browser needs the IP address of `blog.example.com`:
+
+1. Your computer asks a **DNS resolver**, a server whose job is to find the
+   answer for you. It is usually run by your Internet provider, or by the
+   organization whose network you are on.
+2. If the resolver has no answer in its cache, it asks one of the **root name
+   servers**. They do not know the address of `blog.example.com`, but they know
+   which name servers are responsible for `.com`.
+3. The resolver asks one of the name servers of `.com`. They do not know the
+   address either, but they know which name servers are responsible for the
+   zone of `example.com`: the zone of `.com` has `NS` records for it.
+4. The resolver asks one of the name servers of `example.com`. They are
+   **authoritative** for that zone: they answer from its zone file, with the `A`
+   record of `blog.example.com`.
+5. The resolver gives the answer to your computer.
+
+Each answer is kept in a cache for as long as its TTL allows: by the resolver,
+and also by your computer. Until it expires, the next question for the same name
+is answered from a cache, without asking the authoritative name servers again.
+This makes the DNS fast, and it is why a changed record takes time to be seen by
+everyone: a cache may still hold the old answer until its TTL runs out.
+
+## Managing DNS on Gandi.net
 
 <img class='w80' src='images/gandi.jpg' />
 
@@ -111,31 +134,9 @@ Check out [their shop][gandi-shop] to see if your dream domain name is available
 
 ### Configuring a domain
 
-Once you have bought a domain name, you access its management interface from your account:
-
-<p class='center'><img class='w80' src='images/gandi-domains.png' /></p>
-
-### Configuring the domain's DNS zone
-
-Gandi offers many services such as email accounts or SSL certificates.
-The one that interests us is the management of the domain's **DNS zone**:
-
-<p class='center'><img class='w80' src='images/gandi-dns-zone.png' /></p>
-
-> By default, Gandi displays the DNS zone in a human-readable table.
-
-#### Seeing the raw DNS zone text
-
-Advanced users can also see and edit the real DNS zone file:
-
-<p class='center'><img class='w80' src='images/gandi-dns-zone-text.png' /></p>
-
-### Adding a DNS record
-
-The interface allows you to very easily add a DNS record.
-For example, this screenshot shows how to add an `example` subdomain pointing to the IP address `1.1.1.1`:
-
-<p class='center'><img class='w75' src='images/gandi-dns-record.png' /></p>
+Once you have bought a domain name, you access its management interface from
+your account. There, you can manage the domain's DNS zone: you will do so in the
+[next exercise]({% link chapters/508-dns-config/exercise.md %}).
 
 [dns]: https://en.wikipedia.org/wiki/Domain_Name_System
 [dns-record-types]: https://en.wikipedia.org/wiki/List_of_DNS_record_types
@@ -143,6 +144,3 @@ For example, this screenshot shows how to add an `example` subdomain pointing to
 [dns-zone-file]: https://en.wikipedia.org/wiki/Zone_file
 [gandi]: https://www.gandi.net/
 [gandi-shop]: https://shop.gandi.net/
-[gtld]: https://en.wikipedia.org/wiki/Generic_top-level_domain
-[icann]: https://en.wikipedia.org/wiki/ICANN
-[tld]: https://en.wikipedia.org/wiki/Top-level_domain
