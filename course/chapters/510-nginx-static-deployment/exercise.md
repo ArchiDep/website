@@ -272,6 +272,8 @@ Visit the name of the site in your browser, e.g. `http://clock.jde.archidepN.ch`
 address has no port: the browser connects to port 80 (the default port for
 insecure HTTP), where nginx listens.
 
+![The clock in a browser, at the name of its site](images/clock.png)
+
 Now visit your hostname without `clock.` in front of it, e.g.
 `http://jde.archidepN.ch`. You get nginx's welcome page instead, because none of
 your configurations has that name. nginx answers it with its default site, the

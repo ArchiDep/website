@@ -116,6 +116,8 @@ Visit the name of the site in your browser, e.g.
 should see Guess It, with the games won on your earlier deployments in its
 leaderboard, and no port in the address.
 
+![Guess It in a browser, at the name of its site, with no port](images/guessit.png)
+
 Visit the clock too, e.g. `http://clock.jde.archidepN.ch`: it still works. The
 same nginx serves both, on the same port 80.
 

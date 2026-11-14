@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
-  <rect x="4" y="4" width="1192" height="592" rx="16" fill="#f3f3f3" stroke="#999" stroke-width="4" stroke-dasharray="16 12"/>
-  <text x="600" y="250" font-family="Helvetica, Arial, sans-serif" font-size="40" font-weight="700" fill="#555" text-anchor="middle">Screenshot to take</text>
-  <text x="600" y="320" font-family="Helvetica, Arial, sans-serif" font-size="30" fill="#555" text-anchor="middle">Guess It in a browser, reached at its server’s domain name</text>
-  <text x="600" y="380" font-family="Helvetica, Arial, sans-serif" font-size="26" font-style="italic" fill="#777" text-anchor="middle">http://jde.archidep2.ch:3000 in the address bar</text>
-</svg>

@@ -47,8 +47,8 @@ hostname is `jde.archidep2.ch`:
 
   <p class='center'><img class='w80' src='images/gandi-dns-zone.png' /></p>
 
-- Add two new `A` records to map subdomains to **your server's public IP
-  address**:
+- Add two new `A` records with the "Add record" button, to map subdomains to
+  **your server's public IP address**:
   1. Assuming your personal subdomain for the course is `jde.archidep2.ch`, use
      `jde` as the **name of the DNS record**.
   2. Then, create a wildcard subdomain using `*.jde` as the **name of the DNS
@@ -62,8 +62,12 @@ hostname is `jde.archidep2.ch`:
 
   <p class='center'><img class='w75' src='images/gandi-dns-record.png' /></p>
 
+  Create the second wildcard record in the same way. Only the name changes:
+
+  <p class='center'><img class='w60' src='images/gandi-dns-record-wildcard.png' /></p>
+
 Assuming your server's IP address is `W.X.Y.Z` and your username is `jde`,
-the domain's zone file must now contain the following DNS records (among
+the domain's zone file should now contain the following DNS records (among
 others):
 
 ```
@@ -71,9 +75,10 @@ others):
 jde 300 IN A W.X.Y.Z
 ```
 
-You can see the zone file itself in Gandi.net's "Text Mode":
+You can see the zone file itself in Gandi.net's "Advanced View". Look for your
+own lines in it, with your owner username and your server's public IP address:
 
-<p class='center'><img class='w80' src='images/gandi-dns-zone-text.png' /></p>
+<p class='center'><img class='w80' src='images/gandi-dns-zone-file.png' /></p>
 
 ## :exclamation: Access the domain name
 
@@ -82,7 +87,7 @@ It at `http://jde.archidep2.ch:3000` in a browser, instead of
 `http://W.X.Y.Z:3000`. It is the same application, still listening on port 3000:
 only the name in the address has changed.
 
-![Guess It in a browser, at the domain name of its server](./images/guessit-domain.svg)
+![Guess It in a browser, at the domain name of its server](./images/guessit-domain.png)
 
 {% note type: tip %}
 
