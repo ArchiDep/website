@@ -100,7 +100,7 @@ will be loaded in the `http` context, which makes it a good place to define
 
 The nginx package of Ubuntu (and of Debian, which Ubuntu is based on) has two
 directories for website configuration files. This is a convention of these
-distributions, not of nginx itself: other distributions only have `conf.d`.
+distributions:
 
 - **`sites-available`** contains the actual configuration files. For example,
   you could create a file at `/etc/nginx/sites-available/example` to configure

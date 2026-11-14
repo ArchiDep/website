@@ -10,7 +10,7 @@ Architecture & Deployment <!-- .element: class="subtitle" -->
 
 ## What is a proxy?
 
-<img class="w-10/12" src="./images/proxy.svg" alt="A client connects to a proxy, which connects to the server on the client's behalf" />
+<img class="w-10/12" src="./images/proxy.svg" alt="A client connects to a proxy, which connects to the website on the client's behalf" />
 
 A [**proxy server**][proxy] is a computer or application that acts as an
 **intermediary** for requests from clients seeking resources from other servers.
@@ -29,7 +29,7 @@ There are 3 main kinds:
 
 ## Tunneling proxy
 
-<img class="w-10/12" src="./images/tunneling-proxy.svg" alt="An SSH connection from a client in network A passes through a tunneling proxy, unchanged, to a server in network B" />
+<img class="w-10/12" src="./images/tunneling-proxy.svg" alt="An SSH connection from an SSH client in network A passes through a tunneling proxy, drawn as a pipe between the networks, unchanged, to an SSH server in network B" />
 
 A [tunneling proxy][tunneling-proxy] can pass **unmodified requests and
 responses** from one network to another.
@@ -48,7 +48,7 @@ an additional layer of encryption.
 
 ## Forward proxy
 
-<img class="w-10/12" src="./images/forward-proxy.svg" alt="Three clients of a private network connect to a forward proxy in the same network, which connects to servers on the Internet on their behalf" />
+<img class="w-10/12" src="./images/forward-proxy.svg" alt="A client connects to a forward proxy in its own network, which connects to a website on the Internet on its behalf" />
 
 A **forward proxy** retrieves data from a server on behalf of a client. It is
 said to be [**open**][open-proxy] if it is accessible by any Internet user.
@@ -62,7 +62,57 @@ network, and they go through it to reach any server on the Internet.
 
 ### Anonymous forward proxy
 
-<img class="w-10/12" src="./images/anonymous-proxy.svg" alt="A client connects to an anonymous proxy, which connects to the server; the server sees only the proxy" />
+<!-- The fragment shows what the website sees: the client and its connection
+     disappear, and the website is left seeing only the proxy. -->
+<svg class="proxy-diagram mx-auto block w-10/12" viewBox="0 0 960 225" role="img" aria-label="A client connects to an anonymous proxy, which connects across the Internet to the website; the website sees only the proxy">
+  <style>
+    svg.proxy-diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    svg.proxy-diagram .card { fill: #fff; }
+    svg.proxy-diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    svg.proxy-diagram .process text { fill: #fff; text-anchor: middle; font-size: 20px; font-weight: 700; }
+    svg.proxy-diagram .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    svg.proxy-diagram .marker-comm { fill: #000; }
+    svg.proxy-diagram .boundary line { stroke: #000; stroke-width: 3; stroke-dasharray: 12 10; }
+    svg.proxy-diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    svg.proxy-diagram .cloud text { font-size: 16px; fill: #666; text-anchor: middle; }
+    svg.proxy-diagram .note { font-size: 17px; font-style: italic; fill: #000; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="anonymous-proxy-arrow" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="card" width="960" height="225" rx="12"/>
+  <g class="boundary">
+    <line x1="480" y1="24" x2="480" y2="190"/>
+    <line x1="620" y1="24" x2="620" y2="190"/>
+  </g>
+  <g class="cloud">
+    <path d="M518,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+    <text x="550" y="80">Internet</text>
+  </g>
+  <g class="fragment fade-out" data-fragment-index="1">
+    <g class="process">
+      <rect x="30" y="120" width="160" height="56" rx="8"/>
+      <text x="110" y="155">Client</text>
+    </g>
+    <g class="edge">
+      <path d="M190,148 L246,148" marker-end="url(#anonymous-proxy-arrow)"/>
+    </g>
+  </g>
+  <g class="process">
+    <rect x="250" y="120" width="200" height="56" rx="8"/>
+    <text x="350" y="155">Anonymous proxy</text>
+  </g>
+  <g class="process">
+    <rect x="700" y="120" width="200" height="56" rx="8"/>
+    <text x="800" y="155">Website</text>
+  </g>
+  <g class="edge">
+    <path d="M450,148 L696,148" marker-end="url(#anonymous-proxy-arrow)"/>
+  </g>
+  <text class="note fragment" data-fragment-index="1" x="800" y="208">sees only the proxy</text>
+</svg>
 
 Conceals the identity of the client.
 
@@ -77,7 +127,7 @@ combination with this type of proxy server.
 
 ### Transparent forward proxy
 
-<img class="w-10/12" src="./images/transparent-proxy.svg" alt="In a school network, a client's requests go through a transparent proxy without the client having configured anything; the server sees both the proxy and the client" />
+<img class="w-10/12" src="./images/transparent-proxy.svg" alt="In a school network, a client's requests go through a transparent proxy without the client having configured anything; the website sees both the proxy and the client" />
 
 Intercepts the client's requests without the client having to configure
 anything, and does not hide the client.
@@ -104,7 +154,7 @@ too many requests at the same time.
 
 ## Reverse proxy
 
-<img class="w-10/12" src="./images/reverse-proxy.svg" alt="Three clients on the Internet connect to a reverse proxy in the servers' private network, which forwards their requests to the servers behind it" />
+<img class="w-10/12" src="./images/reverse-proxy.svg" alt="A client on the Internet connects to a reverse proxy in the servers' private network, which forwards the requests to the three websites behind it" />
 
 A [**reverse proxy**][reverse-proxy] is an **internal-facing proxy** used to
 control and protect access to servers in a **private network**.
@@ -120,36 +170,6 @@ on their side.
 
 ---
 
-### What the client sees
-
-<img class="w-10/12" src="./images/reverse-proxy-client-view.svg" alt="A client connects to example.com, which is the reverse proxy; the web server behind it, in the internal network, is out of the client's sight" />
-
-The client only sees the proxy server.
-
-**Notes:**
-
-The response from the private server is returned as if it was coming from the
-proxy server itself, leaving the client with no knowledge of the structure of
-the internal network.
-
----
-
-### What the server sees
-
-The server only sees the proxy.
-
-**Notes:**
-
-For the server behind it, the reverse proxy is a client like any other. Every
-connection it receives comes from the proxy, not from the original client.
-
-If the server needs to know who the original client is, for example to record
-their IP address, the proxy has to tell it, by adding HTTP headers to the
-requests it forwards. The [appendix of the subject][what-the-application-sees]
-shows how.
-
----
-
 ## Why use a reverse proxy?
 
 <!-- slide-front-matter class: center, middle -->
@@ -158,9 +178,12 @@ shows how.
 
 ---
 
-### One port, one process
+### Sharing a port
 
-Only **one process** can listen on a given port.
+<img class="w-10/12" src="./images/reverse-proxy-port.svg" alt="Two browsers ask for guessit.example.com and other.example.com; the reverse proxy, alone on port 80, forwards each request to the application listening on a port of its own, 3000 or 3001" />
+
+Only **one process** can listen on a port: the reverse proxy listens on port 80
+**for every site**, and forwards each request **by the name of the site**.
 
 **Notes:**
 
@@ -172,17 +195,6 @@ process listen on a port that is already taken.
 When an address has no port, browsers connect to port 80 for HTTP, and 443 for
 HTTPS. If an application listens on port 80 itself, no other application on the
 same server can be reached without a port in its address.
-
----
-
-### Sharing a port
-
-<img class="w-10/12" src="./images/reverse-proxy-port.svg" alt="Two browsers ask for guessit.example.com and other.example.com; the reverse proxy, alone on port 80, forwards each request to the application listening on a port of its own, 3000 or 3001" />
-
-The reverse proxy listens on port 80 **for every site**, and forwards each
-request to the right application **by the name of the site**.
-
-**Notes:**
 
 A reverse proxy is one more process between the browser and the application,
 with a connection on each side. It is the only process listening on port 80.
@@ -198,25 +210,189 @@ request to the application configured for that name. This is called
 
 ### Hiding internal architecture
 
-<img class="w-10/12" src="./images/reverse-proxy-hide-origin.svg" alt="A client reaches one reverse proxy at one public IP address, which forwards requests to three different servers of its private network" />
+<!-- The slide opens on what the client knows: example.com, which is the reverse
+     proxy. The fragment reveals what is behind it, which the client never
+     sees. -->
+<svg class="proxy-diagram mx-auto block w-10/12" viewBox="0 0 1040 300" role="img" aria-label="A client connects to example.com, which is a reverse proxy; behind it, out of the client's sight, the proxy forwards requests to two websites of its private network and to a third in another network">
+  <style>
+    svg.proxy-diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    svg.proxy-diagram .card { fill: #fff; }
+    svg.proxy-diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    svg.proxy-diagram .process text { fill: #fff; text-anchor: middle; font-size: 20px; font-weight: 700; }
+    svg.proxy-diagram .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    svg.proxy-diagram .edge text { font-size: 16px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    svg.proxy-diagram .marker-comm { fill: #000; }
+    svg.proxy-diagram .boundary line { stroke: #000; stroke-width: 3; stroke-dasharray: 12 10; }
+    svg.proxy-diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    svg.proxy-diagram .cloud text { font-size: 16px; fill: #666; text-anchor: middle; }
+    svg.proxy-diagram .heading { font-size: 22px; font-weight: 700; fill: #000; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="hidden-architecture-arrow" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="card" width="1040" height="300" rx="12"/>
+  <text class="heading" x="110" y="46">Client</text>
+  <g class="boundary">
+    <line x1="230" y1="24" x2="230" y2="276"/>
+    <line x1="370" y1="24" x2="370" y2="276"/>
+  </g>
+  <g class="cloud">
+    <path d="M268,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+    <text x="300" y="80">Internet</text>
+  </g>
+  <g class="process">
+    <rect x="30" y="132" width="160" height="56" rx="8"/>
+    <text x="110" y="167">Client</text>
+  </g>
+  <g class="process">
+    <rect x="400" y="132" width="160" height="56" rx="8"/>
+    <text x="480" y="167">Reverse proxy</text>
+  </g>
+  <g class="edge">
+    <path d="M190,160 L396,160" marker-end="url(#hidden-architecture-arrow)"/>
+    <text x="300" y="148">example.com</text>
+  </g>
+  <g class="fragment">
+    <text class="heading" x="610" y="46">Private network</text>
+    <text class="heading" x="945" y="46">Another network</text>
+    <g class="boundary">
+      <line x1="850" y1="24" x2="850" y2="276"/>
+    </g>
+    <g class="process">
+      <rect x="660" y="62" width="150" height="56" rx="8"/>
+      <text x="735" y="97">Website A</text>
+    </g>
+    <g class="process">
+      <rect x="660" y="202" width="150" height="56" rx="8"/>
+      <text x="735" y="237">Website B</text>
+    </g>
+    <g class="process">
+      <rect x="875" y="132" width="150" height="56" rx="8"/>
+      <text x="950" y="167">Website C</text>
+    </g>
+    <g class="edge">
+      <path d="M560,160 C600,160 600,90 640,90 L656,90" marker-end="url(#hidden-architecture-arrow)"/>
+    </g>
+    <g class="edge">
+      <path d="M560,160 C600,160 600,230 640,230 L656,230" marker-end="url(#hidden-architecture-arrow)"/>
+    </g>
+    <g class="edge">
+      <path d="M560,160 L871,160" marker-end="url(#hidden-architecture-arrow)"/>
+    </g>
+  </g>
+</svg>
 
 Reverse proxies can **hide the existence and characteristics of an internal
 network's private servers**.
 
 **Notes:**
 
-Since the client only sees the proxy server, it is unaware of the complexity of
-the internal architecture and does not have to worry about it.
+The client only sees the proxy server. The response from the private server is
+returned as if it was coming from the proxy server itself, leaving the client
+with no knowledge of the structure of the internal network. It is unaware of the
+complexity of the internal architecture, and does not have to worry about it:
+the proxy can hide anything from a single application to many servers, in
+several networks.
 
 In a scenario where you have only a single public IP address available, a
 reverse proxy allows you to make multiple private servers accessible on that IP
 address through the proxy server.
 
+The other way round, the servers behind the proxy only see the proxy. For them,
+it is a client like any other: every connection they receive comes from the
+proxy, not from the original client. If a server needs to know who the original
+client is, for example to record their IP address, the proxy has to tell it, by
+adding HTTP headers to the requests it forwards. The [appendix of the
+subject][what-the-application-sees] shows how.
+
 ---
 
 ### Hiding multi-component websites
 
-<img class="w-10/12" src="./images/reverse-proxy-cors.svg" alt="Without a reverse proxy, the browser talks to the frontend at www.example.com and to the backend at api.example.com, two origins; with a reverse proxy, the browser talks to example.com only, which forwards to both" />
+<!-- The slide opens on two origins: the browser talks to the frontend and to the
+     backend at a name of their own. The first fragment puts a reverse proxy in
+     front of both, at one name, and the second leaves only what the browser
+     sees of it.
+
+     A PDF prints the slide once, which shows the fragments that fade out but
+     not those that fade in then out. It is made to print the reverse proxy
+     with the frontend and the backend behind it: without the arrows of the two
+     origins, and with those from the proxy. -->
+<svg class="proxy-diagram mx-auto block w-10/12" viewBox="0 0 960 300" role="img" aria-label="Without a reverse proxy, the browser talks to the frontend at www.example.com and to the backend at api.example.com, two origins; with a reverse proxy, the browser talks to example.com only, which forwards to both, and the browser no longer sees them">
+  <style>
+    svg.proxy-diagram { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    svg.proxy-diagram .card { fill: #fff; }
+    svg.proxy-diagram .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    svg.proxy-diagram .process text { fill: #fff; text-anchor: middle; font-size: 20px; font-weight: 700; }
+    svg.proxy-diagram .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    svg.proxy-diagram .edge text { font-size: 16px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    svg.proxy-diagram .marker-comm { fill: #000; }
+    svg.proxy-diagram .boundary line { stroke: #000; stroke-width: 3; stroke-dasharray: 12 10; }
+    svg.proxy-diagram .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    svg.proxy-diagram .cloud text { font-size: 16px; fill: #666; text-anchor: middle; }
+    svg.proxy-diagram .heading { font-size: 22px; font-weight: 700; fill: #000; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="multi-component-arrow" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+  <rect class="card" width="960" height="300" rx="12"/>
+  <text class="heading" x="150" y="46">Client</text>
+  <text class="heading" x="700" y="46">Servers' network</text>
+  <g class="boundary">
+    <line x1="300" y1="24" x2="300" y2="276"/>
+    <line x1="440" y1="24" x2="440" y2="276"/>
+  </g>
+  <g class="cloud">
+    <path d="M338,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+    <text x="370" y="80">Internet</text>
+  </g>
+  <g class="process">
+    <rect x="70" y="132" width="160" height="56" rx="8"/>
+    <text x="150" y="167">Browser</text>
+  </g>
+  <g class="fragment fade-out" data-fragment-index="2">
+    <g class="process">
+      <rect x="740" y="72" width="180" height="56" rx="8"/>
+      <text x="830" y="107">Frontend</text>
+    </g>
+    <g class="process">
+      <rect x="740" y="192" width="180" height="56" rx="8"/>
+      <text x="830" y="227">Backend</text>
+    </g>
+  </g>
+  <g class="fragment fade-out print:hidden" data-fragment-index="1">
+    <g class="edge">
+      <path d="M230,160 C480,160 480,100 736,100" marker-end="url(#multi-component-arrow)"/>
+      <text x="610" y="90">www.example.com</text>
+    </g>
+    <g class="edge">
+      <path d="M230,160 C480,160 480,220 736,220" marker-end="url(#multi-component-arrow)"/>
+      <text x="610" y="242">api.example.com</text>
+    </g>
+  </g>
+  <g class="fragment" data-fragment-index="1">
+    <g class="process">
+      <rect x="470" y="132" width="170" height="56" rx="8"/>
+      <text x="555" y="167">Reverse proxy</text>
+    </g>
+    <g class="edge">
+      <path d="M230,160 L466,160" marker-end="url(#multi-component-arrow)"/>
+      <text x="370" y="148">example.com</text>
+    </g>
+  </g>
+  <g class="fragment fade-in-then-out print:visible! print:opacity-100!" data-fragment-index="1">
+    <g class="edge">
+      <path d="M640,160 C675,160 675,100 710,100 L736,100" marker-end="url(#multi-component-arrow)"/>
+    </g>
+    <g class="edge">
+      <path d="M640,160 C675,160 675,220 710,220 L736,220" marker-end="url(#multi-component-arrow)"/>
+    </g>
+  </g>
+</svg>
 
 **Notes:**
 
@@ -227,9 +403,9 @@ single domain name, avoiding [CORS][cors] issues.
 
 ---
 
-### SSL/TLS termination or authentication
+### SSL/TLS termination
 
-<img class="w-10/12" src="./images/reverse-proxy-ssl.svg" alt="The browser talks HTTPS to the reverse proxy, which talks plain HTTP to the application in its private network" />
+<img class="w-10/12" src="./images/reverse-proxy-ssl.svg" alt="The browser talks HTTPS across the Internet to the reverse proxy, which talks plain HTTP to the two applications of its private network" />
 
 A reverse proxy can be the **secure endpoint** with all the SSL/TLS
 certificates, then **forwarding unencrypted requests** to other servers in the
@@ -240,10 +416,6 @@ private network.
 Managing SSL/TLS certificates to provide websites over HTTPS is rather complex.
 It can be hard to configure some frameworks or tools to ensure they are only
 using secure communications.
-
-Similarly, a reverse proxy could also require **authentication** before letting
-a client access an insecure application, adding security without having to
-modify the application itself.
 
 ---
 
@@ -276,7 +448,7 @@ clients at the same time. Computers or applications can be combined in
 
 A common function of reverse proxies is to perform [**load
 balancing**][load-balancing], i.e. the distribution of workloads across multiple
-servers to achieve **horizontal scaling**.
+applications or servers to achieve **horizontal scaling**.
 
 **Notes:**
 
@@ -292,6 +464,7 @@ requests to different servers, spreading the load between them.
 - Spoon-feeding
 - [Denial-of-service (DoS)][dos] protection
 - [A/B testing][ab-testing]
+- Authentication
 
 **Notes:**
 
@@ -302,6 +475,9 @@ requests to different servers, spreading the load between them.
   dynamically generated page, then serves it to the client a little bit at a
   time. This avoids the internal server having to wait for slow clients such as
   mobile applications.
+- A reverse proxy can require **authentication** before letting a client access
+  an insecure application, adding security without having to modify the
+  application itself.
 - And [more][reverse-proxy-uses]
 
 ---

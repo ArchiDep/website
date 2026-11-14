@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400">
-  <title>A forward proxy sits on the clients' side: the clients of a private network go through it to reach servers on the Internet</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 240" width="960" height="240">
+  <title>A forward proxy sits on the client's side: the client goes through it, in its own network, to reach a website on the Internet</title>
   <style>
     svg { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
     .card { fill: #fff; }
@@ -35,76 +35,40 @@
     </marker>
   </defs>
 
-  <rect class="card" width="960" height="400" rx="12"/>
+  <rect class="card" width="960" height="240" rx="12"/>
 
-  <text class="heading" x="215" y="46">Clients' network</text>
-  <text class="heading" x="755" y="46">Servers</text>
+  <text class="heading" x="200" y="46">Client's network</text>
+  <text class="heading" x="750" y="46">Server</text>
   <g class="boundary">
-    <line x1="400" y1="24" x2="400" y2="376"/>
-    <line x1="540" y1="24" x2="540" y2="376"/>
+    <line x1="400" y1="24" x2="400" y2="216"/>
+    <line x1="540" y1="24" x2="540" y2="216"/>
   </g>
   <g class="cloud">
-    <path d="M422,94 a21,21 0 0 1 -3,-42 a30,30 0 0 1 51,-21 a27,27 0 0 1 48,12 a21,21 0 0 1 6,51 z"/>
-    <text x="472" y="76">Internet</text>
+    <path d="M438,96 a14,14 0 0 1 -2,-28 a20,20 0 0 1 34,-14 a18,18 0 0 1 32,8 a14,14 0 0 1 4,34 z"/>
+    <text x="470" y="80">Internet</text>
   </g>
 
   <g class="process">
-    <rect x="30" y="110" width="150" height="56" rx="8"/>
-    <text class="label" x="105" y="145">Client</text>
+    <rect x="40" y="140" width="160" height="56" rx="8"/>
+    <text class="label" x="120" y="175">Client</text>
   </g>
 
   <g class="process">
-    <rect x="30" y="200" width="150" height="56" rx="8"/>
-    <text class="label" x="105" y="235">Client</text>
+    <rect x="250" y="140" width="130" height="56" rx="8"/>
+    <text class="label" x="315" y="165">Proxy</text>
+    <text class="sub" x="315" y="185">forward</text>
   </g>
 
   <g class="process">
-    <rect x="30" y="290" width="150" height="56" rx="8"/>
-    <text class="label" x="105" y="325">Client</text>
-  </g>
-
-  <g class="process">
-    <rect x="240" y="200" width="130" height="56" rx="8"/>
-    <text class="label" x="305" y="225">Proxy</text>
-    <text class="sub" x="305" y="245">forward</text>
-  </g>
-
-  <g class="process">
-    <rect x="780" y="110" width="150" height="56" rx="8"/>
-    <text class="label" x="855" y="145">Server</text>
-  </g>
-
-  <g class="process">
-    <rect x="780" y="200" width="150" height="56" rx="8"/>
-    <text class="label" x="855" y="235">Server</text>
-  </g>
-
-  <g class="process">
-    <rect x="780" y="290" width="150" height="56" rx="8"/>
-    <text class="label" x="855" y="325">Server</text>
+    <rect x="670" y="140" width="160" height="56" rx="8"/>
+    <text class="label" x="750" y="175">Website</text>
   </g>
 
   <g class="edge comm">
-    <path d="M180,138 C210,138 210,228 236,228" marker-end="url(#arrow-comm)"/>
+    <path d="M200,168 L246,168" marker-end="url(#arrow-comm)"/>
   </g>
 
   <g class="edge comm">
-    <path d="M180,228 C210,228 210,228 236,228" marker-end="url(#arrow-comm)"/>
-  </g>
-
-  <g class="edge comm">
-    <path d="M180,318 C210,318 210,228 236,228" marker-end="url(#arrow-comm)"/>
-  </g>
-
-  <g class="edge comm">
-    <path d="M370,228 C575,228 575,138 776,138" marker-end="url(#arrow-comm)"/>
-  </g>
-
-  <g class="edge comm">
-    <path d="M370,228 C575,228 575,228 776,228" marker-end="url(#arrow-comm)"/>
-  </g>
-
-  <g class="edge comm">
-    <path d="M370,228 C575,228 575,318 776,318" marker-end="url(#arrow-comm)"/>
+    <path d="M380,168 L666,168" marker-end="url(#arrow-comm)"/>
   </g>
 </svg>

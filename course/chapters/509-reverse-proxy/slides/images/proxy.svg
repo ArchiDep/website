@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 136" width="900" height="136">
-  <title>A proxy: a client connects to the proxy, which connects to the server on the client's behalf</title>
+  <title>A client connects to a proxy, which connects to the website on the client's behalf</title>
   <style>
     svg { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
     .card { fill: #fff; }
@@ -49,7 +49,7 @@
 
   <g class="process">
     <rect x="670" y="40" width="200" height="56" rx="8"/>
-    <text class="label" x="770" y="75">Server</text>
+    <text class="label" x="770" y="75">Website</text>
   </g>
 
   <g class="edge comm">
