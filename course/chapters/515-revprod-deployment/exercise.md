@@ -163,7 +163,7 @@ Create an nginx site configuration file
 `/etc/nginx/sites-available/revprod-landing` (e.g. with `nano`) to expose this
 component:
 
-```conf
+```nginx
 server {
   listen 80;
   server_name revprod-landing.jde.archidep.ch;
@@ -257,7 +257,7 @@ Create an nginx site configuration file
 `/etc/nginx/sites-available/revprod-backend` (e.g. with `nano`) to expose this
 component:
 
-```conf
+```nginx
 server {
   listen 80;
   server_name revprod-backend.jde.archidep.ch;

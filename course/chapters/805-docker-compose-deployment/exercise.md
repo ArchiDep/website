@@ -752,7 +752,7 @@ Create a `site.conf` file in the PHP todolist repository.
 Since the goal of this exercise is to work on Docker Compose, in the interest of
 efficiency, here's a configuration that will work:
 
-```conf
+```nginx
 server {
   listen 80;
   server_name _;
@@ -1260,7 +1260,7 @@ Create a new nginx site configuration file on your server with `sudo nano
 /etc/nginx/sites-available/todolist-docker` and save the following contents in
 it:
 
-```conf
+```nginx
 server {
   listen 80;
   server_name todolist-docker.jde.archidep.ch;
