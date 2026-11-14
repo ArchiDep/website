@@ -266,7 +266,7 @@ $> sudo nginx -t
 nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
 nginx: configuration file /etc/nginx/nginx.conf test is successful
 
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 ## :exclamation: Order a coffee
@@ -687,7 +687,7 @@ Check and reload nginx's configuration:
 
 ```bash
 $> sudo nginx -t
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 Visit your café again. It has changed colour, and says that barista 1 serves
@@ -774,7 +774,7 @@ Check and reload nginx's configuration:
 
 ```bash
 $> sudo nginx -t
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 nginx is now a **load balancer**: it forwards each request to one of the

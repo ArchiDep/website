@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400">
+  <title>A forward proxy sits on the clients' side: the clients of a private network go through it to reach servers on the Internet</title>
+  <style>
+    svg { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    .card { fill: #fff; }
+    .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    .process text { fill: #fff; text-anchor: middle; }
+    .process .label { font-size: 20px; font-weight: 700; }
+    .process .sub { font-size: 15px; font-style: italic; }
+    .machine rect { fill: #e6e6ee; stroke: #2b2b3a; stroke-width: 2.5; }
+    .machine line { stroke: #2b2b3a; stroke-width: 2.5; }
+    .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    .edge.control path { stroke-dasharray: 4 5; }
+    .edge text { font-size: 16px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    .marker-comm { fill: #000; }
+    .marker-control { fill: #fff; stroke: #000; stroke-width: 1.5; }
+    .socket path { fill: none; stroke: #000; stroke-width: 1.75; stroke-linecap: round; }
+    .socket text { font-size: 16px; fill: #000; text-anchor: end; }
+    .region rect { fill: none; stroke: #2b2b3a; stroke-width: 2; stroke-dasharray: 10 8; }
+    .region text { font-size: 18px; font-style: italic; fill: #2b2b3a; text-anchor: middle; }
+    .boundary line { stroke: #000; stroke-width: 3; stroke-dasharray: 12 10; }
+    .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    .cloud text { font-size: 16px; fill: #666; text-anchor: middle; }
+    .heading { font-size: 22px; font-weight: 700; fill: #000; text-anchor: middle; }
+    .note { font-size: 17px; font-style: italic; fill: #000; text-anchor: middle; }
+    .cross { stroke: #c93a43; stroke-width: 5; stroke-linecap: round; opacity: 0.35; }
+    .divider { stroke: #999; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="arrow-comm" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+    <marker id="arrow-control" viewBox="-1 -1 16 12" refX="14" refY="5" markerWidth="16" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-control" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="card" width="960" height="400" rx="12"/>
+
+  <text class="heading" x="215" y="46">Clients' network</text>
+  <text class="heading" x="755" y="46">Servers</text>
+  <g class="boundary">
+    <line x1="400" y1="24" x2="400" y2="376"/>
+    <line x1="540" y1="24" x2="540" y2="376"/>
+  </g>
+  <g class="cloud">
+    <path d="M422,94 a21,21 0 0 1 -3,-42 a30,30 0 0 1 51,-21 a27,27 0 0 1 48,12 a21,21 0 0 1 6,51 z"/>
+    <text x="472" y="76">Internet</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="110" width="150" height="56" rx="8"/>
+    <text class="label" x="105" y="145">Client</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="200" width="150" height="56" rx="8"/>
+    <text class="label" x="105" y="235">Client</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="290" width="150" height="56" rx="8"/>
+    <text class="label" x="105" y="325">Client</text>
+  </g>
+
+  <g class="process">
+    <rect x="240" y="200" width="130" height="56" rx="8"/>
+    <text class="label" x="305" y="225">Proxy</text>
+    <text class="sub" x="305" y="245">forward</text>
+  </g>
+
+  <g class="process">
+    <rect x="780" y="110" width="150" height="56" rx="8"/>
+    <text class="label" x="855" y="145">Server</text>
+  </g>
+
+  <g class="process">
+    <rect x="780" y="200" width="150" height="56" rx="8"/>
+    <text class="label" x="855" y="235">Server</text>
+  </g>
+
+  <g class="process">
+    <rect x="780" y="290" width="150" height="56" rx="8"/>
+    <text class="label" x="855" y="325">Server</text>
+  </g>
+
+  <g class="edge comm">
+    <path d="M180,138 C210,138 210,228 236,228" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M180,228 C210,228 210,228 236,228" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M180,318 C210,318 210,228 236,228" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M370,228 C575,228 575,138 776,138" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M370,228 C575,228 575,228 776,228" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M370,228 C575,228 575,318 776,318" marker-end="url(#arrow-comm)"/>
+  </g>
+</svg>

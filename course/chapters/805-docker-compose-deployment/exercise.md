@@ -1283,7 +1283,7 @@ Link and enable that configuration:
 ```bash
 $> sudo ln -s /etc/nginx/sites-available/todolist-docker /etc/nginx/sites-enabled
 $> sudo nginx -t
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 You should now be able to visit http://todolist-docker.jde.archidep.ch in

@@ -192,7 +192,7 @@ Check and reload nginx's configuration:
 
 ```bash
 $> sudo nginx -t
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 You should then be able to access the revprod landing page at
@@ -286,7 +286,7 @@ Check and reload nginx's configuration:
 
 ```bash
 $> sudo nginx -t
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 You should then be able to access the revprod backend at
@@ -552,7 +552,7 @@ Check and reload nginx's configuration:
 
 ```bash
 $> sudo nginx -t
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 You should now be able to access the revprod application at

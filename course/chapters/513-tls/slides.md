@@ -173,8 +173,8 @@ See Mozilla's [SSL Configuration Generator][mozilla-ssl-config].
 **Notes:**
 
 Assuming you already have a website deployed with nginx, add the following lines
-to its configuration file. Reload nginx's configuration with `sudo nginx -s
-reload`.
+to its configuration file. Reload nginx's configuration with `sudo systemctl
+reload nginx`.
 
 - The `listen 443 ssl` directive instructs nginx to also listen on port 443
   (HTTPS) for this site.

@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="900" height="380">
+  <title>Load balancing: the requests of several clients reach one load balancer, which spreads them across three instances of the same application</title>
+  <style>
+    svg { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    .card { fill: #fff; }
+    .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    .process text { fill: #fff; text-anchor: middle; }
+    .process .label { font-size: 20px; font-weight: 700; }
+    .process .sub { font-size: 15px; font-style: italic; }
+    .machine rect { fill: #e6e6ee; stroke: #2b2b3a; stroke-width: 2.5; }
+    .machine line { stroke: #2b2b3a; stroke-width: 2.5; }
+    .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    .edge.control path { stroke-dasharray: 4 5; }
+    .edge text { font-size: 16px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    .marker-comm { fill: #000; }
+    .marker-control { fill: #fff; stroke: #000; stroke-width: 1.5; }
+    .socket path { fill: none; stroke: #000; stroke-width: 1.75; stroke-linecap: round; }
+    .socket text { font-size: 16px; fill: #000; text-anchor: end; }
+    .region rect { fill: none; stroke: #2b2b3a; stroke-width: 2; stroke-dasharray: 10 8; }
+    .region text { font-size: 18px; font-style: italic; fill: #2b2b3a; text-anchor: middle; }
+    .boundary line { stroke: #000; stroke-width: 3; stroke-dasharray: 12 10; }
+    .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    .cloud text { font-size: 16px; fill: #666; text-anchor: middle; }
+    .heading { font-size: 22px; font-weight: 700; fill: #000; text-anchor: middle; }
+    .note { font-size: 17px; font-style: italic; fill: #000; text-anchor: middle; }
+    .cross { stroke: #c93a43; stroke-width: 5; stroke-linecap: round; opacity: 0.35; }
+    .divider { stroke: #999; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="arrow-comm" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+    <marker id="arrow-control" viewBox="-1 -1 16 12" refX="14" refY="5" markerWidth="16" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-control" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="card" width="900" height="380" rx="12"/>
+
+  <g class="process">
+    <rect x="30" y="60" width="150" height="56" rx="8"/>
+    <text class="label" x="105" y="95">Client</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="160" width="150" height="56" rx="8"/>
+    <text class="label" x="105" y="195">Client</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="260" width="150" height="56" rx="8"/>
+    <text class="label" x="105" y="295">Client</text>
+  </g>
+
+  <g class="process">
+    <rect x="340" y="160" width="200" height="56" rx="8"/>
+    <text class="label" x="440" y="195">Load balancer</text>
+  </g>
+
+  <g class="process">
+    <rect x="720" y="60" width="150" height="56" rx="8"/>
+    <text class="label" x="795" y="95">App 1</text>
+  </g>
+
+  <g class="process">
+    <rect x="720" y="160" width="150" height="56" rx="8"/>
+    <text class="label" x="795" y="195">App 2</text>
+  </g>
+
+  <g class="process">
+    <rect x="720" y="260" width="150" height="56" rx="8"/>
+    <text class="label" x="795" y="295">App 3</text>
+  </g>
+
+  <g class="edge comm">
+    <path d="M180,88 C260,88 260,188 336,188" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M180,188 C260,188 260,188 336,188" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M180,288 C260,288 260,188 336,188" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M540,188 C630,188 630,88 716,88" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M540,188 C630,188 630,188 716,188" marker-end="url(#arrow-comm)"/>
+  </g>
+
+  <g class="edge comm">
+    <path d="M540,188 C630,188 630,288 716,288" marker-end="url(#arrow-comm)"/>
+  </g>
+</svg>

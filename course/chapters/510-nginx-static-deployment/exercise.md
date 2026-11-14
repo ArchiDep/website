@@ -27,13 +27,34 @@ records for your server in the domain name system.
 
 ## :exclamation: Install nginx on the server
 
-**Connect to your server** and make sure you have nginx installed [as shown
-during the course]({% link chapters/509-reverse-proxy/subject.md
-%}#installing-nginx):
+**Connect to your server** and install nginx with APT:
 
 ```bash
 $> sudo apt install nginx
 ```
+
+APT starts nginx right away, through systemd, and nginx starts listening on
+port 80. Check that it does (`sudo` lets `ss` show the processes of other
+users, such as nginx):
+
+```bash
+$> sudo ss -tlpn
+State  Recv-Q Send-Q Local Address:Port ... Process
+LISTEN 0      511          0.0.0.0:80   ... users:(("nginx",pid=345,fd=5))
+LISTEN 0      511             [::]:80   ... users:(("nginx",pid=345,fd=6))
+...
+```
+
+Check that its systemd service is running:
+
+```bash
+$> sudo systemctl status nginx
+```
+
+Visit your server's public IP address in a browser. You should see nginx's
+welcome page:
+
+![nginx's welcome page](images/nginx-welcome.png)
 
 ## :exclamation: Put the static website on the server
 
@@ -150,8 +171,10 @@ server {
   root /srv/clock;
   index index.html;
 
-  # Cache images, icons, video, audio, HTC, etc.
-  location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|mp4|ogg|ogv|webm|htc)$ {
+  # Instruct the browser to cache images, icons,
+  # video and audio for 30 days, and do not log
+  # requests for them.
+  location ~* \.(?:jpg|jpeg|gif|png|ico|gz|svg|mp4|ogg|ogv|webm)$ {
     access_log off;
     add_header Cache-Control "max-age=2592000";
   }
@@ -163,25 +186,9 @@ server {
 ### :exclamation: Enable the nginx configuration
 
 By default, configurations stored in the `sites-available` directory are
-available, but not enabled.
-
-{% callout type: more, id: nginx-include-list %}
-
-Indeed, if you check what is included by the main `/etc/nginx/nginx.conf` file,
-you will see that `sites-enabled` is there, but not `sites-available`:
-
-```bash
-$> cat /etc/nginx/nginx.conf | grep include
-include /etc/nginx/modules-enabled/*.conf;
-include /etc/nginx/mime.types;
-include /etc/nginx/conf.d/*.conf;
-include /etc/nginx/sites-enabled/*;
-```
-
-The command pipeline above uses `cat` and `grep` to print all the lines which
-contain the word "include" in the specified file.
-
-{% endcallout %}
+available, but not enabled: the main configuration file [includes
+`sites-enabled`, but not `sites-available`]({% link
+chapters/509-reverse-proxy/subject.md %}#includes).
 
 To enable a configuration file, the convention is to create a symbolic link in
 `sites-enabled`, which points to the actual configuration file in
@@ -233,23 +240,22 @@ If an error occurs here, you may have made a mistake in the configuration. (See
 
 Nginx reloads its configuration [when it receives the `HUP`
 signal][nginx-signals]. You could find the process ID of the `nginx` master
-process and send the signal with `kill -s HUP <ID>`. However, the `nginx`
-command helpfully allows you to do that in a much simpler way:
+process and send the signal with `kill -s HUP <ID>`. The `nginx` command does it
+more simply, with its `-s` option, which sends a **s**ignal to the master
+process: `sudo nginx -s reload`.
+
+You will not even need that. The systemd service of nginx runs that same `nginx
+-s reload` command when you reload it, so you can reload nginx the same way you
+manage Guess It, or any other service:
 
 ```bash
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 If the command indicates no errors, nginx should have reloaded its
-configuration.
+configuration. This is how you will reload nginx from now on.
 
 {% note type: more %}
-
-The `-s` option sends a **s**ignal to the nginx master process.
-
-You can also reload nginx through systemd, the same way you managed Guess It:
-`sudo systemctl reload nginx` runs the same `nginx -s reload` command, which
-sends the same `HUP` signal.
 
 Do not confuse it with `sudo systemctl restart nginx`, which stops nginx and
 starts it again. A restart closes the connections in progress, and if the new

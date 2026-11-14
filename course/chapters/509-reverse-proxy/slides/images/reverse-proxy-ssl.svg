@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 230" width="900" height="230">
+  <title>SSL/TLS termination: the browser talks HTTPS to the reverse proxy, which talks plain HTTP to the application in its private network</title>
+  <style>
+    svg { font-family: 'PT Sans', Helvetica, Arial, sans-serif; }
+    .card { fill: #fff; }
+    .process rect { fill: #f9505a; stroke: #c93a43; stroke-width: 1; }
+    .process text { fill: #fff; text-anchor: middle; }
+    .process .label { font-size: 20px; font-weight: 700; }
+    .process .sub { font-size: 15px; font-style: italic; }
+    .machine rect { fill: #e6e6ee; stroke: #2b2b3a; stroke-width: 2.5; }
+    .machine line { stroke: #2b2b3a; stroke-width: 2.5; }
+    .edge path { fill: none; stroke: #000; stroke-width: 1.5; }
+    .edge.control path { stroke-dasharray: 4 5; }
+    .edge text { font-size: 16px; fill: #000; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+    .marker-comm { fill: #000; }
+    .marker-control { fill: #fff; stroke: #000; stroke-width: 1.5; }
+    .socket path { fill: none; stroke: #000; stroke-width: 1.75; stroke-linecap: round; }
+    .socket text { font-size: 16px; fill: #000; text-anchor: end; }
+    .region rect { fill: none; stroke: #2b2b3a; stroke-width: 2; stroke-dasharray: 10 8; }
+    .region text { font-size: 18px; font-style: italic; fill: #2b2b3a; text-anchor: middle; }
+    .boundary line { stroke: #000; stroke-width: 3; stroke-dasharray: 12 10; }
+    .cloud path { fill: #fff; stroke: #aaa; stroke-width: 2; }
+    .cloud text { font-size: 16px; fill: #666; text-anchor: middle; }
+    .heading { font-size: 22px; font-weight: 700; fill: #000; text-anchor: middle; }
+    .note { font-size: 17px; font-style: italic; fill: #000; text-anchor: middle; }
+    .cross { stroke: #c93a43; stroke-width: 5; stroke-linecap: round; opacity: 0.35; }
+    .divider { stroke: #999; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="arrow-comm" viewBox="0 0 14 10" refX="14" refY="5" markerWidth="14" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-comm" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+    <marker id="arrow-control" viewBox="-1 -1 16 12" refX="14" refY="5" markerWidth="16" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="marker-control" d="M0,0 L14,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <rect class="card" width="900" height="230" rx="12"/>
+
+  <g class="region">
+    <rect x="330" y="20" width="558" height="196" rx="16"/>
+    <text x="609" y="204">Private network</text>
+  </g>
+
+  <g class="process">
+    <rect x="30" y="60" width="200" height="56" rx="8"/>
+    <text class="label" x="130" y="95">Browser</text>
+  </g>
+
+  <g class="process">
+    <rect x="350" y="60" width="200" height="56" rx="8"/>
+    <text class="label" x="450" y="95">Reverse proxy</text>
+  </g>
+
+  <g class="process">
+    <rect x="670" y="60" width="200" height="56" rx="8"/>
+    <text class="label" x="770" y="95">Application</text>
+  </g>
+
+  <g class="edge comm">
+    <path d="M230,88 L346,88" marker-end="url(#arrow-comm)"/>
+    <text x="290" y="76">HTTPS</text>
+  </g>
+
+  <g class="edge comm">
+    <path d="M550,88 L666,88" marker-end="url(#arrow-comm)"/>
+    <text x="610" y="76">HTTP</text>
+  </g>
+</svg>

@@ -53,12 +53,14 @@ put it in the file. You must modify it to:
 
 - Use the name you chose for the site, such as `guessit.jde.archidepN.ch`, in
   the `server_name` directive.
-- Remove the `root` directive. nginx has no files of Guess It to send: Guess It
-  builds every page itself, so nginx must forward every request to it.
 - Forward the requests to the address where Guess It listens, with [nginx's
   `proxy_pass` directive][nginx-proxy-pass]. Guess It runs on the same server as
   nginx, so the address is the server's own [loopback address][loopback],
   `127.0.0.1`, followed by the port Guess It listens on.
+
+Unlike the clock's, this configuration has no `root` directive. nginx has no
+files of Guess It to send: Guess It builds every page itself, so nginx must
+forward every request to it.
 
 {% solution %}
 
@@ -104,7 +106,7 @@ $> sudo nginx -t
 nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
 nginx: configuration file /etc/nginx/nginx.conf test is successful
 
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 ## :exclamation: See it in action

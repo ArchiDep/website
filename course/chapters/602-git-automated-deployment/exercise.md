@@ -51,7 +51,7 @@ the correct directory.
 Tell nginx to reload its configuration:
 
 ```bash
-$> sudo nginx -s reload
+$> sudo systemctl reload nginx
 ```
 
 The site at http://todolist.jde.archidep.ch may not work anymore. You may get a

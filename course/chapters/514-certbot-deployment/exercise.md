@@ -141,7 +141,7 @@ There are two things you need to do:
 
   ```bash
   $> sudo nginx -t
-  $> sudo nginx -s reload
+  $> sudo systemctl reload nginx
   ```
 
 Make sure your sites work at their new address. If they do, the `certbot`
