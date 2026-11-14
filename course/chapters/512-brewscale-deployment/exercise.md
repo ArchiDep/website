@@ -274,15 +274,14 @@ $> sudo systemctl reload nginx
 Visit the café in your browser, e.g. `http://brewscale.jde.archidepN.ch`, and
 order a drink, with your name for the cup if you like.
 
-![Brewscale’s order form](./images/fibscale.png)
+![Brewscale’s order form](./images/brewscale.png)
 
 The button says "Brewing…" for about a second, then the barista hands you your
-drink, and tells you how long it took to brew. Every drink takes about the same
-time: that is how long brewing a coffee takes in this café.
+drink, and tells you how long it took to brew and how long you waited. Every
+drink takes about the same time: that is how long brewing a coffee takes in this
+café.
 
-![A flat white for Alice, brewed in about a second](./images/fibscale-fib-5.png)
-
-![A flat white, brewed in about a second](./images/fibscale-slow.png)
+![A hot chocolate for John, brewed in a second, with no queue](./images/brewscale-brewed.png)
 
 Look at the logs of the service: the barista has logged your order.
 
@@ -407,15 +406,15 @@ The **Host** field tells Locust where the application to test is. Enter the
 address of your café, e.g. `http://brewscale.jde.archidepN.ch`. Set the **Number
 of users** to 1 and the **Ramp up** to 1 for now, and start the test.
 
-![Locust configured with 1 user](./images/fibscale-locust-1-user.png)
+![Locust configured with 1 user](./images/locust-1-user.png)
 
 The **Statistics** tab shows the number of requests made, in total and per
 second, and how long they took. The **Charts** tab shows the same numbers as
 line charts.
 
-![Locust statistics](./images/fibscale-locust-statistics.png)
+![Locust statistics](./images/locust-statistics.png)
 
-![Locust charts with 1 user](./images/fibscale-locust-1-user-charts.png)
+![Locust charts with 1 user](./images/locust-1-user-charts.png)
 
 You should quickly see the number of **r**equests **p**er **s**econd (RPS)
 settle at about 0.5. This is what you would expect with one customer: the
@@ -427,21 +426,21 @@ second.
 Click the **Edit** button in the top bar, and change the **Number of users** to
 2, without changing the ramp up.
 
-![Locust configured with 2 users](./images/fibscale-locust-2-users.png)
+![Locust configured with 2 users](./images/locust-2-users.png)
 
 With two customers ordering every two seconds each, you should see the number of
 requests per second settle at about 1, with the same response time. Everything
 is as expected so far. But the barista is now brewing all the time: while one
 customer waits their second, the other's coffee is brewing.
 
-![Locust charts with 2 users](./images/fibscale-locust-2-users-charts.png)
+![Locust charts with 2 users](./images/locust-2-users-charts.png)
 
 ### :exclamation: Send ten customers
 
 Now change the **Number of users** to 10, and leave the **Ramp up** at 1. This
 adds 8 more customers to the 2 already there.
 
-![Locust configured with 10 users](./images/fibscale-locust-10-users.png)
+![Locust configured with 10 users](./images/locust-10-users.png)
 
 {% note type: more %}
 
@@ -454,17 +453,17 @@ The number of requests per second stays at about 1, while the average response
 time, in the **Statistics** tab, grows to about 9 seconds. Some customers wait
 much longer than that.
 
-![Locust charts with 10 users](./images/fibscale-locust-10-users-charts.png)
+![Locust charts with 10 users](./images/locust-10-users-charts.png)
 
 ### :exclamation: Join the queue
 
 While the ten customers are still ordering, order a coffee yourself in your
 browser. You have to wait a while for your drink. When it comes, the page tells
 you how long it took to brew it, and how long you waited, something like:
-"Brewed in 1.0s by the barista. You waited 9.6s: the rest of the time, you were
+"Brewed in 1.0s by the barista. You waited 9.8s: the rest of the time, you were
 in the queue."
 
-![Brewscale’s result page, with the time spent in the queue of one barista](./images/brewscale-queue-one-barista.svg)
+![A cappuccino for Jane, brewed in a second, after almost ten seconds of waiting](./images/brewscale-queue-one-barista.png)
 
 Your coffee took a second to brew. Why did you wait so much longer?
 
@@ -498,7 +497,7 @@ finds nine others waiting waits about nine seconds before their turn.
 
 You may now **stop** the load test.
 
-![Stop the Locust test](./images/fibscale-locust-10-users-stop.png)
+![Stop the Locust test](./images/locust-stop.png)
 
 ## :question: What to do?
 
@@ -541,6 +540,11 @@ First, stop and disable the `brewscale` service:
 $> sudo systemctl stop brewscale
 $> sudo systemctl disable brewscale
 ```
+
+Your café is now closed. If you visit it, nginx answers with an error page: it
+still forwards your request, but no barista is there to answer it.
+
+![nginx’s 502 Bad Gateway page, with no barista to answer](./images/brewscale-stopped.png)
 
 To run several instances of Brewscale, you could write a unit file for each, but
 systemd also supports **unit templates**: units that can be started several
@@ -693,7 +697,7 @@ $> sudo systemctl reload nginx
 Visit your café again. It has changed colour, and says that barista 1 serves
 you: the barista number you passed as an argument.
 
-![Brewscale served by barista 1](./images/fibscale-color.png)
+![Brewscale served by barista 1](./images/brewscale-color.png)
 
 ### :exclamation: Load test a single barista again
 
@@ -702,13 +706,13 @@ the **Host**
 `http://brewscale.jde.archidepN.ch`, with the **Number of users** set to 10 and
 the **Ramp up** set to 1.
 
-![Locust configured with 10 users again](./images/fibscale-locust-10-users-again.png)
+![Locust configured with 10 users again](./images/locust-10-users-again.png)
 
 You should see the same numbers as before: about one request per second, and a
 response time of about 9 seconds. Nothing has really changed yet: there is still
 a single barista.
 
-![Locust charts with 10 users and one barista](./images/fibscale-locust-10-users-charts-again.png)
+![Locust charts with 10 users and one barista](./images/locust-10-users-charts-again.png)
 
 ### :exclamation: Hire two more baristas
 
@@ -781,23 +785,39 @@ nginx is now a **load balancer**: it forwards each request to one of the
 servers of the upstream, taking them in turn.
 
 Look at Locust again. You should quickly see the number of requests per second
-grow to about 3, and the average response time fall to between 2 and 3 seconds.
+grow to about 3, and the response times fall. The 50th percentile, the time
+within which half of the orders are served, may fall to about a second, while
+the 95th percentile stays at several seconds.
 
-![Locust charts with three baristas](./images/fibscale-locust-3-instances.png)
+![Locust charts with three baristas](./images/locust-3-baristas.png)
+
+{% note type: more %}
+
+Why do some customers still wait several seconds? When you added the baristas,
+barista 1 still had a queue of customers who had ordered before. nginx takes the
+baristas in turn, without looking at how many customers each one has waiting, so
+each barista receives about as many orders as it brews, and barista 1 catches up
+with its queue slowly, if at all. Its customers wait several seconds, while
+those of baristas 2 and 3 are served in about a second.
+
+{% endnote %}
 
 Visit your café and reload the page a few times. The colour and the number of
 the barista change: nginx sends your requests to each barista in turn.
 
-![Brewscale served by barista 1](./images/fibscale-instance-1.png)
+![Brewscale served by barista 1](./images/brewscale-barista-1.png)
 
-![Brewscale served by barista 2](./images/fibscale-instance-2.png)
+![Brewscale served by barista 2](./images/brewscale-barista-2.png)
 
-![Brewscale served by barista 3](./images/fibscale-instance-3.png)
+![Brewscale served by barista 3](./images/brewscale-barista-3.png)
 
-While the test runs, order a coffee yourself again. The queue moves three times
-faster: three baristas brew three coffees at the same time.
+While the test runs, order a coffee yourself again. You should wait much less
+than before:
 
-![Brewscale’s result page, with the time spent in the queue of three baristas](./images/brewscale-queue-three-baristas.svg)
+![A flat white for Alice, brewed by barista 2, after less than two seconds of waiting](./images/brewscale-queue-three-baristas.png)
+
+Three baristas brew three coffees at the same time, so the queue moves three
+times faster. Eight customers in front of you are only two brews ahead of you:
 
 ```
 customer 1  --1s--
@@ -811,6 +831,10 @@ customer 8              --1s--
 you                     --1s--
             ------------------ 3s
 ```
+
+You probably waited even less, unless nginx sent you to barista 1 and its
+queue. Each Locust customer is now served faster, so more of them are pausing
+between two orders at any time, and fewer are queueing in front of you.
 
 You may now stop the load test.
 
