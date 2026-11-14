@@ -389,8 +389,17 @@ c1ffe65eb41b11a2235d5b5c90f6b26ccee00011097e65fe46424559603a22ee
   Locust runs in, where it looks for `locustfile.py`. `$PWD` is a variable of
   your shell that holds the current directory.
 
-Leave Locust running until the end of this exercise. You can check that it has
-started by displaying what it has printed so far:
+Leave Locust running until the end of this exercise. Its container should be
+among the running containers that `docker ps` lists:
+
+```bash
+$> docker ps
+CONTAINER ID   IMAGE                    COMMAND    CREATED          STATUS          PORTS                      NAMES
+924b4f80a521   locustio/locust:2.47.0   "locust"   18 seconds ago   Up 17 seconds   127.0.0.1:8089->8089/tcp   locust
+```
+
+You can also check that Locust has started by displaying what it has printed so
+far:
 
 ```bash
 $> docker logs locust
@@ -458,7 +467,8 @@ much longer than that.
 ### :exclamation: Join the queue
 
 While the ten customers are still ordering, order a coffee yourself in your
-browser. You have to wait a while for your drink. When it comes, the page tells
+browser. Even loading the page with the order form takes about ten seconds, and
+then you have to wait as long again for your drink. When it comes, the page tells
 you how long it took to brew it, and how long you waited, something like:
 "Brewed in 1.0s by the barista. You waited 9.8s: the rest of the time, you were
 in the queue."
@@ -490,6 +500,10 @@ That is why the number of requests per second stayed at about 1 with ten
 customers. The ten Locust customers spend most of their time in the queue, and
 so did you when you joined it: almost every second of your wait was the turn of
 another customer.
+
+The barista does not only brew, it also hands out the menu: every request is
+served in turn, including the one for the page with the order form. That is why
+you had to queue twice, once just to see the menu, and once more for your drink.
 
 The barista does not always serve customers in the order they arrived, so your
 own wait may have been shorter, or much longer. But on average, a customer who
@@ -567,11 +581,12 @@ Modify `/etc/systemd/system/brewscale@.service` as follows:
 
 - Remove the `[Install]` section and the `WantedBy` option it contains. You will
   no longer start the template directly, but a group of its instances.
-- Add `%i` at the end of the description, so that each instance has its own.
-- Add `%i` at the end of the `ExecStart` command, to give Brewscale its barista
-  number as an argument. As [Brewscale's documentation][brewscale-run] says, the
-  number changes the colour of the café, and is shown on every page and in every
-  line of the logs.
+- Add a space and `%i` at the end of the description, so that each instance has
+  its own: `Description=Brewscale %i`.
+- Add a space and `%i` at the end of the `ExecStart` command, to give Brewscale
+  its barista number as an argument. As [Brewscale's
+  documentation][brewscale-run] says, the number changes the colour of the café,
+  and is shown on every page and in every line of the logs.
 - Change the value of the `BREWSCALE_PORT` environment variable from `4200` to
   `420%i`. Only one process can listen on a port, so each barista needs a port
   of its own. systemd replaces `%i` with the instance name as text, not as a
@@ -588,14 +603,11 @@ exist: ports go up to 65535.
 
 {% endnote %}
 
-{% solution %}
+The file should now look like this, with the lines that changed highlighted:
 
-The `/etc/systemd/system/brewscale@.service` file on your server should look
-something like this:
-
-```conf
+```conf highlight_lines="2-3,7,14"
 [Unit]
-Description=Brewscale barista %i
+Description=Brewscale %i
 PartOf=brewscale.target
 
 [Service]
@@ -614,8 +626,6 @@ Environment="JAVA_TOOL_OPTIONS=-Xmx64m"
 
 Restart=on-failure
 ```
-
-{% endsolution %}
 
 ### :exclamation: Group the baristas in a target
 
@@ -648,11 +658,22 @@ Check the status of the target, then of its only barista:
 
 ```bash
 $> sudo systemctl status brewscale.target
-$> sudo systemctl status brewscale@1
-● brewscale@1.service - Brewscale barista 1
-     Loaded: loaded (/etc/systemd/system/brewscale@.service; static)
-     Active: active (running) since Thu 2026-11-19 10:31:12 UTC; 4s ago
+● brewscale.target - Brewscale café
+     Loaded: loaded (/etc/systemd/system/brewscale.target; enabled; preset: enabled)
+     Active: active since Thu 2026-11-19 10:31:12 UTC; 4s ago
 ...
+Nov 19 10:31:12 jde.archidep.ch systemd[1]: Reached target brewscale.target - Brewscale café.
+
+$> sudo systemctl status brewscale@1
+● brewscale@1.service - Brewscale 1
+     Loaded: loaded (/etc/systemd/system/brewscale@.service; static)
+     Active: active (running) since Thu 2026-11-19 10:31:12 UTC; 12s ago
+...
+     CGroup: /system.slice/system-brewscale.slice/brewscale@1.service
+             └─10601 /usr/bin/java -jar target/brewscale.jar 1
+
+Nov 19 10:31:12 jde.archidep.ch systemd[1]: Started brewscale@1.service - Brewscale 1.
+Nov 19 10:31:12 jde.archidep.ch java[10601]: Picked up JAVA_TOOL_OPTIONS: -Xmx64m
 Nov 19 10:31:13 jde.archidep.ch java[10601]: Barista 1 listening on 127.0.0.1:4201, brewing in 1s
 ```
 
@@ -660,14 +681,15 @@ Nov 19 10:31:13 jde.archidep.ch java[10601]: Barista 1 listening on 127.0.0.1:42
 
 The barista now listens on port 4201, and nginx still forwards requests to port
 4200, where nothing listens any more. Update the nginx configuration file
-`/etc/nginx/sites-available/brewscale` to forward them to an [**upstream**][nginx-upstream]:
-a named group of servers, the addresses where nginx can reach your baristas.
-There is only one barista for now, but there will be more soon.
+`/etc/nginx/sites-available/brewscale` to forward them to an
+[**upstream**][nginx-upstream]: a named group of servers, the addresses where
+nginx can reach your baristas. There is only one barista for now, but there will
+be more soon.
 
-Define the upstream, and **change the `proxy_pass` directive** to forward
+**Define the upstream**, and **change the `proxy_pass` directive** to forward
 requests to it:
 
-```nginx
+```nginx highlight_lines="1-4,11-12"
 # The baristas of the café.
 upstream brewscale {
   server 127.0.0.1:4201;
@@ -720,7 +742,7 @@ To hire more baristas, change the `Requires` option of
 `/etc/systemd/system/brewscale.target` to start more instances of the template.
 Let's run three:
 
-```conf
+```conf highlight_lines="3"
 [Unit]
 Description=Brewscale café
 Requires=brewscale@1.service brewscale@2.service brewscale@3.service
@@ -745,6 +767,10 @@ $> sudo systemctl status brewscale@2
 $> sudo systemctl status brewscale@3
 ```
 
+The last line of each status is printed by the barista itself, and says on which
+port it listens: `4201` for barista 1, `4202` for barista 2, and `4203` for
+barista 3. These are the ports nginx must forward requests to.
+
 Each barista is a process of its own, running the same jar with a different
 number. List the processes of the `brewscale` user:
 
@@ -766,7 +792,7 @@ Add your new baristas to the `upstream` block of
 `/etc/nginx/sites-available/brewscale`. Their barista numbers are `2` and `3`,
 so they listen on ports `4202` and `4203`:
 
-```nginx
+```nginx highlight_lines="3-4"
 upstream brewscale {
   server 127.0.0.1:4201;
   server 127.0.0.1:4202;
@@ -803,7 +829,13 @@ those of baristas 2 and 3 are served in about a second.
 {% endnote %}
 
 Visit your café and reload the page a few times. The colour and the number of
-the barista change: nginx sends your requests to each barista in turn.
+the barista change: nginx sends the requests it receives to each barista in
+turn. Do not expect barista 1, 2, then 3, though: the load test is still
+running, and the orders of Locust's customers come between your requests.
+
+Each reload still takes a moment, as your request waits in a barista's queue
+like any order. But the queues are much shorter now: about a second, unless you
+end up in the queue of barista 1.
 
 ![Brewscale served by barista 1](./images/brewscale-barista-1.png)
 
@@ -1105,6 +1137,22 @@ Here's a few tips about some problems you may encounter during this exercise.
 
 Your domain name is too long for nginx's default settings. Fix it as in the
 [same problem in the static site exercise][server-names-hash].
+
+### :boom: `WARNING: A terminally deprecated method in sun.misc.Unsafe has been called`
+
+`mvn package` prints these lines when it starts:
+
+```
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/usr/share/maven/lib/guava.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+```
+
+You can ignore them. They come from Maven itself, not from Brewscale: a library
+that Maven uses (`/usr/share/maven/lib/guava.jar`) calls a method of Java that a
+later version will remove, and Java 25 warns about it. Nothing is wrong with your
+build as long as it ends with `BUILD SUCCESS`.
 
 ### :boom: `Unable to access jarfile target/brewscale.jar`
 
