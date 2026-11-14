@@ -120,7 +120,7 @@ $> npm ci
 Create a systemd unit file named `/etc/systemd/system/revprod-landing.service`
 (e.g. with `nano`) to execute this component and make it listen on port 4201:
 
-```conf
+```ini
 [Unit]
 Description=Landing page for The Revolutionary Product
 
@@ -215,7 +215,7 @@ $> npm ci
 Create a systemd unit file named `/etc/systemd/system/revprod-backend.service`
 (e.g. with `nano`) to execute this component and make it listen on port 4200:
 
-```conf
+```ini
 [Unit]
 Description=Backend for The Revolutionary Product
 
@@ -362,7 +362,7 @@ allow cross-origin requests. Update the systemd unit file
 [appropriate environment variables][revprod-backend-config] to the `[Service]`
 section to enable CORS:
 
-```conf
+```ini
 Environment="REVPROD_CORS=true"
 Environment="REVPROD_CORS_ORIGINS=http://revprod-landing.jde.archidep.ch"
 ```
@@ -405,7 +405,7 @@ problem during the rest of this exercise.
 Update the systemd unit file `/etc/systemd/system/revprod-backend.service` for
 the backend and set the value of the `REVPROD_CORS` variable to false:
 
-```conf
+```ini
 Environment="REVPROD_CORS=false"
 ```
 
@@ -450,7 +450,7 @@ file `/etc/systemd/system/revprod-backend.service` for the backend and comment
 out (or remove) the `REVPROD_LANDING_PAGE_BASE_URL` environment variable in the
 `[Service]` section:
 
-```conf
+```ini
 #Environment="REVPROD_LANDING_PAGE_BASE_URL=http://revprod-landing.jde.archidep.ch"
 ```
 
@@ -458,7 +458,7 @@ Do the same in the systemd unit file
 `/etc/systemd/system/revprod-landing.service` for the landing page for the
 `REVPROD_BACKEND_BASE_URL` variable:
 
-```conf
+```ini
 #Environment="REVPROD_BACKEND_BASE_URL=http://revprod-backend.jde.archidep.ch"
 ```
 

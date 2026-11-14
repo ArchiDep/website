@@ -628,7 +628,7 @@ started.
 The `/etc/systemd/system/guessit.service` file on your server should look
 something like this:
 
-```
+```ini
 [Unit]
 Description=Guess It
 

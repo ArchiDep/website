@@ -298,7 +298,7 @@ many unit file types such as `service`, `socket`, `timer`, etc.
 
 A unit file usually looks like this:
 
-```
+```ini
 [Unit]
 Description=Something to run
 After=something-else.service

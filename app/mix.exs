@@ -92,6 +92,8 @@ defmodule ArchiDep.MixProject do
       {:lumis_wasm_css, "~> 0.26.3"},
       {:lumis_wasm_dockerfile, "~> 0.26.2"},
       {:lumis_wasm_html, "~> 0.26.3"},
+      # systemd unit files, which have no package of their own.
+      {:lumis_wasm_ini, "~> 0.26.5"},
       {:lumis_wasm_javascript, "~> 0.26.3"},
       {:lumis_wasm_markdown, "~> 0.26.3"},
       {:lumis_wasm_markdown_inline, "~> 0.26.2"},

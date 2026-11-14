@@ -150,7 +150,7 @@ read the jar, which is all it needs to run it.
 Create a systemd unit file named `/etc/systemd/system/brewscale.service` with
 `sudo nano`, to run Brewscale:
 
-```conf
+```ini
 [Unit]
 Description=Brewscale
 
@@ -605,7 +605,7 @@ exist: ports go up to 65535.
 
 The file should now look like this, with the lines that changed highlighted:
 
-```conf highlight_lines="2-3,7,14"
+```ini highlight_lines="2-3,7,14"
 [Unit]
 Description=Brewscale %i
 PartOf=brewscale.target
@@ -631,7 +631,7 @@ Restart=on-failure
 
 Create the target file `/etc/systemd/system/brewscale.target`:
 
-```conf
+```ini
 [Unit]
 Description=Brewscale café
 Requires=brewscale@1.service
@@ -742,7 +742,7 @@ To hire more baristas, change the `Requires` option of
 `/etc/systemd/system/brewscale.target` to start more instances of the template.
 Let's run three:
 
-```conf highlight_lines="3"
+```ini highlight_lines="3"
 [Unit]
 Description=Brewscale café
 Requires=brewscale@1.service brewscale@2.service brewscale@3.service
