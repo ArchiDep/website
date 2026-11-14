@@ -111,6 +111,11 @@ after you have fixed a mistake in a record.
 
 On the command line, the `dig` command asks a DNS server and prints its answer:
 
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)\.(?<domain>archidep[0-9]\.ch)"
+  data-template="<username>.<domain>"></div>
+
 ```bash
 $> dig jde.archidep2.ch
 ...
@@ -136,6 +141,11 @@ If your shell says `dig: command not found`, run it on your server, over SSH.
 You can also use `ping`, as you did to find Google's IP address in [Make TCP
 connections][tcp-ping]. It prints the address the name resolves to on its first
 line:
+
+<div
+  class="archidep-randomize"
+  data-regexp="(?<username>[a-z][a-z0-9]+)\.(?<domain>archidep[0-9]\.ch)"
+  data-template="<username>.<domain>"></div>
 
 ```bash
 $> ping -c 1 jde.archidep2.ch

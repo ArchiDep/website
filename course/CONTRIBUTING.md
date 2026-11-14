@@ -1057,11 +1057,14 @@ block:
   with `<username>`, `<ipAddress>` and `<domain>` placeholders.
 - `data-tooltip="false"`: Optionally disables the reminder tooltip.
 
-Each line of the code block is matched separately. To randomize different
-values on different lines, write the regular expression as alternatives, one
-per line, and put all their placeholders in the template: a placeholder whose
-group took no part in a line's match is replaced by nothing. For example, a
-block with an IP address on a `HostName` line and a username on a `User` line:
+Each text node of the code block is matched separately: a whole line in a block
+with no language, but each token in a highlighted one, so that a value appearing
+twice in a highlighted block is randomized twice, independently, and a
+lookbehind cannot see past its token. To randomize different values on different
+lines, write the regular expression as alternatives, one per line, and put all
+their placeholders in the template: a placeholder whose group took no part in a
+line's match is replaced by nothing. For example, a block with an IP address on
+a `HostName` line and a username on a `User` line:
 
 ```html
 <div
