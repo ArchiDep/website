@@ -121,7 +121,7 @@ defmodule ArchiDep.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:ua_inspector, "~> 3.11"},
       {:ueberauth, "~> 0.11.0"},
-      {:ueberauth_oidcc, "~> 0.4.1"},
+      {:ueberauth_oidcc, "~> 0.5.0"},
       {:yaml_elixir, "~> 2.11"},
       # Development & test dependencies
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
