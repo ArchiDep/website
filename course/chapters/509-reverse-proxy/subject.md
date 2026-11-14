@@ -42,9 +42,8 @@ The most important files are:
 - `sites-available` is a directory where website configuration files are stored.
 - `sites-enabled` is a directory containing symbolic links to the configurations
   in `sites-available`.
-- `conf.d` is another directory of configuration files, included in the same
-  place as `sites-enabled`. It is empty on Ubuntu, which puts the configurations
-  of websites in `sites-available` instead.
+- `conf.d` is another directory for reusable configuration files, included in
+  the same place as `sites-enabled`.
 - `snippets` is a directory to store reusable configuration fragments, which
   other configuration files can include.
 
