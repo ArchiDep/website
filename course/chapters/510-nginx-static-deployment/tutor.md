@@ -98,29 +98,6 @@ the same steps, at a name of its own under the wildcard record. In particular:
 
 ## Common pitfalls
 
-- **`git clone` says `Permission denied`**: `/srv/clock` still belongs to
-  `root`, because the `chown` was skipped or mistyped. Running `git clone` with
-  `sudo` gets past it, but leaves files the student cannot update without
-  `sudo`. Hint: who owns `/srv/clock`, according to `ls -ld`? Hint: which
-  command of the step gave it to you?
-- **`nginx -t` reports `[emerg]` with a file and a line number, such as
-  `unexpected "}"` or `directive "server_name" is not terminated by ";"`**: a
-  typo in the configuration, often a missing `;`. Hint: what is on the line the
-  error names, or the line just before it?
-- **`nginx -t` says `open() "/etc/nginx/sites-enabled/clock" failed`, or `Too
-many levels of symbolic links`**: the link was made with a relative or wrong
-  target, so it points nowhere, or to itself. Hint: what does `ls -l
-/etc/nginx/sites-enabled` show after the arrow?
-- **`systemctl reload nginx` says `Job for nginx.service failed`**: the new
-  configuration has an error, and nginx keeps serving the old one. Hint: what
-  does `sudo nginx -t` say?
-- **Changes to `/etc/nginx/sites-available/clock` have no effect, although
-  nginx was reloaded**: `sites-enabled/clock` is a copy, made with `cp`, rather
-  than a link. Hint: does `ls -l /etc/nginx/sites-enabled` show an arrow for
-  `clock`?
-- **The browser shows a security error, or the address starts with
-  `https://`**: some browsers try HTTPS first, and nothing listens on port 443
-  yet. Hint: what does the address bar show, exactly?
 - **The student asks why the server's IP address shows the welcome page and not
   the clock**: that is the intended result. Hint: what name does the browser
   send in the `Host` header when you type an IP address?

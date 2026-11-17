@@ -300,7 +300,7 @@ $> ps -f -C nginx
 
 Here's a few tips about some problems you may encounter during this exercise.
 
-### :boom: `[emerg] could not build the server_names_hash, you should increase server_names_hash_bucket_size`
+### :boom: `[emerg] could not build server_names_hash, you should increase server_names_hash_bucket_size`
 
 Your domain name is too long for nginx's default settings. Fix it as in the
 [same problem in the static site exercise][server-names-hash].
@@ -349,7 +349,7 @@ upstream`, nothing listens at the address of your `proxy_pass` directive:
 [improve]: {% link chapters/413-how-to-improve/subject.md %}
 [proxy-config]: {% link chapters/509-reverse-proxy/subject.md %}#reverse-proxy-configuration
 [reverse-proxy]: {% link chapters/509-reverse-proxy/subject.md %}
-[server-names-hash]: {% link chapters/510-nginx-static-deployment/exercise.md %}#emerg-could-not-build-the-server_names_hash-you-should-increase-server_names_hash_bucket_size
+[server-names-hash]: {% link chapters/510-nginx-static-deployment/exercise.md %}#emerg-could-not-build-server_names_hash-you-should-increase-server_names_hash_bucket_size
 [static-deployment]: {% link chapters/510-nginx-static-deployment/exercise.md %}
 [systemd-architecture]: {% link chapters/506-systemd-deployment/exercise.md %}#architecture
 [systemd-deployment]: {% link chapters/506-systemd-deployment/exercise.md %}

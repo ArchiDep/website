@@ -1133,7 +1133,7 @@ $> sudo journalctl -u brewscale@2 -f
 
 Here's a few tips about some problems you may encounter during this exercise.
 
-### :boom: `[emerg] could not build the server_names_hash, you should increase server_names_hash_bucket_size`
+### :boom: `[emerg] could not build server_names_hash, you should increase server_names_hash_bucket_size`
 
 Your domain name is too long for nginx's default settings. Fix it as in the
 [same problem in the static site exercise][server-names-hash].
@@ -1240,6 +1240,6 @@ nginx only sends requests to the servers of its upstream. Check that:
 [loopback]: {% link chapters/406-unix-networking/slides/slides.md %}#theres-no-place-like-127001
 [reverse-proxy-architecture]: {% link chapters/511-nginx-reverse-proxy-deployment/exercise.md %}#architecture
 [reverse-proxy-deployment]: {% link chapters/511-nginx-reverse-proxy-deployment/exercise.md %}
-[server-names-hash]: {% link chapters/510-nginx-static-deployment/exercise.md %}#emerg-could-not-build-the-server_names_hash-you-should-increase-server_names_hash_bucket_size
+[server-names-hash]: {% link chapters/510-nginx-static-deployment/exercise.md %}#emerg-could-not-build-server_names_hash-you-should-increase-server_names_hash_bucket_size
 [systemd-troubleshooting]: {% link chapters/506-systemd-deployment/exercise.md %}#troubleshooting
 [taking-turns]: {% link chapters/411-how-a-computer-works/slides/slides.md %}#taking-turns

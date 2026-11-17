@@ -232,9 +232,8 @@ nginx: configuration file /etc/nginx/nginx.conf test is successful
 
 {% note type: tip %}
 
-If an error occurs here, you may have made a mistake in the configuration. (See
-[Troubleshooting](#troubleshooting) if you get an error about
-`server_names_hash_bucket_size`.)
+If an error occurs here, you may have made a mistake in the configuration. See
+[Troubleshooting](#troubleshooting) for the most common errors.
 
 {% endnote %}
 
@@ -400,7 +399,60 @@ $> sudo systemctl status nginx
 
 Here's a few tips about some problems you may encounter during this exercise.
 
-### :boom: `[emerg] could not build the server_names_hash, you should increase server_names_hash_bucket_size`
+### :boom: `git clone` says `Permission denied`
+
+`/srv/clock` still belongs to `root`, because the `sudo chown` command of [Put
+the static website on the server][put-website] did not run, or had a typo. Check
+who owns the directory:
+
+```bash
+$> ls -ld /srv/clock
+```
+
+It must belong to your username and to the `www-data` group. Run the `sudo
+chown` and `chmod` commands again, then clone the repository again.
+
+Do not clone with `sudo` to get past the error: the files would belong to
+`root`, and you could not update them later without `sudo`.
+
+### :boom: `nginx -t` reports an `[emerg]` error with a file and a line number
+
+For example:
+
+```
+... [emerg] ... invalid number of arguments in "root" directive in /etc/nginx/sites-enabled/clock:5
+nginx: configuration file /etc/nginx/nginx.conf test failed
+```
+
+```
+... [emerg] ... unexpected "}" in /etc/nginx/sites-enabled/clock:15
+nginx: configuration file /etc/nginx/nginx.conf test failed
+```
+
+Your configuration has a typo. Look at the line the error names, and at the line
+just before it. A missing `;` at the end of a directive is the most common
+cause: nginx reads the next line as part of the same directive, so the error
+names the line after the typo.
+
+### :boom: `nginx -t` says `open() "/etc/nginx/sites-enabled/clock" failed` or `Too many levels of symbolic links`
+
+The symbolic link in `sites-enabled` points to a file that does not exist, or to
+itself, because its target was mistyped or was not a full path. Look at where it
+points, after the arrow:
+
+```bash
+$> ls -l /etc/nginx/sites-enabled
+```
+
+It must point to `/etc/nginx/sites-available/clock`. If it does not, remove the
+link (this removes only the link, not your configuration) and create it again
+with the `ln -s` command of [Enable the nginx configuration][enable]:
+
+```bash
+$> sudo rm /etc/nginx/sites-enabled/clock
+```
+
+### :boom: `[emerg] could not build server_names_hash, you should increase server_names_hash_bucket_size`
 
 If you get an error about `server_names_hash_bucket_size`, it may be because
 your domain name (the value of your `server_name` directive) is too long for
@@ -413,6 +465,30 @@ In that case, edit the main nginx configuration with `sudo nano
 server_names_hash_bucket_size 256;
 ```
 
+### :boom: `systemctl reload nginx` says `Job for nginx.service failed`
+
+Your new configuration has an error, so nginx did not load it. It keeps serving
+the configuration it had before. Run `sudo nginx -t` to see the error, fix it,
+then reload nginx again.
+
+### :boom: My changes to the configuration have no effect
+
+If you have reloaded nginx and your changes to
+`/etc/nginx/sites-available/clock` still have no effect, check
+`/etc/nginx/sites-enabled`:
+
+```bash
+$> ls -l /etc/nginx/sites-enabled
+```
+
+If `clock` has no arrow after it, it is a copy of your configuration, not a
+symbolic link, and nginx reads the copy. Remove the copy and create the link with
+the `ln -s` command of [Enable the nginx configuration][enable]:
+
+```bash
+$> sudo rm /etc/nginx/sites-enabled/clock
+```
+
 ### :boom: I see nginx's welcome page instead of the clock
 
 nginx has no enabled configuration with the name in your browser's address bar,
@@ -420,10 +496,18 @@ so it answers with its default site. Check that:
 
 - The address is the name of the site, with `clock.` in front of your hostname.
 - The `server_name` directive in `/etc/nginx/sites-available/clock` is exactly
-  that name.
+  that name, and ends with `;`. Without the `;`, nginx reads the words of the
+  next line as more names for the site, and `nginx -t` only prints a `[warn]`
+  about a server name that `has suspicious symbols`.
 - The symbolic link `/etc/nginx/sites-enabled/clock` exists and points to your
   configuration (`ls -l /etc/nginx/sites-enabled`).
 - You have reloaded nginx's configuration since your last change.
+
+### :boom: The browser shows a security error, or the address starts with `https://`
+
+Some browsers try HTTPS first when you type a name without `http://`. Nothing
+listens on port 443, the port of HTTPS, on your server yet. Type the address in
+full, with `http://` in front of it, e.g. `http://clock.jde.archidepN.ch`.
 
 ### :boom: The nginx configuration is correct but I get an error page in the browser
 
@@ -472,6 +556,7 @@ the `root` directive. The error log says which file it looked for:
 Are you sure that the value of your `root` directive is correct? Does that
 directory actually exist?
 
+[enable]: #enable-the-nginx-configuration
 [error-page]: #the-nginx-configuration-is-correct-but-i-get-an-error-page-in-the-browser
 [hard-link]: https://en.wikipedia.org/wiki/Hard_link
 [nginx]: http://nginx.org/
