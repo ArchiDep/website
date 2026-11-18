@@ -13,6 +13,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLive do
   alias ArchiDepWeb.Admin.Classes.DeleteClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassDialogLive
   alias ArchiDepWeb.Admin.Classes.EditClassExpectedServerPropertiesDialogLive
+  alias ArchiDepWeb.Admin.Classes.ExportClassDialogLive
   alias ArchiDepWeb.Admin.Classes.ImportStudentsDialogLive
   alias ArchiDepWeb.Admin.Classes.NewStudentDialogLive
   alias ArchiDepWeb.Admin.Classes.StudentFilters

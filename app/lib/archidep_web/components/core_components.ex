@@ -118,6 +118,26 @@ defmodule ArchiDepWeb.Components.CoreComponents do
     """
   end
 
+  @doc """
+  Returns the attributes of a copy button's tooltip, for a button with an
+  identifier and the `tooltip` class. The tooltip offers to copy; a click turns
+  it into a confirmation, which the `hide-tooltip` listener of `app.js` closes
+  and resets after a while by running the JS commands of the
+  `data-tooltip-close` and `data-tooltip-reset` attributes.
+  """
+  @spec copy_tooltip_attributes() :: list({String.t(), String.t() | JS.t()})
+  def copy_tooltip_attributes,
+    do: [
+      {"data-tip", gettext("Copy to clipboard")},
+      {"phx-click",
+       %JS{}
+       |> JS.set_attribute({"data-tip", gettext("Copied!")})
+       |> JS.add_class("tooltip-open")
+       |> JS.dispatch("hide-tooltip")},
+      {"data-tooltip-close", JS.remove_class("tooltip-open")},
+      {"data-tooltip-reset", JS.set_attribute({"data-tip", gettext("Copy to clipboard")})}
+    ]
+
   attr :id, :string,
     required: true,
     doc: "the identifier of the button, which its tooltip is looked up by"
@@ -135,9 +155,8 @@ defmodule ArchiDepWeb.Components.CoreComponents do
   A button that puts a value in the clipboard.
 
   The copying itself is clipboard.js's, wired in `app.js` to every element
-  carrying a `data-clipboard-text` attribute. The click handler only turns the
-  button's own tooltip into a confirmation and schedules its reset, which the
-  `hide-tooltip` listener does by looking the button up by its identifier.
+  carrying a `data-clipboard-text` attribute. The button's tooltip confirms the
+  copy, as `copy_tooltip_attributes/0` describes.
   """
   @spec copy_button(map()) :: Rendered.t()
   def copy_button(assigns) do
@@ -148,12 +167,7 @@ defmodule ArchiDepWeb.Components.CoreComponents do
       class={["cursor-pointer text-base-content/75 hover:text-base-content tooltip", @class]}
       aria-label={gettext("Copy to clipboard")}
       data-clipboard-text={@text}
-      data-tip={gettext("Copy to clipboard")}
-      phx-click={
-        JS.set_attribute({"data-tip", gettext("Copied!")})
-        |> JS.add_class("tooltip-open")
-        |> JS.dispatch("hide-tooltip", detail: %{tooltip: gettext("Copy to clipboard")})
-      }
+      {copy_tooltip_attributes()}
       {@rest}
     >
       <Heroicons.clipboard_document class="size-4" />

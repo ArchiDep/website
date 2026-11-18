@@ -173,21 +173,17 @@
     </h3>
 
     <div class="join">
-      <a class="join-item btn btn-neutral btn-sm" href={~p"/admin/classes/#{@class.id}/csv"}>
-        <span class="flex items-center gap-x-2">
-          <Heroicons.list_bullet class="size-4" />
-          <span>{gettext("CSV")}</span>
-        </span>
-      </a>
-      <a
+      <button
+        type="button"
+        id="open-export-class-dialog"
         class="join-item btn btn-neutral btn-sm"
-        href={~p"/admin/classes/#{@class.id}/ssh-exercise-vm-inventory"}
+        phx-click={ExportClassDialogLive.open()}
       >
         <span class="flex items-center gap-x-2">
-          <Heroicons.cog_6_tooth class="size-4" />
-          <span>{gettext("Inventory")}</span>
+          <Heroicons.arrow_down_tray class="size-4" />
+          <span>{gettext("Export")}</span>
         </span>
-      </a>
+      </button>
       <button
         type="button"
         class="join-item btn btn-secondary btn-sm"
@@ -210,6 +206,15 @@
       </button>
     </div>
   </div>
+
+  <.live_component
+    module={ExportClassDialogLive}
+    id={ExportClassDialogLive.id()}
+    auth={@auth}
+    class={@class}
+    students={@students}
+    filters={@filters}
+  />
 
   <.live_component
     module={ImportStudentsDialogLive}

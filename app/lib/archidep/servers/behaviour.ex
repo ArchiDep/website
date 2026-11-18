@@ -118,6 +118,14 @@ defmodule ArchiDep.Servers.Behaviour do
               {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
 
   @doc """
+  Lists the active servers of a server group's members, ordered by the members'
+  usernames. A member has at most one, the one
+  `fetch_active_server_for_group_member/2` returns.
+  """
+  @callback list_active_servers_in_group(Authentication.t(), UUID.t()) ::
+              {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
+
+  @doc """
   Fetches a server.
   """
   @callback fetch_server(Authentication.t(), UUID.t()) ::

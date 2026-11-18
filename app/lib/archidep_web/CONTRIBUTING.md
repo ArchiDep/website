@@ -373,8 +373,12 @@ The areas map directly onto the bounded contexts:
   and [importing students](../archidep/course/CONTRIBUTING.md#student-import) —
   all backed by the [Course
   context](../archidep/course/CONTRIBUTING.md#use-cases).
-  [`ClassesController`](./admin/classes/classes_controller.ex) adds two `GET`
-  endpoints: a class CSV export and the SSH-exercise-VM Ansible inventory.
+  The class page's export dialog
+  ([`ExportClassDialogLive`](./admin/classes/export_class_dialog_live.ex))
+  shows the students matching its filters in one of the formats of
+  [`Export`](./admin/classes/export.ex), one module per format, which
+  [`ClassesController`](./admin/classes/classes_controller.ex) also serves as
+  downloads.
 - **Course progress** —
   [`CourseSessionsLive`](./admin/course_sessions/course_sessions_live.ex)
   (`/admin/course-sessions`), with dialogs for recording, correcting and
@@ -466,14 +470,14 @@ steps.
 DaisyUI modifier is picked from what happens, not from how much the button
 should stand out:
 
-| Modifier        | The action                                                     |
-| --------------- | -------------------------------------------------------------- |
-| `btn-success`   | Creates something that did not exist (a class, a session)      |
-| `btn-warning`   | Opens something that exists for editing (`Edit`, `Change`)     |
-| `btn-error`     | Destroys something, and confirms the destruction (`Delete`)    |
-| `btn-primary`   | Submits the form it is in (`Save`, `Log in`, `Upload`)         |
-| `btn-secondary` | Leaves without doing it (`Close`, `No`), and side actions      |
-| `btn-neutral`   | Downloads what is already there (the class CSV, the inventory) |
+| Modifier        | The action                                                  |
+| --------------- | ----------------------------------------------------------- |
+| `btn-success`   | Creates something that did not exist (a class, a session)   |
+| `btn-warning`   | Opens something that exists for editing (`Edit`, `Change`)  |
+| `btn-error`     | Destroys something, and confirms the destruction (`Delete`) |
+| `btn-primary`   | Submits the form it is in (`Save`, `Log in`, `Upload`)      |
+| `btn-secondary` | Leaves without doing it (`Close`, `No`), and side actions   |
+| `btn-neutral`   | Copies or downloads what is already there (a class export)  |
 
 ---
 

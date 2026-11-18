@@ -1,0 +1,100 @@
+<dialog
+  id={id()}
+  class="modal"
+  phx-mounted={JS.ignore_attributes(["open"])}
+  data-action-close={JS.dispatch("phx:close-dialog", detail: %{dialog: id()})}
+>
+  <div class="modal-box w-11/12 max-w-5xl max-h-11/12">
+    <h3 class="text-lg font-bold flex items-center gap-x-2">
+      {gettext("Export Students")}
+      <span :if={StudentFilters.active?(@filters)} class="badge badge-primary badge-sm">
+        {gettext("Filtered")}
+      </span>
+    </h3>
+
+    <div role="tablist" class="mt-4 tabs tabs-box bg-base-content/10 export-formats">
+      <button
+        :for={format <- Export.formats()}
+        type="button"
+        role="tab"
+        class={["tab", format == @format && "tab-active bg-primary text-primary-content"]}
+        aria-selected={to_string(format == @format)}
+        data-format={format.id()}
+        phx-click="format"
+        phx-value-format={format.id()}
+        phx-target={@myself}
+      >
+        {format.label()}
+      </button>
+    </div>
+
+    <%= if @export do %>
+      <p :if={@excluded != []} class="mt-4 text-warning export-excluded">
+        {gettext(
+          "{count, plural, =1 {1 student is} other {# students are}} not included because they have no active server: {names}",
+          count: length(@excluded),
+          names: Enum.map_join(@excluded, ", ", & &1.name)
+        )}
+      </p>
+
+      <textarea
+        id="export-class-text"
+        class="mt-4 textarea w-full h-96 font-mono text-xs"
+        readonly
+      >{@display_text}</textarea>
+      <%!--
+        What the copy button copies. clipboard.js copies a text it is given from
+        an element it adds to the page's body, which a modal dialog leaves out
+        of reach, so it copies this element of the dialog instead.
+      --%>
+      <textarea
+        id="export-class-copied-text"
+        class="sr-only"
+        aria-hidden="true"
+        tabindex="-1"
+        readonly
+      >{@text}</textarea>
+      <p :if={@display_text != @text} class="text-sm text-base-content/75 export-redacted">
+        {gettext("Secrets are hidden here, but they are copied and downloaded.")}
+      </p>
+
+      <div class="mt-4 flex justify-end gap-x-2">
+        <button type="button" class="btn btn-secondary" phx-click={close()}>
+          <span class="flex items-center gap-x-2">
+            <Heroicons.x_mark class="size-4" />
+            <span>{gettext("Close")}</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          id="export-class-copy"
+          class="btn btn-neutral tooltip"
+          data-clipboard-target="#export-class-copied-text"
+          {copy_tooltip_attributes()}
+        >
+          <span class="flex items-center gap-x-2">
+            <Heroicons.clipboard_document class="size-4" />
+            <span>{gettext("Copy")}</span>
+          </span>
+        </button>
+        <a
+          id="export-class-download"
+          class="btn btn-neutral"
+          href={download_path(@class, @format, @filters)}
+        >
+          <span class="flex items-center gap-x-2">
+            <Heroicons.arrow_down_tray class="size-4" />
+            <span>{gettext("Download")}</span>
+          </span>
+        </a>
+      </div>
+    <% else %>
+      <div class="mt-4 flex justify-center">
+        <span class="loading loading-spinner"></span>
+      </div>
+    <% end %>
+  </div>
+  <form method="dialog" class="modal-backdrop" phx-click="closed" phx-target={@myself}>
+    <button type="submit">{gettext("Close")}</button>
+  </form>
+</dialog>

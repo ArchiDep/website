@@ -21,9 +21,9 @@ msgstr ""
 #: lib/archidep_web/admin/admin_live.ex:119
 #: lib/archidep_web/admin/ansible/ansible_live.ex:25
 #: lib/archidep_web/admin/ansible/ansible_live.html.heex:7
-#: lib/archidep_web/admin/ansible/ansible_playbook_run_live.ex:20
+#: lib/archidep_web/admin/ansible/ansible_playbook_run_live.ex:19
 #: lib/archidep_web/admin/ansible/ansible_playbook_run_live.html.heex:7
-#: lib/archidep_web/admin/classes/class_live.ex:35
+#: lib/archidep_web/admin/classes/class_live.ex:36
 #: lib/archidep_web/admin/classes/class_live.html.heex:7
 #: lib/archidep_web/admin/classes/classes_live.ex:18
 #: lib/archidep_web/admin/classes/classes_live.html.heex:7
@@ -76,8 +76,8 @@ msgstr ""
 msgid "Profile"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:238
-#: lib/archidep_web/admin/classes/class_live.html.heex:280
+#: lib/archidep_web/admin/classes/class_live.html.heex:243
+#: lib/archidep_web/admin/classes/class_live.html.heex:285
 #: lib/archidep_web/admin/classes/import_students_dialog_live.html.heex:92
 #: lib/archidep_web/admin/classes/student_form_component.ex:48
 #: lib/archidep_web/admin/classes/student_live.html.heex:40
@@ -87,7 +87,7 @@ msgstr ""
 
 #: lib/archidep_web/admin/classes/class_form_component.ex:79
 #: lib/archidep_web/admin/classes/class_live.html.heex:43
-#: lib/archidep_web/admin/classes/class_live.html.heex:283
+#: lib/archidep_web/admin/classes/class_live.html.heex:288
 #: lib/archidep_web/admin/classes/classes_live.html.heex:41
 #: lib/archidep_web/admin/classes/student_form_component.ex:98
 #: lib/archidep_web/admin/classes/student_live.html.heex:50
@@ -126,7 +126,7 @@ msgstr ""
 msgid "Class"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.ex:45
+#: lib/archidep_web/admin/classes/class_live.ex:46
 #, elixir-autogen, icu-format
 msgid "Class not found"
 msgstr ""
@@ -144,6 +144,8 @@ msgstr ""
 #: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:200
 #: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:213
 #: lib/archidep_web/admin/classes/edit_student_dialog_live.html.heex:18
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:65
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:98
 #: lib/archidep_web/admin/classes/import_students_dialog_live.html.heex:180
 #: lib/archidep_web/admin/classes/new_class_dialog_live.html.heex:18
 #: lib/archidep_web/admin/classes/new_student_dialog_live.html.heex:18
@@ -156,7 +158,7 @@ msgstr ""
 #: lib/archidep_web/servers/delete_server_dialog_live.html.heex:37
 #: lib/archidep_web/servers/edit_server_dialog_live.html.heex:43
 #: lib/archidep_web/servers/new_server_dialog_live.html.heex:58
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:52
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:57
 #: lib/archidep_web/servers/server_form_component.ex:730
 #, elixir-autogen, icu-format
 msgid "Close"
@@ -177,7 +179,7 @@ msgstr ""
 msgid "Delete Class"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.ex:75
+#: lib/archidep_web/admin/classes/class_live.ex:76
 #, elixir-autogen, icu-format
 msgid "Deleted class {class}"
 msgstr ""
@@ -198,7 +200,7 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:281
+#: lib/archidep_web/admin/classes/class_live.html.heex:286
 #: lib/archidep_web/admin/classes/student_form_component.ex:38
 #: lib/archidep_web/admin/classes/student_live.html.heex:34
 #: lib/archidep_web/profile/profile_live.html.heex:13
@@ -228,7 +230,7 @@ msgstr ""
 msgid "From {start} until {end}"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:198
+#: lib/archidep_web/admin/classes/class_live.html.heex:194
 #: lib/archidep_web/admin/classes/import_students_dialog_live.html.heex:143
 #, elixir-autogen, icu-format
 msgid "Import"
@@ -250,7 +252,7 @@ msgstr ""
 
 #: lib/archidep_web/admin/ansible/ansible_playbook_run_live.html.heex:173
 #: lib/archidep_web/admin/classes/class_form_component.ex:34
-#: lib/archidep_web/admin/classes/class_live.html.heex:279
+#: lib/archidep_web/admin/classes/class_live.html.heex:284
 #: lib/archidep_web/admin/classes/classes_live.html.heex:33
 #: lib/archidep_web/admin/classes/student_form_component.ex:28
 #: lib/archidep_web/admin/classes/student_live.html.heex:31
@@ -264,12 +266,12 @@ msgstr ""
 msgid "No classes"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:290
+#: lib/archidep_web/admin/classes/class_live.html.heex:295
 #, elixir-autogen, icu-format
 msgid "No students in this class"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:348
+#: lib/archidep_web/admin/classes/class_live.html.heex:353
 #: lib/archidep_web/admin/classes/student_live.html.heex:87
 #, elixir-autogen, icu-format
 msgid "Not registered yet"
@@ -315,7 +317,7 @@ msgstr ""
 msgid "Start date"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:208
+#: lib/archidep_web/admin/classes/class_live.html.heex:204
 #, elixir-autogen, icu-format
 msgid "Student"
 msgstr ""
@@ -343,7 +345,7 @@ msgstr ""
 msgid "Until {end}"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:284
+#: lib/archidep_web/admin/classes/class_live.html.heex:289
 #: lib/archidep_web/admin/classes/student_live.html.heex:71
 #, elixir-autogen, icu-format
 msgid "User account"
@@ -693,7 +695,7 @@ msgstr ""
 #: lib/archidep_web/admin/classes/delete_student_dialog_live.html.heex:20
 #: lib/archidep_web/admin/course_sessions/delete_course_session_dialog_live.html.heex:24
 #: lib/archidep_web/servers/delete_server_dialog_live.html.heex:19
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:34
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:39
 #, elixir-autogen, icu-format
 msgid "No"
 msgstr ""
@@ -951,7 +953,7 @@ msgstr ""
 msgid "User {cs}{username}{ce} does not have sudo access"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:282
+#: lib/archidep_web/admin/classes/class_live.html.heex:287
 #: lib/archidep_web/admin/classes/student_form_component.ex:61
 #: lib/archidep_web/dashboard/components/what_is_your_name_live.html.heex:34
 #: lib/archidep_web/dashboard/dashboard_live.ex:187
@@ -963,7 +965,7 @@ msgid "Username"
 msgstr ""
 
 #: lib/archidep_web/auth/auth_controller.ex:30
-#: lib/archidep_web/auth/auth_controller.ex:167
+#: lib/archidep_web/auth/auth_controller.ex:173
 #: lib/archidep_web/dashboard/dashboard_live.html.heex:9
 #, elixir-autogen, icu-format
 msgid "Welcome!"
@@ -997,12 +999,12 @@ msgstr ""
 msgid "You have not registered any server yet."
 msgstr ""
 
-#: lib/archidep_web/live_auth.ex:88
+#: lib/archidep_web/live_auth.ex:89
 #, elixir-autogen, icu-format
 msgid "You must log in to access this page."
 msgstr ""
 
-#: lib/archidep_web/auth/auth_controller.ex:175
+#: lib/archidep_web/auth/auth_controller.ex:181
 #, elixir-autogen, icu-format
 msgid "Your Switch edu-ID account is not authorized to access this application."
 msgstr ""
@@ -1142,8 +1144,8 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:243
-#: lib/archidep_web/admin/classes/class_live.html.heex:259
+#: lib/archidep_web/admin/classes/class_live.html.heex:248
+#: lib/archidep_web/admin/classes/class_live.html.heex:264
 #, elixir-autogen, icu-format
 msgid "All"
 msgstr ""
@@ -1155,14 +1157,14 @@ msgstr ""
 
 #: lib/archidep_web/admin/ansible/ansible_live.ex:25
 #: lib/archidep_web/admin/ansible/ansible_live.html.heex:16
-#: lib/archidep_web/admin/ansible/ansible_playbook_run_live.ex:20
+#: lib/archidep_web/admin/ansible/ansible_playbook_run_live.ex:19
 #: lib/archidep_web/admin/ansible/ansible_playbook_run_live.html.heex:13
 #: lib/archidep_web/components/layouts.ex:214
 #, elixir-autogen, icu-format
 msgid "Ansible"
 msgstr ""
 
-#: lib/archidep_web/admin/ansible/ansible_playbook_run_live.ex:29
+#: lib/archidep_web/admin/ansible/ansible_playbook_run_live.ex:28
 #, elixir-autogen, icu-format
 msgid "Ansible playbook run not found"
 msgstr ""
@@ -1180,11 +1182,6 @@ msgstr ""
 #: lib/archidep_web/course/latest/no_equivalent.html.heex:27
 #, elixir-autogen, icu-format
 msgid "Back to the page you came from"
-msgstr ""
-
-#: lib/archidep_web/admin/classes/class_live.html.heex:179
-#, elixir-autogen, icu-format
-msgid "CSV"
 msgstr ""
 
 #: lib/archidep_web/course/change_username_dialog_live.html.heex:98
@@ -1237,7 +1234,7 @@ msgstr ""
 msgid "Clear all filters"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:300
+#: lib/archidep_web/admin/classes/class_live.html.heex:305
 #, elixir-autogen, icu-format
 msgid "Clear filters"
 msgstr ""
@@ -1267,14 +1264,14 @@ msgstr ""
 msgid "Context & type"
 msgstr ""
 
-#: lib/archidep_web/components/core_components.ex:153
+#: lib/archidep_web/components/core_components.ex:133
 #, elixir-autogen, icu-format
 msgid "Copied!"
 msgstr ""
 
-#: lib/archidep_web/components/core_components.ex:149
-#: lib/archidep_web/components/core_components.ex:151
-#: lib/archidep_web/components/core_components.ex:155
+#: lib/archidep_web/components/core_components.ex:131
+#: lib/archidep_web/components/core_components.ex:137
+#: lib/archidep_web/components/core_components.ex:167
 #, elixir-autogen, icu-format
 msgid "Copy to clipboard"
 msgstr ""
@@ -1404,12 +1401,13 @@ msgstr ""
 msgid "Failed"
 msgstr ""
 
-#: lib/archidep_web/auth/auth_controller.ex:127
+#: lib/archidep_web/auth/auth_controller.ex:133
 #, elixir-autogen, icu-format
 msgid "Failed to authenticate with Switch edu-ID."
 msgstr ""
 
 #: lib/archidep_web/admin/classes/class_live.html.heex:170
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:11
 #, elixir-autogen, icu-format
 msgid "Filtered"
 msgstr ""
@@ -1509,11 +1507,6 @@ msgstr ""
 #: lib/archidep_web/admin/ansible/ansible_live.html.heex:102
 #, elixir-autogen, icu-format
 msgid "Interrupted"
-msgstr ""
-
-#: lib/archidep_web/admin/classes/class_live.html.heex:188
-#, elixir-autogen, icu-format
-msgid "Inventory"
 msgstr ""
 
 #: lib/archidep_web/dashboard/dashboard_live.html.heex:152
@@ -1632,12 +1625,12 @@ msgstr ""
 msgid "No sessions recorded"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:298
+#: lib/archidep_web/admin/classes/class_live.html.heex:303
 #, elixir-autogen, icu-format
 msgid "No students match the current filters"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.ex:108
+#: lib/archidep_web/admin/classes/class_live.ex:109
 #, elixir-autogen, icu-format
 msgid "None"
 msgstr ""
@@ -1652,7 +1645,7 @@ msgstr ""
 msgid "Not completed"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:270
+#: lib/archidep_web/admin/classes/class_live.html.heex:275
 #, elixir-autogen, icu-format
 msgid "Not registered"
 msgstr ""
@@ -1714,8 +1707,8 @@ msgstr ""
 msgid "Register Server"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/class_live.html.heex:254
-#: lib/archidep_web/admin/classes/class_live.html.heex:264
+#: lib/archidep_web/admin/classes/class_live.html.heex:259
+#: lib/archidep_web/admin/classes/class_live.html.heex:269
 #, elixir-autogen, icu-format
 msgid "Registered"
 msgstr ""
@@ -2101,12 +2094,12 @@ msgstr ""
 msgid "Will connect soon"
 msgstr ""
 
-#: lib/archidep_web/auth/auth_controller.ex:85
+#: lib/archidep_web/auth/auth_controller.ex:91
 #, elixir-autogen, icu-format
 msgid "You are impersonating user {user}."
 msgstr ""
 
-#: lib/archidep_web/auth/auth_controller.ex:104
+#: lib/archidep_web/auth/auth_controller.ex:110
 #, elixir-autogen, icu-format
 msgid "You are no longer impersonating another user."
 msgstr ""
@@ -2416,27 +2409,27 @@ msgstr ""
 msgid "SSH host key fingerprints"
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.ex:60
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.ex:71
 #, elixir-autogen, icu-format
 msgid "Cannot reset the setup because the server is busy. Please try again later."
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.ex:70
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.ex:81
 #, elixir-autogen, icu-format
 msgid "Cannot reset the setup because the server no longer exists."
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:14
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:19
 #, elixir-autogen, icu-format
 msgid "Do this when the server's machine has been replaced by a new one, on which the application user {cs}{app_username}{ce} does not exist yet."
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:46
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:51
 #, elixir-autogen, icu-format
 msgid "Reset"
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:3
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:8
 #, elixir-autogen, icu-format
 msgid "Reset Server Setup"
 msgstr ""
@@ -2447,17 +2440,72 @@ msgstr ""
 msgid "Reset setup"
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.ex:47
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.ex:58
 #, elixir-autogen, icu-format
 msgid "Reset the setup of server {server}"
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:5
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:10
 #, elixir-autogen, icu-format
 msgid "The application will forget that this server has been set up. It will connect as {cs}{username}{ce} and run the setup again, as it would for a new server."
 msgstr ""
 
-#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:28
+#: lib/archidep_web/servers/reset_server_setup_dialog_live.html.heex:33
 #, elixir-autogen, icu-format
 msgid "The setup of this server cannot currently be reset because it is busy."
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:77
+#, elixir-autogen, icu-format
+msgid "Copy"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export/dns_records.ex:23
+#, elixir-autogen, icu-format
+msgid "DNS records"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:87
+#, elixir-autogen, icu-format
+msgid "Download"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export/emails.ex:18
+#, elixir-autogen, icu-format
+msgid "Emails"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/class_live.html.heex:184
+#, elixir-autogen, icu-format
+msgid "Export"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:9
+#, elixir-autogen, icu-format
+msgid "Export Students"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export/known_hosts.ex:21
+#, elixir-autogen, icu-format
+msgid "Known hosts"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export/ssh_config.ex:20
+#, elixir-autogen, icu-format
+msgid "SSH config"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export/ssh_exercise_inventory.ex:19
+#, elixir-autogen, icu-format
+msgid "SSH exercise inventory"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:58
+#, elixir-autogen, icu-format
+msgid "Secrets are hidden here, but they are copied and downloaded."
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:33
+#, elixir-autogen, icu-format
+msgid "{count, plural, =1 {1 student is} other {# students are}} not included because they have no active server: {names}"
 msgstr ""

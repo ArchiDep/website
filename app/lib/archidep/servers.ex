@@ -62,6 +62,15 @@ defmodule ArchiDep.Servers do
           {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
   defdelegate list_all_servers_in_group(auth, server_group_id), to: @implementation
 
+  @doc """
+  Lists the active servers of a server group's members, ordered by the members'
+  usernames. A member has at most one, the one
+  `fetch_active_server_for_group_member/2` returns.
+  """
+  @spec list_active_servers_in_group(Authentication.t(), UUID.t()) ::
+          {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
+  defdelegate list_active_servers_in_group(auth, server_group_id), to: @implementation
+
   # Server group members
 
   @doc """

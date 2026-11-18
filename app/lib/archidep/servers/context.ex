@@ -29,6 +29,11 @@ defmodule ArchiDep.Servers.Context do
   @impl Behaviour
   defdelegate list_all_servers_in_group(auth, server_group_id), to: UseCases.ReadServerGroups
 
+  @doc false
+  @impl Behaviour
+  defdelegate list_active_servers_in_group(auth, server_group_id),
+    to: UseCases.ReadServerGroups
+
   # Server group members
   # ====================
 

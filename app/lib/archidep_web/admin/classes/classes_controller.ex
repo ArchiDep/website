@@ -1,127 +1,45 @@
 defmodule ArchiDepWeb.Admin.Classes.ClassesController do
   use ArchiDepWeb, :controller
 
+  alias ArchiDep.Clock
   alias ArchiDep.Course
-  alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers
+  alias ArchiDepWeb.Admin.Classes.Export
+  alias ArchiDepWeb.Admin.Classes.StudentFilters
 
-  # A spreadsheet application evaluates a cell whose text begins with one of
-  # these as a formula when it opens the file, so every cell that carries text
-  # someone else wrote is prefixed with an apostrophe to keep it text.
-  @csv_formula_prefixes ["=", "+", "-", "@", "\t", "\r"]
-
-  @spec generate_class_csv(Conn.t(), map) :: Conn.t()
-  def generate_class_csv(conn, %{"id" => id}) do
+  @doc """
+  Downloads the students of a class matching the student filters given as query
+  parameters, in one of the formats of `ArchiDepWeb.Admin.Classes.Export`.
+  """
+  @spec generate_class_export(Conn.t(), map) :: Conn.t()
+  def generate_class_export(conn, %{"id" => id, "format" => format_id} = params) do
     auth = conn.assigns.auth
 
-    case Course.fetch_class(auth, id) do
-      {:ok, class} ->
-        students = Course.list_students(auth, class)
+    with {:ok, format} <- Export.fetch_format(format_id),
+         {:ok, class} <- Course.fetch_class(auth, id),
+         students =
+           params
+           |> StudentFilters.from_params()
+           |> StudentFilters.filter(Course.list_students(auth, class)),
+         {:ok, servers} <- list_servers(auth, class.id, format) do
+      export = Export.new(class, students, servers, Clock.now())
 
-        server_data = load_server_data_for(auth, students)
-
-        csv =
-          students
-          |> Enum.map(fn student ->
-            {ip_address, username} = Map.get(server_data, student.id, {nil, nil})
-
-            Enum.map(
-              [
-                student.name,
-                student.academic_class || "",
-                student.email,
-                ip_address,
-                username,
-                student.domain,
-                ""
-              ],
-              &csv_cell/1
-            )
-          end)
-          |> List.insert_at(0, [
-            "name",
-            "class",
-            "email",
-            "ip",
-            "username",
-            "domain",
-            "comments"
-          ])
-          |> CSV.encode(delimiter: "\n")
-          |> Enum.join("")
-
-        conn
-        |> put_resp_header("content-type", "text/csv; charset=utf-8")
-        |> put_resp_header(
-          "content-disposition",
-          "attachment; filename=\"#{class.name}.csv\""
-        )
-        |> send_resp(200, csv)
-
-      _anything ->
-        send_resp(conn, 401, "Unauthorized")
+      conn
+      |> put_resp_header("content-type", format.content_type())
+      |> put_resp_header(
+        "content-disposition",
+        "attachment; filename=\"#{format.filename(class)}\""
+      )
+      |> send_resp(200, Export.render(export, format, false))
+    else
+      {:error, :format_not_found} -> send_resp(conn, 404, "Not Found")
+      {:error, _reason} -> send_resp(conn, 401, "Unauthorized")
     end
   end
 
-  defp csv_cell(value) when is_binary(value) do
-    if String.starts_with?(value, @csv_formula_prefixes), do: "'" <> value, else: value
-  end
-
-  # The IP address is an inet struct and the missing values are `nil`; neither
-  # can carry text, so both go through as they are.
-  defp csv_cell(value), do: value
-
-  defp load_server_data_for(auth, students) do
-    students
-    |> Enum.sort_by(fn %StudentView{name: name, academic_class: academic_class} ->
-      "#{academic_class} - #{name}"
-    end)
-    |> Enum.map(fn %StudentView{id: student_id} ->
-      Task.async(fn -> find_active_server_data_for(auth, student_id) end)
-    end)
-    |> Task.await_many()
-    |> Enum.reduce(%{}, fn {student_id, ip_address, username}, acc ->
-      Map.put(acc, student_id, {ip_address, username})
-    end)
-  end
-
-  defp find_active_server_data_for(auth, student_id) do
-    case Servers.fetch_active_server_for_group_member(auth, student_id) do
-      {:ok, server} -> {student_id, server.ip_address, server.username}
-      {:error, _any_reason} -> {student_id, nil, nil}
-    end
-  end
-
-  @spec generate_class_ssh_exercise_vm_inventory(Conn.t(), map) :: Conn.t()
-  def generate_class_ssh_exercise_vm_inventory(conn, %{"id" => id}) do
-    auth = conn.assigns.auth
-
-    case Course.fetch_class(auth, id) do
-      {:ok, class} ->
-        students = Course.list_students(auth, class)
-
-        conn
-        |> put_resp_header("content-type", "application/json; charset=utf-8")
-        |> put_resp_header(
-          "content-disposition",
-          "attachment; filename=\"inventory.yml\""
-        )
-        |> send_resp(
-          200,
-          Jason.encode!(
-            %{
-              "students" =>
-                Enum.map(
-                  students,
-                  &%{"username" => &1.username, "password" => &1.ssh_exercise_password}
-                )
-            },
-            pretty: true
-          )
-        )
-
-      _anything ->
-        send_resp(conn, 401, "Unauthorized")
-    end
+  defp list_servers(auth, class_id, format) do
+    if format.needs_servers?(),
+      do: Servers.list_active_servers_in_group(auth, class_id),
+      else: {:ok, []}
   end
 end

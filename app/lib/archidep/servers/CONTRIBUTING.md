@@ -282,7 +282,8 @@ exceptions are marked **root-only**.
   for the admin student detail page).
 - [`ReadServerGroups`](./use_cases/read_server_groups.ex) —
   `list_server_groups/1`, `fetch_server_group/2`, `list_server_group_members/2`,
-  `list_all_servers_in_group/2`, `subscribe_server_group_servers/2` +
+  `list_all_servers_in_group/2`, `list_active_servers_in_group/2` (the active
+  server of each member, for the class exports), `subscribe_server_group_servers/2` +
   `refresh_server_ids/2` (**root-only**, the live-read-model pair for a group's
   set of server IDs), and `fetch_authenticated_server_group_member/1` (any
   authenticated user, to load their own membership).
@@ -338,7 +339,8 @@ otherwise:
   `fetch_authenticated_server_group_member`.
 - **Root-only:** `delete_server`, `reset_server_setup`,
   `retry_ansible_playbook`, `retry_checking_sudo_access`, all the server-group
-  and Ansible read operations, and `list_all_servers_in_group`.
+  and Ansible read operations, `list_all_servers_in_group` and
+  `list_active_servers_in_group`.
 - `notify_server_up` is not user-authorized at all — it is authenticated by the
   server's `secret_key`.
 

@@ -1470,6 +1470,243 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
     end
   end
 
+  describe "the export dialog" do
+    setup :register_and_log_in_root
+
+    setup do
+      stub(ArchiDep.Clock.Mock, :now, fn -> ~U[2026-11-18 14:02:17.000000Z] end)
+      :ok
+    end
+
+    test "show the emails of the filtered students without reading their servers", %{
+      conn: conn,
+      auth: auth
+    } do
+      {class, server_group} = build_class_and_group()
+
+      stub_class_page_calls(auth,
+        class: class,
+        server_group: server_group,
+        students: [
+          exported_student(class, "Alice", "INF-1"),
+          exported_student(class, "Bob", "INF-2"),
+          exported_student(class, "Carol", "INF-1")
+        ]
+      )
+
+      {:ok, view, html} = live(conn, "/admin/classes/#{class.id}?academic_class=INF-1")
+
+      assert export_dialog(html) == loading_export_dialog(false, gettext("Emails"))
+
+      view |> element("#open-export-class-dialog") |> render_click()
+
+      assert export_dialog(render(view)) == %{
+               filtered: true,
+               format: gettext("Emails"),
+               excluded: nil,
+               text: "alice@heig-vd.ch\ncarol@heig-vd.ch\n",
+               redacted: false,
+               copied_text: "alice@heig-vd.ch\ncarol@heig-vd.ch\n",
+               download: "/admin/classes/#{class.id}/export/emails?academic_class=INF-1"
+             }
+    end
+
+    test "read the servers once for the formats that need them and list who is left out", %{
+      conn: conn,
+      auth: auth
+    } do
+      {class, server_group} = build_class_and_group(name: "Demo Class")
+      alice = exported_student(class, "Alice", "INF-1")
+      bob = exported_student(class, "Bob", "INF-1")
+
+      stub_class_page_calls(auth,
+        class: class,
+        server_group: server_group,
+        students: [alice, bob]
+      )
+
+      class_id = class.id
+
+      expect(Servers.ContextMock, :list_active_servers_in_group, 1, fn ^auth, ^class_id ->
+        {:ok, [exported_server(alice, {10, 0, 0, 1})]}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view |> element("#open-export-class-dialog") |> render_click()
+      view |> element("#export-class-dialog [data-format=ssh-config]") |> render_click()
+
+      ssh_config = """
+      # BEGIN SSH host aliases of the servers of the ArchiDep students of class Demo Class, generated 2026-11-18 14:02 UTC
+      Host archidep-st-alice
+        HostName 10.0.0.1
+        User alice
+      # END SSH host aliases of the servers of the ArchiDep students of class Demo Class
+      """
+
+      excluded = "1 student is not included because they have no active server: Bob"
+
+      assert export_dialog(render(view)) == %{
+               filtered: false,
+               format: gettext("SSH config"),
+               excluded: excluded,
+               text: ssh_config,
+               redacted: false,
+               copied_text: ssh_config,
+               download: "/admin/classes/#{class.id}/export/ssh-config"
+             }
+
+      view |> element("#export-class-dialog [data-format=dns-records]") |> render_click()
+
+      dns_records = """
+      ; BEGIN DNS records of the servers of the ArchiDep students of class Demo Class, generated 2026-11-18 14:02 UTC
+      ; archidep1.ch
+      alice 300 IN A 10.0.0.1
+      *.alice 300 IN A 10.0.0.1
+      ; END DNS records of the servers of the ArchiDep students of class Demo Class
+      """
+
+      assert export_dialog(render(view)) == %{
+               filtered: false,
+               format: gettext("DNS records"),
+               excluded: excluded,
+               text: dns_records,
+               redacted: false,
+               copied_text: dns_records,
+               download: "/admin/classes/#{class.id}/export/dns-records"
+             }
+    end
+
+    test "hide the passwords on screen but copy them in the clear", %{conn: conn, auth: auth} do
+      {class, server_group} = build_class_and_group()
+
+      stub_class_page_calls(auth,
+        class: class,
+        server_group: server_group,
+        students: [exported_student(class, "Dave", "INF-1")]
+      )
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view |> element("#open-export-class-dialog") |> render_click()
+
+      view
+      |> element("#export-class-dialog [data-format=ssh-exercise-inventory]")
+      |> render_click()
+
+      dialog = export_dialog(render(view))
+
+      assert %{
+               dialog
+               | text: Jason.decode!(dialog.text),
+                 copied_text: Jason.decode!(dialog.copied_text)
+             } == %{
+               filtered: false,
+               format: gettext("SSH exercise inventory"),
+               excluded: nil,
+               text: %{"students" => [%{"username" => "dave", "password" => "***"}]},
+               redacted: true,
+               copied_text: %{
+                 "students" => [%{"username" => "dave", "password" => "dave-secret"}]
+               },
+               download: "/admin/classes/#{class.id}/export/ssh-exercise-inventory"
+             }
+    end
+
+    test "keep the data while the dialog is open and read it again when it is reopened", %{
+      conn: conn,
+      auth: auth
+    } do
+      {class, server_group} = build_class_and_group(name: "Live Class")
+      alice = exported_student(class, "Alice", "INF-1")
+      erin = exported_student(class, "Erin", "INF-1")
+
+      {:ok, students} = Agent.start_link(fn -> [alice] end)
+      stub_class_page_calls(auth, class: class, server_group: server_group)
+
+      stub(Course.ContextMock, :list_students, fn ^auth, _class ->
+        Enum.map(Agent.get(students, & &1), &StudentView.from/1)
+      end)
+
+      {:ok, servers} =
+        Agent.start_link(fn ->
+          [
+            [exported_server(alice, {10, 0, 0, 1})],
+            [exported_server(alice, {10, 0, 0, 11}), exported_server(erin, {10, 0, 0, 5})]
+          ]
+        end)
+
+      class_id = class.id
+
+      expect(Servers.ContextMock, :list_active_servers_in_group, 2, fn ^auth, ^class_id ->
+        {:ok, Agent.get_and_update(servers, fn [next | rest] -> {next, rest} end)}
+      end)
+
+      {:ok, view, _html} = live(conn, "/admin/classes/#{class.id}")
+
+      view |> element("#open-export-class-dialog") |> render_click()
+      view |> element("#export-class-dialog [data-format=ssh-config]") |> render_click()
+
+      first = """
+      # BEGIN SSH host aliases of the servers of the ArchiDep students of class Live Class, generated 2026-11-18 14:02 UTC
+      Host archidep-st-alice
+        HostName 10.0.0.1
+        User alice
+      # END SSH host aliases of the servers of the ArchiDep students of class Live Class
+      """
+
+      opened = %{
+        filtered: false,
+        format: gettext("SSH config"),
+        excluded: nil,
+        text: first,
+        redacted: false,
+        copied_text: first,
+        download: "/admin/classes/#{class.id}/export/ssh-config"
+      }
+
+      assert export_dialog(render(view)) == opened
+
+      Agent.update(students, fn _state -> [alice, erin] end)
+      updated = %{alice | class: class}
+
+      :ok =
+        Course.PubSub.publish_student_updated(
+          updated,
+          StudentUpdated.new(updated),
+          EventsFactory.build(:event_reference, version: updated.version)
+        )
+
+      wait_for_socket_assigns!(
+        view,
+        fn assigns -> length(assigns.students) == 2 end,
+        "students reloaded"
+      )
+
+      assert export_dialog(render(view)) == opened
+
+      view |> element("#export-class-dialog form.modal-backdrop") |> render_click()
+
+      assert export_dialog(render(view)) == loading_export_dialog(false, gettext("SSH config"))
+
+      view |> element("#open-export-class-dialog") |> render_click()
+
+      reopened = """
+      # BEGIN SSH host aliases of the servers of the ArchiDep students of class Live Class, generated 2026-11-18 14:02 UTC
+      Host archidep-st-alice
+        HostName 10.0.0.11
+        User alice
+
+      Host archidep-st-erin
+        HostName 10.0.0.5
+        User erin
+      # END SSH host aliases of the servers of the ArchiDep students of class Live Class
+      """
+
+      assert export_dialog(render(view)) == %{opened | text: reopened, copied_text: reopened}
+    end
+  end
+
   test "accessing the class page redirects to the login page without authentication", %{
     conn: conn
   } do
@@ -1774,6 +2011,100 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
         active: true,
         user: nil
       )
+
+  # A student of the export dialog tests, whose username, email, domain and SSH
+  # exercise password all derive from their name.
+  defp exported_student(class, name, academic_class),
+    do:
+      CourseFactory.build(:student,
+        class_id: class.id,
+        name: name,
+        academic_class: academic_class,
+        email: "#{String.downcase(name)}@heig-vd.ch",
+        username: String.downcase(name),
+        username_confirmed: true,
+        domain: "archidep1.ch",
+        ssh_exercise_password: "#{String.downcase(name)}-secret",
+        active: true,
+        user: nil
+      )
+
+  # The active server of a student of the export dialog tests, whose user is
+  # named after the student and which listens for SSH on port 22.
+  defp exported_server(student, address),
+    do:
+      ServersFactory.build(:server_view,
+        ip_address: %Postgrex.INET{address: address, netmask: 32},
+        username: student.username,
+        ssh_port: nil,
+        owner: ServersFactory.build(:server_owner, root: false, group_member_id: student.id)
+      )
+
+  # Projects the export dialog: the filtered badge, the selected format, the
+  # warning naming the students left out, the text shown, whether the note on
+  # hidden secrets is shown, the text the copy button copies, and the download
+  # link. Before the dialog is opened, and after it is closed, only the badge
+  # and the format are left, with nothing loaded.
+  defp export_dialog(html) do
+    dialog = "#export-class-dialog"
+
+    %{
+      filtered: find_html_elements(html, "#{dialog} h3 .badge") != [],
+      format: selected_export_format(html),
+      excluded: optional_element_text(html, "#{dialog} .export-excluded"),
+      text: raw_element_text(html, "#export-class-text"),
+      redacted: find_html_elements(html, "#{dialog} .export-redacted") != [],
+      copied_text: copied_export_text(html),
+      download: optional_element_attribute(html, "#export-class-download", "href")
+    }
+  end
+
+  # The text the copy button copies: the hidden text area it targets.
+  defp copied_export_text(html) do
+    case find_html_elements(html, "#export-class-copy") do
+      [button] -> raw_element_text(html, html_element_attribute(button, "data-clipboard-target"))
+      [] -> nil
+    end
+  end
+
+  defp loading_export_dialog(filtered, format),
+    do: %{
+      filtered: filtered,
+      format: format,
+      excluded: nil,
+      text: nil,
+      redacted: false,
+      copied_text: nil,
+      download: nil
+    }
+
+  defp selected_export_format(html) do
+    [tab] = find_html_elements(html, ~s(#export-class-dialog [role="tab"][aria-selected="true"]))
+    html_element_text(tab)
+  end
+
+  defp optional_element_text(html, selector) do
+    case find_html_elements(html, selector) do
+      [element] -> html_element_text(element)
+      [] -> nil
+    end
+  end
+
+  defp optional_element_attribute(html, selector, name) do
+    case find_html_elements(html, selector) do
+      [element] -> html_element_attribute(element, name)
+      [] -> nil
+    end
+  end
+
+  # The text of a text area, without the whitespace normalization of
+  # `html_element_text/1`, since its lines are what it shows.
+  defp raw_element_text(html, selector) do
+    case find_html_elements(html, selector) do
+      [element] -> LazyHTML.text(element)
+      [] -> nil
+    end
+  end
 
   defp listed_row(name, email),
     do: %{

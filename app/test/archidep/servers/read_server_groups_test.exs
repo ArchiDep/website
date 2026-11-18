@@ -33,6 +33,8 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
       fetch_authenticated_server_group_member:
         protect({Context, :fetch_authenticated_server_group_member, 1}, Behaviour),
       list_all_servers_in_group: protect({Context, :list_all_servers_in_group, 2}, Behaviour),
+      list_active_servers_in_group:
+        protect({Context, :list_active_servers_in_group, 2}, Behaviour),
       subscribe_server_group_servers:
         protect({Context, :subscribe_server_group_servers, 2}, Behaviour),
       refresh_server_ids: protect({Context, :refresh_server_ids, 2}, Behaviour)
@@ -237,6 +239,136 @@ defmodule ArchiDep.Servers.ReadServerGroupsTest do
       auth = Factory.build(:authentication, root: false)
 
       assert list_all_servers_in_group.(auth, class.id) == {:error, :server_group_not_found}
+
+      assert_no_stored_events!()
+    end
+  end
+
+  describe "list_active_servers_in_group/2" do
+    setup do
+      stub(ArchiDep.Clock.Mock, :now, fn -> @past end)
+      :ok
+    end
+
+    test "lists the active server of each member of a group ordered by member username", %{
+      list_active_servers_in_group: list_active_servers_in_group
+    } do
+      carol = ServersTestHelpers.register_group_member(@past, student: [username: "carol"])
+      class = carol.class
+
+      alice =
+        ServersTestHelpers.register_group_member(@past,
+          class: class,
+          student: [username: "alice"]
+        )
+
+      bob =
+        ServersTestHelpers.register_group_member(@past, class: class, student: [username: "bob"])
+
+      dave =
+        ServersTestHelpers.register_group_member(@past, class: class, student: [username: "dave"])
+
+      erin =
+        ServersTestHelpers.register_group_member(@past, class: class, student: [username: "erin"])
+
+      other = ServersTestHelpers.register_group_member(@past)
+
+      carol_server = ServersTestHelpers.insert_server(carol.owner.id, class.id, active: true)
+      alice_server = ServersTestHelpers.insert_server(alice.owner.id, class.id, active: true)
+      bob_server = ServersTestHelpers.insert_server(bob.owner.id, class.id, active: true)
+
+      # Dave's only server is inactive, Erin has two active servers and so no
+      # active server at all, and the other member's server is in another
+      # group.
+      ServersTestHelpers.insert_server(dave.owner.id, class.id, active: false)
+      ServersTestHelpers.insert_server(erin.owner.id, class.id, active: true)
+      ServersTestHelpers.insert_server(erin.owner.id, class.id, active: true)
+      ServersTestHelpers.insert_server(other.owner.id, other.class.id, active: true)
+
+      auth = Factory.build(:authentication, root: true)
+
+      assert list_active_servers_in_group.(auth, class.id) ==
+               {:ok,
+                Enum.map([alice_server, bob_server, carol_server], &listed_server_view(&1.id))}
+
+      assert_no_stored_events!()
+    end
+
+    test "a server whose owner has moved to another class is not listed", %{
+      list_active_servers_in_group: list_active_servers_in_group
+    } do
+      first_year = ServersTestHelpers.register_group_member(@past)
+
+      ServersTestHelpers.insert_server(first_year.owner.id, first_year.class.id, active: true)
+
+      %{former_class: former_class} = ServersTestHelpers.enrol_in_new_class(first_year, @past)
+
+      # Moving to another class deactivates the former one; reactivating it
+      # leaves only the member's move to keep the server out.
+      {1, nil} =
+        Repo.update_all(
+          from(c in ArchiDep.Course.Schemas.Class, where: c.id == ^former_class.id),
+          set: [active: true]
+        )
+
+      auth = Factory.build(:authentication, root: true)
+
+      assert list_active_servers_in_group.(auth, former_class.id) == {:ok, []}
+
+      assert_no_stored_events!()
+    end
+
+    test "lists the active server of a member who also has servers in a class that has ended",
+         %{list_active_servers_in_group: list_active_servers_in_group} do
+      first_year = ServersTestHelpers.register_group_member(@past)
+
+      # Both kept from the class that has ended: one deactivated, the other
+      # still flagged active.
+      ServersTestHelpers.insert_server(first_year.owner.id, first_year.class.id, active: false)
+      ServersTestHelpers.insert_server(first_year.owner.id, first_year.class.id, active: true)
+
+      %{owner: owner, class: class} = ServersTestHelpers.enrol_in_new_class(first_year, @past)
+
+      server = ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      auth = Factory.build(:authentication, root: true)
+
+      assert list_active_servers_in_group.(auth, class.id) ==
+               {:ok, [listed_server_view(server.id)]}
+
+      assert_no_stored_events!()
+    end
+
+    test "lists no servers for a group without any", %{
+      list_active_servers_in_group: list_active_servers_in_group
+    } do
+      class = CourseFactory.insert(:class, now: @past)
+      auth = Factory.build(:authentication, root: true)
+
+      assert list_active_servers_in_group.(auth, class.id) == {:ok, []}
+
+      assert_no_stored_events!()
+    end
+
+    test "listing the active servers of an unknown group returns a not-found error", %{
+      list_active_servers_in_group: list_active_servers_in_group
+    } do
+      auth = Factory.build(:authentication, root: true)
+
+      assert list_active_servers_in_group.(auth, Ecto.UUID.generate()) ==
+               {:error, :server_group_not_found}
+
+      assert_no_stored_events!()
+    end
+
+    test "a non-root user listing the active servers of a group is masked as not-found", %{
+      list_active_servers_in_group: list_active_servers_in_group
+    } do
+      %{auth: auth, owner: owner, class: class} = ServersTestHelpers.register_group_member(@past)
+
+      ServersTestHelpers.insert_server(owner.id, class.id, active: true)
+
+      assert list_active_servers_in_group.(auth, class.id) == {:error, :server_group_not_found}
 
       assert_no_stored_events!()
     end

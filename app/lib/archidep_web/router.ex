@@ -98,11 +98,9 @@ defmodule ArchiDepWeb.Router do
         live "/classes/:id", Admin.Classes.ClassLive
         live "/course-sessions", Admin.CourseSessions.CourseSessionsLive
 
-        get "/classes/:id/csv", Admin.Classes.ClassesController, :generate_class_csv
-
-        get "/classes/:id/ssh-exercise-vm-inventory",
+        get "/classes/:id/export/:format",
             Admin.Classes.ClassesController,
-            :generate_class_ssh_exercise_vm_inventory
+            :generate_class_export
 
         live "/classes/:class_id/students/:id", Admin.Classes.StudentLive
         live "/servers/:id", Servers.ServerLive, private: %{scope: :admin}

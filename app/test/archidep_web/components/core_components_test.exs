@@ -4,6 +4,22 @@ defmodule ArchiDepWeb.Components.CoreComponentsTest do
   import Phoenix.Component, only: [sigil_H: 2]
   import Phoenix.LiveViewTest, only: [render_component: 2, rendered_to_string: 1]
   alias ArchiDepWeb.Components.CoreComponents
+  alias Phoenix.LiveView.JS
+
+  describe "copy_tooltip_attributes/0" do
+    test "open the confirmation on click and close then reset it with commands of their own" do
+      assert CoreComponents.copy_tooltip_attributes() == [
+               {"data-tip", "Copy to clipboard"},
+               {"phx-click",
+                %JS{}
+                |> JS.set_attribute({"data-tip", "Copied!"})
+                |> JS.add_class("tooltip-open")
+                |> JS.dispatch("hide-tooltip")},
+               {"data-tooltip-close", JS.remove_class("tooltip-open")},
+               {"data-tooltip-reset", JS.set_attribute({"data-tip", "Copy to clipboard"})}
+             ]
+    end
+  end
 
   describe "no_data/1" do
     test "renders the default placeholder text" do

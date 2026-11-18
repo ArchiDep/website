@@ -154,6 +154,11 @@ window.addEventListener('phx:execute-action', event => {
   });
 });
 
+// Closes the tooltip of a copy button 2 seconds after it was opened to confirm a
+// copy, then resets its text 500 milliseconds later (to give time for the close
+// animation). Both are the JS commands in the button's `data-tooltip-close` and
+// `data-tooltip-reset` attributes: LiveView re-applies the commands that opened
+// the tooltip on every patch of the button, until other commands undo them.
 window.addEventListener('hide-tooltip', event => {
   const target = event.target;
 
@@ -162,33 +167,29 @@ window.addEventListener('hide-tooltip', event => {
     return;
   }
 
-  const tooltipReset = event.detail?.tooltip;
-
   if (target.dataset.tooltipTimer) {
     clearTimeout(target.dataset.tooltipTimer);
   }
 
-  // Schedule a timeout to remove the "tooltip-open" class from the target
-  // element after 2 seconds.
-  target.dataset.tooltipTimer = setTimeout(() => {
-    const openTooltip = document.getElementById(targetId);
-    if (openTooltip === null) {
-      // Element was removed from the DOM in the meantime, probably by a live
-      // view update.
-      return;
+  // The button is looked up again by its identifier when each timeout fires,
+  // since a live view update may have replaced or removed it in the meantime.
+  const executeOnTooltip = attribute => {
+    const element = document.getElementById(targetId);
+    const commands = element?.getAttribute(attribute);
+    if (commands) {
+      liveSocket.execJS(element, commands);
     }
 
-    openTooltip.classList.remove('tooltip-open');
+    return element;
+  };
 
-    // Reset the tooltip text 500 milliseconds (if a new one was provided) after
-    // closing the tooltip (to give time for the tooltip close animation).
-    if (tooltipReset) {
-      openTooltip.dataset.tooltipTimer = setTimeout(() => {
-        const openTooltipText = document.getElementById(targetId);
-        if (openTooltipText !== null) {
-          openTooltipText.dataset.tip = tooltipReset;
-        }
-      }, 500);
+  target.dataset.tooltipTimer = setTimeout(() => {
+    const element = executeOnTooltip('data-tooltip-close');
+    if (element !== null) {
+      element.dataset.tooltipTimer = setTimeout(
+        () => executeOnTooltip('data-tooltip-reset'),
+        500
+      );
     }
   }, 2000);
 });

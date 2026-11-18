@@ -5,6 +5,7 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
 
   use ArchiDep, :use_case
 
+  alias ArchiDep.Clock
   alias ArchiDep.Servers.Policy
   alias ArchiDep.Servers.PubSub
   alias ArchiDep.Servers.Schemas.Server
@@ -115,6 +116,56 @@ defmodule ArchiDep.Servers.UseCases.ReadServerGroups do
         {:error, :server_group_not_found}
 
       {:error, {:access_denied, :servers, :list_all_servers_in_group}} ->
+        {:error, :server_group_not_found}
+    end
+  end
+
+  @spec list_active_servers_in_group(Authentication.t(), UUID.t()) ::
+          {:ok, list(ServerView.t())} | {:error, :server_group_not_found}
+  def list_active_servers_in_group(auth, server_group_id) do
+    with :ok <- validate_uuid(server_group_id, :server_group_not_found),
+         {:ok, group} <- ServerGroup.fetch_server_group(server_group_id),
+         :ok <- authorize(auth, Policy, :servers, :list_active_servers_in_group, group) do
+      now = Clock.now()
+
+      servers =
+        Repo.all(
+          from s in Server,
+            join: o in assoc(s, :owner),
+            join: ogm in assoc(o, :group_member),
+            join: ogmg in assoc(ogm, :group),
+            join: g in assoc(s, :group),
+            join: gesp in assoc(g, :expected_server_properties),
+            join: ep in assoc(s, :expected_properties),
+            left_join: lkp in assoc(s, :last_known_properties),
+            # Only the servers of the group's current members: a server a
+            # member registered in a class that has ended is kept, but it is
+            # not their active server.
+            where: s.active and s.group_id == ^server_group_id and ogm.group_id == s.group_id,
+            order_by: [ogm.username, ogm.id, s.id],
+            preload: [
+              group: {g, expected_server_properties: gesp},
+              expected_properties: ep,
+              last_known_properties: lkp,
+              owner: {o, group_member: {ogm, group: ogmg}}
+            ]
+        )
+
+      {:ok,
+       servers
+       |> Enum.filter(&Server.active?(&1, now))
+       |> Enum.chunk_by(& &1.owner.group_member_id)
+       # A member with more than one active server has no active server, as
+       # `fetch_active_server_for_group_member/2` has it.
+       |> Enum.flat_map(fn
+         [server] -> [ServerView.from(server)]
+         _several -> []
+       end)}
+    else
+      {:error, :server_group_not_found} ->
+        {:error, :server_group_not_found}
+
+      {:error, {:access_denied, :servers, :list_active_servers_in_group}} ->
         {:error, :server_group_not_found}
     end
   end
