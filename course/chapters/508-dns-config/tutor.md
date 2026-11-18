@@ -12,11 +12,13 @@
 - 406 Unix Networking: the server's public address against the private one
   `ip address` shows.
 
-The exercise is done in a browser, in the Gandi.net account the teacher
-provides. Its domain is the course's, such as `archidep2.ch`, and every student
-of the class adds records to the same zone. The student's hostname, such as
-`jde.archidep2.ch`, is on their cloud server's details card on the page and on
-the dashboard; the page's examples use `jde`.
+The exercise is done in a browser, in the student's own Gandi.net account. The
+teacher invites each student, on their `@heig-vd.ch` address, to a team of the
+Gandi.net organization that owns the course's domains; the team may change the
+domains' DNS configuration and nothing else. Its domain is the course's, such as
+`archidep2.ch`, and every student of the class adds records to the same zone.
+The student's hostname, such as `jde.archidep2.ch`, is on their cloud server's
+details card on the page and on the dashboard; the page's examples use `jde`.
 
 ## Learning objectives
 

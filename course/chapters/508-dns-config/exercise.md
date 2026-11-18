@@ -35,8 +35,11 @@ hostname is `jde.archidep2.ch`:
 
 ## :exclamation: Configure a DNS zone with Gandi.net
 
-- Connect to [Gandi.net](https://gandi.net) with the user account provided to
-  you by the teacher.
+- By now, you should have received an email from Gandi.net on your
+  `@heig-vd.ch` address, inviting you to join the course's organization. Accept
+  the invitation, and create a Gandi.net account when asked if you do not have
+  one yet. If you cannot find the email, ask the teacher.
+- Connect to [Gandi.net](https://gandi.net) with your account.
 - Go under the "Domain" tab in the left menu and select the domain of the
   hostname you noted above.
 
