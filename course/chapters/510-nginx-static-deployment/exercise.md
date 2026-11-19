@@ -30,6 +30,7 @@ records for your server in the domain name system.
 **Connect to your server** and install nginx with APT:
 
 ```bash
+$> sudo apt update
 $> sudo apt install nginx
 ```
 
