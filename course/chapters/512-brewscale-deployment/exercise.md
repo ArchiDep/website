@@ -331,13 +331,22 @@ You will use Docker Desktop to run Locust, as you did for PostgreSQL in the
 [Guess It exercise][guessit-docker]. If you did not install Docker Desktop then,
 install it as that exercise explains. Make sure Docker Desktop is running.
 
+**On Windows**, you must also check that Docker Desktop is integrated with the
+WSL, otherwise the `docker` command is not available there. Open Docker
+Desktop's settings with the gear icon at the top, and find the **WSL
+integration** section. **Enable integration with my default WSL distro** must be
+on. If you had to turn it on, click **Apply & Restart Engine**, then open a new
+WSL terminal:
+
+![Docker Desktop's WSL integration settings, with the integration with the default WSL distro enabled](./images/docker-wsl-integration.png)
+
 To use Locust, you would normally [write a locustfile][locustfile] describing a
 load testing scenario: the users, and what they do with your application.
 Brewscale's repository already has [one][brewscale-locustfile], named
 `locustfile.py`. Clone the repository on your computer to get it:
 
 ```bash
-$> cd
+$> cd /path/to/projects
 $> git clone https://github.com/ArchiDep/brewscale.git
 $> cd brewscale
 ```
@@ -1174,9 +1183,8 @@ brewscale.target`.
 
 Docker Desktop provides the `docker` command in the WSL only while it is
 running, and only in the WSL distributions it is integrated with. Start Docker
-Desktop, then open a new terminal. If the command is still missing, open Docker
-Desktop's settings, and under **Resources**, then **WSL integration**, enable
-the integration with Ubuntu.
+Desktop, then open a new terminal. If the command is still missing, enable the
+WSL integration as shown in [Run Locust with Docker Desktop][run-locust].
 
 ### :boom: `Cannot connect to the Docker daemon`
 
@@ -1231,6 +1239,7 @@ nginx only sends requests to the servers of its upstream. Check that:
 [maven]: https://maven.apache.org
 [nginx-upstream]: https://nginx.org/en/docs/http/ngx_http_upstream_module.html
 [rate-limiting]: https://en.wikipedia.org/wiki/Rate_limiting
+[run-locust]: #run-locust-with-docker-desktop
 [scaling]: https://en.wikipedia.org/wiki/Scalability
 
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less

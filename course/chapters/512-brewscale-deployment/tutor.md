@@ -93,6 +93,8 @@ applications in containers. In particular:
 - **"Run Locust with Docker Desktop"**.
   Question after: "Which computer is `localhost` in `http://localhost:8089`, and
   where does Locust listen?" (The student's own, forwarded to the container.)
+  Expected on Windows, before running Locust: **Enable integration with my
+  default WSL distro** is on in Docker Desktop's settings.
   Expected: `docker ps` lists the `locust` container with
   `127.0.0.1:8089->8089/tcp`; `docker logs locust` shows `Starting web
 interface`.
