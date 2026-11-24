@@ -351,6 +351,13 @@ $> cat /usr/lib/systemd/system/postgresql@.service
 You will not use exactly the same options, but it shows you what a complete unit
 file can look like.
 
+{% callout type: exercise %}
+
+This step is not written down for you: you must work out yourself what to put
+in the unit file, with the help of the sections below.
+
+{% endcallout %}
+
 Create your own unit file for Guess It at `/etc/systemd/system/guessit.service`.
 Edit it with `sudo nano`, since the `/etc/systemd/system` directory is only
 writable by `root`.
