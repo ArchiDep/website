@@ -214,6 +214,10 @@ materials.
   have I done?", `:classical_building:` for an architecture diagram,
   `:file_folder:` for a [file map](#file-maps) and `:boom:` for
   "Troubleshooting" and its entries.
+- **Never put a heading directly under another**, without text between them. A
+  section that opens with sub-sections starts with at least a sentence saying
+  what the section does as a whole, or is restructured so that it does not need
+  the sub-sections.
 - **Mark every switch between machines in an exercise with an `exercise`
   [callout](#callouts)**, not a sentence in passing: where the exercise starts,
   and wherever its steps go from running commands on the student's server to
@@ -226,6 +230,17 @@ materials.
   to your terminal that is still connected to your server over SSH for this
   part". Using a browser to look at the result of a step is not a switch, and
   needs no callout.
+- **Mark a step where the student must work something out themselves with an
+  `exercise` callout too**, right before it. Students tend to skip the prose and
+  follow the screenshots and code blocks, which do not tell them that this step
+  is not written down for them.
+- **Show every edit to a file in full**: the command that opens it, and the
+  whole file as it must look afterwards, with the lines that change
+  [highlighted](#code-blocks). A step that says only "undo this change" or
+  "remove that line" is skipped by the students who follow the code blocks. To
+  take something out, prefer commenting it out, so that the file shown makes the
+  change visible. Where the student must write part of the file themselves, show
+  a comment in place of that part, never what they were to work out.
 - Use Markdown for formatting text, code blocks, lists, and other elements.
 - Include images, diagrams, and other media to enhance understanding where
   appropriate.
