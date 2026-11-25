@@ -91,6 +91,7 @@ defmodule ArchiDepWeb.Admin.Classes.ExportTest do
         ip_address: %Postgrex.INET{address: {10, 0, 0, 2}, netmask: 32},
         username: "bob",
         ssh_port: nil,
+        set_up_at: nil,
         owner: ServersFactory.build(:server_owner, root: false, group_member_id: bob.id)
       )
 

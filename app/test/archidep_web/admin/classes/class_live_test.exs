@@ -2037,6 +2037,7 @@ defmodule ArchiDepWeb.Admin.Classes.ClassLiveTest do
         ip_address: %Postgrex.INET{address: address, netmask: 32},
         username: student.username,
         ssh_port: nil,
+        set_up_at: nil,
         owner: ServersFactory.build(:server_owner, root: false, group_member_id: student.id)
       )
 
