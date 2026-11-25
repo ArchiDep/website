@@ -5,6 +5,7 @@ defmodule ArchiDepWeb.Admin.Classes.ExportTest do
   alias ArchiDep.Support.CourseFactory
   alias ArchiDep.Support.ServersFactory
   alias ArchiDepWeb.Admin.Classes.Export
+  alias ArchiDepWeb.Admin.Classes.Export.AnsibleInventory
   alias ArchiDepWeb.Admin.Classes.Export.Csv
   alias ArchiDepWeb.Admin.Classes.Export.DnsRecords
   alias ArchiDepWeb.Admin.Classes.Export.Emails
@@ -19,6 +20,7 @@ defmodule ArchiDepWeb.Admin.Classes.ExportTest do
              SshExerciseInventory,
              KnownHosts,
              SshConfig,
+             AnsibleInventory,
              DnsRecords
            ]
   end
@@ -31,6 +33,7 @@ defmodule ArchiDepWeb.Admin.Classes.ExportTest do
                "ssh-exercise-inventory",
                "known-hosts",
                "ssh-config",
+               "ansible-inventory",
                "dns-records",
                "unknown"
              ],
@@ -41,6 +44,7 @@ defmodule ArchiDepWeb.Admin.Classes.ExportTest do
              {:ok, SshExerciseInventory},
              {:ok, KnownHosts},
              {:ok, SshConfig},
+             {:ok, AnsibleInventory},
              {:ok, DnsRecords},
              {:error, :format_not_found}
            ]

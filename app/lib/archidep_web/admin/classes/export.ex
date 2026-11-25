@@ -10,6 +10,7 @@ defmodule ArchiDepWeb.Admin.Classes.Export do
   alias ArchiDep.Course.ClassView
   alias ArchiDep.Course.StudentView
   alias ArchiDep.Servers.ServerView
+  alias ArchiDepWeb.Admin.Classes.Export.AnsibleInventory
   alias ArchiDepWeb.Admin.Classes.Export.Csv
   alias ArchiDepWeb.Admin.Classes.Export.DnsRecords
   alias ArchiDepWeb.Admin.Classes.Export.Emails
@@ -28,7 +29,15 @@ defmodule ArchiDepWeb.Admin.Classes.Export do
           generated_at: DateTime.t()
         }
 
-  @formats [Emails, Csv, SshExerciseInventory, KnownHosts, SshConfig, DnsRecords]
+  @formats [
+    Emails,
+    Csv,
+    SshExerciseInventory,
+    KnownHosts,
+    SshConfig,
+    AnsibleInventory,
+    DnsRecords
+  ]
 
   @doc """
   Returns the export formats, in the order the export dialog shows them.

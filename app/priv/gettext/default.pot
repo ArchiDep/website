@@ -144,8 +144,8 @@ msgstr ""
 #: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:200
 #: lib/archidep_web/admin/classes/edit_class_expected_server_properties_dialog_live.html.heex:213
 #: lib/archidep_web/admin/classes/edit_student_dialog_live.html.heex:18
-#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:65
-#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:98
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:69
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:102
 #: lib/archidep_web/admin/classes/import_students_dialog_live.html.heex:180
 #: lib/archidep_web/admin/classes/new_class_dialog_live.html.heex:18
 #: lib/archidep_web/admin/classes/new_student_dialog_live.html.heex:18
@@ -1264,14 +1264,14 @@ msgstr ""
 msgid "Context & type"
 msgstr ""
 
-#: lib/archidep_web/components/core_components.ex:133
+#: lib/archidep_web/components/core_components.ex:134
 #, elixir-autogen, icu-format
 msgid "Copied!"
 msgstr ""
 
 #: lib/archidep_web/components/core_components.ex:131
-#: lib/archidep_web/components/core_components.ex:137
-#: lib/archidep_web/components/core_components.ex:167
+#: lib/archidep_web/components/core_components.ex:138
+#: lib/archidep_web/components/core_components.ex:168
 #, elixir-autogen, icu-format
 msgid "Copy to clipboard"
 msgstr ""
@@ -2455,7 +2455,7 @@ msgstr ""
 msgid "The setup of this server cannot currently be reset because it is busy."
 msgstr ""
 
-#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:77
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:81
 #, elixir-autogen, icu-format
 msgid "Copy"
 msgstr ""
@@ -2465,7 +2465,7 @@ msgstr ""
 msgid "DNS records"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:87
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:91
 #, elixir-autogen, icu-format
 msgid "Download"
 msgstr ""
@@ -2500,7 +2500,7 @@ msgstr ""
 msgid "SSH exercise inventory"
 msgstr ""
 
-#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:58
+#: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:62
 #, elixir-autogen, icu-format
 msgid "Secrets are hidden here, but they are copied and downloaded."
 msgstr ""
@@ -2508,4 +2508,9 @@ msgstr ""
 #: lib/archidep_web/admin/classes/export_class_dialog_live.html.heex:33
 #, elixir-autogen, icu-format
 msgid "{count, plural, =1 {1 student is} other {# students are}} not included because they have no active server: {names}"
+msgstr ""
+
+#: lib/archidep_web/admin/classes/export/ansible_inventory.ex:20
+#, elixir-autogen, icu-format
+msgid "Ansible inventory"
 msgstr ""
