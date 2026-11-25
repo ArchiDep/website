@@ -805,10 +805,10 @@ one `server` block**.
 
 {% note type: tip %}
 
-The [reverse proxy subject][nginx-location] explains how nginx chooses a
-`location` block for a request. The ["Setting Up a Simple Proxy
-Server"][nginx-beginners-guide-proxy] section of nginx's beginner's guide shows
-an example of a `server` block with several `location` blocks.
+The ["Setting Up a Simple Proxy Server"][nginx-beginners-guide-proxy] section of
+nginx's beginner's guide shows an example of a `server` block with several
+`location` blocks. The [reverse proxy subject][nginx-location] also explains how
+nginx chooses a `location` block for a request.
 
 Do not copy that example as it is: it is not Revprod. Once you have several
 `location` blocks, think through which requests each one matches, and where
