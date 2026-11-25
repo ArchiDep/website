@@ -24,6 +24,14 @@ and automated agents interacting with this project.
   changing any TypeScript**, in this directory or its tests, and check your diff
   against them before calling the change done. They forbid constructs that
   compile without complaint, so the type checker will not catch them for you.
+- **Before calling a change to a page done, check its headings** against the
+  [rule](./CONTRIBUTING.md#writing-guidelines) that a heading is never directly
+  under another. Reading the prose does not catch a stacked heading, since it
+  reads fine: list the headings with their line numbers
+  (`grep -n '^#' <file>`, ignoring the lines in code blocks) and, for every pair
+  of consecutive headings, check that text separates them. A section that opens
+  with sub-sections, such as a new `##` grouping several `###`, is where it
+  happens.
 - **Run `npm run typecheck`** ([Formatting and
   Linting](./CONTRIBUTING.md#formatting-and-linting)) after changing any
   TypeScript in this directory, and fix what it reports before calling the
