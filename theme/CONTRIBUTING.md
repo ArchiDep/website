@@ -317,7 +317,8 @@ add to it — a code block bleeding into the page margins, wrapping in print, th
 spacing of a block inside a note or a solution — are in `course.css`. A marked
 line (`.l-highlighted`, which a code fence asks for with the `highlight_lines`
 decorator documented in the [course material documentation][course-code-blocks])
-is colored by the scheme itself.
+is colored by `course.css` rather than by the scheme, whose color for it barely
+differs from the block's.
 
 ### Course & Application Components
 

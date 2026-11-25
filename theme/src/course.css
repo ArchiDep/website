@@ -18,6 +18,26 @@ main > .archidep-randomize > pre.lumis {
   @apply -mx-(--content-pad);
 }
 
+/* The color schemes mark a highlighted line with a background barely different
+ * from the block's own, so the line is given the warmer background each scheme
+ * uses for a highlighted line number instead, and a bar in the margin beside
+ * it. A background further from the block's would stand out more but would
+ * leave too little contrast for the text on it, comments especially.
+ *
+ * The first shadow extends the line's background a little into the margin, so
+ * that the second, the bar, stands apart from the text rather than against it. */
+pre.lumis .l-highlighted {
+  --highlighted-line-bg: #f8e4ce;
+  background-color: var(--highlighted-line-bg);
+  box-shadow:
+    -0.5rem 0 0 var(--highlighted-line-bg),
+    -0.75rem 0 0 #cb4b16;
+
+  @variant dark {
+    --highlighted-line-bg: #3c342c;
+  }
+}
+
 /* Paper cannot scroll, so a line the box would be read sideways for is a line
  * the reader of a PDF never sees at all: printed, a code block wraps instead.
  * It wraps anywhere rather than at spaces because the lines this is for are
