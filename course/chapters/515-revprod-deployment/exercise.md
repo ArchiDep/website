@@ -445,6 +445,14 @@ configuration, so both components read it from an environment variable:
 - `REVPROD_LANDING_PAGE_BASE_URL` tells the backend the address of the landing
   page, where its **Home** and **Close** links point.
 
+This is where the two components are at this point. It is only an intermediate
+step, not the deployment you will end up with. The landing page is served
+through nginx, at `revprod.jde.archidepN.ch`, while the browser reaches the
+backend directly, at `jde.archidepN.ch:3001`. Step through the diagram to follow
+what you have done so far, and see why the testimonials are missing.
+
+{% include diagrams/515-revprod-split.html %}
+
 ## :exclamation: Link the components
 
 Open the landing page's unit file:
