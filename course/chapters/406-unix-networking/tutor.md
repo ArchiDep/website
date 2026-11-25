@@ -180,8 +180,8 @@ particular:
   "Deploy a web application with nginx as a reverse proxy" has students predict
   that nginx must start as `root` to listen on port 80, a well-known port,
   before finding its master process running as `root`.
-- "TLS/SSL Certificates" and "Provision an SSL certificate using Certbot by
-  Let's Encrypt" add port 443.
+- "TLS/SSL Certificates" and "Provision a TLS certificate with Certbot and Let's
+  Encrypt" add port 443.
 - "Docker Isolation" shows containers' networks as subnets, in CIDR notation
   with the netmask beside it, and ports mapped from `0.0.0.0` of the host into
   a container.

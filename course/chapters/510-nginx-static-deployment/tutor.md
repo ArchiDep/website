@@ -43,8 +43,8 @@ the same steps, at a name of its own under the wildcard record. In particular:
 - "Horizontally scale a web application with nginx as a load balancer" and
   "Deploy a multi-component web application with nginx" add sites of their own
   the same way.
-- "Provision an SSL certificate using Certbot by Let's Encrypt" has Certbot
-  find the sites by their `server_name` and edit their configurations.
+- "Provision a TLS certificate with Certbot and Let's Encrypt" has Certbot find
+  the sites by their `server_name` and edit their configurations.
 - "Set up an automated deployment with Git hooks" deploys into a directory
   nginx serves, as `/srv/clock` is here.
 

@@ -97,5 +97,5 @@ Internet. In particular:
   `root` on their server, without a password.
 - "The Image Gallery" demonstrates how far a permissions problem on a server
   can be exploited.
-- "TLS/SSL Certificates" and "Provision an SSL certificate using Certbot by
-  Let's Encrypt" protect the traffic between browsers and the student's server.
+- "TLS/SSL Certificates" and "Provision a TLS certificate with Certbot and Let's
+  Encrypt" protect the traffic between browsers and the student's server.

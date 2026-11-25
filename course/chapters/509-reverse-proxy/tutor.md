@@ -46,7 +46,7 @@ in headers such as `X-Forwarded-For`. No exercise uses the appendix.
 Taught later:
 
 - HTTPS on nginx, with `listen 443 ssl` and certificates: "TLS/SSL
-  Certificates", then "Provision an SSL certificate using Certbot by Let's
+  Certificates", then "Provision a TLS certificate with Certbot and Let's
   Encrypt", which has Certbot edit the configuration.
 - One site proxying to two components by path, with several `location` blocks,
   and the same-origin policy and CORS: "Deploy a multi-component web application
@@ -148,7 +148,7 @@ nginx in front of it, by the same steps: a file in `sites-available`, a link in
   processes.
 - "Horizontally scale a web application with nginx as a load balancer" uses
   `proxy_pass`, then the `upstream` block of the load balancing example.
-- "TLS/SSL Certificates" and "Provision an SSL certificate using Certbot by
-  Let's Encrypt" add HTTPS to the nginx sites, which is TLS termination.
+- "TLS/SSL Certificates" and "Provision a TLS certificate with Certbot and Let's
+  Encrypt" add HTTPS to the nginx sites, which is TLS termination.
 - "Deploy a multi-component web application with nginx" uses several `location`
   blocks in one site to make a frontend and a backend appear as one website.

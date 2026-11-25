@@ -39,9 +39,9 @@ in the same way. In particular:
 - "Horizontally scale a web application with nginx as a load balancer" proxies
   to one instance first, then to several through an `upstream` block, and meets
   `502 Bad Gateway` when nothing listens at the address.
-- "TLS/SSL Certificates" and "Provision an SSL certificate using Certbot by
-  Let's Encrypt" add HTTPS on nginx, which removes the last flaw this exercise
-  names: Guess It is still served over plain HTTP.
+- "TLS/SSL Certificates" and "Provision a TLS certificate with Certbot and Let's
+  Encrypt" add HTTPS on nginx, which removes the last flaw this exercise names:
+  Guess It is still served over plain HTTP.
 - "Deploy a multi-component web application with nginx" proxies to two
   components from one site, by path.
 

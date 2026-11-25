@@ -46,9 +46,9 @@ Every later exercise on the student's server reaches it by name. In particular:
   the address.
 - "Horizontally scale a web application with nginx as a load balancer" uses
   `brewscale.jde.archidepN.ch`.
-- "Provision an SSL certificate using Certbot by Let's Encrypt" gets
-  certificates for the names of the student's sites, which must resolve to the
-  server.
+- "Provision a TLS certificate with Certbot and Let's Encrypt" gets one
+  certificate for all the names of the student's sites, which must resolve to
+  the server.
 
 ## Key steps
 
