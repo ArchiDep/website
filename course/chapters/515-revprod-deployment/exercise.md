@@ -1165,18 +1165,20 @@ know.
 ### :classical_building: Architecture
 
 This is a simplified architecture of the main running processes and
-communication flow at the end of this exercise:
+communication flow at the end of this exercise. Unlike in the [middle of the
+exercise][two-halves], the browser talks only to nginx, which forwards each
+request to one component or the other by its path. Step through the diagram to
+see what happens when a browser loads Revprod's home page and its testimonials.
 
-![Diagram](./images/architecture.png)
+{% include diagrams/515-revprod.html %}
 
-<div class="flex items-center gap-2">
-  <a href="./images/architecture.pdf" download="RevProd Deployment Architecture" class="tooltip" data-tip="Download PDF">
-    {%- include icons/document-arrow-down.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-  <a href="./images/architecture.png" download="RevProd Deployment Architecture" class="tooltip" data-tip="Download PNG">
-    {%- include icons/photo.html class="size-12 opacity-50 hover:opacity-100" -%}
-  </a>
-</div>
+{% note %}
+
+Note that this diagram simplifies nginx by showing only one process, while in
+reality it has a master process and several worker processes, but this is
+sufficient to understand the architecture.
+
+{% endnote %}
 
 ## :file_folder: Where is everything?
 
@@ -1316,6 +1318,7 @@ has a `location` for `/css/` that forwards to the backend.
 [sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 [troubleshooting-blocked]: #the-schools-network-blocks-your-server
 [troubleshooting-https]: #your-browser-cannot-make-a-secure-connection
+[two-halves]: #two-halves-of-one-application
 
 [certbot-deployment]: {% link chapters/514-certbot-deployment/exercise.md %}
 [command-line-cheatsheet]: {% link cheatsheets/command-line/cheatsheet.md %}#whats-in-this-file-cat-head-tail-less
