@@ -1340,9 +1340,9 @@ more than one `archidep.json`, or none where they are looked for), `--base-url
 <url>` (print a site that is already being served rather than serving the
 build), `--port <n>` (pin the throwaway server's port instead of taking any free
 one), and `--chapter <num-or-slug>`, repeatable, to print only those chapters
-(`--chapter 101 --chapter git`). A selection is for refreshing a few PDFs in a
-full set already printed: the output directory is not emptied, and the home page
-and cheatsheets are not printed.
+(`--chapter 101 --chapter git`), or `--chapter home` for the home page. A
+selection is for refreshing a few PDFs in a full set already printed: the output
+directory is not emptied, and the cheatsheets are not printed.
 
 **Nothing has to be running, and no page ever reaches the deployed site.** The
 links printed inside the PDFs are whatever the build baked into them, so the
@@ -1417,12 +1417,13 @@ npm run screenshot -- 506 --element .file-map --size 390x844
 npm run screenshot -- 411 --hover 'a[data-tip="Source code"]' --size 1600x900
 ```
 
-A chapter is named by its number or its slug. A step is the number of steps
-reached, as the page's stepper counts them, so `0` is none. Without `--step`, a
-page's diagram is fully drawn and a slide is shown as it is arrived at.
-`npm run screenshot -- --help` lists the other options: the window's size, the
-pixel ratio, where the shots go, and so on. The script prints the path of each
-shot it writes, by default in `website/tmp/screenshots`, which Git ignores.
+A chapter is named by its number or its slug, and the home page by `home`. A
+step is the number of steps reached, as the page's stepper counts them, so `0`
+is none. Without `--step`, a page's diagram is fully drawn and a slide is shown
+as it is arrived at. `npm run screenshot -- --help` lists the other options: the
+window's size, the pixel ratio, where the shots go, and so on. The script prints
+the path of each shot it writes, by default in `website/tmp/screenshots`, which
+Git ignores.
 
 Each shot loads its page anew and waits for the step to settle before it is
 taken: at least a second, then until the animations and transitions that end

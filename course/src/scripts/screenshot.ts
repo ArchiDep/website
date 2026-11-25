@@ -14,7 +14,7 @@ import { parseCourseManifest } from './utils/course-manifest';
 
 const USAGE = `Usage: npm run screenshot -- <chapter> [options]
 
-  <chapter>             A chapter's number or slug, such as 411
+  <chapter>             A chapter's number or slug, such as 411, or home
 
   --slides              The chapter's deck rather than its page
   --slide <n|text>      In the deck, the slide numbered n (as its counter
@@ -274,7 +274,7 @@ function deckShot(slide: string | undefined, step: number | undefined): Shot {
   const deckUrl = deckUrlOf();
   const stepped = step === undefined ? '' : `-step-${step}`;
   return {
-    label: `${doc.num} slide ${slide ?? values.diagram ?? 1}${step === undefined ? '' : ` step ${step}`}`,
+    label: `${doc.name} slide ${slide ?? values.diagram ?? 1}${step === undefined ? '' : ` step ${step}`}`,
     take: async page => {
       await page.goto(deckUrl, { waitUntil: 'load' });
       await page.waitForFunction(() => window.deck?.isReady() === true);
@@ -344,7 +344,7 @@ function deckShot(slide: string | undefined, step: number | undefined): Shot {
 
       await settle(page);
       return {
-        name: `${doc.num}-slide-${reached}${stepped}`,
+        name: `${doc.name}-slide-${reached}${stepped}`,
         image: await page.screenshot()
       };
     }
@@ -356,14 +356,14 @@ function pageShot(step: number | undefined): Shot {
   const hover = values.hover;
   const element = values.element;
   const name =
-    `${doc.num}-${diagram ?? 'page'}${values.enlarged ? '-enlarged' : ''}` +
+    `${doc.name}-${diagram ?? 'page'}${values.enlarged ? '-enlarged' : ''}` +
     (step === undefined ? '' : `-step-${step}`) +
     (hover === undefined ? '' : '-hover') +
     (element === undefined ? '' : `-element-${width}`);
   return {
     label: name,
     take: async page => {
-      if (doc.course_type === 'slides') {
+      if (doc.isDeck) {
         throw new Error(`${doc.title} is a deck: add --slides`);
       }
 
@@ -489,11 +489,11 @@ function pageShot(step: number | undefined): Shot {
 }
 
 function codeShot(n: number): Shot {
-  const name = `${doc.num}-code-${n}`;
+  const name = `${doc.name}-code-${n}`;
   return {
     label: name,
     take: async page => {
-      if (doc.course_type === 'slides') {
+      if (doc.isDeck) {
         throw new Error(`${doc.title} is a deck: add --slides`);
       }
 
@@ -553,7 +553,7 @@ async function settle(page: Page): Promise<void> {
 }
 
 function deckUrlOf(): string {
-  if (doc.course_type === 'slides') {
+  if (doc.isDeck) {
     return new URL(doc.url, baseUrl).toString();
   } else if (doc.slides_pdf !== null) {
     return new URL('slides/', new URL(doc.url, baseUrl)).toString();
@@ -571,7 +571,19 @@ async function checkServer(): Promise<void> {
   }
 }
 
-async function findChapter(selector: string) {
+/**
+ * What the shots are of: a chapter, or the home page, which the manifest lists
+ * apart from the chapters and which has no number to name its shots after.
+ */
+interface Target {
+  readonly title: string;
+  readonly name: string;
+  readonly isDeck: boolean;
+  readonly url: string;
+  readonly slides_pdf: string | null;
+}
+
+async function findChapter(selector: string): Promise<Target> {
   const home = await fetchText(baseUrl);
   const edition =
     values.edition ?? /href="\/(\d{4})\/course\//u.exec(home)?.[1];
@@ -584,6 +596,16 @@ async function findChapter(selector: string) {
     JSON.parse(await fetchText(manifestUrl)),
     manifestUrl
   );
+  if (selector === 'home') {
+    return {
+      title: 'The home page',
+      name: 'home',
+      isDeck: false,
+      url: manifest.home.url,
+      slides_pdf: null
+    };
+  }
+
   const docs = manifest.sections.flatMap(section => section.docs);
   const found = docs.find(
     d =>
@@ -594,7 +616,13 @@ async function findChapter(selector: string) {
   if (found === undefined) {
     fail(`No chapter numbered or named ${selector} in ${manifestUrl}`);
   }
-  return found;
+  return {
+    title: found.title,
+    name: String(found.num),
+    isDeck: found.course_type === 'slides',
+    url: found.url,
+    slides_pdf: found.slides_pdf
+  };
 }
 
 async function fetchText(url: string): Promise<string> {

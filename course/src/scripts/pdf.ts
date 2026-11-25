@@ -70,15 +70,18 @@ if (
 const courseData = await readCourseManifest(manifestFile);
 const allDocs = courseData.sections.flatMap(section => section.docs);
 
-// A chapter is named by its number or its slug, as it is in its URL. Printing
-// only some of them is for refreshing those few in a full set already printed,
-// so the rest of the output directory is left as it is, and the home page and
-// cheatsheets, which are not chapters, are left out.
+// A chapter is named by its number or its slug, as it is in its URL, and the
+// home page, which has neither, by "home". Printing only some of them is for
+// refreshing those few in a full set already printed, so the rest of the output
+// directory is left as it is, and the cheatsheets, which are not chapters, are
+// left out.
 const chapterSelectors = values.chapter ?? [];
 const printingAll = chapterSelectors.length === 0;
+const printingHome = printingAll || chapterSelectors.includes('home');
 
 const unknownChapters = chapterSelectors.filter(
   selector =>
+    selector !== 'home' &&
     !allDocs.some(
       doc => String(doc.num) === selector || doc.course_slug === selector
     )
@@ -125,7 +128,7 @@ const progress = new ProgressBar(
   {
     width: Math.min(30, process.stdout.columns),
     total:
-      (printingAll ? 1 : 0) +
+      (printingHome ? 1 : 0) +
       docsToExport
         .map(doc => (doc.slides_pdf === null ? 1 : 2))
         .reduce(N.add, 0) +
@@ -151,7 +154,7 @@ const browser = await puppeteer.launch();
 try {
   const page = await browser.newPage();
 
-  if (printingAll) {
+  if (printingHome) {
     startPrinting('Home');
     await exportPageToPdf(
       page,

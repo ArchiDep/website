@@ -27,9 +27,9 @@ Options:
       --pdf-base URL   Where the PDFs are published, for the download links the
                        pages offer (default: the application's configuration).
   -c, --chapter CH     Print only this chapter, named by number (101) or slug
-                       (command-line); repeat it for several. The output
-                       directory is then not emptied, and the home page and
-                       cheatsheets are not printed.
+                       (command-line), or the home page, named home; repeat
+                       it for several. The output directory is then not
+                       emptied, and the cheatsheets are not printed.
   -h, --help           Print this message.
 
 Relative paths are relative to the current directory. The default directories
