@@ -301,6 +301,12 @@
       "slug": "brewscale-deployment"
     },
     {
+      "path": "/course/513-tls/",
+      "kind": "chapter",
+      "num": 513,
+      "slug": "tls"
+    },
+    {
       "path": "/course/513-tls/slides/",
       "kind": "chapter_slides",
       "num": 513,
