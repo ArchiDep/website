@@ -32,19 +32,25 @@ defmodule ArchiDepWeb.Admin.Classes.Export.SshConfigTest do
          ServersFactory.build(:server_view,
            ip_address: %Postgrex.INET{address: {10, 0, 0, 1}, netmask: 32},
            username: "alice-admin",
-           ssh_port: nil
+           app_username: "archidep",
+           ssh_port: nil,
+           set_up_at: ~U[2026-11-02 10:00:00.000000Z]
          )},
         {CourseFactory.build(:student_view, username: "bob"),
          ServersFactory.build(:server_view,
            ip_address: %Postgrex.INET{address: {10, 0, 0, 2}, netmask: 32},
            username: "bob",
-           ssh_port: 22
+           app_username: "archidep",
+           ssh_port: 22,
+           set_up_at: nil
          )},
         {CourseFactory.build(:student_view, username: "carol"),
          ServersFactory.build(:server_view,
            ip_address: %Postgrex.INET{address: {10, 0, 0, 3}, netmask: 32},
            username: "ubuntu",
-           ssh_port: 2222
+           app_username: "archidep-carol",
+           ssh_port: 2222,
+           set_up_at: ~U[2026-11-03 11:00:00.000000Z]
          )}
       ],
       generated_at: ~U[2026-11-18 14:02:17.000000Z]
@@ -54,7 +60,7 @@ defmodule ArchiDepWeb.Admin.Classes.Export.SshConfigTest do
     # BEGIN SSH host aliases of the servers of the ArchiDep students of class ArchiDep 2026, generated 2026-11-18 14:02 UTC
     Host archidep-st-alice
       HostName 10.0.0.1
-      User alice-admin
+      User archidep
 
     Host archidep-st-bob
       HostName 10.0.0.2
@@ -62,7 +68,7 @@ defmodule ArchiDepWeb.Admin.Classes.Export.SshConfigTest do
 
     Host archidep-st-carol
       HostName 10.0.0.3
-      User ubuntu
+      User archidep-carol
       Port 2222
     # END SSH host aliases of the servers of the ArchiDep students of class ArchiDep 2026
     """
