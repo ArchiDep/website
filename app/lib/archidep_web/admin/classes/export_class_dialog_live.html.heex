@@ -46,10 +46,14 @@
         What the copy button copies. clipboard.js copies a text it is given from
         an element it adds to the page's body, which a modal dialog leaves out
         of reach, so it copies this element of the dialog instead.
+
+        The browser copies the text of a selection as it is laid out, and
+        `sr-only` sets `white-space: nowrap`, which collapses the spaces that
+        indent a line; `whitespace-pre!` keeps them.
       --%>
       <textarea
         id="export-class-copied-text"
-        class="sr-only"
+        class="sr-only whitespace-pre!"
         aria-hidden="true"
         tabindex="-1"
         readonly
