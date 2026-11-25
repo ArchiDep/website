@@ -4,7 +4,12 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
-@plugin "daisyui";
+/* DaisyUI's `stack` component would stretch every slide in one of reveal.js's
+   vertical stacks, also `.stack`, to the slide's full height, so that reveal.js
+   could not centre them. */
+@plugin "daisyui" {
+  exclude: stack;
+}
 
 @source "../../course/chapters/**/slides/**/*.md";
 @source "../../course/chapters/**/slides.md";
