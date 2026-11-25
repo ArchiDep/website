@@ -114,6 +114,15 @@ apt install git` command][install-git-on-linux], or with their other
   - [Firefox][firefox] (optional, required for one network exercise)
 - A free [Render][render] account
 
+## Your cloud server
+
+Each deployment exercise adds something to your cloud server. This diagram shows
+everything you have deployed on it so far, and grows as the course goes on.
+Step through it to follow one request to each site, from your browser to the
+process that answers it.
+
+{% include diagrams/home-server.html %}
+
 ## References
 
 These are the main references used throughout this course. More detailed and
